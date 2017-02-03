@@ -1,6 +1,7 @@
 #include "llvm/Constraints/CustomPasses.hpp"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
@@ -159,8 +160,8 @@ public:
                             }
                             else
                             {
-                                auto replace_instr = new llvm::BitCastInst::BitCastInst(flat_gep_inst, gep_instr->getType(),
-                                                                                        "", &instruction);
+                                auto replace_instr = new llvm::BitCastInst(flat_gep_inst, gep_instr->getType(),
+                                                                           "", &instruction);
 
                                 replacement_table[&instruction] = replace_instr;
                             }
