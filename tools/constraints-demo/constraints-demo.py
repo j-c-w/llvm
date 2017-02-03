@@ -118,7 +118,7 @@ def on_analyze_clicked(widget):
 
     process = subprocess.Popen([WRAPPER_SCRIPT, CLANGPP_EXECUTABLE, "-std=c++14",  "-S", "-emit-llvm",
                                 "-o", TARGET_FILENAME, "-gline-tables-only", SOURCE_FILENAME],
-                                cwd = "temp", stderr=subprocess.PIPE)
+                                stderr=subprocess.PIPE)
 
     Thread(target=wait_thread, args=(process,source_code)).start()
 
@@ -139,7 +139,7 @@ def wait_thread(process, source_code):
 
     else:
 
-        stdout_result = "".join([line.decode("utf8") for line in open("temp/replace-report.txt")])
+        stdout_result = "".join([line.decode("utf8") for line in open("replace-report.txt")])
 
         loops_with_reductions = [part.split("END LOOP\n")[0] for part in stdout_result.split("BEGIN LOOP\n")[1:]]
 

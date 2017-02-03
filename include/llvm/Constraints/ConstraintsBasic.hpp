@@ -16,39 +16,33 @@
    constraint definitions in the included files. */
 
 template<typename Type1, typename Type2,
-         typename = std::enable_if_t<std::is_base_of<Constraint<std::string,unsigned>,Type1>::value>,
-         typename = std::enable_if_t<std::is_base_of<Constraint<std::string,unsigned>,Type2>::value>>
+         typename = typename std::enable_if<std::is_base_of<Constraint<std::string,unsigned>,Type1>::value>::type,
+         typename = typename std::enable_if<std::is_base_of<Constraint<std::string,unsigned>,Type2>::value>::type>
 ConstraintAnd<std::string,unsigned> operator&&(Type1 t1, Type2 t2)
 {
     return ConstraintAnd<std::string,unsigned>(t1, t2);
 }
 
 template<typename Type1, typename Type2,
-         typename = std::enable_if_t<std::is_base_of<Constraint<std::string,unsigned>,Type1>::value>,
-         typename = std::enable_if_t<std::is_base_of<Constraint<std::string,unsigned>,Type2>::value>>
+         typename = typename std::enable_if<std::is_base_of<Constraint<std::string,unsigned>,Type1>::value>::type,
+         typename = typename std::enable_if<std::is_base_of<Constraint<std::string,unsigned>,Type2>::value>::type>
 ConstraintAnd<std::string,unsigned> operator||(Type1 t1, Type2 t2)
 {
     return ConstraintOr<std::string,unsigned>(t1, t2);
 }
 
-ConstraintPrefix<std::string,unsigned> operator+(ConstraintAnd<std::string,unsigned> constraint, std::string prefix)
-{
-    return ConstraintPrefix<std::string,unsigned>(prefix, constraint);
-}
-
-ConstraintPrefix<std::string,unsigned> operator+(ConstraintOr<std::string,unsigned> constraint, std::string prefix)
-{
-    return ConstraintPrefix<std::string,unsigned>(prefix, constraint);
-}
-
-ConstraintRange<unsigned> operator*(unsigned size, ConstraintAnd<std::string,unsigned> constraint)
+template<typename Type,
+         typename = typename std::enable_if<std::is_base_of<Constraint<std::string,unsigned>,Type>::value>::type>
+ConstraintRange<unsigned> operator*(unsigned size, Type constraint)
 {
     return ConstraintRange<unsigned>(size, constraint);
 }
 
-ConstraintRange<unsigned> operator*(unsigned size, ConstraintOr<std::string,unsigned> constraint)
+template<typename Type,
+         typename = typename std::enable_if<std::is_base_of<Constraint<std::string,unsigned>,Type>::value>::type>
+ConstraintPrefix<std::string,unsigned> operator+(Type constraint, std::string prefix)
 {
-    return ConstraintRange<unsigned>(size, constraint);
+    return ConstraintPrefix<std::string,unsigned>(prefix, constraint);
 }
 
 class ConstraintUnused : public ConstraintSingle<std::string,unsigned>
