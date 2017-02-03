@@ -1,3 +1,13 @@
+LLVM Constraint Solving Demo
+============================
+
+The demo GUI as shown at CGO'17 can be accessed by running
+"${BUILD_DIR}/bin/constraint-demo.py" after building with cmake.
+This requires clang to be integrated in the source tree by
+running "git clone http://llvm.org/git/clang" in "tools/clang"
+before building.
+
+
 Low Level Virtual Machine (LLVM)
 ================================
 
