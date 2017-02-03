@@ -10,6 +10,7 @@ from gi.repository import Gdk
 import clang
 from clang import cindex
 
+import sys
 import subprocess
 from threading import Thread
 
@@ -76,7 +77,7 @@ result_inner_box.pack_start(code_window2, False, False, 5)
 PROJECT_DIRECTORY  = "/".join(sys.argv[0].split("/")[:-1])+"/"
 CLANGPP_EXECUTABLE = PROJECT_DIRECTORY+"clang++"
 WRAPPER_SCRIPT     = PROJECT_DIRECTORY+"constraints-wrapper.py"
-TEMP_DIRECTORY     = "~/constraints-demo/"
+TEMP_DIRECTORY     = ""
 SOURCE_FILENAME    = TEMP_DIRECTORY+"input.cc"
 LLVM_FILENAME      = TEMP_DIRECTORY+"input.ll"
 TARGET_FILENAME    = TEMP_DIRECTORY+"output.ll"

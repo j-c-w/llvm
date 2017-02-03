@@ -24,6 +24,7 @@
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Bitcode/BitcodeWriterPass.h"
 #include "llvm/CodeGen/CommandFlags.h"
+#include "llvm/Constraints/CustomPasses.hpp"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/IRPrintingPasses.h"
@@ -396,6 +397,15 @@ int main(int argc, char **argv) {
 #ifdef LINK_POLLY_INTO_TOOLS
   polly::initializePollyPasses(Registry);
 #endif
+
+  Registry.registerPass(*new llvm::PassInfo("RESEARCH: The flatten pass", "research-flatten", "Flatten",
+                        llvm::PassInfo::NormalCtor_t(&llvm::createFlattenPass), false, false, nullptr), true);
+
+  Registry.registerPass(*new llvm::PassInfo("RESEARCH: The preprocessor pass", "research-preprocessor", "Preprocessor",
+                        llvm::PassInfo::NormalCtor_t(&llvm::createPreprocessorPass), false, false, nullptr), true);
+
+  Registry.registerPass(*new llvm::PassInfo("RESEARCH: The replacer pass", "research-replacer", "Replacer",
+                        llvm::PassInfo::NormalCtor_t(&llvm::createReplacerPass), false, false, nullptr), true);
 
   cl::ParseCommandLineOptions(argc, argv,
     "llvm .bc -> .bc modular optimizer and analysis printer\n");

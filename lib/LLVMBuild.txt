@@ -21,6 +21,7 @@ subdirectories =
  AsmParser
  Bitcode
  CodeGen
+ Constraints
  DebugInfo
  Demangle
  ExecutionEngine

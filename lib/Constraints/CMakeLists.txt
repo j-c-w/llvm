@@ -1,4 +1,4 @@
-add_llvm_library(Constraints
+add_llvm_library(LLVMConstraints
 
   SMTSolver.cpp
   PrintSlots.cpp

@@ -19,6 +19,7 @@
 subdirectories =
  bugpoint
  dsymutil
+ constraints-demo
  llc
  lli
  llvm-ar

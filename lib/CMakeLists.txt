@@ -4,6 +4,7 @@
 add_subdirectory(IR)
 add_subdirectory(IRReader)
 add_subdirectory(CodeGen)
+add_subdirectory(Constraints)
 add_subdirectory(Bitcode)
 add_subdirectory(Transforms)
 add_subdirectory(Linker)
