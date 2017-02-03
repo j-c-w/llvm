@@ -24,5 +24,8 @@ add_llvm_library(LLVMConstraints
   TransformReduction.cpp
   TransformDistributive.cpp
   TransformHoistSelection.cpp
+
+  DEPENDS
+  intrinsics_gen
 )
 
