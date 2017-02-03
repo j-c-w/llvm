@@ -15,13 +15,17 @@
 /* In this file, many individual constraints are defined that are simply specializations of some of the very genric
    constraint definitions in the included files. */
 
-template<typename Type1, typename Type2>
+template<typename Type1, typename Type2,
+         typename = std::enable_if_t<std::is_base_of<Constraint<std::string,unsigned>,Type1>::value>,
+         typename = std::enable_if_t<std::is_base_of<Constraint<std::string,unsigned>,Type2>::value>>
 ConstraintAnd<std::string,unsigned> operator&&(Type1 t1, Type2 t2)
 {
     return ConstraintAnd<std::string,unsigned>(t1, t2);
 }
 
-template<typename Type1, typename Type2>
+template<typename Type1, typename Type2,
+         typename = std::enable_if_t<std::is_base_of<Constraint<std::string,unsigned>,Type1>::value>,
+         typename = std::enable_if_t<std::is_base_of<Constraint<std::string,unsigned>,Type2>::value>>
 ConstraintAnd<std::string,unsigned> operator||(Type1 t1, Type2 t2)
 {
     return ConstraintOr<std::string,unsigned>(t1, t2);
