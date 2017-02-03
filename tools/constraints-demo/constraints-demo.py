@@ -7,9 +7,6 @@ from gi.repository import GtkSource
 from gi.repository import Pango
 from gi.repository import Gdk
 
-import clang
-from clang import cindex
-
 import sys
 import subprocess
 from threading import Thread
