@@ -77,5 +77,12 @@ for idx in source_file_indizes:
 
     process4.wait()
 
+    if process2.returncode:
+        sys.exit(process2.returncode)
+    if process3.returncode:
+        sys.exit(process3.returncode)
+    if process4.returncode:
+        sys.exit(process4.returncode)
+
 # Run the original command line but with the C/C++ input files replaced with llvm files.
-subprocess.call(sys.argv[1:])
+sys.exit(subprocess.call(sys.argv[1:]))
