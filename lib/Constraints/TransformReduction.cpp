@@ -14,6 +14,7 @@ void transform_reduction_operator(Function& function, std::vector<std::map<std::
 {
     std::vector<Value*> old_value_fields;
     std::vector<Value*> updated_scalar_fields;
+    std::vector<Value*> histobin_instr_fields;
     std::vector<Value*> load_instr_fields;
     std::vector<Value*> store_instr_fields;
     std::vector<Type*>  reduction_type_fields;
@@ -34,12 +35,15 @@ void transform_reduction_operator(Function& function, std::vector<std::map<std::
 
     for(const auto& solution : histos)
     {
-        auto find_store_instr = solution.find("store_instr");
-        auto find_load_instr  = solution.find("old_value");
+        auto find_store_instr    = solution.find("store_instr");
+        auto find_histobin_instr = solution.find("index_expr.output");
+        auto find_load_instr     = solution.find("old_value");
 
-        if(find_store_instr != solution.end() && find_store_instr->second != nullptr &&
-           find_load_instr  != solution.end() && find_load_instr->second  != nullptr)
+        if(find_store_instr    != solution.end() && find_store_instr->second    != nullptr &&
+           find_histobin_instr != solution.end() && find_histobin_instr->second != nullptr &&
+           find_load_instr     != solution.end() && find_load_instr->second     != nullptr)
         {
+            histobin_instr_fields.push_back(find_histobin_instr->second);
             store_instr_fields.push_back(find_store_instr->second);
             load_instr_fields.push_back(find_load_instr->second);
 
@@ -174,15 +178,11 @@ void transform_reduction_operator(Function& function, std::vector<std::map<std::
                 }
             }
 
-            for(unsigned j = 0; j < load_instr_fields.size(); j++)
+            for(unsigned j = 0; j < histobin_instr_fields.size(); j++)
             {
-                if(&instruction == load_instr_fields[j])
+                if(&instruction == histobin_instr_fields[j])
                 {
                     instruction.setOperand(0, histo_loads[j]);
-                }
-                if(&instruction == store_instr_fields[j])
-                {
-                    instruction.setOperand(1, histo_loads[j]);
                 }
             }
 
