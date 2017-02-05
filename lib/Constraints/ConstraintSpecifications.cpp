@@ -601,8 +601,7 @@ ConstraintAnd<std::string,unsigned> ConstraintScalarReduction(FunctionWrapper& w
             && ConstraintCFGPostdomStrict     (wrap, "final_value",             "end")
 
             && ConstraintDFGEdge              (wrap, "initial_value",           "old_value")
-            && (   ConstraintPreexecution     (wrap, "initial_value")
-                || ConstraintCFGDominateStrict(wrap, "initial_value",           "old_value"))
+            && ConstraintLocallyConstant      (wrap, "initial_value",           "")
 
             && ConstraintDFGEdge              (wrap, "update_expr.output",      "old_value")
             && ConstraintDFGReachable         (wrap, "old_value",               "update_expr.output")
@@ -615,26 +614,19 @@ ConstraintAnd<std::string,unsigned> ConstraintScalarReduction(FunctionWrapper& w
             && ConstraintSameSESE                 ("update_expr.outer_sese.", "")
             && ConstraintSameSESE                 ("update_expr.inner_sese.", "body_sese.")
 
-            && 30 * (   (   ConstraintOpcode             (wrap, llvm::Instruction::Load, 1, "update_expr.input*")
-                         && ConstraintDFGEdge            (wrap, "affine_access*.access_pointer", "update_expr.input*")
-                         && ConstraintAffineAccess1      (wrap)+"affine_access*."
-                         && ConstraintSame                     ("affine_access*.input_index[0]", "iterator")
-                         && ConstraintAffineAccess1      (wrap)+"affine_access*."
-                         && (   ConstraintPreexecution     (wrap, "affine_access*.base_pointer")
-                             || ConstraintCFGDominateStrict(wrap, "affine_access*.base_pointer", "begin"))
-                         && (   ConstraintPreexecution     (wrap, "affine_access*.offset_add.addend")
-                             || ConstraintCFGDominateStrict(wrap, "affine_access*.offset_add.addend", "begin")
-                             || ConstraintUnused                 ("affine_access*.offset_add.addend"))
-                         && (   ConstraintPreexecution     (wrap, "affine_access*.stride_mul[0].multiplier")
-                             || ConstraintCFGDominateStrict(wrap, "affine_access*.stride_mul[0].multiplier", "begin")
-                             || ConstraintUnused                 ("affine_access*.stride_mul[0].multiplier"))
-                         && (   ConstraintPreexecution     (wrap, "affine_access*.base_index")
-                             || ConstraintCFGDominateStrict(wrap, "affine_access*.base_index", "begin")
-                             || ConstraintUnused                 ("affine_access*.base_index"))
-                         && ConstraintOrder                    ("update_expr.input*", "update_expr.input+"))
-                     || (   ConstraintUnused                   ("update_expr.input*")
-                         && ConstraintUnusedAffineAccess1    ()+"affine_access*."
-                         && ConstraintUnused                   ("update_expr.input+")))
+            && 30 * (   (   ConstraintOpcode         (wrap, llvm::Instruction::Load, 1, "update_expr.input*")
+                         && ConstraintDFGEdge        (wrap, "affine_access*.access_pointer", "update_expr.input*")
+                         && ConstraintAffineAccess1  (wrap)+"affine_access*."
+                         && ConstraintSame                 ("affine_access*.input_index[0]", "iterator")
+                         && ConstraintAffineAccess1  (wrap)+"affine_access*."
+                         && ConstraintLocallyConstant(wrap, "affine_access*.base_pointer", "")
+                         && ConstraintLocallyConstant(wrap, "affine_access*.offset_add.addend", "")
+                         && ConstraintLocallyConstant(wrap, "affine_access*.stride_mul[0].multiplier", "")
+                         && ConstraintLocallyConstant(wrap, "affine_access*.base_index", "")
+                         && ConstraintOrder                ("update_expr.input*", "update_expr.input+"))
+                     || (   ConstraintUnused               ("update_expr.input*")
+                         && ConstraintUnusedAffineAccess1()+"affine_access*."
+                         && ConstraintUnused               ("update_expr.input+")))
 
             && ConstraintUnused("update_expr.input[30]")
             && ConstraintSame  ("update_expr.input[31]", "old_value")
@@ -701,30 +693,23 @@ ConstraintAnd<std::string,unsigned> ConstraintHistogram(FunctionWrapper& wrap)
             && ConstraintSameSESE         ("index_expr.outer_sese.",         "")
             && ConstraintSameSESE         ("index_expr.inner_sese.",         "body_sese.")
 
-            && 28 * (   (  ConstraintOpcode                (wrap, llvm::Instruction::Load, 1, "update_expr.input*")
-                         && ConstraintDFGEdge              (wrap, "affine_access*.access_pointer", "update_expr.input*")
-                         && ConstraintSame                       ("affine_access*.input_index[0]", "iterator")
-                         && ConstraintAffineAccess1        (wrap)+"affine_access*."
-                         && ConstraintDistinct                   ("affine_access*.base_pointer", "reduction_array")
-                         && (   ConstraintPreexecution     (wrap, "affine_access*.base_pointer")
-                             || ConstraintCFGDominateStrict(wrap, "affine_access*.base_pointer", "begin"))
-                         && (   ConstraintPreexecution     (wrap, "affine_access*.offset_add.addend")
-                             || ConstraintCFGDominateStrict(wrap, "affine_access*.offset_add.addend", "begin")
-                             || ConstraintUnused                 ("affine_access*.offset_add.addend"))
-                         && (   ConstraintPreexecution     (wrap, "affine_access*.stride_mul[0].multiplier")
-                             || ConstraintCFGDominateStrict(wrap, "affine_access*.stride_mul[0].multiplier", "begin")
-                             || ConstraintUnused                 ("affine_access*.stride_mul[0].multiplier"))
-                         && (   ConstraintPreexecution     (wrap, "affine_access*.base_index")
-                             || ConstraintCFGDominateStrict(wrap, "affine_access*.base_index", "begin")
-                             || ConstraintUnused                 ("affine_access*.base_index"))
-                         && ConstraintOrder                      ("update_expr.input*", "update_expr.input+")
-                         && ConstraintSame                       ("update_expr.input*", "index_expr.input*")
-                         && ConstraintOrder                      ("index_expr.input*", "index_expr.input+"))
-                     || (   ConstraintUnused                     ("update_expr.input*")
-                         && ConstraintUnused                     ("index_expr.input*")
-                         && ConstraintUnusedAffineAccess1      ()+"affine_access*."
-                         && ConstraintUnused                     ("update_expr.input+")
-                         && ConstraintUnused                     ("index_expr.input+")))
+            && 28 * (   (  ConstraintOpcode          (wrap, llvm::Instruction::Load, 1, "update_expr.input*")
+                         && ConstraintDFGEdge        (wrap, "affine_access*.access_pointer", "update_expr.input*")
+                         && ConstraintSame                  ("affine_access*.input_index[0]", "iterator")
+                         && ConstraintAffineAccess1  (wrap)+"affine_access*."
+                         && ConstraintDistinct             ("affine_access*.base_pointer", "reduction_array")
+                         && ConstraintLocallyConstant(wrap, "affine_access*.base_pointer", "")
+                         && ConstraintLocallyConstant(wrap, "affine_access*.offset_add.addend", "")
+                         && ConstraintLocallyConstant(wrap, "affine_access*.stride_mul[0].multiplier", "")
+                         && ConstraintLocallyConstant(wrap, "affine_access*.base_index", "")
+                         && ConstraintOrder                ("update_expr.input*", "update_expr.input+")
+                         && ConstraintSame                 ("update_expr.input*", "index_expr.input*")
+                         && ConstraintOrder                ("index_expr.input*", "index_expr.input+"))
+                     || (   ConstraintUnused               ("update_expr.input*")
+                         && ConstraintUnused               ("index_expr.input*")
+                         && ConstraintUnusedAffineAccess1()+"affine_access*."
+                         && ConstraintUnused               ("update_expr.input+")
+                         && ConstraintUnused               ("index_expr.input+")))
  
             && ConstraintOpcode(wrap, llvm::Instruction::GetElementPtr, "affine_access[0].access_pointer")
 
@@ -787,7 +772,6 @@ ConstraintAnd<std::string,unsigned> ConstraintHistogram(FunctionWrapper& wrap)
 
             && ConstraintUnused            ("index_expr.restrictions[4]")
             && ConstraintSharedFate        ("index_expr.restrictions", 5)
- //         && ConstraintSharedFate<33>    ("index_expr.input")
             && ConstraintPureFunction(wrap)+"index_expr.");
 }
 
