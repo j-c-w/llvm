@@ -141,14 +141,13 @@ public:
                     }
 
                     ofs<<"BEGIN OPERATOR\n";
-                    std::vector<llvm::Value*>       arguments;
                     std::vector<llvm::Instruction*> outputs;
 
 
                     SESEFunction sese_function(function, clustered_solutions[i].intersection[0],
                                                          clustered_solutions[i].intersection[1]);
 
-                    llvm::Function* function = sese_function.make_function(arguments);
+                    llvm::Function* function = sese_function.make_function();
 
                     std::vector<std::map<std::string,llvm::Value*>> scalar_solutions;
                     std::vector<std::map<std::string,llvm::Value*>> histo_solutions;
