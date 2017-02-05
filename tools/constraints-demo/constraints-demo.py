@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import gi
 import sys
+import time
 import threading
 import subprocess
 gi.require_version('Gdk', '3.0')
@@ -161,22 +162,52 @@ def on_analyze_clicked(widget):
 def extract_type_from_llmv_value(code):
     possible_tokens = [t for t in code.split(",")[0].split(" = ")[-1].split(" ") if t != ""]
 
-    if "double*" in possible_tokens:  return "double*"
-    elif "float*" in possible_tokens: return "float*"
-    elif "i32*" in possible_tokens:   return "int*"
-    elif "i64*" in possible_tokens:   return "long*"
-    elif "double" in possible_tokens: return "double"
-    elif "float" in possible_tokens:  return "float"
-    elif "i32" in possible_tokens:    return "int"
-    elif "i64" in possible_tokens:    return "long"
-    else:                             return "<type>"
+    if   "double*" in possible_tokens: return "double*"
+    elif "float*"  in possible_tokens: return "float*"
+    elif "i32*"    in possible_tokens: return "int*"
+    elif "i64*"    in possible_tokens: return "long*"
+    elif "double"  in possible_tokens: return "double"
+    elif "float"   in possible_tokens: return "float"
+    elif "i32"     in possible_tokens: return "int"
+    elif "i64"     in possible_tokens: return "long"
+    else:                              return "<type>"
 
 def generate_reduction(solutions):
-    line1 = "void reduce(out_t* out,"
-    line2 = "            long begin, long end)\n"
-    line3 = "    for(long i = begin; i < end; i++)\n"
-    line4 = "        op(out"
 
+    iter_type  = ""
+    iter_begin = ""
+    iter_end   = ""
+
+    for solution in solutions:
+        iter_type = extract_type_from_llmv_value(solution["iterator"])
+        if len(solution["iter_begin"].strip().split(' ')) == 2:
+            iter_begin = "="+solution["iter_begin"].strip().split(' ')[1]
+        if len(solution["iter_end"].strip().split(' ')) == 2:
+            iter_end = "="+solution["iter_end"].strip().split(' ')[1]
+
+    if not iter_end:
+        iter_begin = ""
+
+    part1 = ("void reduce_par(out_t* out")
+    part2 = (                          ",\n"
+            +"                "+iter_type+" begin"+iter_begin+", "+iter_type+" end"+iter_end+")\n"
+            +"{\n"
+            +" if(/*...*/) { //sequential execution\n"
+            +"  for("+iter_type+" i = begin; i < end; i++)\n"
+            +"   op(out")
+    part3 = (         ",begin,end);\n"
+            +" }\n"
+            +" else {        //divide and conquer\n"
+            +"  "+iter_type+"  mid = begin+(end-begin)/2;\n"
+            +"  out_t tmp = init();\n"
+            +"  reduce_par(out")
+    part4 = (                ",begin,mid);\n"
+            +"  reduce_par(tmp")
+    part5 = (                ", mid, end);\n"
+            +"  merge(out, &tmp);\n"
+            +" }\n"
+            +"}")
+  
     access_base_pointers = []
     accessess            = []
 
@@ -187,7 +218,9 @@ def generate_reduction(solutions):
             except ValueError:
                 baseptr_idx = len(access_base_pointers)
                 access_base_pointers.append(read["base_pointer"])
-                line1 += " "+extract_type_from_llmv_value(read["base_pointer"])+" in"+str(baseptr_idx)+","
+                part1 += ", "+extract_type_from_llmv_value(read["base_pointer"])+" in"+str(baseptr_idx)
+                part3 += ",in"+str(baseptr_idx)
+                part4 += ",in"+str(baseptr_idx)
 
             try:
                 access_idx = accessess.index(read["access_pointer"])
@@ -202,9 +235,9 @@ def generate_reduction(solutions):
                     access_pattern = read["stride_mul"][0]["multiplier"].split(" ")[-1]+"*"+access_pattern
                 if "addend" in read["offset_add"]:
                     access_pattern = access_pattern+"+"+read["offset_add"]["addend"].split(" ")[-1]
-                line4 += ", in"+str(baseptr_idx)+"["+access_pattern+"]"
+                part2 += ",in"+str(baseptr_idx)+"["+access_pattern+"]"
 
-    return line1+"\n"+line2+"{\n"+line3+line4+");\n}"
+    return part1+part2+part3+part4+part5
 
 def wait_thread(source_code):
     global already_running_analysis, already_running_analysis_lock
@@ -238,12 +271,11 @@ def wait_thread(source_code):
                 while source_code.split("\n")[line_end-1] == "":
                     line_end = line_end - 1
 
-                set_output("Found reduction in lines "+str(line_begin)+" - "+str(line_end)+"\n"+
-                           "with the following reduction type",
+                set_output("Found reduction in lines "+str(line_begin)+" - "+str(line_end)+":",
                            "%out_t = type {"+reduction_type+"} ",
-                           "The reduction can be rewritten",
+                           "The reduction can be rewritten as:",
                            generate_reduction(scalars+histos)+" ",
-                           "This uses the reduction operator",
+                           "This uses the reduction operator:",
                            operator+" ")
                 break
         else:
