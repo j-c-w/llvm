@@ -18,25 +18,25 @@ SOURCE_FILENAME    = "input.cc"
 LLVM_FILENAME      = "input.ll"
 TARGET_FILENAME    = "output.ll"
 
-window           = Gtk.Window()
-toplevel_box     = Gtk.HBox(homogeneous=True, spacing=10)
-left_box         = Gtk.VBox()
-menu_box         = Gtk.HBox()
-load_button      = Gtk.Button("load")
-analyze_button   = Gtk.Button("analyze")
-hide_button      = Gtk.Button("hide")
-source_frame     = Gtk.Frame()
-source_box       = Gtk.ScrolledWindow()
-sourcecode       = GtkSource.View()
-result_box       = Gtk.ScrolledWindow()
-result_inner     = Gtk.VBox()
-message_window1  = Gtk.Label()
-code_window1     = GtkSource.View()
-message_window2  = Gtk.Label()
-code_window2     = GtkSource.View()
-message_window3  = Gtk.Label()
-code_window3     = GtkSource.View()
-center_bar       = Gtk.Label()
+window          = Gtk.Window()
+toplevel_box    = Gtk.HBox(homogeneous=True, spacing=10)
+left_box        = Gtk.VBox()
+menu_box        = Gtk.HBox()
+load_button     = Gtk.Button("load")
+analyze_button  = Gtk.Button("analyze")
+hide_button     = Gtk.Button("hide")
+source_frame    = Gtk.Frame()
+source_box      = Gtk.ScrolledWindow()
+sourcecode      = GtkSource.View()
+result_box      = Gtk.ScrolledWindow()
+result_inner    = Gtk.VBox()
+message_window1 = Gtk.Label()
+code_window1    = GtkSource.View()
+message_window2 = Gtk.Label()
+code_window2    = GtkSource.View()
+message_window3 = Gtk.Label()
+code_window3    = GtkSource.View()
+center_bar      = Gtk.Label()
 
 window.      add(toplevel_box)
 source_frame.add(source_box)
@@ -161,24 +161,15 @@ def on_analyze_clicked(widget):
 def extract_type_from_llmv_value(code):
     possible_tokens = [t for t in code.split(",")[0].split(" = ")[-1].split(" ") if t != ""]
 
-    if "double*" in possible_tokens:
-        return "double*"
-    elif "float*" in possible_tokens:
-        return "float*"
-    elif "i32*" in possible_tokens:
-        return "int*"
-    elif "i64*" in possible_tokens:
-        return "long*"
-    elif "double" in possible_tokens:
-        return "double"
-    elif "float" in possible_tokens:
-        return "float"
-    elif "i32" in possible_tokens:
-        return "int"
-    elif "i64" in possible_tokens:
-        return "long"
-    else:
-        return "<type>"
+    if "double*" in possible_tokens:  return "double*"
+    elif "float*" in possible_tokens: return "float*"
+    elif "i32*" in possible_tokens:   return "int*"
+    elif "i64*" in possible_tokens:   return "long*"
+    elif "double" in possible_tokens: return "double"
+    elif "float" in possible_tokens:  return "float"
+    elif "i32" in possible_tokens:    return "int"
+    elif "i64" in possible_tokens:    return "long"
+    else:                             return "<type>"
 
 def generate_reduction(solutions):
     line1 = "void reduce(out_t* out,"
@@ -270,7 +261,9 @@ window        .connect("delete-event", Gtk.main_quit)
 load_button   .connect("clicked",      on_open_clicked)
 analyze_button.connect("clicked",      on_analyze_clicked)
 hide_button   .connect("clicked",      on_hide_clicked)
+
 Gdk.threads_init()
 window.show_all()
 set_output()
+
 Gtk.main()
