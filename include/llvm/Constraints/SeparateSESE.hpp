@@ -22,7 +22,7 @@ public:
 
     void aggressive_dead_code_elim(std::vector<llvm::Instruction*> keep_values);
 
-    llvm::Function* make_function(std::vector<llvm::Value*> arguments);
+    llvm::Function* make_function();
 
     llvm::Instruction* get_instr(llvm::Instruction* in) { return instr_frwd_transl[in]; }
 
@@ -319,8 +319,10 @@ void SESEFunction::aggressive_dead_code_elim(std::vector<llvm::Instruction*> kee
     }
 }
 
-llvm::Function* SESEFunction::make_function(std::vector<llvm::Value*> arguments)
+llvm::Function* SESEFunction::make_function()
 {
+    std::vector<llvm::Value*> arguments;
+
     // Create function object
     std::vector<llvm::Type*> argument_types;
     for(unsigned i = 0; i < arguments.size(); i++)
