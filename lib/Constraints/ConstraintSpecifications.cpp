@@ -81,6 +81,21 @@ ConstraintAnd<std::string,unsigned> ConstraintHoistSelect(FunctionWrapper& wrap)
                     && ConstraintOpcode(wrap, llvm::Instruction::GetElementPtr, 4, "input2"))));
 }
 
+ConstraintAnd<std::string,unsigned> ConstraintPointerIterator(FunctionWrapper& wrap)
+{
+    return (   ConstraintLoop(wrap)
+            && ConstraintOpcode(wrap, llvm::Instruction::PHI, 2, "old_value")
+            && ConstraintCFGDominate(wrap, "begin", "old_value")
+            && ConstraintCFGPostdom(wrap, "old_value", "begin")
+            && ConstraintDFGEdge(wrap, "initial_value", "old_value")
+            && ConstraintLocallyConstant(wrap, "initial_value", "")
+            && ConstraintDFGEdge0(wrap, "old_value", "new_value")
+            && ConstraintOpcode(wrap, llvm::Instruction::GetElementPtr, 2, "new_value")
+            && ConstraintDFGEdge(wrap, "new_value", "old_value")
+            && ConstraintDFGEdge1(wrap, "stride", "new_value")
+            && ConstraintConstant(wrap, "stride"));
+}
+
 ConstraintAnd<std::string,unsigned> ConstraintSESE(FunctionWrapper& wrap)
 {
     return (   ConstraintCFGEdge          (wrap, "precursor", "begin")
@@ -590,30 +605,23 @@ ConstraintAnd<std::string,unsigned> ConstraintUnusedPureFunction()
 
 ConstraintAnd<std::string,unsigned> ConstraintScalarReduction(FunctionWrapper& wrap)
 {
-    return (   ConstraintFor                  (wrap)
-            && ConstraintOpcode               (wrap, llvm::Instruction::PHI, 2, "old_value")
-
-            && ConstraintCFGDominate          (wrap, "begin",                   "old_value")
-            && ConstraintCFGDominate          (wrap, "old_value",               "end")
-
-            && ConstraintDFGReachable         (wrap, "old_value",               "final_value")
-            && ConstraintDFGEdge              (wrap, "old_value",               "final_value")
-            && ConstraintCFGPostdomStrict     (wrap, "final_value",             "end")
-
-            && ConstraintDFGEdge              (wrap, "initial_value",           "old_value")
-            && ConstraintLocallyConstant      (wrap, "initial_value",           "")
-
-            && ConstraintDFGEdge              (wrap, "update_expr.output",      "old_value")
-            && ConstraintDFGReachable         (wrap, "old_value",               "update_expr.output")
-
-            && ConstraintCFGDominate          (wrap, "body_sese.begin",         "update_expr.output")
-            && ConstraintCFGPostdom           (wrap, "body_sese.end",           "update_expr.output")
-            && ConstraintCFGEdge              (wrap, "update_expr.output",      "post_store_instruction")
-            && ConstraintCFGBlocked           (wrap, "post_store_instruction",  "end", "update_expr.output")
-
-            && ConstraintSameSESE                 ("update_expr.outer_sese.", "")
-            && ConstraintSameSESE                 ("update_expr.inner_sese.", "body_sese.")
-
+    return (   ConstraintFor             (wrap)
+            && ConstraintOpcode          (wrap, llvm::Instruction::PHI, 2, "old_value")
+            && ConstraintCFGDominate     (wrap, "begin",                   "old_value")
+            && ConstraintCFGDominate     (wrap, "old_value",               "end")
+            && ConstraintDFGReachable    (wrap, "old_value",               "final_value")
+            && ConstraintDFGEdge         (wrap, "old_value",               "final_value")
+            && ConstraintCFGPostdomStrict(wrap, "final_value",             "end")
+            && ConstraintDFGEdge         (wrap, "initial_value",           "old_value")
+            && ConstraintLocallyConstant (wrap, "initial_value",           "")
+            && ConstraintDFGEdge         (wrap, "update_expr.output",      "old_value")
+            && ConstraintDFGReachable    (wrap, "old_value",               "update_expr.output")
+            && ConstraintCFGDominate     (wrap, "body_sese.begin",         "update_expr.output")
+            && ConstraintCFGPostdom      (wrap, "body_sese.end",           "update_expr.output")
+            && ConstraintCFGEdge         (wrap, "update_expr.output",      "post_store_instruction")
+            && ConstraintCFGBlocked      (wrap, "post_store_instruction",  "end", "update_expr.output")
+            && ConstraintSameSESE            ("update_expr.outer_sese.",   "")
+            && ConstraintSameSESE            ("update_expr.inner_sese.",   "body_sese.")
             && 30 * (   (   ConstraintOpcode         (wrap, llvm::Instruction::Load, 1, "update_expr.input*")
                          && ConstraintDFGEdge        (wrap, "affine_access*.access_pointer", "update_expr.input*")
                          && ConstraintAffineAccess1  (wrap)+"affine_access*."
@@ -627,11 +635,9 @@ ConstraintAnd<std::string,unsigned> ConstraintScalarReduction(FunctionWrapper& w
                      || (   ConstraintUnused               ("update_expr.input*")
                          && ConstraintUnusedAffineAccess1()+"affine_access*."
                          && ConstraintUnused               ("update_expr.input+")))
-
             && ConstraintUnused("update_expr.input[30]")
             && ConstraintSame  ("update_expr.input[31]", "old_value")
             && ConstraintUnused("update_expr.input[32]")
-
             && 4 * (   (   ConstraintOpcode           (wrap, llvm::Instruction::PHI,      "update_expr.restrictions*")
                         && ConstraintCFGDominate      (wrap, "begin",                     "update_expr.restrictions*")
                         && ConstraintCFGDominateStrict(wrap, "update_expr.restrictions*", "body_sese.begin")
@@ -639,7 +645,6 @@ ConstraintAnd<std::string,unsigned> ConstraintScalarReduction(FunctionWrapper& w
                         && ConstraintOrder                  ("update_expr.restrictions*", "update_expr.restrictions+"))
                     || (   ConstraintUnused                 ("update_expr.restrictions*")
                         && ConstraintUnused                 ("update_expr.restrictions+")))
-
             && ConstraintUnused            ("update_expr.restrictions[4]")
             && ConstraintSharedFate        ("update_expr.restrictions", 5)
             && ConstraintPureFunction(wrap)+"update_expr.");
@@ -652,14 +657,11 @@ ConstraintAnd<std::string,unsigned> ConstraintUnusedScalarReduction()
             && ConstraintUnused   ("final_value")
             && ConstraintUnused   ("initial_value")
             && ConstraintUnused   ("post_store_instruction")
-
             && 30 * (   ConstraintUnused               ("update_expr.input*")
                      && ConstraintUnusedAffineAccess1()+"affine_access*.")
-
             && ConstraintUnused("update_expr.input[30]")
             && ConstraintUnused("update_expr.input[31]")
             && ConstraintUnused("update_expr.input[32]")
-
             && ConstraintUnused("update_expr.restrictions[0]")
             && ConstraintUnused("update_expr.restrictions[1]")
             && ConstraintUnused("update_expr.restrictions[2]")
