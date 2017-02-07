@@ -33,6 +33,7 @@ public:
             auto distributive1012_solutions = LLVMSolver(ConstraintDistributive(wrap, 1,0,1,2), wrap).all_solutions();
             auto distributive0012_solutions = LLVMSolver(ConstraintDistributive(wrap, 0,0,1,2), wrap).all_solutions();
             auto hoistselect_solutions      = LLVMSolver(ConstraintHoistSelect (wrap),          wrap).all_solutions();
+            auto pointeriterator_solutions  = LLVMSolver(ConstraintPointerIterator(wrap),       wrap).all_solutions();
 
             if((distributive1012_solutions.size() > 0 || distributive0012_solutions.size() > 0 ||
                hoistselect_solutions.size() > 0) && !found_something)
@@ -84,6 +85,19 @@ public:
             }
 
             if(hoistselect_solutions.size() > 0) continue;
+
+            for(auto solution : pointeriterator_solutions)
+            {
+                ofs<<"BEGIN POINTERITERATOR\n"
+                   <<SolutionHierarchical(solution).print_pythonesque()<<"\n"
+                   <<"END POINTERITERATOR\n";
+
+                std::map<std::string,llvm::Value*> solution_map(solution.begin(), solution.end());
+   //             transform_hoistselect_pattern(function, solution_map);
+                break;
+            }
+
+    //        if(pointeriterator_solutions.size() > 0) continue;
 
             break;
             }
