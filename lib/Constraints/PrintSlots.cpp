@@ -141,10 +141,7 @@ std::string SolutionHierarchical::print_pythonesque()
                         }
                     }
 
-//                    std::string assign_string = "  \"" + basename_str + "\""
-//                                              + std::string(max_name_length - basename_str.size(), ' ') + " : [ ";
-
-                    std::string assign_string = "  \"" + basename_str + "\" :\n    [ ";
+                    std::string assign_string = " \"" + basename_str + "\":\n [";
 
                     std::string part_result;
 
@@ -152,13 +149,12 @@ std::string SolutionHierarchical::print_pythonesque()
                     {
                         for(char c : entry2.second.print_pythonesque())
                         {
-                            if(c == '\n') part_result += "\n      ";
+                            if(c == '\n') part_result += "\n  ";
                             else          part_result += std::string(1, c);
                         }
 
                         if(&entry2 != &*element_map.rbegin())
-//                            part_result += ",\n" + std::string(assign_string.size(), ' ');
-                            part_result += ",\n      ";
+                            part_result += ",\n  ";
                         else
                             part_result += " ]";
                     }
@@ -168,8 +164,7 @@ std::string SolutionHierarchical::print_pythonesque()
             }
             else
             {
-                std::string assign_string = "  \"" + entry.first + "\""/*
-                                          + std::string(max_name_length - entry.first.size(), ' ')*/ + " : ";
+                std::string assign_string = " \"" + entry.first + "\":";
 
                 std::string part_result;
 
