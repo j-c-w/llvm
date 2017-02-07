@@ -15,6 +15,7 @@ ConstraintAnd<std::string,unsigned> ConstraintBinaryChain         (FunctionWrapp
 ConstraintAnd<std::string,unsigned> ConstraintDistributive        (FunctionWrapper& wrap, unsigned SumL, unsigned SumR,
                                                                                           unsigned ProL, unsigned ProR);
 ConstraintAnd<std::string,unsigned> ConstraintHoistSelect         (FunctionWrapper& wrap);
+ConstraintAnd<std::string,unsigned> ConstraintPointerIterator     (FunctionWrapper& wrap);
 ConstraintAnd<std::string,unsigned> ConstraintSESE                (FunctionWrapper& wrap);
 ConstraintAnd<std::string,unsigned> ConstraintSameSESE            (std::string prefix1, std::string prefix2);
 ConstraintAnd<std::string,unsigned> ConstraintUnusedSESE          ();
