@@ -12,7 +12,7 @@ class ConstraintAnd : public Constraint<LabelType,ValueType>
 {
 public:
     template<typename ... Types>
-    ConstraintAnd(Types ... constraints) { add_constraint(constraints ...); }
+    ConstraintAnd(Types ... constraints) { add_constraints(constraints ...); }
 
     std::vector<std::pair<LabelType,std::unique_ptr<Specialized<ValueType>>>> get_specializations() const final;
 
@@ -33,52 +33,49 @@ private:
         std::vector<std::unique_ptr<Specialized<ValueType>>> constraints;
     };
 
-    void add_constraint() { }
+    void add_constraints() { }
 
-    template<typename TFirst>
-    void add_constraint(TFirst);
+    template<typename TFirst, typename ... TRest> 
+    void add_constraints(TFirst first, TRest ... rest);
 
-    template<typename TFirst, typename TSecond, typename ... TRest> 
-    void add_constraint(TFirst first, TSecond second, TRest ... rest);
+    template<typename Type>
+    void add_constraint(Type constraint,
+            typename std::enable_if<std::is_base_of<ConstraintAnd<LabelType,ValueType>,Type>::value>::type* = nullptr);
+
+    template<typename Type>
+    void add_constraint(Type first,
+            typename std::enable_if<std::is_base_of<Constraint<LabelType,ValueType>,Type>::value>::type* = nullptr,
+            typename std::enable_if<!std::is_base_of<ConstraintAnd<LabelType,ValueType>,Type>::value>::type* = nullptr);
 
     std::vector<std::shared_ptr<Constraint<LabelType,ValueType>>> constraints;
 };
 
 template<typename LabelType, typename ValueType>
-template<typename TFirst> 
-void ConstraintAnd<LabelType,ValueType>::add_constraint(TFirst first)
+template<typename TFirst, typename ... TRest> 
+void ConstraintAnd<LabelType,ValueType>::add_constraints(TFirst first, TRest ... rest)
 {
-    if(std::is_base_of<ConstraintAnd<LabelType,ValueType>, TFirst>::value)
+    add_constraint(first);
+    add_constraints(rest...);
+}
+
+template<typename LabelType, typename ValueType>
+template<typename Type>
+void ConstraintAnd<LabelType,ValueType>::add_constraint(Type constraint,
+            typename std::enable_if<std::is_base_of<ConstraintAnd<LabelType,ValueType>,Type>::value>::type*)
+{
+    for(auto& constraint : constraint.constraints)
     {
-        for(auto& constraint : ((ConstraintAnd<LabelType,ValueType>&)(first)).constraints)
-        {
-            constraints.emplace_back(std::move(constraint));
-        }
-    }
-    else
-    {
-        constraints.push_back(std::shared_ptr<Constraint<LabelType,ValueType>>((new TFirst(first))));
+        constraints.emplace_back(std::move(constraint));
     }
 }
 
 template<typename LabelType, typename ValueType>
-template<typename TFirst, typename TSecond, typename ... TRest> 
-void ConstraintAnd<LabelType,ValueType>::add_constraint(TFirst first, TSecond second, TRest ... rest)
+template<typename Type>
+void ConstraintAnd<LabelType,ValueType>::add_constraint(Type constraint,
+            typename std::enable_if<std::is_base_of<Constraint<LabelType,ValueType>,Type>::value>::type*,
+            typename std::enable_if<!std::is_base_of<ConstraintAnd<LabelType,ValueType>,Type>::value>::type*)
 {
-    if(std::is_same<bool,TFirst>::value)   // This hack should be removed soon!
-    {
-        if(*(bool*)&first)
-        {
-            add_constraint(second);
-        }
-
-        add_constraint(rest...);
-    }
-    else
-    {
-        add_constraint(first);
-        add_constraint(second, rest...);
-    }
+        constraints.push_back(std::shared_ptr<Constraint<LabelType,ValueType>>(new Type(constraint)));
 }
 
 #endif
