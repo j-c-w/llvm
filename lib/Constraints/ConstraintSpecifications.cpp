@@ -1,5 +1,8 @@
 #include "llvm/Constraints/ConstraintSpecifications.hpp"
+#include "llvm/Constraints/ConstraintComplexUnused.hpp"
+#include "llvm/Constraints/ConstraintComplexSame.hpp"
 #include "llvm/Constraints/ConstraintSharedFate.hpp"
+#include "llvm/Constraints/ConstraintCollect.hpp"
 #include "llvm/Constraints/ConstraintsBasic.hpp"
 #include "llvm/Constraints/ConstraintAnd.hpp"
 #include "llvm/Constraints/ConstraintOr.hpp"
@@ -53,15 +56,15 @@ ConstraintAnd<std::string,unsigned> ConstraintDistributive(FunctionWrapper& wrap
     std::stringstream last_addend_R;
     last_addend_R<<"sum2.factors["<<SumR<<"]";
 
-    return (   ConstraintBinaryChain(wrap, llvm::Instruction::Add, 1)   +"last_sum."
+    return (   ConstraintBinaryChain(wrap, llvm::Instruction::Add, 1)   +"last_sum"
             && ConstraintSame             ("sum1.results[0]",            "last_sum.factors[0]")
-            && ConstraintBinaryChain(wrap, llvm::Instruction::Add, SumL)+"sum1."
+            && ConstraintBinaryChain(wrap, llvm::Instruction::Add, SumL)+"sum1"
             && ConstraintSame             ("product1.results[0]",        last_addend_L.str())
-            && ConstraintBinaryChain(wrap, llvm::Instruction::Mul, ProL)+"product1."
+            && ConstraintBinaryChain(wrap, llvm::Instruction::Mul, ProL)+"product1"
             && ConstraintSame             ("sum2.results[0]",            "last_sum.factors[1]")
-            && ConstraintBinaryChain(wrap, llvm::Instruction::Add, SumR)+"sum2."
+            && ConstraintBinaryChain(wrap, llvm::Instruction::Add, SumR)+"sum2"
             && ConstraintSame             ("product2.results[0]",        last_addend_R.str())
-            && ConstraintBinaryChain(wrap, llvm::Instruction::Mul, ProR)+"product2."
+            && ConstraintBinaryChain(wrap, llvm::Instruction::Mul, ProR)+"product2"
             && ConstraintSame             (last_factor_L.str(),          last_factor_R.str())
             && ConstraintSame             ("last_sum.results[0]",        "sum"));
 }
@@ -83,45 +86,31 @@ ConstraintAnd<std::string,unsigned> ConstraintHoistSelect(FunctionWrapper& wrap)
 
 ConstraintAnd<std::string,unsigned> ConstraintPointerIterator(FunctionWrapper& wrap)
 {
-    return (   ConstraintLoop(wrap)
-            && ConstraintOpcode(wrap, llvm::Instruction::PHI, 2, "old_value")
-            && ConstraintCFGDominate(wrap, "begin", "old_value")
-            && ConstraintCFGPostdom(wrap, "old_value", "begin")
-            && ConstraintDFGEdge(wrap, "initial_value", "old_value")
-            && ConstraintLocallyConstant(wrap, "initial_value", "")
-            && ConstraintDFGEdge0(wrap, "old_value", "new_value")
-            && ConstraintOpcode(wrap, llvm::Instruction::GetElementPtr, 2, "new_value")
-            && ConstraintDFGEdge(wrap, "new_value", "old_value")
-            && ConstraintDFGEdge1(wrap, "stride", "new_value")
-            && ConstraintConstant(wrap, "stride"));
+    return (   ConstraintLoop           (wrap)
+            && ConstraintOpcode         (wrap, llvm::Instruction::PHI, 2,           "old_value")
+            && ConstraintCFGDominate    (wrap, "begin",                             "old_value")
+            && ConstraintCFGPostdom     (wrap, "old_value",                         "begin")
+            && ConstraintDFGEdge        (wrap, "initial_value",                     "old_value")
+            && ConstraintLocallyConstant(wrap, "initial_value",                     "")
+            && ConstraintDFGEdge0       (wrap, "old_value",                         "new_value")
+            && ConstraintOpcode         (wrap, llvm::Instruction::GetElementPtr, 2, "new_value")
+            && ConstraintDFGEdge        (wrap, "new_value",                         "old_value")
+            && ConstraintDFGEdge1       (wrap, "stride",                            "new_value")
+            && ConstraintConstant       (wrap, "stride"));
 }
 
 ConstraintAnd<std::string,unsigned> ConstraintSESE(FunctionWrapper& wrap)
 {
-    return (   ConstraintCFGEdge          (wrap, "precursor", "begin")
-            && ConstraintCFGEdge          (wrap, "end",       "successor")
-            && ConstraintCFGDominate      (wrap, "begin",     "end")
-            && ConstraintCFGPostdom       (wrap, "end",       "begin")
-            && ConstraintCFGDominateStrict(wrap, "precursor", "begin")
-            && ConstraintCFGPostdomStrict (wrap, "successor", "end")
-            && ConstraintCFGBlocked       (wrap, "begin",     "end",   "precursor")
-            && ConstraintCFGBlocked       (wrap, "successor", "begin", "end"));
-}
-
-ConstraintAnd<std::string,unsigned> ConstraintSameSESE(std::string prefix1, std::string prefix2)
-{
-    return (ConstraintSame(prefix1+"precursor", prefix2+"precursor")
-         && ConstraintSame(prefix1+"begin",     prefix2+"begin")
-         && ConstraintSame(prefix1+"end",       prefix2+"end")
-         && ConstraintSame(prefix1+"successor", prefix2+"successor"));
-}
-
-ConstraintAnd<std::string,unsigned> ConstraintUnusedSESE()
-{
-    return (ConstraintUnused("precursor")
-         && ConstraintUnused("begin")
-         && ConstraintUnused("end")
-         && ConstraintUnused("successor"));
+    return (   ConstraintOpcode           (wrap, llvm::Instruction::Br, "precursor")
+            && ConstraintCFGEdge          (wrap, "precursor",           "begin")
+            && ConstraintOpcode           (wrap, llvm::Instruction::Br, "end")
+            && ConstraintCFGEdge          (wrap, "end",                 "successor")
+            && ConstraintCFGDominate      (wrap, "begin",               "end")
+            && ConstraintCFGPostdom       (wrap, "end",                 "begin")
+            && ConstraintCFGDominateStrict(wrap, "precursor",           "begin")
+            && ConstraintCFGPostdomStrict (wrap, "successor",           "end")
+            && ConstraintCFGBlocked       (wrap, "begin",               "end",   "precursor")
+            && ConstraintCFGBlocked       (wrap, "successor",           "begin", "end"));
 }
 
 ConstraintOr<std::string,unsigned> ConstraintExtendedInt(FunctionWrapper& wrap, std::string input, std::string output)
@@ -142,68 +131,63 @@ ConstraintOr<std::string,unsigned> ConstraintLocallyConstant(FunctionWrapper& wr
 
 ConstraintAnd<std::string,unsigned> ConstraintLoop(FunctionWrapper& wrap)
 {
-    return (   ConstraintSame          ("body_sese.successor",    "begin")
-            && ConstraintOpcode  (wrap, llvm::Instruction::Br, 3, "end")
-            && ConstraintSame          ("body_sese.precursor",    "end")
-            && ConstraintSESE    (wrap)
-            && ConstraintDistinct      ("body_sese.begin",        "successor")
-            && ConstraintOpcode  (wrap, llvm::Instruction::Br,    "body_sese.end")
-            && ConstraintSESE    (wrap)+"body_sese.");
+    return (   ConstraintSESE  (wrap)
+            && ConstraintOpcode(wrap, llvm::Instruction::Br, 3, "end")
+            && ConstraintSame        ("body_sese.precursor",    "end")
+            && ConstraintSame        ("body_sese.successor",    "begin")
+            && ConstraintSESE  (wrap)+"body_sese"
+            && ConstraintDistinct    ("body_sese.begin",        "successor"));
 }
 
-ConstraintAnd<std::string,unsigned> ConstraintUnusedLoop()
+ConstraintAnd<std::string,unsigned> ConstraintInductionVar(FunctionWrapper& wrap, std::string prefix)
 {
-    return (ConstraintUnusedSESE() && ConstraintUnusedSESE()+"body_sese.");
+    if(!prefix.empty()) prefix = prefix + ".";
+
+    return (   ConstraintOpcode     (wrap, llvm::Instruction::PHI, 2, prefix+"iterator")
+            && ConstraintCFGDominate(wrap, "begin",                   prefix+"iterator")
+            && ConstraintCFGPostdom (wrap, "end",                     prefix+"iterator")
+            && ConstraintDFGEdge    (wrap, prefix+"increment",        prefix+"iterator")
+            && ConstraintCFGDominate(wrap, "body_sese.begin",         prefix+"increment")
+            && ConstraintCFGPostdom (wrap, "body_sese.end",           prefix+"increment")
+            && ConstraintCFGDominate(wrap, prefix+"iterator",         prefix+"increment"));
 }
 
 ConstraintAnd<std::string,unsigned> ConstraintFor(FunctionWrapper& wrap)
 {
-    return (   ConstraintOpcode         (wrap, llvm::Instruction::PHI,     "iterator")
+    return (   ConstraintLoop           (wrap)
+            && ConstraintInductionVar   (wrap, "")
             && ConstraintDFGEdge        (wrap, "iterator"       ,          "comparison")
             && ConstraintOpcode         (wrap, llvm::Instruction::ICmp, 2, "comparison")
             && ConstraintDFGEdge        (wrap, "comparison",               "end")
             && ConstraintDFGEdge        (wrap, "increment",                "iterator")
             && ConstraintOpcode         (wrap, llvm::Instruction::Add, 2,  "increment")
             && ConstraintDFGEdge        (wrap, "iterator",                 "increment")
-            && ConstraintLoop           (wrap)
-            && ConstraintDFGEdge        (wrap, "iter_end",   "comparison")
-            && ConstraintLocallyConstant(wrap, "iter_end",   "")
-            && ConstraintDFGEdge        (wrap, "iter_begin", "iterator")
-            && ConstraintLocallyConstant(wrap, "iter_begin", "")
-            && ConstraintDFGEdge        (wrap, "iter_step",  "increment")
-            && ConstraintLocallyConstant(wrap, "iter_step",  ""));
-}
-
-ConstraintAnd<std::string,unsigned> ConstraintUnusedFor()
-{
-    return (   ConstraintUnused    ("iterator")
-            && ConstraintUnused    ("comparison")
-            && ConstraintUnused    ("end")
-            && ConstraintUnused    ("increment")
-            && ConstraintUnusedLoop()
-            && ConstraintUnused    ("iter_end")
-            && ConstraintUnused    ("iter_begin")
-            && ConstraintUnused    ("iter_step"));
+            && ConstraintDFGEdge        (wrap, "iter_end",                 "comparison")
+            && ConstraintLocallyConstant(wrap, "iter_end",                 "")
+            && ConstraintDFGEdge        (wrap, "iter_begin",               "iterator")
+            && ConstraintLocallyConstant(wrap, "iter_begin",               "")
+            && ConstraintDFGEdge        (wrap, "iter_step",                "increment")
+            && ConstraintLocallyConstant(wrap, "iter_step",                ""));
 }
 
 ConstraintAnd<std::string,unsigned> ConstraintNestedFor(FunctionWrapper& wrap, std::string prefix,
                                                         std::string parent)
 {
     return (   ConstraintFor      (wrap)+prefix
-            && ConstraintSame           (prefix+"pre_sese.precursor",  parent+"precursor")
-            && ConstraintSame           (prefix+"pre_sese.begin",      parent+"begin")
-            && ConstraintSame           (prefix+"pre_sese.end",        prefix+"precursor")
-            && ConstraintSame           (prefix+"pre_sese.successor",  prefix+"begin")
-            && (   ConstraintSESE(wrap)+(prefix+"pre_sese.")
-                || (   ConstraintSame   (prefix+"pre_sese.precursor",  prefix+"pre_sese.end")
-                    && ConstraintSame   (prefix+"pre_sese.begin",      prefix+"pre_sese.successor")))
-            && ConstraintSame           (prefix+"post_sese.precursor", prefix+"end")
-            && ConstraintSame           (prefix+"post_sese.begin",     prefix+"successor")
-            && ConstraintSame           (prefix+"post_sese.end",       parent+"end")
-            && ConstraintSame           (prefix+"post_sese.successor", parent+"successor")
-            && (   ConstraintSESE(wrap)+(prefix+"post_sese.")
-                || (   ConstraintSame   (prefix+"post_sese.precursor", prefix+"post_sese.end")
-                    && ConstraintSame   (prefix+"post_sese.begin",     prefix+"post_sese.successor"))));
+            && ConstraintSame           (prefix+".pre_sese.precursor",  parent+".precursor")
+            && ConstraintSame           (prefix+".pre_sese.begin",      parent+".begin")
+            && ConstraintSame           (prefix+".pre_sese.end",        prefix+".precursor")
+            && ConstraintSame           (prefix+".pre_sese.successor",  prefix+".begin")
+            && (   ConstraintSESE(wrap)+(prefix+".pre_sese")
+                || (   ConstraintSame   (prefix+".pre_sese.precursor",  prefix+".pre_sese.end")
+                    && ConstraintSame   (prefix+".pre_sese.begin",      prefix+".pre_sese.successor")))
+            && ConstraintSame           (prefix+".post_sese.precursor", prefix+".end")
+            && ConstraintSame           (prefix+".post_sese.begin",     prefix+".successor")
+            && ConstraintSame           (prefix+".post_sese.end",       parent+".end")
+            && ConstraintSame           (prefix+".post_sese.successor", parent+".successor")
+            && (   ConstraintSESE(wrap)+(prefix+".post_sese")
+                || (   ConstraintSame   (prefix+".post_sese.precursor", prefix+".post_sese.end")
+                    && ConstraintSame   (prefix+".post_sese.begin",     prefix+".post_sese.successor"))));
 }
 
 ConstraintOr<std::string,unsigned> ConstraintAddition(FunctionWrapper& wrap)
@@ -218,13 +202,6 @@ ConstraintOr<std::string,unsigned> ConstraintAddition(FunctionWrapper& wrap)
                         && ConstraintDFGEdge0(wrap, "addend", "value")))));
 }
 
-ConstraintAnd<std::string,unsigned> ConstraintUnusedAddition()
-{
-    return (   ConstraintUnused("value")
-            && ConstraintUnused("input")
-            && ConstraintUnused("addend"));
-}
-
 ConstraintOr<std::string,unsigned> ConstraintMultiplication(FunctionWrapper& wrap)
 {
     return (   (   ConstraintSame                  ("input", "value")
@@ -236,42 +213,27 @@ ConstraintOr<std::string,unsigned> ConstraintMultiplication(FunctionWrapper& wra
                         && ConstraintDFGEdge0(wrap, "multiplier", "value")))));
 }
 
-ConstraintAnd<std::string,unsigned> ConstraintUnusedMultiplication()
-{
-    return (  ConstraintUnused("value")
-            && ConstraintUnused("input")
-            && ConstraintUnused("multiplier"));
-}
-
 ConstraintAnd<std::string,unsigned> ConstraintAffineAccess1(FunctionWrapper& wrap)
 {
-    return (   ConstraintOpcode        (wrap, llvm::Instruction::GetElementPtr, "access_pointer")
-            && ConstraintDFGEdge0      (wrap, "base_pointer",                   "access_pointer")
-            && ConstraintDFGEdge1      (wrap, "output_index",                   "access_pointer")
-            && ConstraintExtendedInt   (wrap, "offset_add.value",               "output_index")
-            && ConstraintAddition      (wrap)+"offset_add."
-            && ConstraintSame                ("stride_mul[0].value",            "offset_add.input")
-            && ConstraintMultiplication(wrap)+"stride_mul[0]."
-            && ConstraintSame                ("index_add[0].value",             "stride_mul[0].input")
-            && ConstraintAddition      (wrap)+"index_add[0]."
-            && (   ConstraintDistinct        ("stride_mul[0].input",            "stride_mul[0].value")
-                || ConstraintSame            ("index_add[0].input",             "index_add[0].value"))
-            && ConstraintExtendedInt   (wrap, "input_index[0]",                 "index_add[0].input")
-            && (   ConstraintDistinct        ("index_add[0].input",             "offset_add.value")
-                || ConstraintSame            ("input_index[0]",                 "index_add[0].input"))
-            && ConstraintSame                ("base_index",                     "index_add[0].addend"));
-}
-
-ConstraintAnd<std::string,unsigned> ConstraintUnusedAffineAccess1()
-{
-    return (   ConstraintUnused                ("access_pointer")
-            && ConstraintUnused                ("base_pointer")
-            && ConstraintUnused                ("output_index")
-            && ConstraintUnused                ("input_index[0]")
-            && ConstraintUnused                ("base_index")
-            && ConstraintUnusedAddition      ()+"index_add[0]."
-            && ConstraintUnusedMultiplication()+"stride_mul[0]."
-            && ConstraintUnusedAddition      ()+"offset_add.");
+    return (   ConstraintOpcode         (wrap, llvm::Instruction::GetElementPtr, "access_pointer")
+            && ConstraintDFGEdge0       (wrap, "base_pointer",                   "access_pointer")
+            && ConstraintLocallyConstant(wrap, "base_pointer",                   "sese.")
+            && ConstraintDFGEdge1       (wrap, "output_index",                   "access_pointer")
+            && ConstraintExtendedInt    (wrap, "offset_add.value",               "output_index")
+            && ConstraintAddition       (wrap)+"offset_add"
+            && ConstraintLocallyConstant(wrap, "offset_add.addend",              "sese.")
+            && ConstraintSame                 ("stride_mul[0].value",            "offset_add.input")
+            && ConstraintMultiplication (wrap)+"stride_mul[0]"
+            && ConstraintLocallyConstant(wrap, "stride_mul[0].multiplier",       "sese.")
+            && ConstraintSame                 ("index_add[0].value",             "stride_mul[0].input")
+            && ConstraintAddition       (wrap)+"index_add[0]"
+            && ConstraintLocallyConstant(wrap, "index_add[0].addend",            "sese.")
+            && (   ConstraintDistinct         ("stride_mul[0].input",            "stride_mul[0].value")
+                || ConstraintSame             ("index_add[0].input",             "index_add[0].value"))
+            && ConstraintExtendedInt    (wrap, "input_index[0]",                 "index_add[0].input")
+            && (   ConstraintDistinct         ("index_add[0].input",             "offset_add.value")
+                || ConstraintSame             ("input_index[0]",                 "index_add[0].input"))
+            && ConstraintSame                 ("base_index",                     "index_add[0].addend"));
 }
 
 ConstraintAnd<std::string,unsigned> ConstraintAffineAccess2(FunctionWrapper& wrap)
@@ -280,16 +242,16 @@ ConstraintAnd<std::string,unsigned> ConstraintAffineAccess2(FunctionWrapper& wra
             && ConstraintDFGEdge0      (wrap, "base_pointer",                   "access_pointer")
             && ConstraintDFGEdge1      (wrap, "output_index",                   "access_pointer")
             && ConstraintExtendedInt   (wrap, "offset_add.value",               "output_index")
-            && ConstraintAddition      (wrap)+"offset_add."
+            && ConstraintAddition      (wrap)+"offset_add"
             && ConstraintSame                ("stride_mul[1].value",            "offset_add.input")
-            && ConstraintMultiplication(wrap)+"stride_mul."
+            && ConstraintMultiplication(wrap)+"stride_mul"
             && ConstraintSame                ("index_add[1].value",             "stride_mul[1].input")
-            && ConstraintAddition      (wrap)+"index_add[1]."
+            && ConstraintAddition      (wrap)+"index_add[1]"
             && ConstraintExtendedInt   (wrap, "input_index[1]",                 "index_add[1].addend")
             && (   ConstraintDistinct        ("index_add[1].input",             "offset_add.value")
                 || ConstraintSame            ("input_index[1]",                 "index_add[1].input"))
             && ConstraintSame                ("stride_mul[0].value",            "index_add[1].input")
-            && ConstraintMultiplication(wrap)+"stride_mul[0]."
+            && ConstraintMultiplication(wrap)+"stride_mul[0]"
             && ConstraintSame                ("index_add[0].value",             "stride_mul[0].input")
             && ConstraintAddition      (wrap)+"index_add[0]"
             && ConstraintExtendedInt   (wrap, "input_index[0]",                 "index_add[0].input")
@@ -298,108 +260,94 @@ ConstraintAnd<std::string,unsigned> ConstraintAffineAccess2(FunctionWrapper& wra
             && ConstraintSame                ("base_index",                     "index_add[0].addend"));
 }
 
-ConstraintAnd<std::string,unsigned> ConstraintUnusedAffineAccess2()
-{
-    return (   ConstraintUnused                ("access_pointer")
-            && ConstraintUnused                ("base_pointer")
-            && ConstraintUnused                ("output_index")
-            && ConstraintUnused                ("input_index[0]")
-            && ConstraintUnused                ("input_index[1]")
-            && ConstraintUnused                ("base_index")
-            && ConstraintUnusedAddition      ()+"index_add[0]."
-            && ConstraintUnusedMultiplication()+"stride_mul[0]."
-            && ConstraintUnusedAddition      ()+"index_add[1]."
-            && ConstraintUnusedMultiplication()+"stride_mul[1]."
-            && ConstraintUnusedAddition      ()+"offset_add.");
-}
-
 ConstraintAnd<std::string,unsigned> ConstraintAffineAccess3(FunctionWrapper& wrap)
 {
     return (   ConstraintOpcode        (wrap, llvm::Instruction::GetElementPtr, "access_pointer")
             && ConstraintDFGEdge0      (wrap, "base_pointer",                   "access_pointer")
             && ConstraintDFGEdge1      (wrap, "output_index",                   "access_pointer")
             && ConstraintExtendedInt   (wrap, "offset_add.value",               "output_index")
-            && ConstraintAddition      (wrap)+"offset_add."
+            && ConstraintAddition      (wrap)+"offset_add"
             && ConstraintSame                ("stride_mul[2].value",            "offset_add.input")
-            && ConstraintMultiplication(wrap)+"stride_mul[2]."
+            && ConstraintMultiplication(wrap)+"stride_mul[2]"
             && ConstraintSame                ("index_add[2].value",             "stride_mul[2].input")
-            && ConstraintAddition      (wrap)+"index_add[2]."
+            && ConstraintAddition      (wrap)+"index_add[2]"
             && ConstraintExtendedInt   (wrap, "input_index[2]",                 "index_add[2].addend")
             && (   ConstraintDistinct        ("index_add[2].input",             "offset_add.value")
                 || ConstraintSame            ("input_index[2]",                 "index_add[2].input"))
             && ConstraintSame                ("stride_mul[1].value",            "index_add[2].input")
-            && ConstraintMultiplication(wrap)+"stride_mul[1]."
+            && ConstraintMultiplication(wrap)+"stride_mul[1]"
             && ConstraintSame                ("index_add[1].value",             "stride_mul[1].input")
-            && ConstraintAddition      (wrap)+"index_add[1]."
+            && ConstraintAddition      (wrap)+"index_add[1]"
             && ConstraintExtendedInt   (wrap, "input_index[1]",                 "index_add[1].addend")
             && (   ConstraintDistinct        ("index_add[1].input",             "input_index[2]")
                 || ConstraintSame            ("input_index[1]",                 "index_add[1].input"))
             && ConstraintSame                ("stride_mul[0].value",            "index_add[1].input")
-            && ConstraintMultiplication(wrap)+"stride_mul[0]."
+            && ConstraintMultiplication(wrap)+"stride_mul[0]"
             && ConstraintSame                ("index_add[0].value",             "stride_mul[0].input")
-            && ConstraintAddition      (wrap)+"index_add[0]."
+            && ConstraintAddition      (wrap)+"index_add[0]"
             && ConstraintExtendedInt   (wrap, "input_index[0]",                 "index_add[0].input")
             && (   ConstraintDistinct        ("index_add[0].input",             "input_index[1]")
                 || ConstraintSame            ("input_index[0]",                 "index_add[0].input"))
             && ConstraintSame                ("base_index",                     "index_add[0].addend"));
 }
 
-ConstraintAnd<std::string,unsigned> ConstraintUnusedAffineAccess3()
+ConstraintAnd<std::string,unsigned> ConstraintStencilAccess3(FunctionWrapper& wrap)
 {
-    return (   ConstraintUnused                ("access_pointer")
-            && ConstraintUnused                ("base_pointer")
-            && ConstraintUnused                ("output_index")
-            && ConstraintUnused                ("input_index[0]")
-            && ConstraintUnused                ("input_index[1]")
-            && ConstraintUnused                ("input_index[2]")
-            && ConstraintUnused                ("base_index")
-            && ConstraintUnusedAddition      ()+"index_add[0]."
-            && ConstraintUnusedMultiplication()+"stride_mul[0]."
-            && ConstraintUnusedAddition      ()+"index_add[1]."
-            && ConstraintUnusedMultiplication()+"stride_mul[1]."
-            && ConstraintUnusedAddition      ()+"index_add[2]."
-            && ConstraintUnusedMultiplication()+"stride_mul[2]."
-            && ConstraintUnusedAddition      ()+"offset_add.");
+    return (   ConstraintAffineAccess3(wrap)+"read"
+            && ConstraintAddition     (wrap)+"index[0]"
+            && (   ConstraintConstant (wrap, "index[0].addend")
+                || ConstraintUnused         ("index[0].addend"))
+            && ConstraintSame               ("read.input_index[0]", "index[0].value")
+            && ConstraintAddition     (wrap)+"index[1]"
+            && (   ConstraintConstant (wrap, "index[1].addend")
+                || ConstraintUnused         ("index[1].addend"))
+            && ConstraintSame               ("read.input_index[1]", "index[1].value")
+            && ConstraintAddition     (wrap)+"index[2]"
+            && (   ConstraintConstant (wrap, "index[2].addend")
+                || ConstraintUnused         ("index[2].addend"))
+            && ConstraintSame               ("read.input_index[2]", "index[2].value"));
 }
 
 ConstraintAnd<std::string,unsigned> ConstraintAffineRead1(FunctionWrapper& wrap)
 {
-    return (   ConstraintOpcode       (wrap, llvm::Instruction::Load, 1, "value")
-            && ConstraintDFGEdge0     (wrap, "access_pointer",           "value")
+    return (   ConstraintOpcode       (wrap, llvm::Instruction::Load, "value")
+            && ConstraintDFGEdge0     (wrap, "access_pointer",        "value")
             && ConstraintAffineAccess1(wrap));
-}
-
-ConstraintAnd<std::string,unsigned> ConstraintUnusedAffineRead1()
-{
-    return (   ConstraintUnused             ("value")
-            && ConstraintUnusedAffineAccess1());
 }
 
 ConstraintAnd<std::string,unsigned> ConstraintAffineRead2(FunctionWrapper& wrap)
 {
-    return (   ConstraintOpcode       (wrap, llvm::Instruction::Load, 1, "value")
-            && ConstraintDFGEdge0     (wrap, "access_pointer",           "value")
+    return (   ConstraintOpcode       (wrap, llvm::Instruction::Load, "value")
+            && ConstraintDFGEdge0     (wrap, "access_pointer",        "value")
             && ConstraintAffineAccess2(wrap));
 }
 
-ConstraintAnd<std::string,unsigned> ConstraintUnusedAffineRead2()
-{
-    return (   ConstraintUnused             ("value")
-            && ConstraintUnusedAffineAccess2());
-}
-
-
 ConstraintAnd<std::string,unsigned> ConstraintAffineRead3(FunctionWrapper& wrap)
 {
-    return (   ConstraintOpcode       (wrap, llvm::Instruction::Load, 1, "value")
-            && ConstraintDFGEdge0     (wrap, "access_pointer",           "value")
+    return (   ConstraintOpcode       (wrap, llvm::Instruction::Load, "value")
+            && ConstraintDFGEdge0     (wrap, "access_pointer",        "value")
             && ConstraintAffineAccess3(wrap));
 }
 
-ConstraintAnd<std::string,unsigned> ConstraintUnusedAffineRead3()
+ConstraintAnd<std::string,unsigned> ConstraintAffineStore1(FunctionWrapper& wrap)
 {
-    return (   ConstraintUnused             ("value")
-            && ConstraintUnusedAffineAccess3());
+    return (   ConstraintOpcode       (wrap, llvm::Instruction::Store, "store")
+            && ConstraintDFGEdge1     (wrap, "access_pointer",         "store")
+            && ConstraintAffineAccess1(wrap));
+}
+
+ConstraintAnd<std::string,unsigned> ConstraintAffineStore2(FunctionWrapper& wrap)
+{
+    return (   ConstraintOpcode       (wrap, llvm::Instruction::Store, "store")
+            && ConstraintDFGEdge1     (wrap, "access_pointer",         "store")
+            && ConstraintAffineAccess2(wrap));
+}
+
+ConstraintAnd<std::string,unsigned> ConstraintAffineStore3(FunctionWrapper& wrap)
+{
+    return (   ConstraintOpcode       (wrap, llvm::Instruction::Store, "store")
+            && ConstraintDFGEdge1     (wrap, "access_pointer",         "store")
+            && ConstraintAffineAccess3(wrap));
 }
 
 ConstraintAnd<std::string,unsigned> ConstraintScale(FunctionWrapper& wrap, std::string prefix,
@@ -459,8 +407,8 @@ ConstraintAnd<std::string,unsigned> ConstraintSumReduction(FunctionWrapper& wrap
 
 ConstraintAnd<std::string,unsigned> ConstraintMatrixmatrix(FunctionWrapper& wrap)
 {
-    return (   ConstraintFor            (wrap)+"loop1."
-            && ConstraintNestedFor      (wrap, "loop2.",                    "loop1.body_sese.")
+    return (   ConstraintFor            (wrap)+"loop1"
+            && ConstraintNestedFor      (wrap, "loop2",                     "loop1.body_sese")
             && ConstraintLocallyConstant(wrap, "loop2.iter_begin",          "loop1.")
             && ConstraintLocallyConstant(wrap, "loop2.iter_step",           "loop1.")
             && ConstraintLocallyConstant(wrap, "loop2.iter_end",            "loop1.")
@@ -469,24 +417,24 @@ ConstraintAnd<std::string,unsigned> ConstraintMatrixmatrix(FunctionWrapper& wrap
             && ConstraintOpcode         (wrap, llvm::Instruction::Store, 2, "store_instr")
             && ConstraintDFGEdge        (wrap, "output.access_pointer",     "store_instr")
             && ConstraintDFGEdge        (wrap, "weighted_sum.output",       "store_instr")
-            && ConstraintAffineAccess2  (wrap)+"output."
+            && ConstraintAffineAccess2  (wrap)+"output"
             && ConstraintLocallyConstant(wrap, "output.vector",             "loop1.")
-            && ConstraintNestedFor      (wrap, "loop3.",                    "loop2.body_sese.")
+            && ConstraintNestedFor      (wrap, "loop3",                     "loop2.body_sese")
             && ConstraintLocallyConstant(wrap, "loop3.iter_begin",          "loop1.")
             && ConstraintLocallyConstant(wrap, "loop3.iter_step",           "loop1.")
             && ConstraintLocallyConstant(wrap, "loop3.iter_end",            "loop1.")
             && ConstraintPermute2             ("loop1.iterator",            "loop3.iterator",
                                                "input1.input_index[0]",     "input1.input_index[1]")
-            && ConstraintAffineRead2    (wrap)+"input1."
+            && ConstraintAffineRead2    (wrap)+"input1"
             && ConstraintLocallyConstant(wrap, "input1.vector",             "loop1.")
             && ConstraintPermute2             ("loop2.iterator",            "loop3.iterator",
                                                "input2.input_index[0]",     "input2.input_index[1]")
-            && ConstraintAffineRead2    (wrap)+"input2."
+            && ConstraintAffineRead2    (wrap)+"input2"
             && ConstraintLocallyConstant(wrap, "input2.vector",             "loop1.")
             && ConstraintOpcode         (wrap, llvm::Instruction::FMul, 2,  "dot_sum.increment")
             && ConstraintDFGEdge        (wrap, "input1.value",              "dot_sum.increment")
             && ConstraintDFGEdge        (wrap, "input2.value",              "dot_sum.increment")
-            && ConstraintSumReduction   (wrap)+"dot_sum."
+            && ConstraintSumReduction   (wrap)+"dot_sum"
             && ConstraintWeightedSum    (wrap, "weighted_sum.",             "loop1.precursor",
                                                "dot_sum.final_value",       "old_value")
             && (   (   ConstraintOpcode (wrap, llvm::Instruction::Load, 1,  "old_value")
@@ -496,30 +444,30 @@ ConstraintAnd<std::string,unsigned> ConstraintMatrixmatrix(FunctionWrapper& wrap
 
 ConstraintAnd<std::string,unsigned> ConstraintSparseMV(FunctionWrapper& wrap)
 {
-    return (   ConstraintFor            (wrap)+"loop1."
+    return (   ConstraintFor            (wrap)+"loop1"
             && ConstraintSame                 ("range_begin_read.input_index[0]", "loop1.iterator")
-            && ConstraintAffineRead1    (wrap)+"range_begin_read."
+            && ConstraintAffineRead1    (wrap)+"range_begin_read"
             && ConstraintDFGEdge0       (wrap, "loop1.iterator", "range_end_read.input_index[0]")
             && ConstraintOpcode         (wrap,  llvm::Instruction::Add, 2, "range_end_read.input_index[0]")
-            && ConstraintAffineRead1    (wrap)+"range_end_read."
-            && ConstraintNestedFor      (wrap, "loop2.", "loop1.body_sese.")
+            && ConstraintAffineRead1    (wrap)+"range_end_read"
+            && ConstraintNestedFor      (wrap, "loop2", "loop1.body_sese")
             && ConstraintLocallyConstant(wrap, "loop2.iter_begin", "loop1.")
             && ConstraintLocallyConstant(wrap, "loop2.iter_step", "loop1.")
             && ConstraintLocallyConstant(wrap, "loop2.iter_end", "loop1.")
             && ConstraintSame                 ("loop2.iter_begin", "range_begin_read.value")
             && ConstraintSame                 ("loop2.iter_end", "range_end_read.value")
             && ConstraintSame                 ("input_matrix.input_index[0]", "loop2.iterator")
-            && ConstraintAffineRead1    (wrap)+"input_matrix."
+            && ConstraintAffineRead1    (wrap)+"input_matrix"
             && ConstraintSame                 ("input_index.input_index[0]", "loop2.iterator")
-            && ConstraintAffineRead1    (wrap)+"input_index."
+            && ConstraintAffineRead1    (wrap)+"input_index"
             && ConstraintSame                 ("input_vector.input_index[0]", "input_index.input_index[0]")
-            && ConstraintAffineRead1    (wrap)+"input_vector."
+            && ConstraintAffineRead1    (wrap)+"input_vector"
             && ConstraintOpcode         (wrap, llvm::Instruction::FMul, 2, "dot_sum.increment")
             && ConstraintDFGEdge        (wrap, "input_matrix.value", "dot_sum.increment")
             && ConstraintDFGEdge        (wrap, "intput_vector.value", "dot_sum.increment")
-            && ConstraintSumReduction   (wrap)+"dot_sum."
+            && ConstraintSumReduction   (wrap)+"dot_sum"
             && ConstraintSame                 ("output.input_index[0]", "loop1.iterator")
-            && ConstraintAffineAccess1  (wrap)+"output."
+            && ConstraintAffineAccess1  (wrap)+"output"
             && ConstraintOpcode         (wrap, llvm::Instruction::Store, 2, "store_instr")
             && ConstraintDFGEdge0       (wrap, "dot_sum.final_value", "store_instr"));
 }
@@ -550,22 +498,14 @@ ConstraintAnd<std::string,unsigned> ConstraintPureFunction(FunctionWrapper& wrap
         }
     }
 
-    return (   ConstraintSESE                        (wrap)+"outer_sese."
-            && ConstraintSESE                        (wrap)+"inner_sese."
-            && ConstraintCFGDominate                 (wrap, "outer_sese.begin", "inner_sese.begin")
-            && ConstraintCFGPostdom                  (wrap, "outer_sese.end",   "inner_sese.end")
-            && 4 * (   (   ConstraintCDGEdge         (wrap, "control_history*", "inner_sese.begin")
-                        && ConstraintOrder                 ("control_history*", "control_history+"))
-                    || (   ConstraintUnused                ("control_history*")
-                        && ConstraintUnused                ("control_history+")))
-            && ConstraintUnused                            ("control_history[4]")
-            && ConstraintSharedFate                        ("control_history", 5)
-            && 64 * (   (   ConstraintLocallyConstant(wrap, "constants*", "outer_sese.")
-                         && ConstraintOrder                ("constants*", "constants+"))
-                     || (   ConstraintUnused               ("constants*")
-                         && ConstraintUnused               ("constants+")))
-            && ConstraintUnused                            ("constants[64]")
-            && ConstraintSharedFate                        ("constants", 65)
+    return (   ConstraintSESE       (wrap)+"outer_sese"
+            && ConstraintSESE       (wrap)+"inner_sese"
+            && ConstraintCFGDominate(wrap, "outer_sese.begin", "inner_sese.begin")
+            && ConstraintCFGPostdom (wrap, "outer_sese.end",   "inner_sese.end")
+
+            && ConstraintCollect (4, "control_history", ConstraintCDGEdge        (wrap, "", "@inner_sese.begin"))
+            && ConstraintCollect(64, "constants",       ConstraintLocallyConstant(wrap, "", "@outer_sese."))
+
             && ConstraintDominate<std::string,false>(wrap.pdg, wrap.rpdg,
                  origins,
                  {"restrictions[0]", "restrictions[1]", "restrictions[2]", "restrictions[3]"},
@@ -593,16 +533,6 @@ ConstraintAnd<std::string,unsigned> ConstraintPureFunction(FunctionWrapper& wrap
                   {}, {"output"}, true));
 }
 
-ConstraintAnd<std::string,unsigned> ConstraintUnusedPureFunction()
-{
-    return (   ConstraintUnusedSESE     ()+"outer_sese."
-            && ConstraintUnusedSESE     ()+"inner_sese."
-            && 4 * (   ConstraintUnused ("control_history*")
-                    && ConstraintUnused ("control_history+"))
-            && 64 * (   ConstraintUnused("constants*")
-                     && ConstraintUnused("constants+")));
-}
-
 ConstraintAnd<std::string,unsigned> ConstraintScalarReduction(FunctionWrapper& wrap)
 {
     return (   ConstraintFor             (wrap)
@@ -620,55 +550,25 @@ ConstraintAnd<std::string,unsigned> ConstraintScalarReduction(FunctionWrapper& w
             && ConstraintCFGPostdom      (wrap, "body_sese.end",           "update_expr.output")
             && ConstraintCFGEdge         (wrap, "update_expr.output",      "post_store_instruction")
             && ConstraintCFGBlocked      (wrap, "post_store_instruction",  "end", "update_expr.output")
-            && ConstraintSameSESE            ("update_expr.outer_sese.",   "")
-            && ConstraintSameSESE            ("update_expr.inner_sese.",   "body_sese.")
-            && 30 * (   (   ConstraintOpcode         (wrap, llvm::Instruction::Load, 1, "update_expr.input*")
-                         && ConstraintDFGEdge        (wrap, "affine_access*.access_pointer", "update_expr.input*")
-                         && ConstraintAffineAccess1  (wrap)+"affine_access*."
-                         && ConstraintSame                 ("affine_access*.input_index[0]", "iterator")
-                         && ConstraintAffineAccess1  (wrap)+"affine_access*."
-                         && ConstraintLocallyConstant(wrap, "affine_access*.base_pointer", "")
-                         && ConstraintLocallyConstant(wrap, "affine_access*.offset_add.addend", "")
-                         && ConstraintLocallyConstant(wrap, "affine_access*.stride_mul[0].multiplier", "")
-                         && ConstraintLocallyConstant(wrap, "affine_access*.base_index", "")
-                         && ConstraintOrder                ("update_expr.input*", "update_expr.input+"))
-                     || (   ConstraintUnused               ("update_expr.input*")
-                         && ConstraintUnusedAffineAccess1()+"affine_access*."
-                         && ConstraintUnused               ("update_expr.input+")))
-            && ConstraintUnused("update_expr.input[30]")
-            && ConstraintSame  ("update_expr.input[31]", "old_value")
-            && ConstraintUnused("update_expr.input[32]")
-            && 4 * (   (   ConstraintOpcode           (wrap, llvm::Instruction::PHI,      "update_expr.restrictions*")
-                        && ConstraintCFGDominate      (wrap, "begin",                     "update_expr.restrictions*")
-                        && ConstraintCFGDominateStrict(wrap, "update_expr.restrictions*", "body_sese.begin")
-                        && ConstraintDistinct               ("update_expr.restrictions*", "old_value")
-                        && ConstraintOrder                  ("update_expr.restrictions*", "update_expr.restrictions+"))
-                    || (   ConstraintUnused                 ("update_expr.restrictions*")
-                        && ConstraintUnused                 ("update_expr.restrictions+")))
-            && ConstraintUnused            ("update_expr.restrictions[4]")
-            && ConstraintSharedFate        ("update_expr.restrictions", 5)
-            && ConstraintPureFunction(wrap)+"update_expr.");
-}
+            && ConstraintComplexSame         ("update_expr.outer_sese",    "",          ConstraintSESE(wrap))
+            && ConstraintComplexSame         ("update_expr.inner_sese",    "body_sese", ConstraintSESE(wrap))
 
-ConstraintAnd<std::string,unsigned> ConstraintUnusedScalarReduction()
-{
-    return (   ConstraintUnusedFor()
-            && ConstraintUnused   ("old_value")
-            && ConstraintUnused   ("final_value")
-            && ConstraintUnused   ("initial_value")
-            && ConstraintUnused   ("post_store_instruction")
-            && 30 * (   ConstraintUnused               ("update_expr.input*")
-                     && ConstraintUnusedAffineAccess1()+"affine_access*.")
-            && ConstraintUnused("update_expr.input[30]")
-            && ConstraintUnused("update_expr.input[31]")
-            && ConstraintUnused("update_expr.input[32]")
-            && ConstraintUnused("update_expr.restrictions[0]")
-            && ConstraintUnused("update_expr.restrictions[1]")
-            && ConstraintUnused("update_expr.restrictions[2]")
-            && ConstraintUnused("update_expr.restrictions[3]")
-            && ConstraintUnused("update_expr.restrictions[4]")
+            && ConstraintCollect(31, "read",
+                                 ConstraintAffineRead1(wrap)
+                              && ConstraintSame       ("input_index[0]", "@iterator")
+                              && ConstraintSame       ("sese.begin",     "@begin"))
 
-            && ConstraintUnusedPureFunction()+"update_expr.");
+            && 31 * ConstraintSame("update_expr.input*",    "read*.value")
+            && ConstraintSame     ("update_expr.input[31]", "old_value")
+            && ConstraintUnused   ("update_expr.input[32]")
+
+            && ConstraintCollect(4, "update_expr.restrictions",
+                                 ConstraintOpcode           (wrap, llvm::Instruction::PHI, "")
+                              && ConstraintCFGDominate      (wrap, "@begin",               "")
+                              && ConstraintCFGDominateStrict(wrap, "", "@body_sese.begin")
+                              && ConstraintDistinct               ("", "@old_value"))
+
+            && ConstraintPureFunction(wrap)+"update_expr");
 }
 
 ConstraintAnd<std::string,unsigned> ConstraintHistogram(FunctionWrapper& wrap)
@@ -689,157 +589,92 @@ ConstraintAnd<std::string,unsigned> ConstraintHistogram(FunctionWrapper& wrap)
             && ConstraintOpcode     (wrap, llvm::Instruction::GetElementPtr, "index_expr.output")
             && ConstraintDFGEdge0   (wrap, "reduction_array",                "index_expr.output")
 
-            && ConstraintSameSESE         ("update_expr.outer_sese.",        "")
-            && ConstraintSameSESE         ("update_expr.inner_sese.",        "body_sese.")
+            && ConstraintComplexSame      ("update_expr.outer_sese",         "",          ConstraintSESE(wrap))
+            && ConstraintComplexSame      ("update_expr.inner_sese",         "body_sese", ConstraintSESE(wrap))
 
-            && ConstraintSameSESE         ("index_expr.outer_sese.",         "")
-            && ConstraintSameSESE         ("index_expr.inner_sese.",         "body_sese.")
+            && ConstraintComplexSame      ("index_expr.outer_sese",          "",          ConstraintSESE(wrap))
+            && ConstraintComplexSame      ("index_expr.inner_sese",          "body_sese", ConstraintSESE(wrap))
 
-            && 28 * (   (  ConstraintOpcode          (wrap, llvm::Instruction::Load, 1, "update_expr.input*")
-                         && ConstraintDFGEdge        (wrap, "affine_access*.access_pointer", "update_expr.input*")
-                         && ConstraintSame                  ("affine_access*.input_index[0]", "iterator")
-                         && ConstraintAffineAccess1  (wrap)+"affine_access*."
-                         && ConstraintDistinct             ("affine_access*.base_pointer", "reduction_array")
-                         && ConstraintLocallyConstant(wrap, "affine_access*.base_pointer", "")
-                         && ConstraintLocallyConstant(wrap, "affine_access*.offset_add.addend", "")
-                         && ConstraintLocallyConstant(wrap, "affine_access*.stride_mul[0].multiplier", "")
-                         && ConstraintLocallyConstant(wrap, "affine_access*.base_index", "")
-                         && ConstraintOrder                ("update_expr.input*", "update_expr.input+")
-                         && ConstraintSame                 ("update_expr.input*", "index_expr.input*")
-                         && ConstraintOrder                ("index_expr.input*", "index_expr.input+"))
-                     || (   ConstraintUnused               ("update_expr.input*")
-                         && ConstraintUnused               ("index_expr.input*")
-                         && ConstraintUnusedAffineAccess1()+"affine_access*."
-                         && ConstraintUnused               ("update_expr.input+")
-                         && ConstraintUnused               ("index_expr.input+")))
- 
-            && ConstraintOpcode(wrap, llvm::Instruction::GetElementPtr, "affine_access[0].access_pointer")
+            && ConstraintOpcode(wrap, llvm::Instruction::GetElementPtr, "read[0].access_pointer")
 
-            && (   (   ConstraintOpcode      (wrap, llvm::Instruction::Load, 1,       "closure_read[0]")
-                    && ConstraintDFGEdge     (wrap, "closure_pointer[0]",             "closure_read[0]")
-                    && ConstraintOpcode      (wrap, llvm::Instruction::GetElementPtr, "closure_pointer[0]")
-                    && ConstraintDFGEdge0    (wrap, "closure_vector[0]",              "closure_pointer[0]")
-                    && ConstraintCFGDominate (wrap, "body_sese.begin",                "closure_read[0]")
-                    && ConstraintCFGPostdom  (wrap, "body_sese.end",                  "closure_read[0]")
-                    && ConstraintDistinct          ("closure_vector[0]",              "affine_access[0].base_pointer")
-                    && ConstraintDistinct          ("closure_vector[0]",              "reduction_array")
-                    && ConstraintOrder             ("closure_read[0]",                "closure_read[1]"))
-                || (   ConstraintUnused            ("closure_read[0]")
-                    && ConstraintUnused            ("closure_pointer[0]")
-                    && ConstraintUnused            ("closure_vector[0]")
-                    && ConstraintUnused            ("closure_read[1]")))
+            && ConstraintCollect(29, "read",
+                                 ConstraintAffineRead1(wrap)
+                              && ConstraintSame       ("input_index[0]", "@iterator")
+                              && ConstraintSame       ("sese.begin",     "@begin"))
 
-            && (   (   ConstraintOpcode      (wrap, llvm::Instruction::Load, 1,       "closure_read[1]")
-                    && ConstraintDFGEdge     (wrap, "closure_pointer[1]",             "closure_read[1]")
-                    && ConstraintOpcode      (wrap, llvm::Instruction::GetElementPtr, "closure_pointer[1]")
-                    && ConstraintDFGEdge0    (wrap, "closure_vector[1]",              "closure_pointer[1]")
-                    && ConstraintCFGDominate (wrap, "body_sese.begin",                "closure_read[1]")
-                    && ConstraintCFGPostdom  (wrap, "body_sese.end",                  "closure_read[1]")
-                    && ConstraintDistinct          ("closure_vector[1]",              "affine_access[0].base_pointer")
-                    && ConstraintDistinct          ("closure_vector[1]",              "reduction_array"))
-                || (   ConstraintUnused            ("closure_read[1]")
-                    && ConstraintUnused            ("closure_pointer[1]")
-                    && ConstraintUnused            ("closure_vector[1]")))
+            && ConstraintCollect(2, "closure",                // This is quite a hack to make tpacf work
+                                 ConstraintOpcode     (wrap, llvm::Instruction::Load, 1,       "read")
+                              && ConstraintDFGEdge    (wrap, "pointer",                        "read")
+                              && ConstraintOpcode     (wrap, llvm::Instruction::GetElementPtr, "pointer")
+                              && ConstraintDFGEdge0   (wrap, "vector",                         "pointer")
+                              && ConstraintCFGDominate(wrap, "@body_sese.begin",               "read")
+                              && ConstraintCFGPostdom (wrap, "@body_sese.end",                 "read")
+                              && ConstraintDistinct         ("vector",                         "@read[0].base_pointer")
+                              && ConstraintDistinct         ("vector",                         "@reduction_array"))
 
-            && ConstraintUnused                     ("update_expr.input[28]")
-            && ConstraintSame                       ("update_expr.input[29]", "closure_read[0]")
-            && ConstraintSame                       ("update_expr.input[30]", "closure_read[1]")
-            && ConstraintSame                       ("update_expr.input[31]", "old_value")
-            && ConstraintUnused                     ("update_expr.input[32]")
-            && ConstraintSharedFate                 ("update_expr.input", 33)
+            && 29 * ConstraintSame("update_expr.input*",    "read*.value")
+            && ConstraintSame     ("update_expr.input[29]", "closure[0].read")
+            && ConstraintSame     ("update_expr.input[30]", "closure[1].read")
+            && ConstraintSame     ("update_expr.input[31]", "old_value")
+            && ConstraintUnused   ("update_expr.input[32]")
 
-            && 4 * (   (   ConstraintOpcode           (wrap, llvm::Instruction::PHI,      "update_expr.restrictions*")
-                        && ConstraintCFGDominate      (wrap, "begin",                     "update_expr.restrictions*")
-                        && ConstraintCFGDominateStrict(wrap, "update_expr.restrictions*", "body_sese.begin")
-                        && ConstraintOrder                  ("update_expr.restrictions*", "update_expr.restrictions+"))
-                    || (   ConstraintUnused                 ("update_expr.restrictions*")
-                        && ConstraintUnused                ("update_expr.restrictions+")))
+            && ConstraintCollect(4, "update_expr.restrictions",
+                                 ConstraintOpcode           (wrap, llvm::Instruction::PHI, "")
+                              && ConstraintCFGDominate      (wrap, "@begin", "")
+                              && ConstraintCFGDominateStrict(wrap, "", "@body_sese.begin")
+                              && ConstraintDistinct               ("", "@old_value"))
 
-            && ConstraintUnused            ("update_expr.restrictions[4]")
-            && ConstraintSharedFate        ("update_expr.restrictions", 5)
-            && ConstraintPureFunction(wrap)+"update_expr."
+            && ConstraintPureFunction(wrap)+"update_expr"
 
-            && ConstraintUnused            ("index_expr.input[28]")
-            && ConstraintSame              ("index_expr.input[29]", "closure_read[0]")
-            && ConstraintSame              ("index_expr.input[30]", "closure_read[1]")
-            && ConstraintUnused            ("index_expr.input[31]")
-            && ConstraintUnused            ("index_expr.input[32]")
+            && 29 * ConstraintSame("index_expr.input*",    "read*.value")
+            && ConstraintSame     ("index_expr.input[29]", "closure[0].read")
+            && ConstraintSame     ("index_expr.input[30]", "closure[1].read")
+            && ConstraintUnused   ("index_expr.input[31]")
+            && ConstraintUnused   ("index_expr.input[32]")
 
-            && 4 * (   (   ConstraintOpcode           (wrap, llvm::Instruction::PHI, "index_expr.restrictions*")
-                        && ConstraintCFGDominate      (wrap, "begin", "index_expr.restrictions*")
-                        && ConstraintCFGDominateStrict(wrap, "index_expr.restrictions*", "body_sese.begin")
-                        && ConstraintOrder                  ("index_expr.restrictions*", "update_expr.restrictions+"))
-                    || (   ConstraintUnused                 ("index_expr.restrictions*")
-                        && ConstraintUnused                 ("index_expr.restrictions+")))
+            && ConstraintCollect(4, "index_expr.restrictions",
+                                 ConstraintOpcode           (wrap, llvm::Instruction::PHI, "")
+                              && ConstraintCFGDominate      (wrap, "@begin",               "")
+                              && ConstraintCFGDominateStrict(wrap, "", "@body_sese.begin"))
 
-            && ConstraintUnused            ("index_expr.restrictions[4]")
-            && ConstraintSharedFate        ("index_expr.restrictions", 5)
-            && ConstraintPureFunction(wrap)+"index_expr.");
-}
-
-ConstraintAnd<std::string,unsigned> Constraint3DStencilAccess(FunctionWrapper& wrap)
-{
-    return (   ConstraintAddition     (wrap)+"index[0]."
-            && (   ConstraintConstant (wrap, "index[0].addend")
-                || ConstraintUnused         ("index[0].addend"))
-            && ConstraintSame               ("read.input_index[0]", "index[0].value")
-            && ConstraintAddition     (wrap)+"index[1]."
-            && (   ConstraintConstant (wrap, "index[1].addend")
-                || ConstraintUnused         ("index[1].addend"))
-            && ConstraintSame               ("read.input_index[1]", "index[1].value")
-            && ConstraintAddition     (wrap)+"index[2]."
-            && (   ConstraintConstant (wrap, "index[2].addend")
-                || ConstraintUnused         ("index[2].addend"))
-            && ConstraintSame               ("read.input_index[2]", "index[2].value")
-            && ConstraintAffineAccess3(wrap)+"read.");
-}
-
-ConstraintAnd<std::string,unsigned> ConstraintUnused3DStencilAccess()
-{
-    return (   ConstraintUnusedAffineAccess3()+"read."
-            && ConstraintUnusedAddition     ()+"index[0]."
-            && ConstraintUnusedAddition     ()+"index[1]."
-            && ConstraintUnusedAddition     ()+"index[2].");
+            && ConstraintPureFunction(wrap)+"index_expr");
 }
 
 ConstraintAnd<std::string,unsigned> Constraint3DStencil(FunctionWrapper& wrap)
 {
-    return (   ConstraintFor            (wrap)+"loop1."
-            && ConstraintNestedFor      (wrap, "loop2.",           "loop1.body_sese.")
+    return (   ConstraintFor            (wrap)+"loop1"
+            && ConstraintNestedFor      (wrap, "loop2",            "loop1.body_sese")
             && ConstraintLocallyConstant(wrap, "loop2.iter_begin", "loop1.")
             && ConstraintLocallyConstant(wrap, "loop2.iter_step",  "loop1.")
             && ConstraintLocallyConstant(wrap, "loop2.iter_end",   "loop1.")
-            && ConstraintNestedFor      (wrap, "loop3.",           "loop2.body_sese.")
+            && ConstraintNestedFor      (wrap, "loop3",            "loop2.body_sese")
             && ConstraintLocallyConstant(wrap, "loop3.iter_begin", "loop1.")
             && ConstraintLocallyConstant(wrap, "loop3.iter_step",  "loop1.")
             && ConstraintLocallyConstant(wrap, "loop3.iter_end",   "loop1.")
-            && ConstraintOpcode         (wrap, llvm::Instruction::Store, 2, "store_instr")
-            && ConstraintPermute3             ("loop1.iterator", "loop2.iterator", "loop3.iterator",
-                                               "write_address.input_index[0]", "write_address.input_index[1]",
-                                               "write_address.input_index[2]")
-            && ConstraintDFGEdge1       (wrap, "write_address.access_pointer", "store_instr")
-            && ConstraintAffineAccess3  (wrap)+"write_address."
 
-            && 32 * (   (   ConstraintPermute3               ("loop1.iterator", "loop2.iterator", "loop3.iterator",
-                                                              "reads*.index[0].input", "reads*.index[1].input",
-                                                              "reads*.index[2].input")
-                         && ConstraintOpcode           (wrap, llvm::Instruction::Load, 1, "compute_expr.input*")
-                         && ConstraintDFGEdge0         (wrap, "reads*.read.access_pointer", "compute_expr.input*")
-                         && Constraint3DStencilAccess  (wrap)+"reads*."
-                         && ConstraintOrder                  ("compute_expr.input*", "compute_expr.input+"))
-                     || (   ConstraintUnused                 ("compute_expr.input*")
-                         && ConstraintUnused3DStencilAccess()+"reads*."
-                         && ConstraintUnused                 ("compute_expr.input+")))
+            && ConstraintAffineStore3   (wrap)+"write"
+            && ConstraintPermute3             ("loop1.iterator",       "loop2.iterator",       "loop3.iterator",
+                                               "write.input_index[0]", "write.input_index[1]", "write.input_index[2]")
 
-            && ConstraintUnused            ("compute_expr.input[32]")
-            && ConstraintDFGEdge0    (wrap, "compute_expr.output", "store_instr")
-            && ConstraintSameSESE          ("compute_expr.outer_sese.", "loop1.")
-            && ConstraintSameSESE          ("compute_expr.inner_sese.", "loop3.body_sese.")
-            && ConstraintSharedFate        ("compute_expr.input", 33)
+            && ConstraintCollect(32, "reads",
+                                 ConstraintOpcode         (wrap, llvm::Instruction::Load, 1, "value")
+                              && ConstraintDFGEdge0       (wrap, "read.access_pointer", "value")
+                              && ConstraintStencilAccess3(wrap)
+                              && ConstraintSame                  ("index[0].input", "@write.input_index[0]")
+                              && ConstraintSame                  ("index[1].input", "@write.input_index[1]")
+                              && ConstraintSame                  ("index[2].input", "@write.input_index[2]"))
+
+            && 33 * ConstraintSame("compute_expr.input*", "reads*.value")
+
+            && ConstraintDFGEdge0    (wrap, "compute_expr.output", "write.store")
+
+            && ConstraintComplexSame       ("compute_expr.outer_sese", "loop1",           ConstraintSESE(wrap))
+            && ConstraintComplexSame       ("compute_expr.inner_sese", "loop3.body_sese", ConstraintSESE(wrap))
+
             && ConstraintUnused            ("compute_expr.restrictions[0]")
             && ConstraintUnused            ("compute_expr.restrictions[1]")
             && ConstraintUnused            ("compute_expr.restrictions[2]")
             && ConstraintUnused            ("compute_expr.restrictions[3]")
             && ConstraintUnused            ("compute_expr.restrictions[4]")
-            && ConstraintPureFunction(wrap)+"compute_expr.");
+            && ConstraintPureFunction(wrap)+"compute_expr");
 }
