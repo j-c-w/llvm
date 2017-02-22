@@ -15,12 +15,12 @@ class ConstraintSharedFate : public Constraint<std::string,unsigned>
 public:
     ConstraintSharedFate() {}
 
-    ConstraintSharedFate(std::string prefix, unsigned N)
+    ConstraintSharedFate(std::string prefix, unsigned N, std::string postfix="")
     {
         for(unsigned i = 0; i < N; i++)
         {
             std::stringstream sstr;
-            sstr<<prefix<<"["<<i<<"]";
+            sstr<<prefix<<"["<<i<<"]"<<postfix;
             variables.push_back(sstr.str());
         }
     }
