@@ -191,7 +191,6 @@ std::string SolutionHierarchical::print_pythonesque()
     }
 }
 
-
 /*
 static
 std::string generate_c_typename(llvm::Type* type)
