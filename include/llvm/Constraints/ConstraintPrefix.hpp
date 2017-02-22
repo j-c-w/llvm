@@ -20,7 +20,18 @@ public:
 
         for(auto& entry : result)
         {
-            entry.first = prefix + entry.first;
+            if(entry.first.empty() || prefix.empty())
+            {
+                entry.first = prefix;
+            }
+            else if(entry.first[0] == '@')
+            {
+                entry.first = std::string(entry.first.begin() + 1, entry.first.end());
+            }
+            else
+            {
+                entry.first = prefix + "." + entry.first;
+            }
         }
 
         return result;
