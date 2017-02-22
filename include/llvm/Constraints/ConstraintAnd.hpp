@@ -75,7 +75,7 @@ void ConstraintAnd<LabelType,ValueType>::add_constraint(Type constraint,
             typename std::enable_if<std::is_base_of<Constraint<LabelType,ValueType>,Type>::value>::type*,
             typename std::enable_if<!std::is_base_of<ConstraintAnd<LabelType,ValueType>,Type>::value>::type*)
 {
-        constraints.push_back(std::shared_ptr<Constraint<LabelType,ValueType>>(new Type(constraint)));
+    constraints.push_back(std::shared_ptr<Constraint<LabelType,ValueType>>(new Type(constraint)));
 }
 
 #endif
