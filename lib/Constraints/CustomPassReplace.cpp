@@ -4,6 +4,7 @@
 #include "llvm/Constraints/FunctionWrap.hpp"
 #include "llvm/Constraints/PrintSlots.hpp"
 #include "llvm/Constraints/Transforms.hpp"
+#include "llvm/Constraints/GenerateCOperator.hpp"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
@@ -166,6 +167,11 @@ public:
 
                     transform_reduction_operator(*function, scalar_solutions, histo_solutions);
 
+                    function->setName("operator");
+                    function->getArgumentList().begin()->setName("acc");
+                    ofs<<print_c_operator(*function);
+//                    ofs<<print_halide_stencil(*function);
+/*
                     {
                     std::stringstream str_str;
                     llvm::raw_os_ostream out_stream(str_str);
@@ -173,7 +179,7 @@ public:
                     out_stream.flush();
                     str_str.flush();
                     ofs<<str_str.str();
-                    }
+                    }*/
 
                     delete function;
                     ofs<<"END LOOP\n";
