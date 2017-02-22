@@ -81,9 +81,9 @@ message_window3.set_yalign(0.0)
 language_manager = GtkSource.LanguageManager()
 
 sourcecode.  get_buffer().set_language(language_manager.get_language("cpp"))
-code_window1.get_buffer().set_language(language_manager.get_language("llvm"))
+code_window1.get_buffer().set_language(language_manager.get_language("cpp"))
 code_window2.get_buffer().set_language(language_manager.get_language("cpp"))
-code_window3.get_buffer().set_language(language_manager.get_language("llvm"))
+code_window3.get_buffer().set_language(language_manager.get_language("cpp"))
 
 sourcecode.  get_buffer().set_highlight_syntax(True)
 code_window1.get_buffer().set_highlight_syntax(True)
@@ -96,13 +96,6 @@ code_window3.set_editable(False)
 
 already_running_analysis      = False
 already_running_analysis_lock = threading.Lock()
-
-def postprocess_llvm_code(code):
-    stripped_code = "\n".join([line.split("; preds")[0].split(", !"    )[0]
-                                   .split(" #"     )[0].split(", align")[0].rstrip(" ") for line in code.split('\n')])
-
-    return (stripped_code.replace("\n  ", "\n").replace(" \n",  "\n").replace(".000000e+00", ".0")
-                         .replace("getelementptr", "GEP").replace("<badref>", "@op")).strip()
 
 def map_IR_to_C_line(instruction):
     has_hit = 0
@@ -284,9 +277,9 @@ def wait_thread(source_code):
             scalars  = [eval(p.split("END SCALAR REDUCTION\n")[0]) for p in loop.split("BEGIN SCALAR REDUCTION\n")[1:]]
             histos   = [eval(p.split("END HISTOGRAM\n")[0])        for p in loop.split("BEGIN HISTOGRAM\n")[1:]]
 
-            operator       = postprocess_llvm_code(loop.split("BEGIN OPERATOR\n")[1])
-            reduction_type = operator.split("@op({")[1].split("}")[0];
-            operator       = operator.replace("{"+reduction_type+"}", "%out_t")
+            operator       = loop.split("BEGIN OPERATOR\n")[1]
+            reduction_type = operator.split("operator(")[1].split("* acc")[0];
+            operator       = operator.replace(reduction_type, "out_t")
 
             if len(scalars+histos):
 
@@ -297,7 +290,7 @@ def wait_thread(source_code):
                     line_end = line_end - 1
 
                 set_output("Found reduction in lines "+str(line_begin)+" - "+str(line_end)+":",
-                           "%out_t = type {"+reduction_type+"} ",
+                           "typedef "+reduction_type+" out_t;",
                            "The reduction can be rewritten as:",
                            generate_reduction(scalars+histos)+" ",
                            "This uses the reduction operator:",
