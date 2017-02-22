@@ -19,6 +19,7 @@ add_llvm_library(LLVMConstraints
 
   CustomPassFlatten.cpp
   CustomPassReplace.cpp
+  CustomPassRemovePHI.cpp
   CustomPassPreprocess.cpp
 
   TransformReduction.cpp
