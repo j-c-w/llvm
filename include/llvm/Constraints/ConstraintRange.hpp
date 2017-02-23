@@ -14,7 +14,7 @@ class ConstraintRange : public Constraint<std::string,ValueType>
 {
 public:
     template<typename Type>
-    ConstraintRange(unsigned N, Type c) : size(N), constraint(new Type(c)) { }
+    ConstraintRange(unsigned N, Type c, unsigned o = 0) : offset(o), size(N), constraint(new Type(c)) { }
 
     class SpecializedRange : public Specialized<ValueType>
     {
@@ -36,6 +36,7 @@ public:
 
 private:
 
+    unsigned                                           offset;
     unsigned                                           size;
     std::shared_ptr<Constraint<std::string,ValueType>> constraint;
 };
