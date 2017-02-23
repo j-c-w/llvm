@@ -7,7 +7,7 @@
 /* This class implements the graph edge constraint, demanding that there is an edge between two given nodes in some
    graph that is passes as an additional parameter. */
 template<typename LabelType>
-class ConstraintEdge : public Constraint<std::string,unsigned>
+class ConstraintEdge : public Constraint<LabelType,unsigned>
 {
 public:
     using Graph = std::vector<std::vector<unsigned>>;
