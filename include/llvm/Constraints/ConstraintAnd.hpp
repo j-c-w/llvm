@@ -47,6 +47,15 @@ private:
             typename std::enable_if<std::is_base_of<Constraint<LabelType,ValueType>,Type>::value>::type* = nullptr,
             typename std::enable_if<!std::is_base_of<ConstraintAnd<LabelType,ValueType>,Type>::value>::type* = nullptr);
 
+    template<typename Type>
+    void add_constraint(std::vector<Type> constraint,
+            typename std::enable_if<std::is_base_of<ConstraintAnd<LabelType,ValueType>,Type>::value>::type* = nullptr);
+
+    template<typename Type>
+    void add_constraint(std::vector<Type> first,
+            typename std::enable_if<std::is_base_of<Constraint<LabelType,ValueType>,Type>::value>::type* = nullptr,
+            typename std::enable_if<!std::is_base_of<ConstraintAnd<LabelType,ValueType>,Type>::value>::type* = nullptr);
+
     std::vector<std::shared_ptr<Constraint<LabelType,ValueType>>> constraints;
 };
 
@@ -76,6 +85,32 @@ void ConstraintAnd<LabelType,ValueType>::add_constraint(Type constraint,
             typename std::enable_if<!std::is_base_of<ConstraintAnd<LabelType,ValueType>,Type>::value>::type*)
 {
     constraints.push_back(std::shared_ptr<Constraint<LabelType,ValueType>>(new Type(constraint)));
+}
+
+template<typename LabelType, typename ValueType>
+template<typename Type>
+void ConstraintAnd<LabelType,ValueType>::add_constraint(std::vector<Type> constraint_vector,
+            typename std::enable_if<std::is_base_of<ConstraintAnd<LabelType,ValueType>,Type>::value>::type*)
+{
+    for(auto& and_constraint : constraint_vector)
+    {
+        for(auto& constraint : and_constraint.constraints)
+        {
+            constraints.push_back(std::shared_ptr<Constraint<LabelType,ValueType>>(new Type(constraint)));
+        }
+    }
+}
+
+template<typename LabelType, typename ValueType>
+template<typename Type>
+void ConstraintAnd<LabelType,ValueType>::add_constraint(std::vector<Type> constraint_vector,
+            typename std::enable_if<std::is_base_of<Constraint<LabelType,ValueType>,Type>::value>::type*,
+            typename std::enable_if<!std::is_base_of<ConstraintAnd<LabelType,ValueType>,Type>::value>::type*)
+{
+    for(auto& constraint : constraint_vector)
+    {
+        constraints.push_back(std::shared_ptr<Constraint<LabelType,ValueType>>(new Type(constraint)));
+    }
 }
 
 #endif
