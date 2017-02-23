@@ -12,6 +12,7 @@ add_llvm_library(LLVMConstraints
   ConstraintSingle.cpp
   ConstraintDominate.cpp
   ConstraintOrdering.cpp
+  ConstraintSameBlock.cpp
   ConstraintLLVMSingle.cpp
   ConstraintSharedFate.cpp
 
