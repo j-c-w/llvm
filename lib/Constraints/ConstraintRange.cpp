@@ -32,13 +32,13 @@ std::vector<std::pair<std::string,std::unique_ptr<Specialized<ValueType>>>> Cons
                 if(j == last_wildcard && result.first[j] == '*')
                 {
                     std::stringstream sstr;
-                    sstr<<std::move(new_label)<<"["<<i<<"]";
+                    sstr<<std::move(new_label)<<"["<<(offset+i)<<"]";
                     new_label = sstr.str();
                 }
                 else if(j == last_wildcard && result.first[j] == '+')
                 {
                     std::stringstream sstr;
-                    sstr<<std::move(new_label)<<"["<<(i+1)<<"]";
+                    sstr<<std::move(new_label)<<"["<<(offset+i+1)<<"]";
                     new_label = sstr.str();
                 }
                 else
