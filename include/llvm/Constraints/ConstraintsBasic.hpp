@@ -3,6 +3,7 @@
 #include "llvm/Constraints/ConstraintLLVMSingle.hpp"
 #include "llvm/Constraints/ConstraintDominate.hpp"
 #include "llvm/Constraints/ConstraintOrdering.hpp"
+#include "llvm/Constraints/ConstraintSameBlock.hpp"
 #include "llvm/Constraints/ConstraintSingle.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
 #include "llvm/Constraints/ConstraintEdge.hpp"
@@ -55,21 +56,31 @@ public:
 class ConstraintLLVMIntConstant : public ConstraintLLVMSingle
 {
 public:
-    ConstraintLLVMIntConstant(FunctionWrapper& cdfg, int64_t value, std::string var)
-     : ConstraintLLVMSingle(cdfg, var, std::function<bool(llvm::Value&)>([=](llvm::Value& llvm_value)
-    {
-        if(llvm::ConstantInt* const_int_cast = llvm::dyn_cast<llvm::ConstantInt>(&llvm_value))
+    ConstraintLLVMIntConstant(FunctionWrapper& wrap, int64_t value, std::string var)
+      : ConstraintLLVMSingle(wrap, var, std::function<bool(llvm::Value&)>([=](llvm::Value& llvm_value)
         {
-            return (const_int_cast->getSExtValue() == value);
-        }
-        else return false;
-    })) { }
+            if(llvm::ConstantInt* const_int_cast = llvm::dyn_cast<llvm::ConstantInt>(&llvm_value))
+            {
+                return (const_int_cast->getSExtValue() == value);
+            }
+            else return false;
+        })) { }
 
     ConstraintLLVMIntConstant(FunctionWrapper& cdfg, std::string var)
-     : ConstraintLLVMSingle(cdfg, var, std::function<bool(llvm::Value&)>([=](llvm::Value& llvm_value)
-    {
-        return llvm::isa<llvm::ConstantInt>(&llvm_value);
-    })) { }
+      : ConstraintLLVMSingle(cdfg, var, std::function<bool(llvm::Value&)>([=](llvm::Value& llvm_value)
+        {
+            return llvm::isa<llvm::ConstantInt>(&llvm_value);
+        })) { }
+};
+
+class ConstraintNotNumericConstant : public ConstraintLLVMSingle
+{
+public:
+    ConstraintNotNumericConstant(FunctionWrapper& cdfg, std::string var)
+     : ConstraintLLVMSingle(cdfg, var, std::function<bool(llvm::Value&)>([=](llvm::Value& value)
+                                       { return !llvm::isa<llvm::ConstantInt>(value) &&
+                                                !llvm::isa<llvm::ConstantFP>(value)  &&
+                                                !llvm::isa<llvm::ConstantPointerNull>(value); })) { }
 };
 
 class ConstraintConstant : public ConstraintLLVMSingle
@@ -107,6 +118,14 @@ public:
      : ConstraintLLVMSingle(cdfg, var,
                             std::function<bool(llvm::Instruction&)>([=](llvm::Instruction& instruction)
                             { return instruction.getOpcode() == opcode && instruction.getNumOperands() == argn; })) { }
+};
+
+class ConstraintPHINode : public ConstraintAnd<std::string,unsigned>
+{
+public:
+    ConstraintPHINode(FunctionWrapper& wrap, std::string begin, std::string var)
+      : ConstraintAnd<std::string,unsigned>(ConstraintOpcode(wrap, llvm::Instruction::PHI, var),
+                                            ConstraintSameBlock<std::string>(wrap, begin, var)) { } 
 };
 
 class ConstraintIntegerType : public ConstraintLLVMSingle
@@ -229,21 +248,54 @@ public:
      : ConstraintDominate<std::string,false>(g.dfg, g.rdfg, {}, {n1}, {}, {n2}, {}, {n3}, false) { }
 };
 
+inline
+std::vector<std::string> expand_variables(std::string var)
+{
+    std::vector<std::string> result;
+
+    unsigned i1 = 0;
+    while(i1 < var.size() && var[i1] != '[') i1++;
+
+    if(i1 < var.size())
+    {
+        std::string part1 = std::string(var.begin(), var.begin() + (++i1));
+
+        unsigned value1 = 0;
+
+        while(i1 < var.size() && var[i1] >= '0' && var[i1] <= '9') value1 = 10*value1 + (var[i1++]-'0');
+
+        if(i1 < var.size() && var[i1++] == '.' && i1 < var.size() && var[i1++] == '.')
+        {
+            unsigned value2 = 0;
+
+            while(i1 < var.size() && var[i1] >= '0' && var[i1] <= '9') value2 = 10*value2 + (var[i1++]-'0');
+
+            if(value1 < value2 && value2 - value1 <= 1024 && i1 < var.size() && var[i1] == ']')
+            {
+                std::string part2 = std::string(var.begin() + i1, var.end());
+
+                for(unsigned i = value1; i < value2; i++)
+                {
+                    std::stringstream sstr;
+                    sstr<<part1<<i<<part2;
+                    result.push_back(sstr.str());
+                }
+            }
+        }
+    }
+
+    if(result.empty()) result.push_back(var);
+
+    return result;
+}
+
+
 
 class ConstraintDFGDominate : public ConstraintDominate<std::string,false>
 {
 public:
-    ConstraintDFGDominate(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.dfg, g.rdfg, get_origins(g), {}, {}, v1, {}, v2, true) { }
-
-    ConstraintDFGDominate(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.dfg, g.rdfg, get_origins(g), {}, {}, {v1}, {}, v2, true) { }
-
-    ConstraintDFGDominate(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.dfg, g.rdfg, get_origins(g), {}, {}, v1, {}, {v2}, true) { }
-
     ConstraintDFGDominate(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.dfg, g.rdfg, get_origins(g), {}, {}, {v1}, {}, {v2}, true) { }
+     : ConstraintDominate<std::string,false>(g.dfg, g.rdfg, get_origins(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), true) { }
 
 private:
     static std::vector<unsigned> get_origins(const FunctionWrapper& wrap)
@@ -267,17 +319,8 @@ private:
 class ConstraintDFGPostdom : public ConstraintDominate<std::string,false>
 {
 public:
-    ConstraintDFGPostdom(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, v1, {}, v2, true) { }
-
-    ConstraintDFGPostdom(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, {v1}, {}, v2, true) { }
-
-    ConstraintDFGPostdom(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, v1, {}, {v2}, true) { }
-
     ConstraintDFGPostdom(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, {v1}, {}, {v2}, true) { }
+     : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), true) { }
 
 private:
     static std::vector<unsigned> get_destinies(const FunctionWrapper& wrap)
@@ -301,17 +344,31 @@ private:
 class ConstraintCFGDominate : public ConstraintDominate<std::string,false>
 {
 public:
-    ConstraintCFGDominate(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.cfg, g.rcfg, get_origins(g), {}, {}, v1, {}, v2, true) { }
-
-    ConstraintCFGDominate(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.cfg, g.rcfg, get_origins(g), {}, {}, {v1}, {}, v2, true) { }
-
-    ConstraintCFGDominate(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.cfg, g.rcfg, get_origins(g), {}, {}, v1, {}, {v2}, true) { }
-
     ConstraintCFGDominate(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.cfg, g.rcfg, get_origins(g), {}, {}, {v1}, {}, {v2}, true) { }
+     : ConstraintDominate<std::string,false>(g.cfg, g.rcfg, get_origins(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), true) { }
+
+private:
+    static std::vector<unsigned> get_origins(const FunctionWrapper& wrap)
+    {
+        std::vector<unsigned> origins;
+
+        for(unsigned i = 0; i < wrap.rcfg.size(); i++)
+        {
+            if(wrap.rcfg[i].empty() && !wrap.cfg[i].empty())
+            {
+                origins.push_back(i);
+            }
+        }
+
+        return origins;
+    }
+};
+
+class ConstraintCFGNotDominate : public ConstraintDominate<std::string,true>
+{
+public:
+    ConstraintCFGNotDominate(const FunctionWrapper& g, std::string v1, std::string v2)
+     : ConstraintDominate<std::string,true>(g.cfg, g.rcfg, get_origins(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), true) { }
 
 private:
     static std::vector<unsigned> get_origins(const FunctionWrapper& wrap)
@@ -333,17 +390,8 @@ private:
 class ConstraintCFGPostdom : public ConstraintDominate<std::string,false>
 {
 public:
-    ConstraintCFGPostdom(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.rcfg, g.cfg, get_destinies(g), {}, {}, v1, {}, v2, true) { }
-
-    ConstraintCFGPostdom(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.rcfg, g.cfg, get_destinies(g), {}, {}, {v1}, {}, v2, true) { }
-
-    ConstraintCFGPostdom(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rcfg, g.cfg, get_destinies(g), {}, {}, v1, {}, {v2}, true) { }
-
     ConstraintCFGPostdom(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rcfg, g.cfg, get_destinies(g), {}, {}, {v1}, {}, {v2}, true) { }
+     : ConstraintDominate<std::string,false>(g.rcfg, g.cfg, get_destinies(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), true) { }
 
 private:
     static std::vector<unsigned> get_destinies(const FunctionWrapper& wrap)
@@ -365,17 +413,8 @@ private:
 class ConstraintPDGDominate : public ConstraintDominate<std::string,false>
 {
 public:
-    ConstraintPDGDominate(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.pdg, g.rpdg, get_origins(g), {}, {}, v1, {}, v2, true) { }
-
-    ConstraintPDGDominate(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.pdg, g.rpdg, get_origins(g), {}, {}, {v1}, {}, v2, true) { }
-
-    ConstraintPDGDominate(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.pdg, g.rpdg, get_origins(g), {}, {}, v1, {}, {v2}, true) { }
-
-    ConstraintPDGDominate(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.pdg, g.rpdg, get_origins(g), {}, {}, {v1}, {}, {v2}, true) { }
+    ConstraintPDGDominate(const FunctionWrapper& g, std::string v0, std::string v1, std::string v2)
+     : ConstraintDominate<std::string,false>(g.pdg, g.rpdg, get_origins(g), expand_variables(v0), {}, expand_variables(v1), {}, expand_variables(v2), true) { }
 
 private:
     static std::vector<unsigned> get_origins(const FunctionWrapper& wrap)
@@ -411,17 +450,8 @@ private:
 class ConstraintPDGNotDominate : public ConstraintDominate<std::string,true>
 {
 public:
-    ConstraintPDGNotDominate(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,true>(g.pdg, g.rpdg, get_origins(g), {}, {}, v1, {}, v2, true) { }
-
-    ConstraintPDGNotDominate(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,true>(g.pdg, g.rpdg, get_origins(g), {}, {}, {v1}, {}, v2, true) { }
-
-    ConstraintPDGNotDominate(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,true>(g.pdg, g.rpdg, get_origins(g), {}, {}, v1, {}, {v2}, true) { }
-
     ConstraintPDGNotDominate(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,true>(g.pdg, g.rpdg, get_origins(g), {}, {}, {v1}, {}, {v2}, true) { }
+     : ConstraintDominate<std::string,true>(g.pdg, g.rpdg, get_origins(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), true) { }
 
 private:
     static std::vector<unsigned> get_origins(const FunctionWrapper& wrap)
@@ -457,17 +487,8 @@ private:
 class ConstraintPDGPostdom : public ConstraintDominate<std::string,false>
 {
 public:
-    ConstraintPDGPostdom(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.rpdg, g.pdg, get_destinies(g), {}, {}, v1, {}, v2, true) { }
-
-    ConstraintPDGPostdom(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.rpdg, g.pdg, get_destinies(g), {}, {}, {v1}, {}, v2, true) { }
-
-    ConstraintPDGPostdom(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rpdg, g.pdg, get_destinies(g), {}, {}, v1, {}, {v2}, true) { }
-
     ConstraintPDGPostdom(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rpdg, g.pdg, get_destinies(g), {}, {}, {v1}, {}, {v2}, true) { }
+     : ConstraintDominate<std::string,false>(g.rpdg, g.pdg, get_destinies(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), true) { }
 
 private:
     static std::vector<unsigned> get_destinies(const FunctionWrapper& wrap)
@@ -491,17 +512,8 @@ private:
 class ConstraintDFGDominateStrict : public ConstraintDominate<std::string,false>
 {
 public:
-    ConstraintDFGDominateStrict(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.dfg, g.rdfg, get_origins(g), {}, {}, v1, {}, v2, false) { }
-
-    ConstraintDFGDominateStrict(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.dfg, g.rdfg, get_origins(g), {}, {}, {v1}, {}, v2, false) { }
-
-    ConstraintDFGDominateStrict(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.dfg, g.rdfg, get_origins(g), {}, {}, v1, {}, {v2}, false) { }
-
     ConstraintDFGDominateStrict(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.dfg, g.rdfg, get_origins(g), {}, {}, {v1}, {}, {v2}, false) { }
+     : ConstraintDominate<std::string,false>(g.dfg, g.rdfg, get_origins(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), false) { }
 
 private:
     static std::vector<unsigned> get_origins(const FunctionWrapper& wrap)
@@ -529,13 +541,13 @@ public:
      : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, v1, {}, v2, false) { }
 
     ConstraintDFGPostdomStrict(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, {v1}, {}, v2, false) { }
+     : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, expand_variables(v1), {}, v2, false) { }
 
     ConstraintDFGPostdomStrict(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, v1, {}, {v2}, false) { }
+     : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, v1, {}, expand_variables(v2), false) { }
 
     ConstraintDFGPostdomStrict(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, {v1}, {}, {v2}, false) { }
+     : ConstraintDominate<std::string,false>(g.rdfg, g.dfg, get_destinies(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), false) { }
 
 private:
     static std::vector<unsigned> get_destinies(const FunctionWrapper& wrap)
@@ -559,17 +571,8 @@ private:
 class ConstraintCFGDominateStrict : public ConstraintDominate<std::string,false>
 {
 public:
-    ConstraintCFGDominateStrict(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.cfg, g.rcfg, get_origins(g), {}, {}, v1, {}, v2, false) { }
-
-    ConstraintCFGDominateStrict(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.cfg, g.rcfg, get_origins(g), {}, {}, {v1}, {}, v2, false) { }
-
-    ConstraintCFGDominateStrict(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.cfg, g.rcfg, get_origins(g), {}, {}, v1, {}, {v2}, false) { }
-
     ConstraintCFGDominateStrict(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.cfg, g.rcfg, get_origins(g), {}, {}, {v1}, {}, {v2}, false) { }
+     : ConstraintDominate<std::string,false>(g.cfg, g.rcfg, get_origins(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), false) { }
 
 private:
     static std::vector<unsigned> get_origins(const FunctionWrapper& wrap)
@@ -591,17 +594,8 @@ private:
 class ConstraintCFGPostdomStrict : public ConstraintDominate<std::string,false>
 {
 public:
-    ConstraintCFGPostdomStrict(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.rcfg, g.cfg, get_destinies(g), {}, {}, v1, {}, v2, false) { }
-
-    ConstraintCFGPostdomStrict(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.rcfg, g.cfg, get_destinies(g), {}, {}, {v1}, {}, v2, false) { }
-
-    ConstraintCFGPostdomStrict(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rcfg, g.cfg, get_destinies(g), {}, {}, v1, {}, {v2}, false) { }
-
     ConstraintCFGPostdomStrict(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rcfg, g.cfg, get_destinies(g), {}, {}, {v1}, {}, {v2}, false) { }
+     : ConstraintDominate<std::string,false>(g.rcfg, g.cfg, get_destinies(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), false) { }
 
 private:
     static std::vector<unsigned> get_destinies(const FunctionWrapper& wrap)
@@ -623,17 +617,8 @@ private:
 class ConstraintPDGDominateStrict : public ConstraintDominate<std::string,false>
 {
 public:
-    ConstraintPDGDominateStrict(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.pdg, g.rpdg, get_origins(g), {}, {}, v1, {}, v2, false) { }
-
-    ConstraintPDGDominateStrict(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.pdg, g.rpdg, get_origins(g), {}, {}, {v1}, {}, v2, false) { }
-
-    ConstraintPDGDominateStrict(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.pdg, g.rpdg, get_origins(g), {}, {}, v1, {}, {v2}, false) { }
-
     ConstraintPDGDominateStrict(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.pdg, g.rpdg, get_origins(g), {}, {}, {v1}, {}, {v2}, false) { }
+     : ConstraintDominate<std::string,false>(g.pdg, g.rpdg, get_origins(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), false) { }
 
 private:
     static std::vector<unsigned> get_origins(const FunctionWrapper& wrap)
@@ -657,17 +642,8 @@ private:
 class ConstraintPDGPostdomStrict : public ConstraintDominate<std::string,false>
 {
 public:
-    ConstraintPDGPostdomStrict(const FunctionWrapper& g, std::vector<std::string> v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.rpdg, g.pdg, get_destinies(g), {}, {}, v1, {}, v2, false) { }
-
-    ConstraintPDGPostdomStrict(const FunctionWrapper& g, std::string v1, std::vector<std::string> v2)
-     : ConstraintDominate<std::string,false>(g.rpdg, g.pdg, get_destinies(g), {}, {}, {v1}, {}, v2, false) { }
-
-    ConstraintPDGPostdomStrict(const FunctionWrapper& g, std::vector<std::string> v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rpdg, g.pdg, get_destinies(g), {}, {}, v1, {}, {v2}, false) { }
-
     ConstraintPDGPostdomStrict(const FunctionWrapper& g, std::string v1, std::string v2)
-     : ConstraintDominate<std::string,false>(g.rpdg, g.pdg, get_destinies(g), {}, {}, {v1}, {}, {v2}, false) { }
+     : ConstraintDominate<std::string,false>(g.rpdg, g.pdg, get_destinies(g), {}, {}, expand_variables(v1), {}, expand_variables(v2), false) { }
 
 private:
     static std::vector<unsigned> get_destinies(const FunctionWrapper& wrap)
