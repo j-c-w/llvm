@@ -18,6 +18,7 @@
 [common]
 subdirectories =
  bugpoint
+ constraints-demo
  dsymutil
  llc
  lli

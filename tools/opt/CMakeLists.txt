@@ -3,6 +3,7 @@ set(LLVM_LINK_COMPONENTS
   Analysis
   BitWriter
   CodeGen
+  Constraints
   Core
   Coroutines
   IPO

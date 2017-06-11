@@ -1,0 +1,39 @@
+add_llvm_library(LLVMConstraints
+
+  SMTSolver.cpp
+  PrintSlots.cpp
+  GraphEngine.cpp
+  FunctionWrap.cpp
+
+  BackendOr.cpp
+  BackendAnd.cpp
+  BackendEdge.cpp
+  BackendSingle.cpp
+  BackendCollect.cpp
+  BackendDominate.cpp
+  BackendOrdering.cpp
+  BackendSameBlock.cpp
+  BackendIncomingValue.cpp
+
+  ConstraintOr.cpp
+  ConstraintAnd.cpp
+  ConstraintRange.cpp
+  ConstraintPrefix.cpp
+  ConstraintCollect.cpp
+
+  ConstraintSpecifications.cpp
+
+  CustomPassFlatten.cpp
+  CustomPassReplace.cpp
+  CustomPassRemovePHI.cpp
+  CustomPassPreprocess.cpp
+  CustomPassAnnotateBlocks.cpp
+
+  TransformReduction.cpp
+  TransformDistributive.cpp
+  TransformHoistSelection.cpp
+
+  DEPENDS
+  intrinsics_gen
+)
+
