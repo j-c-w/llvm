@@ -46,12 +46,6 @@ OPTIMIZATION_PASSES = [name for line in process1.stderr
                             for name in line.decode("utf8")[17:].rstrip().split(' ')
                                      if name[:1] == "-" and name[1:] not in OPTIMIZATION_BLACKLIST]
 
-# These passes are run before the detection pass as a way of normalising the LLVM IR code.
-# Clearly not all of tehm are necessary, but who cares.
-NORMALIZATION_PASSES  = ( OPTIMIZATION_PASSES + ["-research-flatten"]
-                        + OPTIMIZATION_PASSES + ["-research-preprocessor"]
-                        + OPTIMIZATION_PASSES + ["-simplifycfg"] )
-
 # Run the tool for each C/C++ input file.
 for idx in source_file_indizes:
 
@@ -65,24 +59,26 @@ for idx in source_file_indizes:
                                 + first_phase_arguments,
                                 stdout = subprocess.PIPE)
 
-    # Strip away the stupid noinline attributes.
-    process3 = subprocess.Popen(["python", '/'.join((sys.argv[0].split('/')[:-1]))+"/remove_function_attr.py"],
-                                 stdin = process2.stdout,
-                                 stdout = subprocess.PIPE)
-
     # Optimize LLVM assembly output by clang using modified version of opt.
-    process4 = subprocess.Popen([BINARY_OPT, "-S", "-o", modified_filename, "-", "-always-inline"]
-                                + NORMALIZATION_PASSES  + ["-research-replacer"],
-                                stdin = process3.stdout)
+    process3 = subprocess.Popen([BINARY_OPT, "-S", "-o", modified_filename, "-", "-always-inline"]
+                                + ["-research-flatten", "-research-preprocessor"]
+                                + OPTIMIZATION_PASSES  + ["-research-replacer"],
+                                stdin = subprocess.PIPE)
 
-    process4.wait()
+    blacklist = ["noinline", "optnone"]
+
+    # Strip away the stupid noinline and optnone attributes.
+    for line in process2.stdout:
+        filter_line = " ".join([word for word in line.decode("utf8").split(' ') if word not in blacklist])
+        process3.stdin.write(filter_line.encode("utf8"))
+
+    process3.stdin.close()
+    process3.wait()
 
     if process2.returncode:
         sys.exit(process2.returncode)
     if process3.returncode:
         sys.exit(process3.returncode)
-    if process4.returncode:
-        sys.exit(process4.returncode)
 
 # Run the original command line but with the C/C++ input files replaced with llvm files.
 sys.exit(subprocess.call(sys.argv[1:]))

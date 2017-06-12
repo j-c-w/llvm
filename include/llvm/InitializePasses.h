@@ -58,6 +58,9 @@ void initializeGlobalISel(PassRegistry&);
 /// Initialize all passes linked into the CodeGen library.
 void initializeTarget(PassRegistry&);
 
+void initializeResearchFlattenPass(PassRegistry&);
+void initializeResearchPreprocessorPass(PassRegistry&);
+void initializeResearchReplacerPass(PassRegistry&);
 void initializeAAEvalLegacyPassPass(PassRegistry&);
 void initializeAAResultsWrapperPassPass(PassRegistry&);
 void initializeADCELegacyPassPass(PassRegistry&);

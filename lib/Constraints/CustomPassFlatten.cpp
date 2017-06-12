@@ -6,34 +6,46 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 
-bool llvm::CustomFlattenPass::runOnModule(llvm::Module& module)
+using namespace llvm;
+
+class ResearchFlatten : public ModulePass
+{
+public:
+    static char ID;
+
+    ResearchFlatten() : ModulePass(ID) {}
+
+    bool runOnModule(Module& module) override;
+};
+
+bool ResearchFlatten::runOnModule(Module& module)
 {
     //Remove Premature GEP instructions
-    for(llvm::Function& function : module.getFunctionList())
+    for(Function& function : module.getFunctionList())
     {
-        std::map<llvm::Value*,llvm::Value*> replacement_table;
+        std::map<Value*,Value*> replacement_table;
 
-        for(llvm::BasicBlock& block : function.getBasicBlockList())
+        for(BasicBlock& block : function.getBasicBlockList())
         {
-            for(llvm::Instruction& instruction : block.getInstList())
+            for(Instruction& instruction : block.getInstList())
             {
-                if(auto gep_inst = llvm::dyn_cast<llvm::GetElementPtrInst>(&instruction))
+                if(auto gep_inst = dyn_cast<GetElementPtrInst>(&instruction))
                 {
-                    std::vector<llvm::Value*> reverse_index_vector;
+                    std::vector<Value*> reverse_index_vector;
                     for(unsigned i = 1; i < gep_inst->getNumOperands(); i++)
                     {
                         reverse_index_vector.push_back(gep_inst->getOperand(gep_inst->getNumOperands()-i));
                     }
 
-                    while(auto gep_origin = llvm::dyn_cast<llvm::GetElementPtrInst>(gep_inst->getOperand(0)))
+                    while(auto gep_origin = dyn_cast<GetElementPtrInst>(gep_inst->getOperand(0)))
                     {
                         auto first_arg  = gep_origin->getOperand(gep_origin->getNumOperands()-1);
                         auto second_arg = reverse_index_vector.back();
 
-                        auto first_const_arg  = llvm::dyn_cast<llvm::ConstantInt>(first_arg);
-                        auto second_const_arg = llvm::dyn_cast<llvm::ConstantInt>(second_arg);
+                        auto first_const_arg  = dyn_cast<ConstantInt>(first_arg);
+                        auto second_const_arg = dyn_cast<ConstantInt>(second_arg);
 
-                        llvm::Value* summed_index = nullptr;
+                        Value* summed_index = nullptr;
 
                         if(second_const_arg && second_const_arg->getSExtValue() == 0)
                         {
@@ -45,7 +57,7 @@ bool llvm::CustomFlattenPass::runOnModule(llvm::Module& module)
                         }
                         else
                         {
-                            summed_index = llvm::BinaryOperator::Create(llvm::Instruction::Add,
+                            summed_index = BinaryOperator::Create(Instruction::Add,
                                                              gep_origin->getOperand(gep_origin->getNumOperands()-1),
                                                              reverse_index_vector.back(), "", &instruction);
                         }
@@ -64,7 +76,7 @@ bool llvm::CustomFlattenPass::runOnModule(llvm::Module& module)
                     {
                         std::reverse(reverse_index_vector.begin(), reverse_index_vector.end());
 
-                        auto* new_gep_instr = llvm::GetElementPtrInst::Create(gep_inst->getSourceElementType(),
+                        auto* new_gep_instr = GetElementPtrInst::Create(gep_inst->getSourceElementType(),
                                                                               gep_inst->getOperand(0),
                                                                               reverse_index_vector,
                                                                               "", &instruction);
@@ -75,9 +87,9 @@ bool llvm::CustomFlattenPass::runOnModule(llvm::Module& module)
             }
         }
 
-        for(llvm::BasicBlock& block : function.getBasicBlockList())
+        for(BasicBlock& block : function.getBasicBlockList())
         {
-            for(llvm::Instruction& instruction : block.getInstList())
+            for(Instruction& instruction : block.getInstList())
             {
                 for(unsigned i = 0; i < instruction.getNumOperands(); i++)
                 {
@@ -91,37 +103,37 @@ bool llvm::CustomFlattenPass::runOnModule(llvm::Module& module)
     }
 
     //Flatten array GEP instructions
-    for(llvm::Function& function : module.getFunctionList())
+    for(Function& function : module.getFunctionList())
     {
-        std::map<llvm::Value*,llvm::Value*> replacement_table;
+        std::map<Value*,Value*> replacement_table;
 
-        for(llvm::BasicBlock& block : function.getBasicBlockList())
+        for(BasicBlock& block : function.getBasicBlockList())
         {
-            for(llvm::Instruction& instruction : block.getInstList())
+            for(Instruction& instruction : block.getInstList())
             {
-                if(auto gep_instr = llvm::dyn_cast<llvm::GetElementPtrInst>(&instruction))
+                if(auto gep_instr = dyn_cast<GetElementPtrInst>(&instruction))
                 {
                     auto source_element_type = gep_instr->getSourceElementType();
                     unsigned active_index    = 2;
 
-                    auto zero_index = llvm::ConstantInt::get(llvm::Type::getInt64Ty(module.getContext()), 0);
+                    auto zero_index = ConstantInt::get(Type::getInt64Ty(module.getContext()), 0);
 
-                    std::vector<llvm::Value*> zero_index_vector;
+                    std::vector<Value*> zero_index_vector;
                     zero_index_vector.push_back(zero_index);
 
                     auto* merged_index = gep_instr->getOperand(1);
 
-                    while(auto array_type = llvm::dyn_cast<llvm::ArrayType>(source_element_type))
+                    while(auto array_type = dyn_cast<ArrayType>(source_element_type))
                     {
-                        merged_index = llvm::BinaryOperator::Create(llvm::Instruction::Mul, merged_index,
-                                                 llvm::ConstantInt::get(merged_index->getType(), 
+                        merged_index = BinaryOperator::Create(Instruction::Mul, merged_index,
+                                                 ConstantInt::get(merged_index->getType(), 
                                                                         array_type->getNumElements()),
                                                                          "", &instruction);
 
                         if(active_index < gep_instr->getNumOperands() &&
                            gep_instr->getOperand(active_index)->getType() == merged_index->getType())
                         {
-                            merged_index = llvm::BinaryOperator::Create(llvm::Instruction::Add, merged_index,
+                            merged_index = BinaryOperator::Create(Instruction::Add, merged_index,
                                                                         gep_instr->getOperand(active_index),
                                                                         "", &instruction);
                         }
@@ -134,17 +146,17 @@ bool llvm::CustomFlattenPass::runOnModule(llvm::Module& module)
 
                     if(zero_index_vector.size() > 1)
                     {
-                        auto first_cast = llvm::GetElementPtrInst::Create(gep_instr->getSourceElementType(),
+                        auto first_cast = GetElementPtrInst::Create(gep_instr->getSourceElementType(),
                                                                           gep_instr->getOperand(0), zero_index_vector,
                                                                           "", &instruction);
 
-                        std::vector<llvm::Value*> new_indizes;
+                        std::vector<Value*> new_indizes;
                         new_indizes.push_back(merged_index);
 
                         for(unsigned i = active_index; i < gep_instr->getNumOperands(); i++)
                             new_indizes.push_back(gep_instr->getOperand(i));
 
-                        auto flat_gep_inst = llvm::GetElementPtrInst::Create(source_element_type, first_cast,
+                        auto flat_gep_inst = GetElementPtrInst::Create(source_element_type, first_cast,
                                                                              new_indizes, "", &instruction);
 
                         if(flat_gep_inst->getType() == gep_instr->getType())
@@ -153,7 +165,7 @@ bool llvm::CustomFlattenPass::runOnModule(llvm::Module& module)
                         }
                         else
                         {
-                            auto replace_instr = new llvm::BitCastInst(flat_gep_inst, gep_instr->getType(),
+                            auto replace_instr = new BitCastInst(flat_gep_inst, gep_instr->getType(),
                                                                        "", &instruction);
 
                             replacement_table[&instruction] = replace_instr;
@@ -163,9 +175,9 @@ bool llvm::CustomFlattenPass::runOnModule(llvm::Module& module)
             }
         }
 
-        for(llvm::BasicBlock& block : function.getBasicBlockList())
+        for(BasicBlock& block : function.getBasicBlockList())
         {
-            for(llvm::Instruction& instruction : block.getInstList())
+            for(Instruction& instruction : block.getInstList())
             {
                 for(unsigned i = 0; i < instruction.getNumOperands(); i++)
                 {
@@ -179,44 +191,44 @@ bool llvm::CustomFlattenPass::runOnModule(llvm::Module& module)
     }
 
     //Split so that only first index can be dynamic
-    for(llvm::Function& function : module.getFunctionList())
+    for(Function& function : module.getFunctionList())
     {
-        std::map<llvm::Value*,llvm::Value*> replacement_table;
+        std::map<Value*,Value*> replacement_table;
 
-        for(llvm::BasicBlock& block : function.getBasicBlockList())
+        for(BasicBlock& block : function.getBasicBlockList())
         {
-            for(llvm::Instruction& instruction : block.getInstList())
+            for(Instruction& instruction : block.getInstList())
             {
-                if(auto gep_instr = llvm::dyn_cast<llvm::GetElementPtrInst>(&instruction))
+                if(auto gep_instr = dyn_cast<GetElementPtrInst>(&instruction))
                 {
-                    std::vector<std::vector<llvm::Value*>> index_groups;
+                    std::vector<std::vector<Value*>> index_groups;
 
                     index_groups.emplace_back(1, gep_instr->getOperand(1));
 
-                    auto zero_index = llvm::ConstantInt::get(llvm::Type::getInt64Ty(module.getContext()), 0);
+                    auto zero_index = ConstantInt::get(Type::getInt64Ty(module.getContext()), 0);
 
                     for(unsigned i = 2; i < gep_instr->getNumOperands(); i++)
                     {
-                        if(llvm::dyn_cast<llvm::ConstantInt>(gep_instr->getOperand(i)))
+                        if(dyn_cast<ConstantInt>(gep_instr->getOperand(i)))
                         {
                             index_groups.back().push_back(gep_instr->getOperand(i));
                         }
                         else
                         {
                             index_groups.back().push_back(zero_index);
-                            index_groups.push_back(std::vector<llvm::Value*>(1, gep_instr->getOperand(i)));
+                            index_groups.push_back(std::vector<Value*>(1, gep_instr->getOperand(i)));
                         }
                     }
 
                     if(index_groups.size() > 1)
                     {
-                        llvm::Value* last_gep = gep_instr->getOperand(0);
+                        Value* last_gep = gep_instr->getOperand(0);
 
                         for(unsigned i = 0; i < index_groups.size(); i++)
                         {
-                            if(auto pointer_type = llvm::dyn_cast<llvm::PointerType>(last_gep->getType()))
+                            if(auto pointer_type = dyn_cast<PointerType>(last_gep->getType()))
                             {
-                                last_gep = llvm::GetElementPtrInst::Create(pointer_type->getElementType(),
+                                last_gep = GetElementPtrInst::Create(pointer_type->getElementType(),
                                                                            last_gep, index_groups[i],
                                                                            "", &instruction);
                             }
@@ -228,9 +240,9 @@ bool llvm::CustomFlattenPass::runOnModule(llvm::Module& module)
             }
         }
 
-        for(llvm::BasicBlock& block : function.getBasicBlockList())
+        for(BasicBlock& block : function.getBasicBlockList())
         {
-            for(llvm::Instruction& instruction : block.getInstList())
+            for(Instruction& instruction : block.getInstList())
             {
                 for(unsigned i = 0; i < instruction.getNumOperands(); i++)
                 {
@@ -246,10 +258,13 @@ bool llvm::CustomFlattenPass::runOnModule(llvm::Module& module)
     return false;
 }
 
-char llvm::CustomFlattenPass::ID = 0;
+char ResearchFlatten::ID = 0;
 
-static llvm::RegisterPass<llvm::CustomFlattenPass> X("research-flatten", "Research flatten", false, false);
+//INITIALIZE_PASS_BEGIN(ResearchFlatten, "research-flatten", "Research flatten", false, false)
+//INITIALIZE_PASS_END(ResearchFlatten, "research-flatten", "Research flatten", false, false)
 
-llvm::ModulePass *llvm::createFlattenPass() {
-  return new llvm::CustomFlattenPass();
+static RegisterPass<ResearchFlatten> X("research-flatten", "Research flatten", false, false);
+
+ModulePass *llvm::createResearchFlattenPass() {
+  return new ResearchFlatten();
 }

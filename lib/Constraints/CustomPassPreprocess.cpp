@@ -12,16 +12,28 @@
 #include <fstream>
 #include <sstream>
 
-bool llvm::CustomPreprocessorPass::runOnModule(llvm::Module& module)
+using namespace llvm;
+
+class ResearchPreprocessor : public ModulePass
 {
-    llvm::ModuleSlotTracker slot_tracker(&module);
+public:
+    static char ID;
+
+    ResearchPreprocessor() : ModulePass(ID) {}
+
+    bool runOnModule(Module& module) override;
+};
+
+bool ResearchPreprocessor::runOnModule(Module& module)
+{
+    ModuleSlotTracker slot_tracker(&module);
 
     auto constraint_hoist_select = ConstraintHoistSelect();
     auto constraint_distributive = ConstraintDistributive();
 
     std::ofstream ofs("preprocess-report.txt");
 
-    for(llvm::Function& function : module.getFunctionList())
+    for(Function& function : module.getFunctionList())
     {
         if(!function.isDeclaration())
         {
@@ -38,7 +50,7 @@ bool llvm::CustomPreprocessorPass::runOnModule(llvm::Module& module)
                     if(!found_something)
                     {
                         std::stringstream str_str;
-                        llvm::raw_os_ostream out_stream(str_str);
+                        raw_os_ostream out_stream(str_str);
                         function.printAsOperand(out_stream);
                         out_stream.flush();
                         str_str.flush();
@@ -50,7 +62,7 @@ bool llvm::CustomPreprocessorPass::runOnModule(llvm::Module& module)
                        <<SolutionHierarchical(hoistselect_solutions[0], slot_tracker).print_pythonesque()<<"\n"
                        <<"END HOISTSELECT\n";
 
-                    std::map<std::string,llvm::Value*> solution_map(hoistselect_solutions[0].begin(),
+                    std::map<std::string,Value*> solution_map(hoistselect_solutions[0].begin(),
                                                                     hoistselect_solutions[0].end());
                     transform_hoistselect_pattern(function, solution_map);
 
@@ -70,7 +82,7 @@ bool llvm::CustomPreprocessorPass::runOnModule(llvm::Module& module)
                     if(!found_something)
                     {
                         std::stringstream str_str;
-                        llvm::raw_os_ostream out_stream(str_str);
+                        raw_os_ostream out_stream(str_str);
                         function.printAsOperand(out_stream);
                         out_stream.flush();
                         str_str.flush();
@@ -82,7 +94,7 @@ bool llvm::CustomPreprocessorPass::runOnModule(llvm::Module& module)
                        <<SolutionHierarchical(distributive_solutions[0], slot_tracker).print_pythonesque()<<"\n"
                        <<"END DISTRIBUTIVE\n";
 
-                    std::map<std::string,llvm::Value*> solution_map(distributive_solutions[0].begin(),
+                    std::map<std::string,Value*> solution_map(distributive_solutions[0].begin(),
                                                                     distributive_solutions[0].end());
                     transform_distributive(function, solution_map);
 
@@ -102,10 +114,10 @@ bool llvm::CustomPreprocessorPass::runOnModule(llvm::Module& module)
     return false;
 }
 
-char llvm::CustomPreprocessorPass::ID = 0;
+char ResearchPreprocessor::ID = 0;
 
-static llvm::RegisterPass<llvm::CustomPreprocessorPass> X("research-preprocessor", "Research preprocessor", false, false);
+static RegisterPass<ResearchPreprocessor> X("research-preprocessor", "Research preprocessor", false, false);
 
-llvm::ModulePass *llvm::createPreprocessorPass() {
-  return new CustomPreprocessorPass();
+ModulePass *llvm::createResearchPreprocessorPass() {
+  return new ResearchPreprocessor();
 }

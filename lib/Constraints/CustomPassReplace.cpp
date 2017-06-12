@@ -16,13 +16,15 @@
 #include <sstream>
 #include <map>
 
+using namespace llvm;
+
 unsigned create_shared_data = 0;
 
-using Solution = std::vector<std::pair<std::string,llvm::Value*>>;
+using Solution = std::vector<std::pair<std::string,Value*>>;
 
 struct SolutionCluster
 {
-    std::vector<llvm::Value*>                   intersection;
+    std::vector<Value*>                   intersection;
     std::map<std::string,std::vector<Solution>> solutions;
 };
 
@@ -43,12 +45,12 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<ClusterSpecification>
     {
         for(const auto& solution : cluster_spec.solutions)
         {
-            std::vector<llvm::Value*> intersection_vector;
+            std::vector<Value*> intersection_vector;
 
             for(auto& intersect : cluster_spec.intersection)
             {
                 auto find_intersect_it = std::find_if(solution.begin(), solution.end(),
-                     [&intersect](const std::pair<std::string,llvm::Value*>& a) { return a.first == intersect; });
+                     [&intersect](const std::pair<std::string,Value*>& a) { return a.first == intersect; });
 
                 if(find_intersect_it != solution.end() && find_intersect_it->second != nullptr)
                 {
@@ -81,10 +83,20 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<ClusterSpecification>
     return result;
 }
 
-bool llvm::CustomReplacerPass::runOnModule(llvm::Module& module)
+class ResearchReplacer : public ModulePass
+{
+public:
+    static char ID;
+
+    ResearchReplacer() : ModulePass(ID) {}
+
+    bool runOnModule(Module& module) override;
+};
+
+bool ResearchReplacer::runOnModule(Module& module)
 {
     create_shared_data = 0;
-    llvm::ModuleSlotTracker slot_tracker(&module);
+    ModuleSlotTracker slot_tracker(&module);
 
     auto constraint_scalar_reduction = ConstraintScalarReduction();
     auto constraint_histogram        = ConstraintHistogram();
@@ -94,7 +106,7 @@ bool llvm::CustomReplacerPass::runOnModule(llvm::Module& module)
 
     std::ofstream ofs("replace-report.txt");
 
-    for(llvm::Function& function : module.getFunctionList())
+    for(Function& function : module.getFunctionList())
     {
         if(!function.isDeclaration())
         {
@@ -117,7 +129,7 @@ bool llvm::CustomReplacerPass::runOnModule(llvm::Module& module)
             {
                 {
                 std::stringstream str_str;
-                llvm::raw_os_ostream out_stream(str_str);
+                raw_os_ostream out_stream(str_str);
                 function.printAsOperand(out_stream);
                 out_stream.flush();
                 str_str.flush();
@@ -167,15 +179,15 @@ bool llvm::CustomReplacerPass::runOnModule(llvm::Module& module)
                        clustered_solutions[i].solutions["scalars"].size() > 0)
                     {
                         ofs<<"BEGIN OPERATOR\n";
-                        std::vector<llvm::Instruction*> outputs;
+                        std::vector<Instruction*> outputs;
 
                         SESEFunction sese_function(function, clustered_solutions[i].intersection[0],
                                                              clustered_solutions[i].intersection[1]);
 
-                        llvm::Function* function = sese_function.make_function();
+                        Function* function = sese_function.make_function();
 
-                        std::vector<std::map<std::string,llvm::Value*>> scalar_solutions;
-                        std::vector<std::map<std::string,llvm::Value*>> histo_solutions;
+                        std::vector<std::map<std::string,Value*>> scalar_solutions;
+                        std::vector<std::map<std::string,Value*>> histo_solutions;
 
                         for(auto& solution : clustered_solutions[i].solutions["scalars"])
                         {
@@ -209,10 +221,10 @@ bool llvm::CustomReplacerPass::runOnModule(llvm::Module& module)
     return false;
 }
 
-char llvm::CustomReplacerPass::ID = 0;
+char ResearchReplacer::ID = 0;
 
-static llvm::RegisterPass<llvm::CustomReplacerPass> X("research-replacer", "Research replacer", false, false);
+static RegisterPass<ResearchReplacer> X("research-replacer", "Research replacer", false, false);
 
-llvm::ModulePass *llvm::createReplacerPass() {
-  return new llvm::CustomReplacerPass();
+ModulePass *llvm::createResearchReplacerPass() {
+  return new ResearchReplacer();
 }

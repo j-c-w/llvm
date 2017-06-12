@@ -62,9 +62,9 @@ namespace {
       if (std::getenv("bar") != (char*) -1)
         return;
 
-      (void) llvm::createFlattenPass();
-      (void) llvm::createPreprocessorPass();
-      (void) llvm::createReplacerPass();
+      (void) llvm::createResearchFlattenPass();
+      (void) llvm::createResearchPreprocessorPass();
+      (void) llvm::createResearchReplacerPass();
       (void) llvm::createAAEvalPass();
       (void) llvm::createAggressiveDCEPass();
       (void) llvm::createBitTrackingDCEPass();

@@ -12,56 +12,26 @@ class ModulePass;
    ReplacerPass is the central part of this project, it uses the SMT based constraint solver to detect computational
    idioms in LLVM IR code. */
 FunctionPass* createRemovePHIPass();
-ModulePass*   createFlattenPass();
-ModulePass*   createPreprocessorPass();
-ModulePass*   createReplacerPass();
+ModulePass*   createResearchFlattenPass();
+ModulePass*   createResearchPreprocessorPass();
+ModulePass*   createResearchReplacerPass();
 ModulePass*   createAnnotateBlocksPass();
 
-class CustomFlattenPass : public llvm::ModulePass
-{
-public:
-    static char ID;
-
-    CustomFlattenPass() : llvm::ModulePass(ID) {}
-
-    bool runOnModule(llvm::Module& module) override;
-};
-
-class CustomPreprocessorPass : public llvm::ModulePass
-{
-public:
-    static char ID;
-
-    CustomPreprocessorPass() : llvm::ModulePass(ID) {}
-
-    bool runOnModule(llvm::Module& module) override;
-};
-
-class CustomReplacerPass : public llvm::ModulePass
-{
-public:
-    static char ID;
-
-    CustomReplacerPass() : llvm::ModulePass(ID) {}
-
-    bool runOnModule(llvm::Module& module) override;
-};
-
-class FlattenPass : public PassInfoMixin<FlattenPass> {
+class ResearchFlattenPass : public PassInfoMixin<ResearchFlattenPass> {
 public:
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
     return PreservedAnalyses::none();
   }
 };
 
-class PreprocessorPass : public PassInfoMixin<PreprocessorPass> {
+class ResearchPreprocessorPass : public PassInfoMixin<ResearchPreprocessorPass> {
 public:
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
     return PreservedAnalyses::none();
   }
 };
 
-class ReplacerPass : public PassInfoMixin<ReplacerPass> {
+class ResearchReplacerPass : public PassInfoMixin<ResearchReplacerPass> {
 public:
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM) {
     return PreservedAnalyses::none();
