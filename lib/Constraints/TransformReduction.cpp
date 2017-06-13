@@ -72,7 +72,8 @@ void transform_reduction_operator(Function& function, std::vector<std::map<std::
 
             if(find_input_j != solution.end() && find_input_j->second != nullptr)
             {
-                if(std::find(arguments.begin(), arguments.end(), find_input_j->second) == arguments.end())
+                if(std::find(arguments.begin(), arguments.end(), find_input_j->second) == arguments.end() &&
+                   std::find(old_value_fields.begin(), old_value_fields.end(), find_input_j->second) == old_value_fields.end())
                 {
                     arguments.push_back(find_input_j->second);
                 }

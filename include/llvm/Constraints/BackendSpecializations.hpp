@@ -176,12 +176,26 @@ private:
 
         for(unsigned i = 0; i < wrap.rdfg.size(); i++)
         {
-            if((data_origins    && wrap.opcodes[i] == llvm::Instruction::Load)   ||
-               (data_origins    && llvm::isa<llvm::Argument>(wrap.get_value(i))) ||
-               (data_sinks      && wrap.opcodes[i] == llvm::Instruction::Store)  ||
-               (data_sinks      && wrap.opcodes[i] == llvm::Instruction::Ret)    ||
-               (control_origins && wrap.rcfg[i].empty() && !wrap.cfg[i].empty()) ||
-               (control_sinks   && wrap.cfg[i].empty()  && !wrap.rcfg[i].empty()))
+            if(data_origins && wrap.opcodes[i] == llvm::Instruction::Call)
+            {
+                if(auto call_inst = llvm::dyn_cast<llvm::CallInst>(wrap.get_value(i)))
+                {
+                    auto attributes = call_inst->getCalledFunction()->getAttributes();
+
+                    if(!(attributes.hasAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::ReadOnly) ||
+                         attributes.hasAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::ReadNone)) ||
+                       !attributes.hasAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::NoUnwind))
+                    {
+                        origins.push_back(i);
+                    }
+                }
+            }
+            else if((data_origins    && wrap.opcodes[i] == llvm::Instruction::Load)   ||
+                    (data_origins    && llvm::isa<llvm::Argument>(wrap.get_value(i))) ||
+                    (data_sinks      && wrap.opcodes[i] == llvm::Instruction::Store)  ||
+                    (data_sinks      && wrap.opcodes[i] == llvm::Instruction::Ret)    ||
+                    (control_origins && wrap.rcfg[i].empty() && !wrap.cfg[i].empty()) ||
+                    (control_sinks   && wrap.cfg[i].empty()  && !wrap.rcfg[i].empty()))
             {
                 origins.push_back(i);
             }

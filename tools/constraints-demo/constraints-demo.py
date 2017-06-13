@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import gi
+import re
 import sys
 import time
 import threading
@@ -20,7 +21,7 @@ LLVM_FILENAME      = "input.ll"
 TARGET_FILENAME    = "output.ll"
 
 window          = Gtk.Window()
-toplevel_box    = Gtk.HBox(homogeneous=True, spacing=10)
+toplevel_box    = Gtk.HBox(homogeneous=True, spacing=5)
 left_box        = Gtk.VBox()
 menu_box        = Gtk.HBox()
 load_button     = Gtk.Button("load")
@@ -60,7 +61,7 @@ result_inner.pack_start(code_window2,    False, False, 5)
 result_inner.pack_start(message_window3, False, False, 5)
 result_inner.pack_start(code_window3,    False, False, 5)
 
-sourcecode.     modify_font(Pango.FontDescription("Monospace 10"))
+sourcecode.     modify_font(Pango.FontDescription( "Monospace 8"))
 load_button.    modify_font(Pango.FontDescription(     "Sans 10"))
 flatana_button. modify_font(Pango.FontDescription(     "Sans 10"))
 analyze_button. modify_font(Pango.FontDescription(     "Sans 10"))
@@ -96,6 +97,16 @@ code_window3.set_editable(False)
 
 already_running_analysis      = False
 already_running_analysis_lock = threading.Lock()
+
+def run_through_clang_format(code):
+
+    process = subprocess.Popen(["clang-format", "-style={BasedOnStyle: llvm,ColumnLimit: 45}"],
+                               stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    process.stdin.write(code.encode("utf8"))
+    process.stdin.close()
+
+    return "".join([line.decode("utf8") for line in process.stdout])
+
 
 def map_IR_to_C_line(instruction):
     has_hit = 0
@@ -138,7 +149,7 @@ def on_open_clicked(widget):
         selected_file = dialog.get_filename()
         with open(selected_file, 'r') as f:
             data = f.read()
-            sourcecode.get_buffer().set_text(data)
+            sourcecode.get_buffer().set_text(run_through_clang_format(data))
     dialog.destroy()
 
 def on_analyze_clicked(widget):
@@ -230,7 +241,7 @@ def generate_reduction(solutions):
     accessess            = []
 
     for solution in solutions:
-        for read in solution["affine_access"]:
+        for read in solution["read"]:
             try:
                 baseptr_idx = access_base_pointers.index(read["base_pointer"])
             except ValueError:
@@ -257,6 +268,58 @@ def generate_reduction(solutions):
 
     return part1+part2+part3+part4+part5
 
+def beautify_operator(operator):
+    declarations = re.findall("  (int|double|float|long) ([a-zA-Z0-9_]+);", operator)
+
+    for datatype, name in declarations:
+        operator = re.sub("  "+datatype+" "+name+";\n((?:  [^\n]*;\n)*)  "+name+" =", "\\1  "+datatype+" "+name+" =", operator)
+
+    variables = re.findall("  (int|double|float|long) ([a-zA-Z0-9_]+)", operator)
+
+    labels_present  = re.findall("([a-zA-Z0-9_]+):\n", operator)
+
+    for label in labels_present:
+        operator = re.sub("  goto "+label+";\n"+label, label, operator)
+
+    for label in labels_present:
+        operator = re.sub("goto "+label+";([^\n]*)\n"+label, ";\\1\n"+label, operator)
+
+    labels_targeted = re.findall("goto ([a-zA-Z0-9_]+);", operator)
+
+    for label in labels_present:
+        if label not in labels_targeted:
+            operator = re.sub(label+":\n", "", operator)
+
+    for label in labels_present:
+        operator = re.sub("; else goto "+label+";\n((?:  [^\n]*;\n)*)"+label, "{\n\\1  }\n"+label, operator)
+
+    labels_targeted = re.findall("goto ([a-zA-Z0-9_]+);", operator)
+
+    for label in labels_present:
+        if label not in labels_targeted:
+            operator = re.sub(label+":\n", "", operator)
+
+    operator = re.sub("\[\(long\)\(int\)", "[(int)", operator)
+    operator = re.sub("  return ;\n\}", "}", operator)
+
+    return operator
+
+def generate_gemm_call(solutions):
+    code = ""
+    for solution in solutions:
+
+        lda = solution["loop"][0]["iter_step"].split(" ")[-1]
+        ldb = solution["loop"][1]["iter_step"].split(" ")[-1]
+        ldc = solution["loop"][2]["iter_step"].split(" ")[-1]
+
+        code += ( "cblas_sgemm(CBLAS_ORDER, CBLAS_TRANSPOSE, CBLAS_TRANSPOSE, "
+                + solution["loop"][0]["iter_end"].split(" ")[-1]+", "
+                + solution["loop"][1]["iter_end"].split(" ")[-1]+", "
+                + solution["loop"][2]["iter_end"].split(" ")[-1]+", "
+                + "1.0, A, "+lda+", B, "+ldb+", 0.0, C, "+ldc+");" )
+
+    return code
+
 def wait_thread(source_code):
     global already_running_analysis, already_running_analysis_lock
 
@@ -273,21 +336,36 @@ def wait_thread(source_code):
     else:
         stdout_result = open("replace-report.txt").read().decode("utf8")
 
-        print stdout_result
+        found_suitable_loop = False
 
         for loop in [p.split("END LOOP\n")[0] for p in stdout_result.split("BEGIN LOOP\n")[1:]]:
-            scalars  = [eval(p.split("END SCALAR REDUCTION\n")[0]) for p in loop.split("BEGIN SCALAR REDUCTION\n")[1:]]
-            histos   = [eval(p.split("END HISTOGRAM\n")[0])        for p in loop.split("BEGIN HISTOGRAM\n")[1:]]
+            scalars  = [eval(p.split("END SCALAR REDUCTION\n")[0])       for p in loop.split("BEGIN SCALAR REDUCTION\n")[1:]]
+            histos   = [eval(p.split("END HISTOGRAM\n")[0])              for p in loop.split("BEGIN HISTOGRAM\n")[1:]]
+            matrix   = [eval(p.split("END MATRIX MULTIPLICATIONS\n")[0]) for p in loop.split("BEGIN MATRIX MULTIPLICATIONS\n")[1:]]
+            stencils = [eval(p.split("END STENCIL\n")[0])                for p in loop.split("BEGIN STENCIL\n")[1:]]
 
-            operator       = loop.split("BEGIN OPERATOR\n")[1]
-            reduction_type = operator.split("operator(")[1].split("* acc")[0];
-            operator       = operator.replace(reduction_type, "out_t")
+            found_suitable_loop = True
 
-            print operator
-            print scalars
-            print histos
+            if len(stencils):
 
-            if len(scalars+histos):
+                line_begin = map_IR_to_C_line(stencils[0]["begin"])
+                line_end   = map_IR_to_C_line(stencils[0]["successor"]) - 1
+
+                set_output("Found stencil kernel in lines "+str(line_begin)+" - "+str(line_end)+":")
+
+            elif len(matrix):
+
+                line_begin = map_IR_to_C_line(matrix[0]["begin"])
+                line_end   = map_IR_to_C_line(matrix[0]["successor"]) - 1
+
+                set_output("Found matrix multiplication in lines "+str(line_begin)+" - "+str(line_end)+":",
+                           run_through_clang_format(generate_gemm_call(matrix)))
+
+            elif len(scalars+histos):
+
+                operator       = loop.split("BEGIN OPERATOR\n")[1]
+                reduction_type = operator.split("op(")[1].split("* acc")[0];
+                operator       = operator.replace(reduction_type, "out_t")
 
                 line_begin = map_IR_to_C_line((scalars+histos)[0]["begin"])
                 line_end   = map_IR_to_C_line((scalars+histos)[0]["successor"]) - 1
@@ -296,14 +374,20 @@ def wait_thread(source_code):
                     line_end = line_end - 1
 
                 set_output("Found reduction in lines "+str(line_begin)+" - "+str(line_end)+":",
-                           "typedef "+reduction_type+" out_t;",
-                           "The reduction can be rewritten as:",
-                           generate_reduction(scalars+histos)+" ",
+                           "typedef "+run_through_clang_format(reduction_type)+" out_t;",
+                           "Assuming it is associative,\nit can be rewritten:",
+                           run_through_clang_format(generate_reduction(scalars+histos))+" ",
                            "This uses the reduction operator:",
-                           operator+" ")
-                break
-        else:
-            set_output("No reductions were identified.")
+                           run_through_clang_format(beautify_operator(operator))+" ")
+
+            else:
+            
+                found_suitable_loop = False
+                continue
+            break
+
+        if not found_suitable_loop:
+            set_output("No idioms were identified.")
 
     Gdk.threads_leave()
     already_running_analysis_lock.acquire()
@@ -327,17 +411,10 @@ def flatwait_thread(source_code):
     else:
         stdout_result = open("replace-report.txt").read().decode("utf8")
 
-        for loop in [p.split("END LOOP\n")[0] for p in stdout_result.split("BEGIN LOOP\n")[1:]]:
-            scalars  = [eval(p.split("END SCALAR REDUCTION\n")[0]) for p in loop.split("BEGIN SCALAR REDUCTION\n")[1:]]
-            histos   = [eval(p.split("END HISTOGRAM\n")[0])        for p in loop.split("BEGIN HISTOGRAM\n")[1:]]
-
-            print scalars
-            print histos
-
-            set_output(loop.split("BEGIN OPERATOR\n")[0], downscale=3)
-            break
+        if stdout_result:
+            set_output(stdout_result, "", "", "", "", "", 5)
         else:
-            set_output("No reductions were identified.")
+            set_output("No idioms were identified.")
 
     Gdk.threads_leave()
     already_running_analysis_lock.acquire()

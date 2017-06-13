@@ -203,9 +203,9 @@ bool ResearchReplacer::runOnModule(Module& module)
 
                         transform_reduction_operator(*function, scalar_solutions, histo_solutions);
 
-                        function->setName("operator");
+                        function->setName("op");
                         function->arg_begin()->setName("acc");
-                        ofs<<print_c_operator(*function);
+                        ofs<<print_pretty_c_operator(*function);
                         delete function;
                     }
 

@@ -37,6 +37,9 @@ public:
     static Expression Mul(Expression e1, Expression e2) { return Expression("", {{e1, "*"}, {e2, ""}}, 5, 4); }
     static Expression Div(Expression e1, Expression e2) { return Expression("", {{e1, "/"}, {e2, ""}}, 5, 4); }
 
+    static Expression And(Expression e1, Expression e2) { return Expression("", {{e1, "&&"}, {e2, ""}}, 13, 12); }
+    static Expression Or (Expression e1, Expression e2) { return Expression("", {{e1, "||"}, {e2, ""}}, 14, 13); }
+
     static Expression Reference(Expression e1)
     {
         if(e1.head == "*" && e1.tail.size() == 1)
@@ -233,7 +236,7 @@ std::string print_c_operator(llvm::Function& function)
         if(name.empty())
         {
             std::stringstream sstr;
-            sstr<<"arg"<<expressions.size();
+            sstr<<"in"<<expressions.size();
             name = sstr.str();
         }
 
@@ -262,7 +265,7 @@ std::string print_c_operator(llvm::Function& function)
             if(auto* alloca_cast = llvm::dyn_cast<llvm::AllocaInst>(&inst))
             {
                 std::stringstream sstr;
-                sstr<<"tmp"<<(counter++);
+                sstr<<"t"<<(counter++);
 
                 output += "  "+print_c_type(alloca_cast->getAllocatedType())+" "+sstr.str()+";\n";
 
@@ -362,6 +365,8 @@ std::string print_c_operator(llvm::Function& function)
                         case llvm::Instruction::FSub: new_expr = Expression::Sub(left, right); break;
                         case llvm::Instruction::FMul: new_expr = Expression::Mul(left, right); break;
                         case llvm::Instruction::FDiv: new_expr = Expression::Div(left, right); break;
+                        case llvm::Instruction::And:  new_expr = Expression::And(left, right); break;
+                        case llvm::Instruction::Or:   new_expr = Expression::Or (left, right); break;
                         default:;
                         }
                     }
@@ -446,7 +451,7 @@ std::string print_c_operator(llvm::Function& function)
                     if(relevant_uses > 1)
                     {
                         std::stringstream sstr;
-                        sstr<<"tmp"<<(counter++);
+                        sstr<<"t"<<(counter++);
 
                         Expression store_expr = Expression::Assign(Expression::Atomic(sstr.str()), new_expr);
 
@@ -465,6 +470,11 @@ std::string print_c_operator(llvm::Function& function)
     }
 
     return print_c_type(function.getReturnType())+" "+std::string(function.getName())+"("+output+"}\n";
+}
+
+std::string print_pretty_c_operator(llvm::Function& function)
+{
+    return print_c_operator(function);
 }
 
 #endif
