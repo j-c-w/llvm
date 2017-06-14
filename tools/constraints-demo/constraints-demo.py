@@ -222,9 +222,9 @@ def generate_reduction(solutions):
             +"                "+iter_type+" begin"+iter_begin+", "+iter_type+" end"+iter_end+")\n"
             +"{\n"
             +" if(/*...*/) { //sequential execution\n"
-            +"  for("+iter_type+" i = begin; i < end; i"+iter_step+")\n"
+            +"  for("+iter_type+" i = begin; i < end; i"+iter_step+") {\n"
             +"   op(out")
-    part3 = (         ",begin,end);\n"
+    part3 = (         "); }\n"
             +" }\n"
             +" else {        //divide and conquer\n"
             +"  "+iter_type+"  mid = begin+(end-begin)/2;\n"
@@ -274,7 +274,7 @@ def beautify_operator(operator):
     for datatype, name in declarations:
         operator = re.sub("  "+datatype+" "+name+";\n((?:  [^\n]*;\n)*)  "+name+" =", "\\1  "+datatype+" "+name+" =", operator)
 
-    variables = re.findall("  (int|double|float|long) ([a-zA-Z0-9_]+)", operator)
+    variables = re.findall("  (int|double|float|long) ([a-zA-Z0-9_]+) ", operator)
 
     labels_present  = re.findall("([a-zA-Z0-9_]+):\n", operator)
 
@@ -351,12 +351,22 @@ def wait_thread(source_code):
                 line_begin = map_IR_to_C_line(stencils[0]["begin"])
                 line_end   = map_IR_to_C_line(stencils[0]["successor"]) - 1
 
+                if line_begin >= len(source_code.split("\n")):
+                    line_begin = None
+                if line_end >= len(source_code.split("\n")):
+                    line_end = None
+
                 set_output("Found stencil kernel in lines "+str(line_begin)+" - "+str(line_end)+":")
 
             elif len(matrix):
 
                 line_begin = map_IR_to_C_line(matrix[0]["begin"])
                 line_end   = map_IR_to_C_line(matrix[0]["successor"]) - 1
+
+                if line_begin >= len(source_code.split("\n")):
+                    line_begin = None
+                if line_end >= len(source_code.split("\n")):
+                    line_end = None
 
                 set_output("Found matrix multiplication in lines "+str(line_begin)+" - "+str(line_end)+":",
                            run_through_clang_format(generate_gemm_call(matrix)))
@@ -370,12 +380,17 @@ def wait_thread(source_code):
                 line_begin = map_IR_to_C_line((scalars+histos)[0]["begin"])
                 line_end   = map_IR_to_C_line((scalars+histos)[0]["successor"]) - 1
 
-                while source_code.split("\n")[line_end-1] == "":
+                if line_begin >= len(source_code.split("\n")):
+                    line_begin = None
+                if line_end >= len(source_code.split("\n")):
+                    line_end = None
+
+                while line_end > 0 and source_code.split("\n")[line_end-1] == "":
                     line_end = line_end - 1
 
                 set_output("Found reduction in lines "+str(line_begin)+" - "+str(line_end)+":",
                            "typedef "+run_through_clang_format(reduction_type)+" out_t;",
-                           "Assuming it is associative,\nit can be rewritten:",
+                           "Assuming it is associative,\nthe reduction can be rewritten:",
                            run_through_clang_format(generate_reduction(scalars+histos))+" ",
                            "This uses the reduction operator:",
                            run_through_clang_format(beautify_operator(operator))+" ")

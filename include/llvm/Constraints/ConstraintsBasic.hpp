@@ -84,6 +84,7 @@ using ConstraintPreexecution       = ConstraintScalar<BackendPreexecution>;
 using ConstraintArgument           = ConstraintScalar<BackendArgument>;
 using ConstraintInstruction        = ConstraintScalar<BackendInstruction>;
 
+using ConstraintPHIInst    = ConstraintScalar<BackendPHIInst>;
 using ConstraintStoreInst  = ConstraintScalar<BackendStoreInst>;
 using ConstraintLoadInst   = ConstraintScalar<BackendLoadInst>;
 using ConstraintReturnInst = ConstraintScalar<BackendReturnInst>;

@@ -12,7 +12,7 @@ public:
     {
         std::vector<std::pair<std::string,llvm::Value*>> result;
 
-        auto solution = Solver::next_solution(2500000);
+        auto solution = Solver::next_solution(UINT_MAX);
 
         result.reserve(solution.size());
         for(auto& entry : solution)

@@ -43,6 +43,7 @@ public:
       : BackendLLVMSingle_<llvm::Value>(wrap, [](llvm::Value& value)
                                               { return !llvm::isa<llvm::ConstantInt>(value) &&
                                                        !llvm::isa<llvm::ConstantFP>(value)  &&
+                                                       !llvm::isa<llvm::Function>(value)  &&
                                                        !llvm::isa<llvm::ConstantPointerNull>(value); }) { }
 };
 
@@ -232,6 +233,7 @@ using BackendPreexecution       = ScalarBackend<BackendPreexecution_,1>;
 using BackendArgument           = ScalarBackend<BackendArgument_,1>;
 using BackendInstruction        = ScalarBackend<BackendInstruction_,1>;
 
+using BackendPHIInst    = ScalarBackend<BackendOpcode_<llvm::Instruction::PHI>,1>;
 using BackendStoreInst  = ScalarBackend<BackendOpcode_<llvm::Instruction::Store>,1>;
 using BackendLoadInst   = ScalarBackend<BackendOpcode_<llvm::Instruction::Load>,1>;
 using BackendReturnInst = ScalarBackend<BackendOpcode_<llvm::Instruction::Ret>,1>;

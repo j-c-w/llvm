@@ -379,20 +379,20 @@ ConstraintAnd ConstraintPureFunction(std::string input, std::string outer, std::
 {
     return std::make_pair("origin",4) * (   ConstraintCDGEdge("", nonlocal(inner)))
 
-        && std::make_pair("constants",32) * (   ConstraintLocallyConstant   ("value", nonlocal(outer))
+        && std::make_pair("constants",64) * (   ConstraintLocallyConstant   ("value", nonlocal(outer))
                                              && ConstraintNotNumericConstant("value")
                                              && ConstraintDFGEdge           ("value",           "use")
                                              && ConstraintCFGDominate       (nonlocal(inner),   "use"))
 
-        && std::make_pair("restrictions",32) * (   ConstraintCFGDominate      (nonlocal(outer), "value")
+        && std::make_pair("restrictions",64) * (   ConstraintCFGDominate      (nonlocal(outer), "value")
                                                 && ConstraintCFGDominateStrict("value", nonlocal(inner))
                                                 && ConstraintDFGEdge          ("value",           "use")
                                                 && ConstraintCFGDominate      (nonlocal(inner),   "use"))
 
         && ConstraintVectorSame("input[0..32]", input)
 
-        && ConstraintPDGDominate("restrictions[0..32].value",
-                                 "origin[0..4],constants[0..32].value,"+input, "output");
+        && ConstraintPDGDominate("restrictions[0..64].value",
+                                 "origin[0..4],constants[0..64].value,"+input, "output");
 }
 
 ConstraintAnd ConstraintScalarReductionBase(std::string input)
@@ -400,9 +400,9 @@ ConstraintAnd ConstraintScalarReductionBase(std::string input)
     return ConstraintInductionVar("old_value", "update_expr.output")
         && ConstraintDistinct    ("old_value",           "iterator")
 
-        && std::make_pair("uses",4) * (   ConstraintDFGEdge  (nonlocal("old_value"), "")
-                                       && ConstraintAfterLoop("",          nonlocal("")))
-        && ConstraintDFGEdge("old_value", "uses[0]")
+//        && std::make_pair("uses",4) * (   ConstraintDFGEdge  (nonlocal("old_value"), "")
+//                                       && ConstraintAfterLoop("",          nonlocal("")))
+//        && ConstraintDFGEdge("old_value", "uses[0]")
 
         && "update_expr" + ConstraintPureFunction(nonlocal("old_value,"+input),
                                                   nonlocal("begin"), nonlocal("body_sese.begin"))
