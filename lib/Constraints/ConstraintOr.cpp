@@ -1,5 +1,6 @@
 #include "llvm/Constraints/ConstraintOr.hpp"
 #include "llvm/Constraints/BackendSpecializations.hpp"
+#include "llvm/Constraints/ConstraintAtomic.hpp"
 #include "llvm/Constraints/ConstraintsBasic.hpp"
 #include <unordered_map>
 #include <vector>
@@ -104,11 +105,12 @@ std::vector<SpecializedContainer> ConstraintOr::get_specials(FunctionWrapper& wr
 
     unsigned size = special_vectors.size();
 
-    auto backend = BackendOr::Create({{size}}, std::move(special_vectors));
 
-    for(unsigned i = 0; i < std::get<0>(backend).size() && i < labels.size(); i++)
+    std::shared_ptr<BackendOr_> backend(new BackendOr_({{size}}, std::move(special_vectors)));
+
+    for(unsigned i = 0; i < size && i < labels.size(); i++)
     {
-        use_vector.emplace_back(std::get<0>(backend)[i]);
+        use_vector.emplace_back((VectorSelector<BackendOr_,0>(backend, i)));
     }
 
     return use_vector;

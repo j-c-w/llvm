@@ -55,12 +55,12 @@ for idx in source_file_indizes:
     sys.argv[idx]     = modified_filename
 
     # Compile to LLVM assembly without optimisations, write to stdout.
-    process2 = subprocess.Popen([BINARY_CLANG, "-S", "-emit-llvm", "-o", "-", original_filename]
+    process2 = subprocess.Popen([BINARY_CLANG, "-S", "-emit-llvm", "-o", "-", "-O0", original_filename]
                                 + first_phase_arguments,
                                 stdout = subprocess.PIPE)
 
     # Optimize LLVM assembly output by clang using modified version of opt.
-    process3 = subprocess.Popen([BINARY_OPT, "-S", "-o", modified_filename, "-", "-always-inline"]
+    process3 = subprocess.Popen([BINARY_OPT, "-S", "-o", modified_filename, "-"]
                                 + ["-research-flatten", "-research-preprocessor"]
                                 + OPTIMIZATION_PASSES  + ["-research-replacer"],
                                 stdin = subprocess.PIPE)

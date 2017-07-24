@@ -1,4 +1,5 @@
 #include "llvm/Constraints/ConstraintAnd.hpp"
+#include "llvm/Constraints/ConstraintAtomic.hpp"
 #include "llvm/Constraints/BackendSpecializations.hpp"
 #include <unordered_map>
 #include <vector>
@@ -70,9 +71,16 @@ std::vector<SpecializedContainer> ConstraintAnd::get_specials(FunctionWrapper& w
 
     for(unsigned i = 0; i < special_vectors.size() && i < labels.size(); i++)
     {
-        auto backend = BackendAnd::Create(std::move(special_vectors[i]));
+        if(special_vectors[i].size() > 1)
+        {
+            std::shared_ptr<BackendAnd_> backend(new BackendAnd_(std::move(special_vectors[i])));
 
-        use_vector.emplace_back(std::get<0>(backend));
+            use_vector.emplace_back(ScalarSelector<BackendAnd_,0>(backend));
+        }
+        else
+        {
+            use_vector.emplace_back(std::move(special_vectors[i][0]));
+        }
     }
 
     return use_vector;

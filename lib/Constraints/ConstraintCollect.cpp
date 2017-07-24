@@ -1,28 +1,37 @@
 #include "llvm/Constraints/ConstraintCollect.hpp"
+#include "llvm/Constraints/ConstraintAtomic.hpp"
 #include "llvm/Constraints/BackendSpecializations.hpp"
 
 ConstraintCollect::ConstraintCollect(unsigned n, std::string prefix, ConstraintContainer c)
                  : constraint(std::move(c)), size(n)
 {
-    std::vector<std::string> global_names;
-    std::vector<std::string> local_names;
+    std::vector<std::string>                        global_names;
+    std::vector<std::pair<std::string,std::string>> local_names;
     
     auto use_vector = constraint->get_labels();
 
     for(unsigned i = 0; i < use_vector.size(); i++)
     {
-        if(use_vector[i].empty() || use_vector[i].front() != '@')
+        bool islocal = false;
+
+        for(unsigned j = 0; j + prefix.size() + 1 < use_vector[i].size() && !islocal; j++)
         {
-            local_indices.push_back(i);
-            local_names.push_back(std::move(use_vector[i]));
+            if(use_vector[i][j] == '[' && use_vector[i][j+prefix.size()+1] == ']' &&
+               std::string(use_vector[i].begin() + j+1, use_vector[i].begin() + j+prefix.size()+1) == prefix)
+            {
+                local_indices.push_back(i);
+                local_names.emplace_back(std::string(use_vector[i].begin(), use_vector[i].begin()+j+1),
+                                         std::string(use_vector[i].begin()+j+prefix.size()+1, use_vector[i].end()));
+                islocal = true;
+            }
         }
-        else
+
+        if(!islocal)
         {
             global_indices.push_back(i);
-            global_names.emplace_back(use_vector[i].begin() + 1, use_vector[i].end());
+            global_names.push_back(use_vector[i]);
         }
     }
-
 
     labels.reserve(global_names.size() + size * local_names.size());
     for(unsigned i = 0; i < global_names.size(); i++)
@@ -30,17 +39,17 @@ ConstraintCollect::ConstraintCollect(unsigned n, std::string prefix, ConstraintC
         labels.emplace_back(global_names[i]);
     }
 
-    std::string indexed_prefix = prefix+"[";
+    std::string number_string = "";
     for(unsigned i = 0; i < size; i++)
     {
-        if(i == 0 || i == 10 || i == 100) indexed_prefix.push_back('0');
-        if(i>=100) indexed_prefix[indexed_prefix.size()-3] = '0'+((i/100)%10);
-        if(i>=10)  indexed_prefix[indexed_prefix.size()-2] = '0'+((i/10)%10);
-        if(true)   indexed_prefix[indexed_prefix.size()-1] = '0'+((i/1)%10);
+        if(i == 0 || i == 10 || i == 100) number_string.push_back('0');
+        if(i>=100) number_string[number_string.size()-3] = '0'+((i/100)%10);
+        if(i>=10)  number_string[number_string.size()-2] = '0'+((i/10)%10);
+        if(true)   number_string[number_string.size()-1] = '0'+((i/1)%10);
 
         for(unsigned j = 0; j < local_names.size(); j++)
         {
-            std::string final_name = indexed_prefix+"]"+(local_names[j].empty()?"":("."+local_names[j]));
+            std::string final_name = local_names[j].first + number_string + local_names[j].second;
             labels.emplace_back(final_name);
         }
     }
@@ -78,17 +87,17 @@ std::vector<SpecializedContainer> ConstraintCollect::get_specials(FunctionWrappe
     unsigned size1 = globals.size();
     unsigned size2 = size*locals.size();
 
-    auto backend = BackendCollect::Create({{size1, size2}}, std::move(globals), std::move(locals));
+    std::shared_ptr<BackendCollect_> backend(new BackendCollect_({{size1, size2}}, std::move(globals), std::move(locals)));
 
     use_vector.reserve(use_vector.size() + globals.size() + size * locals.size());
-    for(unsigned i = 0; i < std::get<0>(backend).size(); i++)
+    for(unsigned i = 0; i < size1; i++)
     {
-        use_vector.push_back(std::get<0>(backend)[i]);
+        use_vector.push_back(VectorSelector<BackendCollect_,0>(backend, i));
     }
 
-    for(unsigned j = 0; j < std::get<1>(backend).size(); j++)
+    for(unsigned i = 0; i < size2; i++)
     {
-        use_vector.emplace_back(std::get<1>(backend)[j]);
+        use_vector.emplace_back(VectorSelector<BackendCollect_,1>(backend, i));
     }
 
     return use_vector;

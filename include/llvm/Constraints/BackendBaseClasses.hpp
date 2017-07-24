@@ -4,7 +4,7 @@
 #include "llvm/Constraints/Constraint.hpp"
 #include <memory>
 #include <tuple>
-
+/*
 template<typename Derived,unsigned N>
 class ScalarBackend
 {
@@ -47,6 +47,39 @@ public:
         static Type build(std::shared_ptr<Derived> backend)
         {
             return {};
+        }
+    };
+
+    template<typename DUMMY>
+    struct TupleBuilder<1,DUMMY>
+    {
+        using Type = std::tuple<Selector<0>>;
+
+        static Type build(std::shared_ptr<Derived> backend)
+        {
+            return Type{backend};
+        }
+    };
+
+    template<typename DUMMY>
+    struct TupleBuilder<2,DUMMY>
+    {
+        using Type = std::tuple<Selector<0>,Selector<1>>;
+
+        static Type build(std::shared_ptr<Derived> backend)
+        {
+            return Type{backend,backend};
+        }
+    };
+
+    template<typename DUMMY>
+    struct TupleBuilder<3,DUMMY>
+    {
+        using Type = std::tuple<Selector<0>,Selector<1>,Selector<2>>;
+
+        static Type build(std::shared_ptr<Derived> backend)
+        {
+            return Type{backend,backend,backend};
         }
     };
 
@@ -108,11 +141,69 @@ public:
     {
         using Type = std::tuple<>;
 
-        static Type build(std::shared_ptr<Derived> backend, std::array<unsigned,N>)
+        static Type build(std::shared_ptr<Derived> backend, std::array<unsigned,N> sizes)
         {
             return {};
         }
     };
+
+    template<typename DUMMY>
+    struct TupleBuilder<1,DUMMY>
+    {
+        using Type = std::tuple<std::vector<Selector<0>>>;
+
+        static Type build(std::shared_ptr<Derived> backend, std::array<unsigned,N> sizes)
+        {
+            Type result;
+
+            for(unsigned i = 0; i < std::get<0>(sizes); i++)
+                std::get<0>(result).emplace_back(backend, i);
+
+            return result;
+        }
+    };
+
+    template<typename DUMMY>
+    struct TupleBuilder<2,DUMMY>
+    {
+        using Type = std::tuple<std::vector<Selector<0>>,std::vector<Selector<1>>>;
+
+        static Type build(std::shared_ptr<Derived> backend, std::array<unsigned,N> sizes)
+        {
+            Type result;
+
+            for(unsigned i = 0; i < std::get<0>(sizes); i++)
+                std::get<0>(result).emplace_back(backend, i);
+
+            for(unsigned i = 0; i < std::get<1>(sizes); i++)
+                std::get<1>(result).emplace_back(backend, i);
+
+            return result;
+        }
+    };
+
+    template<typename DUMMY>
+    struct TupleBuilder<3,DUMMY>
+    {
+        using Type = std::tuple<std::vector<Selector<0>>,std::vector<Selector<1>>,std::vector<Selector<2>>>;
+
+        static Type build(std::shared_ptr<Derived> backend, std::array<unsigned,N> sizes)
+        {
+            Type result;
+
+            for(unsigned i = 0; i < std::get<0>(sizes); i++)
+                std::get<0>(result).emplace_back(backend, i);
+
+            for(unsigned i = 0; i < std::get<1>(sizes); i++)
+                std::get<1>(result).emplace_back(backend, i);
+
+            for(unsigned i = 0; i < std::get<2>(sizes); i++)
+                std::get<2>(result).emplace_back(backend, i);
+
+            return result;
+        }
+    };
+
 
     template<typename ... ConstructorParam>
     static typename TupleBuilder<N>::Type Create(std::array<unsigned,N> size, ConstructorParam&& ... context)
@@ -122,5 +213,5 @@ public:
         return TupleBuilder<N>::build(shared_backend, size);
     }
 };
-
+*/
 #endif

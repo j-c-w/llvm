@@ -14,10 +14,10 @@ class ConstraintRange : public Constraint
 {
 public:
     template<typename T1, typename std::enable_if<std::is_base_of<Constraint,T1>::value>::type* = nullptr>
-    ConstraintRange(unsigned N, T1 c, unsigned o = 0)
-      : ConstraintRange(N, ConstraintContainer(new T1(std::move(c))), o) { }
+    ConstraintRange(unsigned N, T1 c, unsigned o = 0, bool r = false)
+      : ConstraintRange(N, ConstraintContainer(new T1(std::move(c))), o, r) { }
 
-    ConstraintRange(unsigned N, ConstraintContainer c, unsigned o = 0);
+    ConstraintRange(unsigned N, ConstraintContainer c, unsigned o = 0, bool r = false);
 
     std::vector<std::string> get_labels(std::vector<std::string> use_vector = {}) const final;
 
@@ -35,6 +35,7 @@ private:
     std::vector<unsigned>                     global_indices;
     unsigned                                  offset;
     unsigned                                  size;
+    bool                                      reverse;
 };
 
 #endif

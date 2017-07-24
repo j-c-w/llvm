@@ -4,8 +4,66 @@
 #include "llvm/Constraints/ConstraintAnd.hpp"
 #include "llvm/Constraints/ConstraintOr.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
+/*
+class ConstraintDistributive : public Constraint
+{
+public:
+    std::vector<std::string> get_labels(std::vector<std::string> = {}) const override;
+    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
+                                                   std::vector<SpecializedContainer> = {}) const override;
+};
 
-/* This file containts the constraint specifications that are used for idiom detection. */
+class ConstraintHoistSelect : public Constraint
+{
+public:
+    std::vector<std::string> get_labels(std::vector<std::string> = {}) const override;
+    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
+                                                   std::vector<SpecializedContainer> = {}) const override;
+};
+
+class ConstraintScalarReduction : public Constraint
+{
+public:
+    std::vector<std::string> get_labels(std::vector<std::string> = {}) const override;
+    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
+                                                   std::vector<SpecializedContainer> = {}) const override;
+};
+
+class ConstraintMatrixmatrix : public Constraint
+{
+public:
+    std::vector<std::string> get_labels(std::vector<std::string> = {}) const override;
+    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
+                                                   std::vector<SpecializedContainer> = {}) const override;
+};
+
+class ConstraintSparseMV : public Constraint
+{
+public:
+    std::vector<std::string> get_labels(std::vector<std::string> = {}) const override;
+    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
+                                                   std::vector<SpecializedContainer> = {}) const override;
+};
+
+class ConstraintHistogram : public Constraint
+{
+public:
+    std::vector<std::string> get_labels(std::vector<std::string> = {}) const override;
+    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
+                                                   std::vector<SpecializedContainer> = {}) const override;
+};
+
+class ConstraintStencil : public Constraint
+{
+public:
+    ConstraintStencil(unsigned){}
+    std::vector<std::string> get_labels(std::vector<std::string> = {}) const override;
+    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
+                                                   std::vector<SpecializedContainer> = {}) const override;
+};
+*/
+
+// This file containts the constraint specifications that are used for idiom detection. 
 ConstraintContainer ConstraintPermute(std::vector<std::string> in, std::vector<std::string> out);
 ConstraintContainer ConstraintVectorSame(std::vector<std::string> in, std::vector<std::string> out);
 ConstraintContainer ConstraintVectorSame(std::string a, std::string b);
@@ -18,8 +76,8 @@ ConstraintAnd       ConstraintHoistSelect();
 ConstraintOr        ConstraintLocallyConstant(std::string var, std::string border);
 ConstraintAnd       ConstraintSESE();
 ConstraintAnd       ConstraintInSESE(std::string var, std::string sese);
-ConstraintAnd       ConstraintMaxOnceInSESE(std::string var, std::string sese);
-ConstraintAnd       ConstraintOnceInSESE(std::string var, std::string sese);
+ConstraintPrefix    ConstraintMaxOnceInSESE(std::string var, std::string sese);
+ConstraintPrefix    ConstraintOnceInSESE(std::string var, std::string sese);
 ConstraintOr        ConstraintExtendedInt(std::string input, std::string output);
 ConstraintAnd       ConstraintLoop();
 ConstraintAnd       ConstraintInductionVar(std::string old_ind, std::string new_ind);

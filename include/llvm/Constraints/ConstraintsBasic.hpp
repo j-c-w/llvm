@@ -33,9 +33,12 @@ ConstraintOr operator||(Type1 t1, Type2 t2)
 
 template<typename Type,
          typename std::enable_if<std::is_base_of<Constraint,Type>::value>::type* = nullptr>
-ConstraintRange operator*(unsigned size, Type constraint)
+ConstraintRange operator*(int size, Type constraint)
 {
-    return {size, std::move(constraint)};
+    if(size < 0)
+        return {(unsigned)-size, std::move(constraint)};
+    else
+        return {(unsigned)+size, std::move(constraint)};
 }
 
 template<typename Type,
@@ -72,93 +75,95 @@ inline std::string nonlocal(std::string s)
     return sout;
 }
 
-using ConstraintUnused = ConstraintScalar<BackendUnused>;
+using ConstraintUnused = ConstraintScalar<BackendUnused_,1>;
 
-using ConstraintIntegerType = ConstraintScalar<BackendIntegerType>;
-using ConstraintFloatType   = ConstraintScalar<BackendFloatType>;
-using ConstraintPointerType = ConstraintScalar<BackendPointerType>;
+using ConstraintIntegerType = ConstraintScalar<BackendIntegerType_,1>;
+using ConstraintFloatType   = ConstraintScalar<BackendFloatType_,1>;
+using ConstraintPointerType = ConstraintScalar<BackendPointerType_,1>;
 
-using ConstraintNotNumericConstant = ConstraintScalar<BackendNotNumericConstant>;
-using ConstraintConstant           = ConstraintScalar<BackendConstant>;
-using ConstraintPreexecution       = ConstraintScalar<BackendPreexecution>;
-using ConstraintArgument           = ConstraintScalar<BackendArgument>;
-using ConstraintInstruction        = ConstraintScalar<BackendInstruction>;
+using ConstraintNotNumericConstant = ConstraintScalar<BackendNotNumericConstant_,1>;
+using ConstraintConstant           = ConstraintScalar<BackendConstant_,1>;
+using ConstraintPreexecution       = ConstraintScalar<BackendPreexecution_,1>;
+using ConstraintArgument           = ConstraintScalar<BackendArgument_,1>;
+using ConstraintInstruction        = ConstraintScalar<BackendInstruction_,1>;
 
-using ConstraintPHIInst    = ConstraintScalar<BackendPHIInst>;
-using ConstraintStoreInst  = ConstraintScalar<BackendStoreInst>;
-using ConstraintLoadInst   = ConstraintScalar<BackendLoadInst>;
-using ConstraintReturnInst = ConstraintScalar<BackendReturnInst>;
-using ConstraintBranchInst = ConstraintScalar<BackendBranchInst>;
-using ConstraintAddInst    = ConstraintScalar<BackendAddInst>;
-using ConstraintSubInst    = ConstraintScalar<BackendSubInst>;
-using ConstraintMulInst    = ConstraintScalar<BackendMulInst>;
-using ConstraintFAddInst   = ConstraintScalar<BackendFAddInst>;
-using ConstraintFSubInst   = ConstraintScalar<BackendFSubInst>;
-using ConstraintFMulInst   = ConstraintScalar<BackendFMulInst>;
-using ConstraintFDivInst   = ConstraintScalar<BackendFDivInst>;
-using ConstraintSelectInst = ConstraintScalar<BackendSelectInst>;
-using ConstraintSExtInst   = ConstraintScalar<BackendSExtInst>;
-using ConstraintZExtInst   = ConstraintScalar<BackendZExtInst>;
-using ConstraintGEPInst    = ConstraintScalar<BackendGEPInst>;
-using ConstraintICmpInst   = ConstraintScalar<BackendICmpInst>;
+using ConstraintPHIInst    = ConstraintScalar<BackendPHIInst_,1>;
+using ConstraintStoreInst  = ConstraintScalar<BackendStoreInst_,1>;
+using ConstraintLoadInst   = ConstraintScalar<BackendLoadInst_,1>;
+using ConstraintReturnInst = ConstraintScalar<BackendReturnInst_,1>;
+using ConstraintBranchInst = ConstraintScalar<BackendBranchInst_,1>;
+using ConstraintAddInst    = ConstraintScalar<BackendAddInst_,1>;
+using ConstraintSubInst    = ConstraintScalar<BackendSubInst_,1>;
+using ConstraintMulInst    = ConstraintScalar<BackendMulInst_,1>;
+using ConstraintFAddInst   = ConstraintScalar<BackendFAddInst_,1>;
+using ConstraintFSubInst   = ConstraintScalar<BackendFSubInst_,1>;
+using ConstraintFMulInst   = ConstraintScalar<BackendFMulInst_,1>;
+using ConstraintFDivInst   = ConstraintScalar<BackendFDivInst_,1>;
+using ConstraintBitOrInst  = ConstraintScalar<BackendBitOrInst_,1>;
+using ConstraintLShiftInst = ConstraintScalar<BackendLShiftInst_,1>;
+using ConstraintSelectInst = ConstraintScalar<BackendSelectInst_,1>;
+using ConstraintSExtInst   = ConstraintScalar<BackendSExtInst_,1>;
+using ConstraintZExtInst   = ConstraintScalar<BackendZExtInst_,1>;
+using ConstraintGEPInst    = ConstraintScalar<BackendGEPInst_,1>;
+using ConstraintICmpInst   = ConstraintScalar<BackendICmpInst_,1>;
 
-using ConstraintSame     = ConstraintScalar<BackendSame>;
-using ConstraintDistinct = ConstraintScalar<BackendDistinct>;
-using ConstraintOrder    = ConstraintScalar<BackendOrder>;
+using ConstraintSame     = ConstraintScalar<BackendSame_,2>;
+using ConstraintDistinct = ConstraintScalar<BackendDistinct_,2>;
+using ConstraintOrder    = ConstraintScalar<BackendOrder_,2>;
 
-using ConstraintSameBlock     = ConstraintScalar<BackendSameBlockWrap>;
-using ConstraintIncomingValue = ConstraintScalar<BackendIncomingValueWrap>;
+using ConstraintSameBlock     = ConstraintScalar<BackendSameBlock_,2>;
+using ConstraintIncomingValue = ConstraintScalar<BackendIncomingValue_,3>;
 
-using ConstraintDFGEdge  = ConstraintScalar<BackendDFGEdge>;
-using ConstraintCFGEdge  = ConstraintScalar<BackendCFGEdge>;
-using ConstraintCDGEdge  = ConstraintScalar<BackendCDGEdge>;
-using ConstraintPDGEdge  = ConstraintScalar<BackendPDGEdge>;
+using ConstraintDFGEdge  = ConstraintScalar<BackendDFGEdge_,2>;
+using ConstraintCFGEdge  = ConstraintScalar<BackendCFGEdge_,2>;
+using ConstraintCDGEdge  = ConstraintScalar<BackendCDGEdge_,2>;
+using ConstraintPDGEdge  = ConstraintScalar<BackendPDGEdge_,2>;
 
-using ConstraintFirstArgument  = ConstraintScalar<BackendFirstArgument>;
-using ConstraintSecondArgument = ConstraintScalar<BackendSecondArgument>;
-using ConstraintThirdArgument  = ConstraintScalar<BackendThirdArgument>;
-using ConstraintFourthArgument = ConstraintScalar<BackendFourthArgument>;
+using ConstraintFirstArgument  = ConstraintScalar<BackendFirstArgument_,2>;
+using ConstraintSecondArgument = ConstraintScalar<BackendSecondArgument_,2>;
+using ConstraintThirdArgument  = ConstraintScalar<BackendThirdArgument_,2>;
+using ConstraintFourthArgument = ConstraintScalar<BackendFourthArgument_,2>;
 
-using ConstraintDFGDominate       = ConstraintVector<BackendDFGDominate>;
-using ConstraintDFGPostdom        = ConstraintVector<BackendDFGPostdom>;
-using ConstraintDFGDominateStrict = ConstraintVector<BackendDFGDominateStrict>;
-using ConstraintDFGPostdomStrict  = ConstraintVector<BackendDFGPostdomStrict>;
+using ConstraintDFGDominate       = ConstraintVector<BackendDFGDominate_,3>;
+using ConstraintDFGPostdom        = ConstraintVector<BackendDFGPostdom_,3>;
+using ConstraintDFGDominateStrict = ConstraintVector<BackendDFGDominateStrict_,3>;
+using ConstraintDFGPostdomStrict  = ConstraintVector<BackendDFGPostdomStrict_,3>;
 
-using ConstraintCFGDominate       = ConstraintVector<BackendCFGDominate>;
-using ConstraintCFGPostdom        = ConstraintVector<BackendCFGPostdom>;
-using ConstraintCFGDominateStrict = ConstraintVector<BackendCFGDominateStrict>;
-using ConstraintCFGPostdomStrict  = ConstraintVector<BackendCFGPostdomStrict>;
+using ConstraintCFGDominate       = ConstraintVector<BackendCFGDominate_,3>;
+using ConstraintCFGPostdom        = ConstraintVector<BackendCFGPostdom_,3>;
+using ConstraintCFGDominateStrict = ConstraintVector<BackendCFGDominateStrict_,3>;
+using ConstraintCFGPostdomStrict  = ConstraintVector<BackendCFGPostdomStrict_,3>;
 
-using ConstraintPDGDominate       = ConstraintVector<BackendPDGDominate>;
-using ConstraintPDGPostdom        = ConstraintVector<BackendPDGPostdom>;
-using ConstraintPDGDominateStrict = ConstraintVector<BackendPDGDominateStrict>;
-using ConstraintPDGPostdomStrict  = ConstraintVector<BackendPDGPostdomStrict>;
+using ConstraintPDGDominate       = ConstraintVector<BackendPDGDominate_,3>;
+using ConstraintPDGPostdom        = ConstraintVector<BackendPDGPostdom_,3>;
+using ConstraintPDGDominateStrict = ConstraintVector<BackendPDGDominateStrict_,3>;
+using ConstraintPDGPostdomStrict  = ConstraintVector<BackendPDGPostdomStrict_,3>;
 
-using ConstraintDFGNotDominate       = ConstraintVector<BackendDFGNotDominate>;
-using ConstraintDFGNotPostdom        = ConstraintVector<BackendDFGNotPostdom>;
-using ConstraintDFGNotDominateStrict = ConstraintVector<BackendDFGNotDominateStrict>;
-using ConstraintDFGNotPostdomStrict  = ConstraintVector<BackendDFGNotPostdomStrict>;
+using ConstraintDFGNotDominate       = ConstraintVector<BackendDFGNotDominate_,3>;
+using ConstraintDFGNotPostdom        = ConstraintVector<BackendDFGNotPostdom_,3>;
+using ConstraintDFGNotDominateStrict = ConstraintVector<BackendDFGNotDominateStrict_,3>;
+using ConstraintDFGNotPostdomStrict  = ConstraintVector<BackendDFGNotPostdomStrict_,3>;
 
-using ConstraintCFGNotDominate       = ConstraintVector<BackendCFGNotDominate>;
-using ConstraintCFGNotPostdom        = ConstraintVector<BackendCFGNotPostdom>;
-using ConstraintCFGNotDominateStrict = ConstraintVector<BackendCFGNotDominateStrict>;
-using ConstraintCFGNotPostdomStrict  = ConstraintVector<BackendCFGNotPostdomStrict>;
+using ConstraintCFGNotDominate       = ConstraintVector<BackendCFGNotDominate_,3>;
+using ConstraintCFGNotPostdom        = ConstraintVector<BackendCFGNotPostdom_,3>;
+using ConstraintCFGNotDominateStrict = ConstraintVector<BackendCFGNotDominateStrict_,3>;
+using ConstraintCFGNotPostdomStrict  = ConstraintVector<BackendCFGNotPostdomStrict_,3>;
 
-using ConstraintPDGNotDominate       = ConstraintVector<BackendPDGNotDominate>;
-using ConstraintPDGNotPostdom        = ConstraintVector<BackendPDGNotPostdom>;
-using ConstraintPDGNotDominateStrict = ConstraintVector<BackendPDGNotDominateStrict>;
-using ConstraintPDGNotPostdomStrict  = ConstraintVector<BackendPDGNotPostdomStrict>;
+using ConstraintPDGNotDominate       = ConstraintVector<BackendPDGNotDominate_,3>;
+using ConstraintPDGNotPostdom        = ConstraintVector<BackendPDGNotPostdom_,3>;
+using ConstraintPDGNotDominateStrict = ConstraintVector<BackendPDGNotDominateStrict_,3>;
+using ConstraintPDGNotPostdomStrict  = ConstraintVector<BackendPDGNotPostdomStrict_,3>;
 
-using ConstraintCFGBlocked = ConstraintVector<BackendCFGBlocked>;
-using ConstraintDFGBlocked = ConstraintVector<BackendDFGBlocked>;
-using ConstraintPDGBlocked = ConstraintVector<BackendPDGBlocked>;
+using ConstraintCFGBlocked = ConstraintVector<BackendCFGBlocked_,3>;
+using ConstraintDFGBlocked = ConstraintVector<BackendDFGBlocked_,3>;
+using ConstraintPDGBlocked = ConstraintVector<BackendPDGBlocked_,3>;
 
 class ConstraintPHINode : public ConstraintAnd
 {
 public:
     ConstraintPHINode(std::string var, std::string begin)
-      : ConstraintAnd(ConstraintScalar<ScalarBackend<BackendOpcode_<llvm::Instruction::PHI>,1>>(var),
-                                            ConstraintSameBlock(begin, var)) { } 
+      : ConstraintAnd(ConstraintScalar<BackendOpcode_<llvm::Instruction::PHI>,1>(var),
+                      ConstraintSameBlock(begin, var)) { } 
 };
 
 #endif

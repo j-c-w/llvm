@@ -1,11 +1,12 @@
 #include "llvm/Constraints/ConstraintRange.hpp"
+#include "llvm/Constraints/ConstraintAtomic.hpp"
 #include "llvm/Constraints/BackendSpecializations.hpp"
 #include <unordered_map>
 #include <vector>
 #include <list>
 
-ConstraintRange::ConstraintRange(unsigned N, ConstraintContainer c, unsigned o)
-               : constraint(std::move(c)), local_size(0), offset(o), size(N)
+ConstraintRange::ConstraintRange(unsigned N, ConstraintContainer c, unsigned o, bool r)
+               : constraint(std::move(c)), local_size(0), offset(o), size(N), reverse(r)
 {
     auto flat_labels = constraint->get_labels();
 
@@ -63,14 +64,15 @@ ConstraintRange::ConstraintRange(unsigned N, ConstraintContainer c, unsigned o)
 
     labels.resize(local_indices.size() + (size-1)*local_size + next_indices.size() + global_indices.size());
 
-    for(unsigned i = 0; i <= size; i++)
+    for(unsigned i0 = 0; i0 <= size; i0++)
     {
+        unsigned i = reverse ? (size-i0) : i0;
         if(i < size)
         {
             for(unsigned j = 0; j < local_indices.size(); j++)
             {
                 labels[(i==0)?j:(local_indices.size() + (i-1)*local_size + local_indices[j].second)] =
-                 print_index(flat_labels[local_indices[j].first], blank_indices[local_indices[j].second], offset+i);
+                     print_index(flat_labels[local_indices[j].first], blank_indices[local_indices[j].second], offset+i);
             }
         }
         if(i > 0)
@@ -101,8 +103,10 @@ std::vector<SpecializedContainer> ConstraintRange::get_specials(FunctionWrapper&
 {
     std::vector<std::vector<SpecializedContainer>> special_vectors(labels.size());
 
-    for(unsigned i = 0; i < size; i++)
+    for(unsigned i0 = 0; i0 < size; i0++)
     {
+        unsigned i = reverse ? (size-i0-1) : i0;
+
         auto old_result_size = use_vector.size();
         use_vector = constraint->get_specials(wrap, std::move(use_vector));
 
@@ -130,9 +134,9 @@ std::vector<SpecializedContainer> ConstraintRange::get_specials(FunctionWrapper&
     use_vector.reserve(use_vector.size() + special_vectors.size());
     for(unsigned i = 0; i < special_vectors.size(); i++)
     {
-        auto backend = BackendAnd::Create(std::move(special_vectors[i]));
+        std::shared_ptr<BackendAnd_> backend(new BackendAnd_(std::move(special_vectors[i])));
 
-        use_vector.emplace_back(std::get<0>(backend));
+        use_vector.emplace_back(ScalarSelector<BackendAnd_,0>((backend)));
     }
 
     return use_vector;

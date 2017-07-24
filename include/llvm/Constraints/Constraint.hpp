@@ -15,7 +15,7 @@ public:
     virtual std::vector<Label> get_labels(std::vector<Label> use_vector = {}) const = 0;
 
     virtual std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
-                                                std::vector<SpecializedContainer> use_vector = {}) const = 0;
+                                                           std::vector<SpecializedContainer> use_vector = {}) const = 0;
 
     std::vector<std::pair<Label,SpecializedContainer>> get_specializations(FunctionWrapper& wrap,
                                 std::vector<std::pair<Label,SpecializedContainer>> use_vector = {}) const
