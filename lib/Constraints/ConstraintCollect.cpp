@@ -1,4 +1,4 @@
-#include "llvm/Constraints/ConstraintAtomic.hpp"
+#include "llvm/Constraints/ConstraintClasses.hpp"
 #include "llvm/Constraints/BackendSpecializations.hpp"
 
 ConstraintCollect::ConstraintCollect(unsigned n, std::string prefix, Constraint* c)
@@ -86,17 +86,17 @@ std::vector<SpecializedContainer> ConstraintCollect::get_specials(FunctionWrappe
     unsigned size1 = globals.size();
     unsigned size2 = size*locals.size();
 
-    std::shared_ptr<BackendCollect_> backend(new BackendCollect_({{size1, size2}}, std::move(globals), std::move(locals)));
+    std::shared_ptr<BackendCollect> backend(new BackendCollect({{size1, size2}}, std::move(globals), std::move(locals)));
 
     use_vector.reserve(use_vector.size() + globals.size() + size * locals.size());
     for(unsigned i = 0; i < size1; i++)
     {
-        use_vector.push_back(VectorSelector<BackendCollect_,0>(backend, i));
+        use_vector.push_back(VectorSelector<BackendCollect,0>(backend, i));
     }
 
     for(unsigned i = 0; i < size2; i++)
     {
-        use_vector.emplace_back(VectorSelector<BackendCollect_,1>(backend, i));
+        use_vector.emplace_back(VectorSelector<BackendCollect,1>(backend, i));
     }
 
     return use_vector;

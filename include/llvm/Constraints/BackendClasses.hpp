@@ -7,10 +7,10 @@
 /* This class implements he logical dicjunction in the constraint description system.
    The constructor takes an arbitrary amount of constraints and the resulting constraints enforces that all of them are
    satisfied at once. */
-class BackendAnd_
+class BackendAnd
 {
 public:
-    BackendAnd_(std::vector<SpecializedContainer> c);
+    BackendAnd(std::vector<SpecializedContainer> c);
 
     template<unsigned idx> SkipResult skip_invalid(Specialized::Value& c);
 
@@ -23,10 +23,10 @@ private:
     std::vector<SpecializedContainer> constraints;
 };
 
-class BackendOr_
+class BackendOr
 {
 public:
-    BackendOr_(std::array<unsigned,1>, std::vector<std::vector<SpecializedContainer>> c);
+    BackendOr(std::array<unsigned,1>, std::vector<std::vector<SpecializedContainer>> c);
 
     template<unsigned idx1> SkipResult skip_invalid(unsigned idx, Specialized::Value& c);
 
@@ -40,11 +40,11 @@ private:
     std::vector<unsigned>                          disabled_since;
 };
 
-class BackendCollect_
+class BackendCollect
 {
 public:
-    BackendCollect_(std::array<unsigned,2> size, std::vector<SpecializedContainer> nloc,
-                                                 std::vector<SpecializedContainer> loc);
+    BackendCollect(std::array<unsigned,2> size, std::vector<SpecializedContainer> nloc,
+                                                std::vector<SpecializedContainer> loc);
 
     template<unsigned idx1> SkipResult skip_invalid(unsigned idx2, Specialized::Value &c);
 
@@ -61,10 +61,10 @@ private:
     std::vector<Specialized::Value>    solutions;
 };
 
-class BackendSingle_
+class BackendSingle
 {
 public:
-    BackendSingle_(std::vector<Specialized::Value> hits);
+    BackendSingle(std::vector<Specialized::Value> hits);
 
     template<unsigned idx> SkipResult skip_invalid(Specialized::Value& c);
 
@@ -78,11 +78,11 @@ private:
     typename std::vector<Specialized::Value>::const_iterator hit_start;
 };
 
-class BackendEdge_
+class BackendEdge
 {
 public:
     using Graph = std::vector<std::vector<unsigned>>;
-    BackendEdge_(const Graph& gf, const Graph& gb);
+    BackendEdge(const Graph& gf, const Graph& gb);
 
     template<unsigned idx> SkipResult skip_invalid(unsigned& c);
 
@@ -97,10 +97,10 @@ private:
     const unsigned*                                   dst_ptr;
 };
 
-class BackendSameBlock_
+class BackendSameBlock
 {
 public:
-    BackendSameBlock_(const FunctionWrapper& w);
+    BackendSameBlock(const FunctionWrapper& w);
 
     template<bool idx> SkipResult skip_invalid(unsigned& c);
 
@@ -115,10 +115,10 @@ private:
 };
 
 template<bool lt, bool eq, bool gt>
-class BackendOrdering_
+class BackendOrdering
 {
 public:
-    BackendOrdering_();
+    BackendOrdering();
 
     template<unsigned idx> SkipResult skip_invalid(Specialized::Value& c);
 
@@ -132,10 +132,10 @@ private:
     unsigned other_value;
 };
 
-class BackendIncomingValue_
+class BackendIncomingValue
 {
 public:
-    BackendIncomingValue_(const FunctionWrapper& w);
+    BackendIncomingValue(const FunctionWrapper& w);
 
     template<unsigned idx> SkipResult skip_invalid(unsigned& c);
 
@@ -150,10 +150,10 @@ private:
 };
 
 template<bool reverse,bool allow_unstrict>
-class BackendDominate_
+class BackendDominate
 {
 public:
-    BackendDominate_(std::array<unsigned,3> size, const GraphEngine::Graph& graph_forw);
+    BackendDominate(std::array<unsigned,3> size, const GraphEngine::Graph& graph_forw);
 
     template<unsigned idx1> SkipResult skip_invalid(unsigned idx2, unsigned& c);
 

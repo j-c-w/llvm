@@ -1,11 +1,11 @@
-#include "llvm/Constraints/Backends.hpp"
+#include "llvm/Constraints/BackendClasses.hpp"
 
-BackendAnd_::BackendAnd_(std::vector<SpecializedContainer> c)
+BackendAnd::BackendAnd(std::vector<SpecializedContainer> c)
            : constraints(std::move(c))
 { }
 
 template<unsigned idx>
-SkipResult BackendAnd_::skip_invalid(Specialized::Value& c)
+SkipResult BackendAnd::skip_invalid(Specialized::Value& c)
 {
     for(auto& constraint : constraints)
     {
@@ -25,7 +25,7 @@ SkipResult BackendAnd_::skip_invalid(Specialized::Value& c)
 }
 
 template<unsigned idx>
-void BackendAnd_::begin()
+void BackendAnd::begin()
 {
     for(auto& constraint : constraints)
     {
@@ -34,7 +34,7 @@ void BackendAnd_::begin()
 }
 
 template<unsigned idx>
-void BackendAnd_::fixate(Specialized::Value c)
+void BackendAnd::fixate(Specialized::Value c)
 {
     for(auto& constraint : constraints)
     {
@@ -43,7 +43,7 @@ void BackendAnd_::fixate(Specialized::Value c)
 }
 
 template<unsigned idx>
-void BackendAnd_::resume(Specialized::Value c)
+void BackendAnd::resume(Specialized::Value c)
 {
     for(auto& constraint : constraints)
     {
@@ -52,7 +52,7 @@ void BackendAnd_::resume(Specialized::Value c)
 }
 
 template<unsigned idx>
-void BackendAnd_::cancel()
+void BackendAnd::cancel()
 {
     for(auto& constraint : constraints)
     {
@@ -60,8 +60,8 @@ void BackendAnd_::cancel()
     }
 }
 
-template SkipResult BackendAnd_::skip_invalid<0>(Specialized::Value&);
-template       void BackendAnd_::begin<0>();
-template       void BackendAnd_::fixate<0>(Specialized::Value);
-template       void BackendAnd_::resume<0>(Specialized::Value);
-template       void BackendAnd_::cancel<0>();
+template SkipResult BackendAnd::skip_invalid<0>(Specialized::Value&);
+template       void BackendAnd::begin<0>();
+template       void BackendAnd::fixate<0>(Specialized::Value);
+template       void BackendAnd::resume<0>(Specialized::Value);
+template       void BackendAnd::cancel<0>();

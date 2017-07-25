@@ -1,13 +1,13 @@
-#include "llvm/Constraints/Backends.hpp"
+#include "llvm/Constraints/BackendClasses.hpp"
 
 template<bool lt, bool eq, bool gt>
-BackendOrdering_<lt,eq,gt>::BackendOrdering_()
+BackendOrdering<lt,eq,gt>::BackendOrdering()
                                 : amount_completed(0)
 { }
 
 template<bool lt, bool eq, bool gt>
 template<unsigned idx>
-SkipResult BackendOrdering_<lt,eq,gt>::skip_invalid(Specialized::Value& c)
+SkipResult BackendOrdering<lt,eq,gt>::skip_invalid(Specialized::Value& c)
 {
     if(amount_completed == 1)
     {
@@ -55,27 +55,27 @@ SkipResult BackendOrdering_<lt,eq,gt>::skip_invalid(Specialized::Value& c)
     }
 }
 
-template      class BackendOrdering_<false,false,false>;
-template SkipResult BackendOrdering_<false,false,false>::skip_invalid<0>(Specialized::Value&);
-template SkipResult BackendOrdering_<false,false,false>::skip_invalid<1>(Specialized::Value&);
-template      class BackendOrdering_<false,false,true>;
-template SkipResult BackendOrdering_<false,false,true>::skip_invalid<0>(Specialized::Value&);
-template SkipResult BackendOrdering_<false,false,true>::skip_invalid<1>(Specialized::Value&);
-template      class BackendOrdering_<false,true,false>;
-template SkipResult BackendOrdering_<false,true,false>::skip_invalid<0>(Specialized::Value&);
-template SkipResult BackendOrdering_<false,true,false>::skip_invalid<1>(Specialized::Value&);
-template      class BackendOrdering_<false,true,true>;
-template SkipResult BackendOrdering_<false,true,true>::skip_invalid<0>(Specialized::Value&);
-template SkipResult BackendOrdering_<false,true,true>::skip_invalid<1>(Specialized::Value&);
-template      class BackendOrdering_<true,false,false>;
-template SkipResult BackendOrdering_<true,false,false>::skip_invalid<0>(Specialized::Value&);
-template SkipResult BackendOrdering_<true,false,false>::skip_invalid<1>(Specialized::Value&);
-template      class BackendOrdering_<true,false,true>;
-template SkipResult BackendOrdering_<true,false,true>::skip_invalid<0>(Specialized::Value&);
-template SkipResult BackendOrdering_<true,false,true>::skip_invalid<1>(Specialized::Value&);
-template      class BackendOrdering_<true,true,false>;
-template SkipResult BackendOrdering_<true,true,false>::skip_invalid<0>(Specialized::Value&);
-template SkipResult BackendOrdering_<true,true,false>::skip_invalid<1>(Specialized::Value&);
-template      class BackendOrdering_<true,true,true>;
-template SkipResult BackendOrdering_<true,true,true>::skip_invalid<0>(Specialized::Value&);
-template SkipResult BackendOrdering_<true,true,true>::skip_invalid<1>(Specialized::Value&);
+template      class BackendOrdering<false,false,false>;
+template SkipResult BackendOrdering<false,false,false>::skip_invalid<0>(Specialized::Value&);
+template SkipResult BackendOrdering<false,false,false>::skip_invalid<1>(Specialized::Value&);
+template      class BackendOrdering<false,false,true>;
+template SkipResult BackendOrdering<false,false,true>::skip_invalid<0>(Specialized::Value&);
+template SkipResult BackendOrdering<false,false,true>::skip_invalid<1>(Specialized::Value&);
+template      class BackendOrdering<false,true,false>;
+template SkipResult BackendOrdering<false,true,false>::skip_invalid<0>(Specialized::Value&);
+template SkipResult BackendOrdering<false,true,false>::skip_invalid<1>(Specialized::Value&);
+template      class BackendOrdering<false,true,true>;
+template SkipResult BackendOrdering<false,true,true>::skip_invalid<0>(Specialized::Value&);
+template SkipResult BackendOrdering<false,true,true>::skip_invalid<1>(Specialized::Value&);
+template      class BackendOrdering<true,false,false>;
+template SkipResult BackendOrdering<true,false,false>::skip_invalid<0>(Specialized::Value&);
+template SkipResult BackendOrdering<true,false,false>::skip_invalid<1>(Specialized::Value&);
+template      class BackendOrdering<true,false,true>;
+template SkipResult BackendOrdering<true,false,true>::skip_invalid<0>(Specialized::Value&);
+template SkipResult BackendOrdering<true,false,true>::skip_invalid<1>(Specialized::Value&);
+template      class BackendOrdering<true,true,false>;
+template SkipResult BackendOrdering<true,true,false>::skip_invalid<0>(Specialized::Value&);
+template SkipResult BackendOrdering<true,true,false>::skip_invalid<1>(Specialized::Value&);
+template      class BackendOrdering<true,true,true>;
+template SkipResult BackendOrdering<true,true,true>::skip_invalid<0>(Specialized::Value&);
+template SkipResult BackendOrdering<true,true,true>::skip_invalid<1>(Specialized::Value&);

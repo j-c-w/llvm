@@ -1,6 +1,6 @@
 #ifndef _CONSTRAINTCOMPOSED_HPP_
 #define _CONSTRAINTCOMPOSED_HPP_
-#include "llvm/Constraints/ConstraintAtomic.hpp"
+#include "llvm/Constraints/ConstraintClasses.hpp"
 
 // This file containts the constraint specifications that are used for idiom detection. 
 ConstraintAnd ConstraintDistributive();

@@ -35,7 +35,7 @@ class ConstraintOr : public Constraint
 public:
     ConstraintOr(std::vector<Constraint*> cvec);
 
-    std::vector<Constraint::Label>   get_labels(std::vector<Constraint::Label> use_vector = {}) const final;
+    std::vector<Constraint::Label>    get_labels(std::vector<Constraint::Label> use_vector = {}) const final;
     std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap, std::vector<SpecializedContainer> use_vector = {}) const final;
 
 private:
@@ -81,7 +81,7 @@ private:
     std::shared_ptr<Backend> base;
 };
 
-template<typename Derived,unsigned N>
+template<typename Backend,unsigned N>
 class ConstraintScalar : public Constraint
 {
 public:
@@ -99,11 +99,11 @@ public:
 
     std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap, std::vector<SpecializedContainer> use_vector = {}) const final
     {
-        std::shared_ptr<Derived> backend(new Derived(wrap));
+        std::shared_ptr<Backend> backend(new Backend(wrap));
 
-        if(N > 0) use_vector.emplace_back(ScalarSelector<Derived,(N>0?0:0)>(backend));
-        if(N > 1) use_vector.emplace_back(ScalarSelector<Derived,(N>1?1:0)>(backend));
-        if(N > 2) use_vector.emplace_back(ScalarSelector<Derived,(N>2?2:0)>(backend));
+        if(N > 0) use_vector.emplace_back(ScalarSelector<Backend,(N>0?0:0)>(backend));
+        if(N > 1) use_vector.emplace_back(ScalarSelector<Backend,(N>1?1:0)>(backend));
+        if(N > 2) use_vector.emplace_back(ScalarSelector<Backend,(N>2?2:0)>(backend));
 
         return use_vector;
     }
@@ -132,7 +132,7 @@ private:
     unsigned                 idx2;
 };
 
-template<typename Derived,unsigned N>
+template<typename Backend,unsigned N>
 class ConstraintVector : public Constraint
 {
 public:
@@ -164,11 +164,11 @@ public:
             temp_sizes[0] = 0;
         }
 
-        std::shared_ptr<Derived> backend(new Derived(temp_sizes, wrap));
+        std::shared_ptr<Backend> backend(new Backend(temp_sizes, wrap));
 
-        if(N > 0) for(unsigned i = 0; i < temp_sizes[0]; i++) use_vector.emplace_back(VectorSelector<Derived,(N>0?0:0)>(backend, i));
-        if(N > 1) for(unsigned i = 0; i < temp_sizes[1]; i++) use_vector.emplace_back(VectorSelector<Derived,(N>1?1:0)>(backend, i));
-        if(N > 2) for(unsigned i = 0; i < temp_sizes[2]; i++) use_vector.emplace_back(VectorSelector<Derived,(N>2?2:0)>(backend, i));
+        if(N > 0) for(unsigned i = 0; i < temp_sizes[0]; i++) use_vector.emplace_back(VectorSelector<Backend,(N>0?0:0)>(backend, i));
+        if(N > 1) for(unsigned i = 0; i < temp_sizes[1]; i++) use_vector.emplace_back(VectorSelector<Backend,(N>1?1:0)>(backend, i));
+        if(N > 2) for(unsigned i = 0; i < temp_sizes[2]; i++) use_vector.emplace_back(VectorSelector<Backend,(N>2?2:0)>(backend, i));
 
         return use_vector;
     }

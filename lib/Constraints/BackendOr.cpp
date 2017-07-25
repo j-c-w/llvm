@@ -1,14 +1,14 @@
-#include "llvm/Constraints/Backends.hpp"
+#include "llvm/Constraints/BackendClasses.hpp"
 #include <memory>
 #include <vector>
 #include <limits>
 
-BackendOr_::BackendOr_(std::array<unsigned,1>, std::vector<std::vector<SpecializedContainer>> c)
+BackendOr::BackendOr(std::array<unsigned,1>, std::vector<std::vector<SpecializedContainer>> c)
           : constraints(std::move(c)), disabled_since(constraints.empty()?0:constraints.front().size(), 0)
 { }
 
 template<unsigned idx1> 
-SkipResult BackendOr_::skip_invalid(unsigned idx2, Specialized::Value& c)
+SkipResult BackendOr::skip_invalid(unsigned idx2, Specialized::Value& c)
 {
     SkipResult result = SkipResult::FAIL;
     Specialized::Value min = std::numeric_limits<Specialized::Value>::max();
@@ -43,7 +43,7 @@ SkipResult BackendOr_::skip_invalid(unsigned idx2, Specialized::Value& c)
 }
 
 template<unsigned idx1> 
-void BackendOr_::begin(unsigned idx2)
+void BackendOr::begin(unsigned idx2)
 {
     for(unsigned i = 0; i < constraints[idx2].size(); i++)
     {
@@ -55,7 +55,7 @@ void BackendOr_::begin(unsigned idx2)
 }
 
 template<unsigned idx1> 
-void BackendOr_::resume(unsigned idx2, Specialized::Value c)
+void BackendOr::resume(unsigned idx2, Specialized::Value c)
 {
     for(unsigned i = 0; i < constraints[idx2].size(); i++)
     {
@@ -71,7 +71,7 @@ void BackendOr_::resume(unsigned idx2, Specialized::Value c)
 }
 
 template<unsigned idx1> 
-void BackendOr_::fixate(unsigned idx2, Specialized::Value c)
+void BackendOr::fixate(unsigned idx2, Specialized::Value c)
 {
     for(unsigned i = 0; i < constraints[idx2].size(); i++)
     {
@@ -93,7 +93,7 @@ void BackendOr_::fixate(unsigned idx2, Specialized::Value c)
 }
 
 template<unsigned idx1> 
-void BackendOr_::cancel(unsigned idx2)
+void BackendOr::cancel(unsigned idx2)
 {
     for(unsigned i = 0; i < constraints[idx2].size(); i++)
     {
@@ -104,8 +104,8 @@ void BackendOr_::cancel(unsigned idx2)
     }
 }
 
-template SkipResult BackendOr_::skip_invalid<0>(unsigned,Specialized::Value&);
-template       void BackendOr_::begin<0>(unsigned);
-template       void BackendOr_::fixate<0>(unsigned,Specialized::Value);
-template       void BackendOr_::resume<0>(unsigned,Specialized::Value);
-template       void BackendOr_::cancel<0>(unsigned);
+template SkipResult BackendOr::skip_invalid<0>(unsigned,Specialized::Value&);
+template       void BackendOr::begin<0>(unsigned);
+template       void BackendOr::fixate<0>(unsigned,Specialized::Value);
+template       void BackendOr::resume<0>(unsigned,Specialized::Value);
+template       void BackendOr::cancel<0>(unsigned);

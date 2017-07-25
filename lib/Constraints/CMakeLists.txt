@@ -19,7 +19,7 @@ add_llvm_library(LLVMConstraints
   ConstraintAnd.cpp
   ConstraintCollect.cpp
 
-  ConstraintSpecifications.cpp
+  IdiomSpecifications.cpp
 
   CustomPassFlatten.cpp
   CustomPassReplace.cpp

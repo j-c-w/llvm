@@ -1,13 +1,13 @@
-#include "llvm/Constraints/Backends.hpp"
+#include "llvm/Constraints/BackendClasses.hpp"
 
-BackendCollect_::BackendCollect_(std::array<unsigned,2>, std::vector<SpecializedContainer> nloc,
+BackendCollect::BackendCollect(std::array<unsigned,2>, std::vector<SpecializedContainer> nloc,
                                                          std::vector<SpecializedContainer> loc)
                : nonlocals(std::move(nloc)), locals(std::move(loc)),
                  filled_nonlocals(0), filled_locals(locals.size(), 0)
 { }
 
 template<unsigned idx1>
-SkipResult BackendCollect_::skip_invalid(unsigned idx2, Specialized::Value &c)
+SkipResult BackendCollect::skip_invalid(unsigned idx2, Specialized::Value &c)
 {
     if(idx1 == 0)
     {
@@ -44,7 +44,7 @@ SkipResult BackendCollect_::skip_invalid(unsigned idx2, Specialized::Value &c)
 }
 
 template<unsigned idx1>
-void BackendCollect_::begin(unsigned idx2)
+void BackendCollect::begin(unsigned idx2)
 {
     if(idx1 == 0)
     {
@@ -53,7 +53,7 @@ void BackendCollect_::begin(unsigned idx2)
 }
 
 template<unsigned idx1>
-void BackendCollect_::fixate(unsigned idx2, Specialized::Value c)
+void BackendCollect::fixate(unsigned idx2, Specialized::Value c)
 {
     unsigned max_steps = UINT_MAX;
     if(idx1 == 0)
@@ -126,7 +126,7 @@ void BackendCollect_::fixate(unsigned idx2, Specialized::Value c)
 }
 
 template<unsigned idx1>
-void BackendCollect_::resume(unsigned idx2, Specialized::Value c)
+void BackendCollect::resume(unsigned idx2, Specialized::Value c)
 {
     if(idx1 == 0)
     {
@@ -144,7 +144,7 @@ void BackendCollect_::resume(unsigned idx2, Specialized::Value c)
 }
 
 template<unsigned idx1>
-void BackendCollect_::cancel(unsigned idx2)
+void BackendCollect::cancel(unsigned idx2)
 {
     if(idx1 == 0)
     {
@@ -152,13 +152,13 @@ void BackendCollect_::cancel(unsigned idx2)
     }
 }
 
-template SkipResult BackendCollect_::skip_invalid<0>(unsigned,Specialized::Value&);
-template SkipResult BackendCollect_::skip_invalid<1>(unsigned,Specialized::Value&);
-template       void BackendCollect_::begin<0>(unsigned);
-template       void BackendCollect_::begin<1>(unsigned);
-template       void BackendCollect_::fixate<0>(unsigned,Specialized::Value);
-template       void BackendCollect_::fixate<1>(unsigned,Specialized::Value);
-template       void BackendCollect_::resume<0>(unsigned,Specialized::Value);
-template       void BackendCollect_::resume<1>(unsigned,Specialized::Value);
-template       void BackendCollect_::cancel<0>(unsigned);
-template       void BackendCollect_::cancel<1>(unsigned);
+template SkipResult BackendCollect::skip_invalid<0>(unsigned,Specialized::Value&);
+template SkipResult BackendCollect::skip_invalid<1>(unsigned,Specialized::Value&);
+template       void BackendCollect::begin<0>(unsigned);
+template       void BackendCollect::begin<1>(unsigned);
+template       void BackendCollect::fixate<0>(unsigned,Specialized::Value);
+template       void BackendCollect::fixate<1>(unsigned,Specialized::Value);
+template       void BackendCollect::resume<0>(unsigned,Specialized::Value);
+template       void BackendCollect::resume<1>(unsigned,Specialized::Value);
+template       void BackendCollect::cancel<0>(unsigned);
+template       void BackendCollect::cancel<1>(unsigned);

@@ -1,6 +1,6 @@
 #include "llvm/Constraints/CustomPasses.hpp"
 #include "llvm/Constraints/LLVMSolver.hpp"
-#include "llvm/Constraints/ConstraintSpecifications.hpp"
+#include "llvm/Constraints/IdiomSpecifications.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
 #include "llvm/Constraints/PrintSlots.hpp"
 #include "llvm/Constraints/Transforms.hpp"

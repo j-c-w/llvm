@@ -1,11 +1,11 @@
-#include "llvm/Constraints/Backends.hpp"
+#include "llvm/Constraints/BackendClasses.hpp"
 
-BackendIncomingValue_::BackendIncomingValue_(const FunctionWrapper& w)
+BackendIncomingValue::BackendIncomingValue(const FunctionWrapper& w)
                      : wrap(w), values(nullptr,nullptr,nullptr)
 { }
 
 template<unsigned idx>
-SkipResult BackendIncomingValue_::skip_invalid(unsigned& c)
+SkipResult BackendIncomingValue::skip_invalid(unsigned& c)
 {
     auto& in_value  = std::get<0>(values);
     auto& term_inst = std::get<1>(values);
@@ -42,6 +42,6 @@ SkipResult BackendIncomingValue_::skip_invalid(unsigned& c)
     else return SkipResult::FAIL;
 }
 
-template SkipResult BackendIncomingValue_::skip_invalid<0>(unsigned&);
-template SkipResult BackendIncomingValue_::skip_invalid<1>(unsigned&);
-template SkipResult BackendIncomingValue_::skip_invalid<2>(unsigned&);
+template SkipResult BackendIncomingValue::skip_invalid<0>(unsigned&);
+template SkipResult BackendIncomingValue::skip_invalid<1>(unsigned&);
+template SkipResult BackendIncomingValue::skip_invalid<2>(unsigned&);

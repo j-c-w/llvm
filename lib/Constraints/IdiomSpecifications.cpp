@@ -1,13 +1,12 @@
-#include "llvm/Constraints/ConstraintSpecifications.hpp"
-#include "llvm/Constraints/ConstraintAtomic.hpp"
-#include "llvm/Constraints/ConstraintsBasic.hpp"
+#include "llvm/Constraints/IdiomSpecifications.hpp"
+#include "llvm/Constraints/ConstraintSpecializations.hpp"
 
 ConstraintAnd ConstraintDistributive()
 {
     return ConstraintAnd({
          new ConstraintAddInst("value"),
-         new ConstraintFirstArgument("sum1.value", "value"),
-         new ConstraintSecondArgument("sum2.value", "value"),
+         new ConstraintFirstOperand("sum1.value", "value"),
+         new ConstraintSecondOperand("sum2.value", "value"),
          new ConstraintIntegerType("sum1.value"),
          new ConstraintSame("sum1.value", "sum1.results[0]"),
          new ConstraintOr({
@@ -15,11 +14,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum1.results[0]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.results[1]", "sum1.results[0]"),
-                 new ConstraintSecondArgument("sum1.factors[0]", "sum1.results[0]")}),
+                 new ConstraintFirstOperand("sum1.results[1]", "sum1.results[0]"),
+                 new ConstraintSecondOperand("sum1.factors[0]", "sum1.results[0]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.factors[0]", "sum1.results[0]"),
-                 new ConstraintSecondArgument("sum1.results[1]", "sum1.results[0]")})}),
+                 new ConstraintFirstOperand("sum1.factors[0]", "sum1.results[0]"),
+                 new ConstraintSecondOperand("sum1.results[1]", "sum1.results[0]")})}),
              new ConstraintIntegerType("sum1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -37,11 +36,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum1.results[1]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.results[2]", "sum1.results[1]"),
-                 new ConstraintSecondArgument("sum1.factors[1]", "sum1.results[1]")}),
+                 new ConstraintFirstOperand("sum1.results[2]", "sum1.results[1]"),
+                 new ConstraintSecondOperand("sum1.factors[1]", "sum1.results[1]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.factors[1]", "sum1.results[1]"),
-                 new ConstraintSecondArgument("sum1.results[2]", "sum1.results[1]")})}),
+                 new ConstraintFirstOperand("sum1.factors[1]", "sum1.results[1]"),
+                 new ConstraintSecondOperand("sum1.results[2]", "sum1.results[1]")})}),
              new ConstraintIntegerType("sum1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -59,11 +58,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum1.results[2]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.results[3]", "sum1.results[2]"),
-                 new ConstraintSecondArgument("sum1.factors[2]", "sum1.results[2]")}),
+                 new ConstraintFirstOperand("sum1.results[3]", "sum1.results[2]"),
+                 new ConstraintSecondOperand("sum1.factors[2]", "sum1.results[2]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.factors[2]", "sum1.results[2]"),
-                 new ConstraintSecondArgument("sum1.results[3]", "sum1.results[2]")})}),
+                 new ConstraintFirstOperand("sum1.factors[2]", "sum1.results[2]"),
+                 new ConstraintSecondOperand("sum1.results[3]", "sum1.results[2]")})}),
              new ConstraintIntegerType("sum1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -81,11 +80,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum1.results[3]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.results[4]", "sum1.results[3]"),
-                 new ConstraintSecondArgument("sum1.factors[3]", "sum1.results[3]")}),
+                 new ConstraintFirstOperand("sum1.results[4]", "sum1.results[3]"),
+                 new ConstraintSecondOperand("sum1.factors[3]", "sum1.results[3]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.factors[3]", "sum1.results[3]"),
-                 new ConstraintSecondArgument("sum1.results[4]", "sum1.results[3]")})}),
+                 new ConstraintFirstOperand("sum1.factors[3]", "sum1.results[3]"),
+                 new ConstraintSecondOperand("sum1.results[4]", "sum1.results[3]")})}),
              new ConstraintIntegerType("sum1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -103,11 +102,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum1.results[4]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.results[5]", "sum1.results[4]"),
-                 new ConstraintSecondArgument("sum1.factors[4]", "sum1.results[4]")}),
+                 new ConstraintFirstOperand("sum1.results[5]", "sum1.results[4]"),
+                 new ConstraintSecondOperand("sum1.factors[4]", "sum1.results[4]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.factors[4]", "sum1.results[4]"),
-                 new ConstraintSecondArgument("sum1.results[5]", "sum1.results[4]")})}),
+                 new ConstraintFirstOperand("sum1.factors[4]", "sum1.results[4]"),
+                 new ConstraintSecondOperand("sum1.results[5]", "sum1.results[4]")})}),
              new ConstraintIntegerType("sum1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -125,11 +124,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum1.results[5]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.results[6]", "sum1.results[5]"),
-                 new ConstraintSecondArgument("sum1.factors[5]", "sum1.results[5]")}),
+                 new ConstraintFirstOperand("sum1.results[6]", "sum1.results[5]"),
+                 new ConstraintSecondOperand("sum1.factors[5]", "sum1.results[5]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.factors[5]", "sum1.results[5]"),
-                 new ConstraintSecondArgument("sum1.results[6]", "sum1.results[5]")})}),
+                 new ConstraintFirstOperand("sum1.factors[5]", "sum1.results[5]"),
+                 new ConstraintSecondOperand("sum1.results[6]", "sum1.results[5]")})}),
              new ConstraintIntegerType("sum1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -147,11 +146,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum1.results[6]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.results[7]", "sum1.results[6]"),
-                 new ConstraintSecondArgument("sum1.factors[6]", "sum1.results[6]")}),
+                 new ConstraintFirstOperand("sum1.results[7]", "sum1.results[6]"),
+                 new ConstraintSecondOperand("sum1.factors[6]", "sum1.results[6]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.factors[6]", "sum1.results[6]"),
-                 new ConstraintSecondArgument("sum1.results[7]", "sum1.results[6]")})}),
+                 new ConstraintFirstOperand("sum1.factors[6]", "sum1.results[6]"),
+                 new ConstraintSecondOperand("sum1.results[7]", "sum1.results[6]")})}),
              new ConstraintIntegerType("sum1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -169,11 +168,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum1.results[7]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.results[8]", "sum1.results[7]"),
-                 new ConstraintSecondArgument("sum1.factors[7]", "sum1.results[7]")}),
+                 new ConstraintFirstOperand("sum1.results[8]", "sum1.results[7]"),
+                 new ConstraintSecondOperand("sum1.factors[7]", "sum1.results[7]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum1.factors[7]", "sum1.results[7]"),
-                 new ConstraintSecondArgument("sum1.results[8]", "sum1.results[7]")})}),
+                 new ConstraintFirstOperand("sum1.factors[7]", "sum1.results[7]"),
+                 new ConstraintSecondOperand("sum1.results[8]", "sum1.results[7]")})}),
              new ConstraintIntegerType("sum1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -195,11 +194,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product1.results[0]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.results[1]", "product1.results[0]"),
-                 new ConstraintSecondArgument("product1.factors[0]", "product1.results[0]")}),
+                 new ConstraintFirstOperand("product1.results[1]", "product1.results[0]"),
+                 new ConstraintSecondOperand("product1.factors[0]", "product1.results[0]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.factors[0]", "product1.results[0]"),
-                 new ConstraintSecondArgument("product1.results[1]", "product1.results[0]")})}),
+                 new ConstraintFirstOperand("product1.factors[0]", "product1.results[0]"),
+                 new ConstraintSecondOperand("product1.results[1]", "product1.results[0]")})}),
              new ConstraintIntegerType("product1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -217,11 +216,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product1.results[1]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.results[2]", "product1.results[1]"),
-                 new ConstraintSecondArgument("product1.factors[1]", "product1.results[1]")}),
+                 new ConstraintFirstOperand("product1.results[2]", "product1.results[1]"),
+                 new ConstraintSecondOperand("product1.factors[1]", "product1.results[1]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.factors[1]", "product1.results[1]"),
-                 new ConstraintSecondArgument("product1.results[2]", "product1.results[1]")})}),
+                 new ConstraintFirstOperand("product1.factors[1]", "product1.results[1]"),
+                 new ConstraintSecondOperand("product1.results[2]", "product1.results[1]")})}),
              new ConstraintIntegerType("product1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -239,11 +238,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product1.results[2]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.results[3]", "product1.results[2]"),
-                 new ConstraintSecondArgument("product1.factors[2]", "product1.results[2]")}),
+                 new ConstraintFirstOperand("product1.results[3]", "product1.results[2]"),
+                 new ConstraintSecondOperand("product1.factors[2]", "product1.results[2]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.factors[2]", "product1.results[2]"),
-                 new ConstraintSecondArgument("product1.results[3]", "product1.results[2]")})}),
+                 new ConstraintFirstOperand("product1.factors[2]", "product1.results[2]"),
+                 new ConstraintSecondOperand("product1.results[3]", "product1.results[2]")})}),
              new ConstraintIntegerType("product1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -261,11 +260,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product1.results[3]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.results[4]", "product1.results[3]"),
-                 new ConstraintSecondArgument("product1.factors[3]", "product1.results[3]")}),
+                 new ConstraintFirstOperand("product1.results[4]", "product1.results[3]"),
+                 new ConstraintSecondOperand("product1.factors[3]", "product1.results[3]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.factors[3]", "product1.results[3]"),
-                 new ConstraintSecondArgument("product1.results[4]", "product1.results[3]")})}),
+                 new ConstraintFirstOperand("product1.factors[3]", "product1.results[3]"),
+                 new ConstraintSecondOperand("product1.results[4]", "product1.results[3]")})}),
              new ConstraintIntegerType("product1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -283,11 +282,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product1.results[4]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.results[5]", "product1.results[4]"),
-                 new ConstraintSecondArgument("product1.factors[4]", "product1.results[4]")}),
+                 new ConstraintFirstOperand("product1.results[5]", "product1.results[4]"),
+                 new ConstraintSecondOperand("product1.factors[4]", "product1.results[4]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.factors[4]", "product1.results[4]"),
-                 new ConstraintSecondArgument("product1.results[5]", "product1.results[4]")})}),
+                 new ConstraintFirstOperand("product1.factors[4]", "product1.results[4]"),
+                 new ConstraintSecondOperand("product1.results[5]", "product1.results[4]")})}),
              new ConstraintIntegerType("product1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -305,11 +304,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product1.results[5]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.results[6]", "product1.results[5]"),
-                 new ConstraintSecondArgument("product1.factors[5]", "product1.results[5]")}),
+                 new ConstraintFirstOperand("product1.results[6]", "product1.results[5]"),
+                 new ConstraintSecondOperand("product1.factors[5]", "product1.results[5]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.factors[5]", "product1.results[5]"),
-                 new ConstraintSecondArgument("product1.results[6]", "product1.results[5]")})}),
+                 new ConstraintFirstOperand("product1.factors[5]", "product1.results[5]"),
+                 new ConstraintSecondOperand("product1.results[6]", "product1.results[5]")})}),
              new ConstraintIntegerType("product1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -327,11 +326,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product1.results[6]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.results[7]", "product1.results[6]"),
-                 new ConstraintSecondArgument("product1.factors[6]", "product1.results[6]")}),
+                 new ConstraintFirstOperand("product1.results[7]", "product1.results[6]"),
+                 new ConstraintSecondOperand("product1.factors[6]", "product1.results[6]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.factors[6]", "product1.results[6]"),
-                 new ConstraintSecondArgument("product1.results[7]", "product1.results[6]")})}),
+                 new ConstraintFirstOperand("product1.factors[6]", "product1.results[6]"),
+                 new ConstraintSecondOperand("product1.results[7]", "product1.results[6]")})}),
              new ConstraintIntegerType("product1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -349,11 +348,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product1.results[7]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.results[8]", "product1.results[7]"),
-                 new ConstraintSecondArgument("product1.factors[7]", "product1.results[7]")}),
+                 new ConstraintFirstOperand("product1.results[8]", "product1.results[7]"),
+                 new ConstraintSecondOperand("product1.factors[7]", "product1.results[7]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product1.factors[7]", "product1.results[7]"),
-                 new ConstraintSecondArgument("product1.results[8]", "product1.results[7]")})}),
+                 new ConstraintFirstOperand("product1.factors[7]", "product1.results[7]"),
+                 new ConstraintSecondOperand("product1.results[8]", "product1.results[7]")})}),
              new ConstraintIntegerType("product1.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -375,11 +374,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum2.results[0]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.results[1]", "sum2.results[0]"),
-                 new ConstraintSecondArgument("sum2.factors[0]", "sum2.results[0]")}),
+                 new ConstraintFirstOperand("sum2.results[1]", "sum2.results[0]"),
+                 new ConstraintSecondOperand("sum2.factors[0]", "sum2.results[0]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.factors[0]", "sum2.results[0]"),
-                 new ConstraintSecondArgument("sum2.results[1]", "sum2.results[0]")})}),
+                 new ConstraintFirstOperand("sum2.factors[0]", "sum2.results[0]"),
+                 new ConstraintSecondOperand("sum2.results[1]", "sum2.results[0]")})}),
              new ConstraintIntegerType("sum2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -397,11 +396,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum2.results[1]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.results[2]", "sum2.results[1]"),
-                 new ConstraintSecondArgument("sum2.factors[1]", "sum2.results[1]")}),
+                 new ConstraintFirstOperand("sum2.results[2]", "sum2.results[1]"),
+                 new ConstraintSecondOperand("sum2.factors[1]", "sum2.results[1]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.factors[1]", "sum2.results[1]"),
-                 new ConstraintSecondArgument("sum2.results[2]", "sum2.results[1]")})}),
+                 new ConstraintFirstOperand("sum2.factors[1]", "sum2.results[1]"),
+                 new ConstraintSecondOperand("sum2.results[2]", "sum2.results[1]")})}),
              new ConstraintIntegerType("sum2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -419,11 +418,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum2.results[2]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.results[3]", "sum2.results[2]"),
-                 new ConstraintSecondArgument("sum2.factors[2]", "sum2.results[2]")}),
+                 new ConstraintFirstOperand("sum2.results[3]", "sum2.results[2]"),
+                 new ConstraintSecondOperand("sum2.factors[2]", "sum2.results[2]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.factors[2]", "sum2.results[2]"),
-                 new ConstraintSecondArgument("sum2.results[3]", "sum2.results[2]")})}),
+                 new ConstraintFirstOperand("sum2.factors[2]", "sum2.results[2]"),
+                 new ConstraintSecondOperand("sum2.results[3]", "sum2.results[2]")})}),
              new ConstraintIntegerType("sum2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -441,11 +440,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum2.results[3]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.results[4]", "sum2.results[3]"),
-                 new ConstraintSecondArgument("sum2.factors[3]", "sum2.results[3]")}),
+                 new ConstraintFirstOperand("sum2.results[4]", "sum2.results[3]"),
+                 new ConstraintSecondOperand("sum2.factors[3]", "sum2.results[3]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.factors[3]", "sum2.results[3]"),
-                 new ConstraintSecondArgument("sum2.results[4]", "sum2.results[3]")})}),
+                 new ConstraintFirstOperand("sum2.factors[3]", "sum2.results[3]"),
+                 new ConstraintSecondOperand("sum2.results[4]", "sum2.results[3]")})}),
              new ConstraintIntegerType("sum2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -463,11 +462,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum2.results[4]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.results[5]", "sum2.results[4]"),
-                 new ConstraintSecondArgument("sum2.factors[4]", "sum2.results[4]")}),
+                 new ConstraintFirstOperand("sum2.results[5]", "sum2.results[4]"),
+                 new ConstraintSecondOperand("sum2.factors[4]", "sum2.results[4]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.factors[4]", "sum2.results[4]"),
-                 new ConstraintSecondArgument("sum2.results[5]", "sum2.results[4]")})}),
+                 new ConstraintFirstOperand("sum2.factors[4]", "sum2.results[4]"),
+                 new ConstraintSecondOperand("sum2.results[5]", "sum2.results[4]")})}),
              new ConstraintIntegerType("sum2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -485,11 +484,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum2.results[5]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.results[6]", "sum2.results[5]"),
-                 new ConstraintSecondArgument("sum2.factors[5]", "sum2.results[5]")}),
+                 new ConstraintFirstOperand("sum2.results[6]", "sum2.results[5]"),
+                 new ConstraintSecondOperand("sum2.factors[5]", "sum2.results[5]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.factors[5]", "sum2.results[5]"),
-                 new ConstraintSecondArgument("sum2.results[6]", "sum2.results[5]")})}),
+                 new ConstraintFirstOperand("sum2.factors[5]", "sum2.results[5]"),
+                 new ConstraintSecondOperand("sum2.results[6]", "sum2.results[5]")})}),
              new ConstraintIntegerType("sum2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -507,11 +506,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum2.results[6]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.results[7]", "sum2.results[6]"),
-                 new ConstraintSecondArgument("sum2.factors[6]", "sum2.results[6]")}),
+                 new ConstraintFirstOperand("sum2.results[7]", "sum2.results[6]"),
+                 new ConstraintSecondOperand("sum2.factors[6]", "sum2.results[6]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.factors[6]", "sum2.results[6]"),
-                 new ConstraintSecondArgument("sum2.results[7]", "sum2.results[6]")})}),
+                 new ConstraintFirstOperand("sum2.factors[6]", "sum2.results[6]"),
+                 new ConstraintSecondOperand("sum2.results[7]", "sum2.results[6]")})}),
              new ConstraintIntegerType("sum2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -529,11 +528,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintAddInst("sum2.results[7]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.results[8]", "sum2.results[7]"),
-                 new ConstraintSecondArgument("sum2.factors[7]", "sum2.results[7]")}),
+                 new ConstraintFirstOperand("sum2.results[8]", "sum2.results[7]"),
+                 new ConstraintSecondOperand("sum2.factors[7]", "sum2.results[7]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum2.factors[7]", "sum2.results[7]"),
-                 new ConstraintSecondArgument("sum2.results[8]", "sum2.results[7]")})}),
+                 new ConstraintFirstOperand("sum2.factors[7]", "sum2.results[7]"),
+                 new ConstraintSecondOperand("sum2.results[8]", "sum2.results[7]")})}),
              new ConstraintIntegerType("sum2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -555,11 +554,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product2.results[0]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.results[1]", "product2.results[0]"),
-                 new ConstraintSecondArgument("product2.factors[0]", "product2.results[0]")}),
+                 new ConstraintFirstOperand("product2.results[1]", "product2.results[0]"),
+                 new ConstraintSecondOperand("product2.factors[0]", "product2.results[0]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.factors[0]", "product2.results[0]"),
-                 new ConstraintSecondArgument("product2.results[1]", "product2.results[0]")})}),
+                 new ConstraintFirstOperand("product2.factors[0]", "product2.results[0]"),
+                 new ConstraintSecondOperand("product2.results[1]", "product2.results[0]")})}),
              new ConstraintIntegerType("product2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -577,11 +576,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product2.results[1]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.results[2]", "product2.results[1]"),
-                 new ConstraintSecondArgument("product2.factors[1]", "product2.results[1]")}),
+                 new ConstraintFirstOperand("product2.results[2]", "product2.results[1]"),
+                 new ConstraintSecondOperand("product2.factors[1]", "product2.results[1]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.factors[1]", "product2.results[1]"),
-                 new ConstraintSecondArgument("product2.results[2]", "product2.results[1]")})}),
+                 new ConstraintFirstOperand("product2.factors[1]", "product2.results[1]"),
+                 new ConstraintSecondOperand("product2.results[2]", "product2.results[1]")})}),
              new ConstraintIntegerType("product2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -599,11 +598,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product2.results[2]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.results[3]", "product2.results[2]"),
-                 new ConstraintSecondArgument("product2.factors[2]", "product2.results[2]")}),
+                 new ConstraintFirstOperand("product2.results[3]", "product2.results[2]"),
+                 new ConstraintSecondOperand("product2.factors[2]", "product2.results[2]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.factors[2]", "product2.results[2]"),
-                 new ConstraintSecondArgument("product2.results[3]", "product2.results[2]")})}),
+                 new ConstraintFirstOperand("product2.factors[2]", "product2.results[2]"),
+                 new ConstraintSecondOperand("product2.results[3]", "product2.results[2]")})}),
              new ConstraintIntegerType("product2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -621,11 +620,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product2.results[3]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.results[4]", "product2.results[3]"),
-                 new ConstraintSecondArgument("product2.factors[3]", "product2.results[3]")}),
+                 new ConstraintFirstOperand("product2.results[4]", "product2.results[3]"),
+                 new ConstraintSecondOperand("product2.factors[3]", "product2.results[3]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.factors[3]", "product2.results[3]"),
-                 new ConstraintSecondArgument("product2.results[4]", "product2.results[3]")})}),
+                 new ConstraintFirstOperand("product2.factors[3]", "product2.results[3]"),
+                 new ConstraintSecondOperand("product2.results[4]", "product2.results[3]")})}),
              new ConstraintIntegerType("product2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -643,11 +642,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product2.results[4]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.results[5]", "product2.results[4]"),
-                 new ConstraintSecondArgument("product2.factors[4]", "product2.results[4]")}),
+                 new ConstraintFirstOperand("product2.results[5]", "product2.results[4]"),
+                 new ConstraintSecondOperand("product2.factors[4]", "product2.results[4]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.factors[4]", "product2.results[4]"),
-                 new ConstraintSecondArgument("product2.results[5]", "product2.results[4]")})}),
+                 new ConstraintFirstOperand("product2.factors[4]", "product2.results[4]"),
+                 new ConstraintSecondOperand("product2.results[5]", "product2.results[4]")})}),
              new ConstraintIntegerType("product2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -665,11 +664,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product2.results[5]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.results[6]", "product2.results[5]"),
-                 new ConstraintSecondArgument("product2.factors[5]", "product2.results[5]")}),
+                 new ConstraintFirstOperand("product2.results[6]", "product2.results[5]"),
+                 new ConstraintSecondOperand("product2.factors[5]", "product2.results[5]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.factors[5]", "product2.results[5]"),
-                 new ConstraintSecondArgument("product2.results[6]", "product2.results[5]")})}),
+                 new ConstraintFirstOperand("product2.factors[5]", "product2.results[5]"),
+                 new ConstraintSecondOperand("product2.results[6]", "product2.results[5]")})}),
              new ConstraintIntegerType("product2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -687,11 +686,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product2.results[6]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.results[7]", "product2.results[6]"),
-                 new ConstraintSecondArgument("product2.factors[6]", "product2.results[6]")}),
+                 new ConstraintFirstOperand("product2.results[7]", "product2.results[6]"),
+                 new ConstraintSecondOperand("product2.factors[6]", "product2.results[6]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.factors[6]", "product2.results[6]"),
-                 new ConstraintSecondArgument("product2.results[7]", "product2.results[6]")})}),
+                 new ConstraintFirstOperand("product2.factors[6]", "product2.results[6]"),
+                 new ConstraintSecondOperand("product2.results[7]", "product2.results[6]")})}),
              new ConstraintIntegerType("product2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -709,11 +708,11 @@ ConstraintAnd ConstraintDistributive()
              new ConstraintMulInst("product2.results[7]"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.results[8]", "product2.results[7]"),
-                 new ConstraintSecondArgument("product2.factors[7]", "product2.results[7]")}),
+                 new ConstraintFirstOperand("product2.results[8]", "product2.results[7]"),
+                 new ConstraintSecondOperand("product2.factors[7]", "product2.results[7]")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("product2.factors[7]", "product2.results[7]"),
-                 new ConstraintSecondArgument("product2.results[8]", "product2.results[7]")})}),
+                 new ConstraintFirstOperand("product2.factors[7]", "product2.results[7]"),
+                 new ConstraintSecondOperand("product2.results[8]", "product2.results[7]")})}),
              new ConstraintIntegerType("product2.last_factor")}),
            new ConstraintAnd({
              new ConstraintOr({
@@ -733,10 +732,10 @@ ConstraintAnd ConstraintHoistSelect()
 {
     return ConstraintAnd({
          new ConstraintSelectInst("select"),
-         new ConstraintSecondArgument("input1", "select"),
-         new ConstraintFirstArgument("base", "input1"),
-         new ConstraintThirdArgument("input2", "select"),
-         new ConstraintFirstArgument("base", "input2"),
+         new ConstraintSecondOperand("input1", "select"),
+         new ConstraintFirstOperand("base", "input1"),
+         new ConstraintThirdOperand("input2", "select"),
+         new ConstraintFirstOperand("base", "input2"),
          new ConstraintGEPInst("input1"),
          new ConstraintGEPInst("input2")});
 }
@@ -804,9 +803,9 @@ ConstraintAnd ConstraintReduction()
          new ConstraintCollect(32, "i",
            new ConstraintAnd({
              new ConstraintLoadInst("read[i].value"),
-             new ConstraintFirstArgument("read[i].access_pointer", "read[i].value"),
+             new ConstraintFirstOperand("read[i].access_pointer", "read[i].value"),
              new ConstraintGEPInst("read[i].access_pointer"),
-             new ConstraintFirstArgument("read[i].base_pointer", "read[i].access_pointer"),
+             new ConstraintFirstOperand("read[i].base_pointer", "read[i].access_pointer"),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -815,7 +814,7 @@ ConstraintAnd ConstraintReduction()
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
                  new ConstraintUnused("read[i].base_pointer")})}),
-             new ConstraintSecondArgument("read[i].output_index", "read[i].access_pointer"),
+             new ConstraintSecondOperand("read[i].output_index", "read[i].access_pointer"),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintZExtInst("read[i].output_index"),
@@ -835,22 +834,22 @@ ConstraintAnd ConstraintReduction()
                    new ConstraintFAddInst("read[i].offset_add.value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].offset_add.input", "read[i].offset_add.value"),
-                     new ConstraintSecondArgument("read[i].offset_add.addend", "read[i].offset_add.value")}),
+                     new ConstraintFirstOperand("read[i].offset_add.input", "read[i].offset_add.value"),
+                     new ConstraintSecondOperand("read[i].offset_add.addend", "read[i].offset_add.value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].offset_add.addend", "read[i].offset_add.value"),
-                     new ConstraintSecondArgument("read[i].offset_add.input", "read[i].offset_add.value")})})}),
+                     new ConstraintFirstOperand("read[i].offset_add.addend", "read[i].offset_add.value"),
+                     new ConstraintSecondOperand("read[i].offset_add.input", "read[i].offset_add.value")})})}),
                new ConstraintAnd({
                  new ConstraintOr({
                    new ConstraintSubInst("read[i].offset_add.value"),
                    new ConstraintFSubInst("read[i].offset_add.value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].offset_add.input", "read[i].offset_add.value"),
-                     new ConstraintSecondArgument("read[i].offset_add.addend", "read[i].offset_add.value")}),
+                     new ConstraintFirstOperand("read[i].offset_add.input", "read[i].offset_add.value"),
+                     new ConstraintSecondOperand("read[i].offset_add.addend", "read[i].offset_add.value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].offset_add.addend", "read[i].offset_add.value"),
-                     new ConstraintSecondArgument("read[i].offset_add.input", "read[i].offset_add.value")})})})}),
+                     new ConstraintFirstOperand("read[i].offset_add.addend", "read[i].offset_add.value"),
+                     new ConstraintSecondOperand("read[i].offset_add.input", "read[i].offset_add.value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -871,20 +870,20 @@ ConstraintAnd ConstraintReduction()
                    new ConstraintFMulInst("read[i].stride_mul[0].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].stride_mul[0].input", "read[i].stride_mul[0].value"),
-                     new ConstraintSecondArgument("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value")}),
+                     new ConstraintFirstOperand("read[i].stride_mul[0].input", "read[i].stride_mul[0].value"),
+                     new ConstraintSecondOperand("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value"),
-                     new ConstraintSecondArgument("read[i].stride_mul[0].input", "read[i].stride_mul[0].value")})})}),
+                     new ConstraintFirstOperand("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value"),
+                     new ConstraintSecondOperand("read[i].stride_mul[0].input", "read[i].stride_mul[0].value")})})}),
                new ConstraintAnd({
                  new ConstraintFDivInst("read[i].stride_mul[0].value"),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].stride_mul[0].input", "read[i].stride_mul[0].value"),
-                     new ConstraintSecondArgument("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value")}),
+                     new ConstraintFirstOperand("read[i].stride_mul[0].input", "read[i].stride_mul[0].value"),
+                     new ConstraintSecondOperand("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value"),
-                     new ConstraintSecondArgument("read[i].stride_mul[0].input", "read[i].stride_mul[0].value")})})})}),
+                     new ConstraintFirstOperand("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value"),
+                     new ConstraintSecondOperand("read[i].stride_mul[0].input", "read[i].stride_mul[0].value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -905,22 +904,22 @@ ConstraintAnd ConstraintReduction()
                    new ConstraintFAddInst("read[i].index_add[0].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].index_add[0].input", "read[i].index_add[0].value"),
-                     new ConstraintSecondArgument("read[i].index_add[0].addend", "read[i].index_add[0].value")}),
+                     new ConstraintFirstOperand("read[i].index_add[0].input", "read[i].index_add[0].value"),
+                     new ConstraintSecondOperand("read[i].index_add[0].addend", "read[i].index_add[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].index_add[0].addend", "read[i].index_add[0].value"),
-                     new ConstraintSecondArgument("read[i].index_add[0].input", "read[i].index_add[0].value")})})}),
+                     new ConstraintFirstOperand("read[i].index_add[0].addend", "read[i].index_add[0].value"),
+                     new ConstraintSecondOperand("read[i].index_add[0].input", "read[i].index_add[0].value")})})}),
                new ConstraintAnd({
                  new ConstraintOr({
                    new ConstraintSubInst("read[i].index_add[0].value"),
                    new ConstraintFSubInst("read[i].index_add[0].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].index_add[0].input", "read[i].index_add[0].value"),
-                     new ConstraintSecondArgument("read[i].index_add[0].addend", "read[i].index_add[0].value")}),
+                     new ConstraintFirstOperand("read[i].index_add[0].input", "read[i].index_add[0].value"),
+                     new ConstraintSecondOperand("read[i].index_add[0].addend", "read[i].index_add[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].index_add[0].addend", "read[i].index_add[0].value"),
-                     new ConstraintSecondArgument("read[i].index_add[0].input", "read[i].index_add[0].value")})})})}),
+                     new ConstraintFirstOperand("read[i].index_add[0].addend", "read[i].index_add[0].value"),
+                     new ConstraintSecondOperand("read[i].index_add[0].input", "read[i].index_add[0].value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintZExtInst("read[i].index_add[0].input"),
@@ -1153,9 +1152,9 @@ ConstraintAnd ConstraintAXPY()
              new ConstraintInstruction("begin"),
              new ConstraintUnused("iter_step")})}),
          new ConstraintLoadInst("src.value"),
-         new ConstraintFirstArgument("src.access_pointer", "src.value"),
+         new ConstraintFirstOperand("src.access_pointer", "src.value"),
          new ConstraintGEPInst("src.access_pointer"),
-         new ConstraintFirstArgument("src.base_pointer", "src.access_pointer"),
+         new ConstraintFirstOperand("src.base_pointer", "src.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1164,7 +1163,7 @@ ConstraintAnd ConstraintAXPY()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("src.base_pointer")})}),
-         new ConstraintSecondArgument("src.output_index", "src.access_pointer"),
+         new ConstraintSecondOperand("src.output_index", "src.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("src.output_index"),
@@ -1184,22 +1183,22 @@ ConstraintAnd ConstraintAXPY()
                new ConstraintFAddInst("src.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.offset_add.input", "src.offset_add.value"),
-                 new ConstraintSecondArgument("src.offset_add.addend", "src.offset_add.value")}),
+                 new ConstraintFirstOperand("src.offset_add.input", "src.offset_add.value"),
+                 new ConstraintSecondOperand("src.offset_add.addend", "src.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.offset_add.addend", "src.offset_add.value"),
-                 new ConstraintSecondArgument("src.offset_add.input", "src.offset_add.value")})})}),
+                 new ConstraintFirstOperand("src.offset_add.addend", "src.offset_add.value"),
+                 new ConstraintSecondOperand("src.offset_add.input", "src.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("src.offset_add.value"),
                new ConstraintFSubInst("src.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.offset_add.input", "src.offset_add.value"),
-                 new ConstraintSecondArgument("src.offset_add.addend", "src.offset_add.value")}),
+                 new ConstraintFirstOperand("src.offset_add.input", "src.offset_add.value"),
+                 new ConstraintSecondOperand("src.offset_add.addend", "src.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.offset_add.addend", "src.offset_add.value"),
-                 new ConstraintSecondArgument("src.offset_add.input", "src.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("src.offset_add.addend", "src.offset_add.value"),
+                 new ConstraintSecondOperand("src.offset_add.input", "src.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1220,20 +1219,20 @@ ConstraintAnd ConstraintAXPY()
                new ConstraintFMulInst("src.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.stride_mul[0].input", "src.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src.stride_mul[0].multiplier", "src.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("src.stride_mul[0].input", "src.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src.stride_mul[0].multiplier", "src.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.stride_mul[0].multiplier", "src.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src.stride_mul[0].input", "src.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("src.stride_mul[0].multiplier", "src.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src.stride_mul[0].input", "src.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("src.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.stride_mul[0].input", "src.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src.stride_mul[0].multiplier", "src.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("src.stride_mul[0].input", "src.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src.stride_mul[0].multiplier", "src.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.stride_mul[0].multiplier", "src.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src.stride_mul[0].input", "src.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("src.stride_mul[0].multiplier", "src.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src.stride_mul[0].input", "src.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1254,22 +1253,22 @@ ConstraintAnd ConstraintAXPY()
                new ConstraintFAddInst("src.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.index_add[0].input", "src.index_add[0].value"),
-                 new ConstraintSecondArgument("src.index_add[0].addend", "src.index_add[0].value")}),
+                 new ConstraintFirstOperand("src.index_add[0].input", "src.index_add[0].value"),
+                 new ConstraintSecondOperand("src.index_add[0].addend", "src.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.index_add[0].addend", "src.index_add[0].value"),
-                 new ConstraintSecondArgument("src.index_add[0].input", "src.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("src.index_add[0].addend", "src.index_add[0].value"),
+                 new ConstraintSecondOperand("src.index_add[0].input", "src.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("src.index_add[0].value"),
                new ConstraintFSubInst("src.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.index_add[0].input", "src.index_add[0].value"),
-                 new ConstraintSecondArgument("src.index_add[0].addend", "src.index_add[0].value")}),
+                 new ConstraintFirstOperand("src.index_add[0].input", "src.index_add[0].value"),
+                 new ConstraintSecondOperand("src.index_add[0].addend", "src.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.index_add[0].addend", "src.index_add[0].value"),
-                 new ConstraintSecondArgument("src.index_add[0].input", "src.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("src.index_add[0].addend", "src.index_add[0].value"),
+                 new ConstraintSecondOperand("src.index_add[0].input", "src.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("src.index_add[0].input"),
@@ -1296,9 +1295,9 @@ ConstraintAnd ConstraintAXPY()
              new ConstraintUnused("src.base_index")})}),
          new ConstraintSame("iterator", "src.input_index[0]"),
          new ConstraintStoreInst("dst.store"),
-         new ConstraintSecondArgument("dst.access_pointer", "dst.store"),
+         new ConstraintSecondOperand("dst.access_pointer", "dst.store"),
          new ConstraintGEPInst("dst.access_pointer"),
-         new ConstraintFirstArgument("dst.base_pointer", "dst.access_pointer"),
+         new ConstraintFirstOperand("dst.base_pointer", "dst.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1307,7 +1306,7 @@ ConstraintAnd ConstraintAXPY()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("dst.base_pointer")})}),
-         new ConstraintSecondArgument("dst.output_index", "dst.access_pointer"),
+         new ConstraintSecondOperand("dst.output_index", "dst.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("dst.output_index"),
@@ -1327,22 +1326,22 @@ ConstraintAnd ConstraintAXPY()
                new ConstraintFAddInst("dst.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.offset_add.input", "dst.offset_add.value"),
-                 new ConstraintSecondArgument("dst.offset_add.addend", "dst.offset_add.value")}),
+                 new ConstraintFirstOperand("dst.offset_add.input", "dst.offset_add.value"),
+                 new ConstraintSecondOperand("dst.offset_add.addend", "dst.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.offset_add.addend", "dst.offset_add.value"),
-                 new ConstraintSecondArgument("dst.offset_add.input", "dst.offset_add.value")})})}),
+                 new ConstraintFirstOperand("dst.offset_add.addend", "dst.offset_add.value"),
+                 new ConstraintSecondOperand("dst.offset_add.input", "dst.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("dst.offset_add.value"),
                new ConstraintFSubInst("dst.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.offset_add.input", "dst.offset_add.value"),
-                 new ConstraintSecondArgument("dst.offset_add.addend", "dst.offset_add.value")}),
+                 new ConstraintFirstOperand("dst.offset_add.input", "dst.offset_add.value"),
+                 new ConstraintSecondOperand("dst.offset_add.addend", "dst.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.offset_add.addend", "dst.offset_add.value"),
-                 new ConstraintSecondArgument("dst.offset_add.input", "dst.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("dst.offset_add.addend", "dst.offset_add.value"),
+                 new ConstraintSecondOperand("dst.offset_add.input", "dst.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1363,20 +1362,20 @@ ConstraintAnd ConstraintAXPY()
                new ConstraintFMulInst("dst.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.stride_mul[0].input", "dst.stride_mul[0].value"),
-                 new ConstraintSecondArgument("dst.stride_mul[0].multiplier", "dst.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("dst.stride_mul[0].input", "dst.stride_mul[0].value"),
+                 new ConstraintSecondOperand("dst.stride_mul[0].multiplier", "dst.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.stride_mul[0].multiplier", "dst.stride_mul[0].value"),
-                 new ConstraintSecondArgument("dst.stride_mul[0].input", "dst.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("dst.stride_mul[0].multiplier", "dst.stride_mul[0].value"),
+                 new ConstraintSecondOperand("dst.stride_mul[0].input", "dst.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("dst.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.stride_mul[0].input", "dst.stride_mul[0].value"),
-                 new ConstraintSecondArgument("dst.stride_mul[0].multiplier", "dst.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("dst.stride_mul[0].input", "dst.stride_mul[0].value"),
+                 new ConstraintSecondOperand("dst.stride_mul[0].multiplier", "dst.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.stride_mul[0].multiplier", "dst.stride_mul[0].value"),
-                 new ConstraintSecondArgument("dst.stride_mul[0].input", "dst.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("dst.stride_mul[0].multiplier", "dst.stride_mul[0].value"),
+                 new ConstraintSecondOperand("dst.stride_mul[0].input", "dst.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1397,22 +1396,22 @@ ConstraintAnd ConstraintAXPY()
                new ConstraintFAddInst("dst.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.index_add[0].input", "dst.index_add[0].value"),
-                 new ConstraintSecondArgument("dst.index_add[0].addend", "dst.index_add[0].value")}),
+                 new ConstraintFirstOperand("dst.index_add[0].input", "dst.index_add[0].value"),
+                 new ConstraintSecondOperand("dst.index_add[0].addend", "dst.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.index_add[0].addend", "dst.index_add[0].value"),
-                 new ConstraintSecondArgument("dst.index_add[0].input", "dst.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("dst.index_add[0].addend", "dst.index_add[0].value"),
+                 new ConstraintSecondOperand("dst.index_add[0].input", "dst.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("dst.index_add[0].value"),
                new ConstraintFSubInst("dst.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.index_add[0].input", "dst.index_add[0].value"),
-                 new ConstraintSecondArgument("dst.index_add[0].addend", "dst.index_add[0].value")}),
+                 new ConstraintFirstOperand("dst.index_add[0].input", "dst.index_add[0].value"),
+                 new ConstraintSecondOperand("dst.index_add[0].addend", "dst.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("dst.index_add[0].addend", "dst.index_add[0].value"),
-                 new ConstraintSecondArgument("dst.index_add[0].input", "dst.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("dst.index_add[0].addend", "dst.index_add[0].value"),
+                 new ConstraintSecondOperand("dst.index_add[0].input", "dst.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("dst.index_add[0].input"),
@@ -1440,8 +1439,8 @@ ConstraintAnd ConstraintAXPY()
          new ConstraintSame("iterator", "dst.input_index[0]"),
          new ConstraintDistinct("src.base_pointer", "dst.base_pointer"),
          new ConstraintLoadInst("sum.input"),
-         new ConstraintFirstArgument("dst.access_pointer", "sum.input"),
-         new ConstraintFirstArgument("sum.value", "dst.store"),
+         new ConstraintFirstOperand("dst.access_pointer", "sum.input"),
+         new ConstraintFirstOperand("sum.value", "dst.store"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintSame("sum.input", "sum.value"),
@@ -1453,22 +1452,22 @@ ConstraintAnd ConstraintAXPY()
                new ConstraintFAddInst("sum.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum.input", "sum.value"),
-                 new ConstraintSecondArgument("sum.addend", "sum.value")}),
+                 new ConstraintFirstOperand("sum.input", "sum.value"),
+                 new ConstraintSecondOperand("sum.addend", "sum.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum.addend", "sum.value"),
-                 new ConstraintSecondArgument("sum.input", "sum.value")})})}),
+                 new ConstraintFirstOperand("sum.addend", "sum.value"),
+                 new ConstraintSecondOperand("sum.input", "sum.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("sum.value"),
                new ConstraintFSubInst("sum.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum.input", "sum.value"),
-                 new ConstraintSecondArgument("sum.addend", "sum.value")}),
+                 new ConstraintFirstOperand("sum.input", "sum.value"),
+                 new ConstraintSecondOperand("sum.addend", "sum.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("sum.addend", "sum.value"),
-                 new ConstraintSecondArgument("sum.input", "sum.value")})})})}),
+                 new ConstraintFirstOperand("sum.addend", "sum.value"),
+                 new ConstraintSecondOperand("sum.input", "sum.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintSame("src.value", "sum.addend"),
@@ -1480,20 +1479,20 @@ ConstraintAnd ConstraintAXPY()
                new ConstraintFMulInst("sum.addend")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.value", "sum.addend"),
-                 new ConstraintSecondArgument("alpha", "sum.addend")}),
+                 new ConstraintFirstOperand("src.value", "sum.addend"),
+                 new ConstraintSecondOperand("alpha", "sum.addend")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("alpha", "sum.addend"),
-                 new ConstraintSecondArgument("src.value", "sum.addend")})})}),
+                 new ConstraintFirstOperand("alpha", "sum.addend"),
+                 new ConstraintSecondOperand("src.value", "sum.addend")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("sum.addend"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src.value", "sum.addend"),
-                 new ConstraintSecondArgument("alpha", "sum.addend")}),
+                 new ConstraintFirstOperand("src.value", "sum.addend"),
+                 new ConstraintSecondOperand("alpha", "sum.addend")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("alpha", "sum.addend"),
-                 new ConstraintSecondArgument("src.value", "sum.addend")})})})}),
+                 new ConstraintFirstOperand("alpha", "sum.addend"),
+                 new ConstraintSecondOperand("src.value", "sum.addend")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1565,9 +1564,9 @@ ConstraintAnd ConstraintDOT()
              new ConstraintInstruction("begin"),
              new ConstraintUnused("iter_step")})}),
          new ConstraintLoadInst("src1.value"),
-         new ConstraintFirstArgument("src1.access_pointer", "src1.value"),
+         new ConstraintFirstOperand("src1.access_pointer", "src1.value"),
          new ConstraintGEPInst("src1.access_pointer"),
-         new ConstraintFirstArgument("src1.base_pointer", "src1.access_pointer"),
+         new ConstraintFirstOperand("src1.base_pointer", "src1.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1576,7 +1575,7 @@ ConstraintAnd ConstraintDOT()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("src1.base_pointer")})}),
-         new ConstraintSecondArgument("src1.output_index", "src1.access_pointer"),
+         new ConstraintSecondOperand("src1.output_index", "src1.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("src1.output_index"),
@@ -1596,22 +1595,22 @@ ConstraintAnd ConstraintDOT()
                new ConstraintFAddInst("src1.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.offset_add.input", "src1.offset_add.value"),
-                 new ConstraintSecondArgument("src1.offset_add.addend", "src1.offset_add.value")}),
+                 new ConstraintFirstOperand("src1.offset_add.input", "src1.offset_add.value"),
+                 new ConstraintSecondOperand("src1.offset_add.addend", "src1.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.offset_add.addend", "src1.offset_add.value"),
-                 new ConstraintSecondArgument("src1.offset_add.input", "src1.offset_add.value")})})}),
+                 new ConstraintFirstOperand("src1.offset_add.addend", "src1.offset_add.value"),
+                 new ConstraintSecondOperand("src1.offset_add.input", "src1.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("src1.offset_add.value"),
                new ConstraintFSubInst("src1.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.offset_add.input", "src1.offset_add.value"),
-                 new ConstraintSecondArgument("src1.offset_add.addend", "src1.offset_add.value")}),
+                 new ConstraintFirstOperand("src1.offset_add.input", "src1.offset_add.value"),
+                 new ConstraintSecondOperand("src1.offset_add.addend", "src1.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.offset_add.addend", "src1.offset_add.value"),
-                 new ConstraintSecondArgument("src1.offset_add.input", "src1.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("src1.offset_add.addend", "src1.offset_add.value"),
+                 new ConstraintSecondOperand("src1.offset_add.input", "src1.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1632,20 +1631,20 @@ ConstraintAnd ConstraintDOT()
                new ConstraintFMulInst("src1.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.stride_mul[0].input", "src1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src1.stride_mul[0].multiplier", "src1.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("src1.stride_mul[0].input", "src1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src1.stride_mul[0].multiplier", "src1.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.stride_mul[0].multiplier", "src1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src1.stride_mul[0].input", "src1.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("src1.stride_mul[0].multiplier", "src1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src1.stride_mul[0].input", "src1.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("src1.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.stride_mul[0].input", "src1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src1.stride_mul[0].multiplier", "src1.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("src1.stride_mul[0].input", "src1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src1.stride_mul[0].multiplier", "src1.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.stride_mul[0].multiplier", "src1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src1.stride_mul[0].input", "src1.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("src1.stride_mul[0].multiplier", "src1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src1.stride_mul[0].input", "src1.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1666,22 +1665,22 @@ ConstraintAnd ConstraintDOT()
                new ConstraintFAddInst("src1.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.index_add[0].input", "src1.index_add[0].value"),
-                 new ConstraintSecondArgument("src1.index_add[0].addend", "src1.index_add[0].value")}),
+                 new ConstraintFirstOperand("src1.index_add[0].input", "src1.index_add[0].value"),
+                 new ConstraintSecondOperand("src1.index_add[0].addend", "src1.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.index_add[0].addend", "src1.index_add[0].value"),
-                 new ConstraintSecondArgument("src1.index_add[0].input", "src1.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("src1.index_add[0].addend", "src1.index_add[0].value"),
+                 new ConstraintSecondOperand("src1.index_add[0].input", "src1.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("src1.index_add[0].value"),
                new ConstraintFSubInst("src1.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.index_add[0].input", "src1.index_add[0].value"),
-                 new ConstraintSecondArgument("src1.index_add[0].addend", "src1.index_add[0].value")}),
+                 new ConstraintFirstOperand("src1.index_add[0].input", "src1.index_add[0].value"),
+                 new ConstraintSecondOperand("src1.index_add[0].addend", "src1.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src1.index_add[0].addend", "src1.index_add[0].value"),
-                 new ConstraintSecondArgument("src1.index_add[0].input", "src1.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("src1.index_add[0].addend", "src1.index_add[0].value"),
+                 new ConstraintSecondOperand("src1.index_add[0].input", "src1.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("src1.index_add[0].input"),
@@ -1708,9 +1707,9 @@ ConstraintAnd ConstraintDOT()
              new ConstraintUnused("src1.base_index")})}),
          new ConstraintSame("iterator", "src1.input_index[0]"),
          new ConstraintLoadInst("src2.value"),
-         new ConstraintFirstArgument("src2.access_pointer", "src2.value"),
+         new ConstraintFirstOperand("src2.access_pointer", "src2.value"),
          new ConstraintGEPInst("src2.access_pointer"),
-         new ConstraintFirstArgument("src2.base_pointer", "src2.access_pointer"),
+         new ConstraintFirstOperand("src2.base_pointer", "src2.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1719,7 +1718,7 @@ ConstraintAnd ConstraintDOT()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("src2.base_pointer")})}),
-         new ConstraintSecondArgument("src2.output_index", "src2.access_pointer"),
+         new ConstraintSecondOperand("src2.output_index", "src2.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("src2.output_index"),
@@ -1739,22 +1738,22 @@ ConstraintAnd ConstraintDOT()
                new ConstraintFAddInst("src2.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.offset_add.input", "src2.offset_add.value"),
-                 new ConstraintSecondArgument("src2.offset_add.addend", "src2.offset_add.value")}),
+                 new ConstraintFirstOperand("src2.offset_add.input", "src2.offset_add.value"),
+                 new ConstraintSecondOperand("src2.offset_add.addend", "src2.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.offset_add.addend", "src2.offset_add.value"),
-                 new ConstraintSecondArgument("src2.offset_add.input", "src2.offset_add.value")})})}),
+                 new ConstraintFirstOperand("src2.offset_add.addend", "src2.offset_add.value"),
+                 new ConstraintSecondOperand("src2.offset_add.input", "src2.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("src2.offset_add.value"),
                new ConstraintFSubInst("src2.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.offset_add.input", "src2.offset_add.value"),
-                 new ConstraintSecondArgument("src2.offset_add.addend", "src2.offset_add.value")}),
+                 new ConstraintFirstOperand("src2.offset_add.input", "src2.offset_add.value"),
+                 new ConstraintSecondOperand("src2.offset_add.addend", "src2.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.offset_add.addend", "src2.offset_add.value"),
-                 new ConstraintSecondArgument("src2.offset_add.input", "src2.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("src2.offset_add.addend", "src2.offset_add.value"),
+                 new ConstraintSecondOperand("src2.offset_add.input", "src2.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1775,20 +1774,20 @@ ConstraintAnd ConstraintDOT()
                new ConstraintFMulInst("src2.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.stride_mul[0].input", "src2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src2.stride_mul[0].multiplier", "src2.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("src2.stride_mul[0].input", "src2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src2.stride_mul[0].multiplier", "src2.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.stride_mul[0].multiplier", "src2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src2.stride_mul[0].input", "src2.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("src2.stride_mul[0].multiplier", "src2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src2.stride_mul[0].input", "src2.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("src2.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.stride_mul[0].input", "src2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src2.stride_mul[0].multiplier", "src2.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("src2.stride_mul[0].input", "src2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src2.stride_mul[0].multiplier", "src2.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.stride_mul[0].multiplier", "src2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("src2.stride_mul[0].input", "src2.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("src2.stride_mul[0].multiplier", "src2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("src2.stride_mul[0].input", "src2.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -1809,22 +1808,22 @@ ConstraintAnd ConstraintDOT()
                new ConstraintFAddInst("src2.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.index_add[0].input", "src2.index_add[0].value"),
-                 new ConstraintSecondArgument("src2.index_add[0].addend", "src2.index_add[0].value")}),
+                 new ConstraintFirstOperand("src2.index_add[0].input", "src2.index_add[0].value"),
+                 new ConstraintSecondOperand("src2.index_add[0].addend", "src2.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.index_add[0].addend", "src2.index_add[0].value"),
-                 new ConstraintSecondArgument("src2.index_add[0].input", "src2.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("src2.index_add[0].addend", "src2.index_add[0].value"),
+                 new ConstraintSecondOperand("src2.index_add[0].input", "src2.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("src2.index_add[0].value"),
                new ConstraintFSubInst("src2.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.index_add[0].input", "src2.index_add[0].value"),
-                 new ConstraintSecondArgument("src2.index_add[0].addend", "src2.index_add[0].value")}),
+                 new ConstraintFirstOperand("src2.index_add[0].input", "src2.index_add[0].value"),
+                 new ConstraintSecondOperand("src2.index_add[0].addend", "src2.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("src2.index_add[0].addend", "src2.index_add[0].value"),
-                 new ConstraintSecondArgument("src2.index_add[0].input", "src2.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("src2.index_add[0].addend", "src2.index_add[0].value"),
+                 new ConstraintSecondOperand("src2.index_add[0].input", "src2.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("src2.index_add[0].input"),
@@ -1912,19 +1911,19 @@ ConstraintAnd ConstraintDOT()
          new ConstraintFAddInst("new_ind"),
          new ConstraintOr({
            new ConstraintAnd({
-             new ConstraintFirstArgument("old_ind", "new_ind"),
-             new ConstraintSecondArgument("dotvalue", "new_ind")}),
+             new ConstraintFirstOperand("old_ind", "new_ind"),
+             new ConstraintSecondOperand("dotvalue", "new_ind")}),
            new ConstraintAnd({
-             new ConstraintFirstArgument("dotvalue", "new_ind"),
-             new ConstraintSecondArgument("old_ind", "new_ind")})}),
+             new ConstraintFirstOperand("dotvalue", "new_ind"),
+             new ConstraintSecondOperand("old_ind", "new_ind")})}),
          new ConstraintFMulInst("dotvalue"),
          new ConstraintOr({
            new ConstraintAnd({
-             new ConstraintFirstArgument("src1", "dotvalue"),
-             new ConstraintSecondArgument("src2", "dotvalue")}),
+             new ConstraintFirstOperand("src1", "dotvalue"),
+             new ConstraintSecondOperand("src2", "dotvalue")}),
            new ConstraintAnd({
-             new ConstraintFirstArgument("src2", "dotvalue"),
-             new ConstraintSecondArgument("src1", "dotvalue")})}),
+             new ConstraintFirstOperand("src2", "dotvalue"),
+             new ConstraintSecondOperand("src1", "dotvalue")})}),
          new ConstraintIncomingValue("initial", "precursor", "old_ind")});
 }
 
@@ -2235,9 +2234,9 @@ ConstraintAnd ConstraintGEMM()
          new ConstraintSame("body_sese.end", "loop[2].body_sese.end"),
          new ConstraintSame("body_sese.successor", "loop[2].body_sese.successor"),
          new ConstraintStoreInst("output.store"),
-         new ConstraintSecondArgument("output.access_pointer", "output.store"),
+         new ConstraintSecondOperand("output.access_pointer", "output.store"),
          new ConstraintGEPInst("output.access_pointer"),
-         new ConstraintFirstArgument("output.base_pointer", "output.access_pointer"),
+         new ConstraintFirstOperand("output.base_pointer", "output.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2246,7 +2245,7 @@ ConstraintAnd ConstraintGEMM()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("output.base_pointer")})}),
-         new ConstraintSecondArgument("output.output_index", "output.access_pointer"),
+         new ConstraintSecondOperand("output.output_index", "output.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("output.output_index"),
@@ -2266,22 +2265,22 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFAddInst("output.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.offset_add.input", "output.offset_add.value"),
-                 new ConstraintSecondArgument("output.offset_add.addend", "output.offset_add.value")}),
+                 new ConstraintFirstOperand("output.offset_add.input", "output.offset_add.value"),
+                 new ConstraintSecondOperand("output.offset_add.addend", "output.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.offset_add.addend", "output.offset_add.value"),
-                 new ConstraintSecondArgument("output.offset_add.input", "output.offset_add.value")})})}),
+                 new ConstraintFirstOperand("output.offset_add.addend", "output.offset_add.value"),
+                 new ConstraintSecondOperand("output.offset_add.input", "output.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("output.offset_add.value"),
                new ConstraintFSubInst("output.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.offset_add.input", "output.offset_add.value"),
-                 new ConstraintSecondArgument("output.offset_add.addend", "output.offset_add.value")}),
+                 new ConstraintFirstOperand("output.offset_add.input", "output.offset_add.value"),
+                 new ConstraintSecondOperand("output.offset_add.addend", "output.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.offset_add.addend", "output.offset_add.value"),
-                 new ConstraintSecondArgument("output.offset_add.input", "output.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("output.offset_add.addend", "output.offset_add.value"),
+                 new ConstraintSecondOperand("output.offset_add.input", "output.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2302,20 +2301,20 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFMulInst("output.stride_mul[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[1].input", "output.stride_mul[1].value"),
-                 new ConstraintSecondArgument("output.stride_mul[1].multiplier", "output.stride_mul[1].value")}),
+                 new ConstraintFirstOperand("output.stride_mul[1].input", "output.stride_mul[1].value"),
+                 new ConstraintSecondOperand("output.stride_mul[1].multiplier", "output.stride_mul[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[1].multiplier", "output.stride_mul[1].value"),
-                 new ConstraintSecondArgument("output.stride_mul[1].input", "output.stride_mul[1].value")})})}),
+                 new ConstraintFirstOperand("output.stride_mul[1].multiplier", "output.stride_mul[1].value"),
+                 new ConstraintSecondOperand("output.stride_mul[1].input", "output.stride_mul[1].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("output.stride_mul[1].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[1].input", "output.stride_mul[1].value"),
-                 new ConstraintSecondArgument("output.stride_mul[1].multiplier", "output.stride_mul[1].value")}),
+                 new ConstraintFirstOperand("output.stride_mul[1].input", "output.stride_mul[1].value"),
+                 new ConstraintSecondOperand("output.stride_mul[1].multiplier", "output.stride_mul[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[1].multiplier", "output.stride_mul[1].value"),
-                 new ConstraintSecondArgument("output.stride_mul[1].input", "output.stride_mul[1].value")})})})}),
+                 new ConstraintFirstOperand("output.stride_mul[1].multiplier", "output.stride_mul[1].value"),
+                 new ConstraintSecondOperand("output.stride_mul[1].input", "output.stride_mul[1].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2336,22 +2335,22 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFAddInst("output.index_add[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[1].input", "output.index_add[1].value"),
-                 new ConstraintSecondArgument("output.index_add[1].addend", "output.index_add[1].value")}),
+                 new ConstraintFirstOperand("output.index_add[1].input", "output.index_add[1].value"),
+                 new ConstraintSecondOperand("output.index_add[1].addend", "output.index_add[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[1].addend", "output.index_add[1].value"),
-                 new ConstraintSecondArgument("output.index_add[1].input", "output.index_add[1].value")})})}),
+                 new ConstraintFirstOperand("output.index_add[1].addend", "output.index_add[1].value"),
+                 new ConstraintSecondOperand("output.index_add[1].input", "output.index_add[1].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("output.index_add[1].value"),
                new ConstraintFSubInst("output.index_add[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[1].input", "output.index_add[1].value"),
-                 new ConstraintSecondArgument("output.index_add[1].addend", "output.index_add[1].value")}),
+                 new ConstraintFirstOperand("output.index_add[1].input", "output.index_add[1].value"),
+                 new ConstraintSecondOperand("output.index_add[1].addend", "output.index_add[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[1].addend", "output.index_add[1].value"),
-                 new ConstraintSecondArgument("output.index_add[1].input", "output.index_add[1].value")})})})}),
+                 new ConstraintFirstOperand("output.index_add[1].addend", "output.index_add[1].value"),
+                 new ConstraintSecondOperand("output.index_add[1].input", "output.index_add[1].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("output.index_add[1].addend"),
@@ -2379,20 +2378,20 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFMulInst("output.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[0].input", "output.stride_mul[0].value"),
-                 new ConstraintSecondArgument("output.stride_mul[0].multiplier", "output.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("output.stride_mul[0].input", "output.stride_mul[0].value"),
+                 new ConstraintSecondOperand("output.stride_mul[0].multiplier", "output.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[0].multiplier", "output.stride_mul[0].value"),
-                 new ConstraintSecondArgument("output.stride_mul[0].input", "output.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("output.stride_mul[0].multiplier", "output.stride_mul[0].value"),
+                 new ConstraintSecondOperand("output.stride_mul[0].input", "output.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("output.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[0].input", "output.stride_mul[0].value"),
-                 new ConstraintSecondArgument("output.stride_mul[0].multiplier", "output.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("output.stride_mul[0].input", "output.stride_mul[0].value"),
+                 new ConstraintSecondOperand("output.stride_mul[0].multiplier", "output.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[0].multiplier", "output.stride_mul[0].value"),
-                 new ConstraintSecondArgument("output.stride_mul[0].input", "output.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("output.stride_mul[0].multiplier", "output.stride_mul[0].value"),
+                 new ConstraintSecondOperand("output.stride_mul[0].input", "output.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2413,22 +2412,22 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFAddInst("output.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[0].input", "output.index_add[0].value"),
-                 new ConstraintSecondArgument("output.index_add[0].addend", "output.index_add[0].value")}),
+                 new ConstraintFirstOperand("output.index_add[0].input", "output.index_add[0].value"),
+                 new ConstraintSecondOperand("output.index_add[0].addend", "output.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[0].addend", "output.index_add[0].value"),
-                 new ConstraintSecondArgument("output.index_add[0].input", "output.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("output.index_add[0].addend", "output.index_add[0].value"),
+                 new ConstraintSecondOperand("output.index_add[0].input", "output.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("output.index_add[0].value"),
                new ConstraintFSubInst("output.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[0].input", "output.index_add[0].value"),
-                 new ConstraintSecondArgument("output.index_add[0].addend", "output.index_add[0].value")}),
+                 new ConstraintFirstOperand("output.index_add[0].input", "output.index_add[0].value"),
+                 new ConstraintSecondOperand("output.index_add[0].addend", "output.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[0].addend", "output.index_add[0].value"),
-                 new ConstraintSecondArgument("output.index_add[0].input", "output.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("output.index_add[0].addend", "output.index_add[0].value"),
+                 new ConstraintSecondOperand("output.index_add[0].input", "output.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("output.index_add[0].input"),
@@ -2461,9 +2460,9 @@ ConstraintAnd ConstraintGEMM()
              new ConstraintSame("loop[0].iterator", "output.input_index[1]"),
              new ConstraintSame("loop[1].iterator", "output.input_index[0]")})}),
          new ConstraintLoadInst("input1.value"),
-         new ConstraintFirstArgument("input1.access_pointer", "input1.value"),
+         new ConstraintFirstOperand("input1.access_pointer", "input1.value"),
          new ConstraintGEPInst("input1.access_pointer"),
-         new ConstraintFirstArgument("input1.base_pointer", "input1.access_pointer"),
+         new ConstraintFirstOperand("input1.base_pointer", "input1.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2472,7 +2471,7 @@ ConstraintAnd ConstraintGEMM()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("input1.base_pointer")})}),
-         new ConstraintSecondArgument("input1.output_index", "input1.access_pointer"),
+         new ConstraintSecondOperand("input1.output_index", "input1.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("input1.output_index"),
@@ -2492,22 +2491,22 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFAddInst("input1.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.offset_add.input", "input1.offset_add.value"),
-                 new ConstraintSecondArgument("input1.offset_add.addend", "input1.offset_add.value")}),
+                 new ConstraintFirstOperand("input1.offset_add.input", "input1.offset_add.value"),
+                 new ConstraintSecondOperand("input1.offset_add.addend", "input1.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.offset_add.addend", "input1.offset_add.value"),
-                 new ConstraintSecondArgument("input1.offset_add.input", "input1.offset_add.value")})})}),
+                 new ConstraintFirstOperand("input1.offset_add.addend", "input1.offset_add.value"),
+                 new ConstraintSecondOperand("input1.offset_add.input", "input1.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("input1.offset_add.value"),
                new ConstraintFSubInst("input1.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.offset_add.input", "input1.offset_add.value"),
-                 new ConstraintSecondArgument("input1.offset_add.addend", "input1.offset_add.value")}),
+                 new ConstraintFirstOperand("input1.offset_add.input", "input1.offset_add.value"),
+                 new ConstraintSecondOperand("input1.offset_add.addend", "input1.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.offset_add.addend", "input1.offset_add.value"),
-                 new ConstraintSecondArgument("input1.offset_add.input", "input1.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("input1.offset_add.addend", "input1.offset_add.value"),
+                 new ConstraintSecondOperand("input1.offset_add.input", "input1.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2528,20 +2527,20 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFMulInst("input1.stride_mul[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[1].input", "input1.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value")}),
+                 new ConstraintFirstOperand("input1.stride_mul[1].input", "input1.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[1].input", "input1.stride_mul[1].value")})})}),
+                 new ConstraintFirstOperand("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[1].input", "input1.stride_mul[1].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("input1.stride_mul[1].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[1].input", "input1.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value")}),
+                 new ConstraintFirstOperand("input1.stride_mul[1].input", "input1.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[1].input", "input1.stride_mul[1].value")})})})}),
+                 new ConstraintFirstOperand("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[1].input", "input1.stride_mul[1].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2562,22 +2561,22 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFAddInst("input1.index_add[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[1].input", "input1.index_add[1].value"),
-                 new ConstraintSecondArgument("input1.index_add[1].addend", "input1.index_add[1].value")}),
+                 new ConstraintFirstOperand("input1.index_add[1].input", "input1.index_add[1].value"),
+                 new ConstraintSecondOperand("input1.index_add[1].addend", "input1.index_add[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[1].addend", "input1.index_add[1].value"),
-                 new ConstraintSecondArgument("input1.index_add[1].input", "input1.index_add[1].value")})})}),
+                 new ConstraintFirstOperand("input1.index_add[1].addend", "input1.index_add[1].value"),
+                 new ConstraintSecondOperand("input1.index_add[1].input", "input1.index_add[1].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("input1.index_add[1].value"),
                new ConstraintFSubInst("input1.index_add[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[1].input", "input1.index_add[1].value"),
-                 new ConstraintSecondArgument("input1.index_add[1].addend", "input1.index_add[1].value")}),
+                 new ConstraintFirstOperand("input1.index_add[1].input", "input1.index_add[1].value"),
+                 new ConstraintSecondOperand("input1.index_add[1].addend", "input1.index_add[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[1].addend", "input1.index_add[1].value"),
-                 new ConstraintSecondArgument("input1.index_add[1].input", "input1.index_add[1].value")})})})}),
+                 new ConstraintFirstOperand("input1.index_add[1].addend", "input1.index_add[1].value"),
+                 new ConstraintSecondOperand("input1.index_add[1].input", "input1.index_add[1].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("input1.index_add[1].addend"),
@@ -2605,20 +2604,20 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFMulInst("input1.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[0].input", "input1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("input1.stride_mul[0].input", "input1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[0].input", "input1.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[0].input", "input1.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("input1.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[0].input", "input1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("input1.stride_mul[0].input", "input1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[0].input", "input1.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[0].input", "input1.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2639,22 +2638,22 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFAddInst("input1.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[0].input", "input1.index_add[0].value"),
-                 new ConstraintSecondArgument("input1.index_add[0].addend", "input1.index_add[0].value")}),
+                 new ConstraintFirstOperand("input1.index_add[0].input", "input1.index_add[0].value"),
+                 new ConstraintSecondOperand("input1.index_add[0].addend", "input1.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[0].addend", "input1.index_add[0].value"),
-                 new ConstraintSecondArgument("input1.index_add[0].input", "input1.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("input1.index_add[0].addend", "input1.index_add[0].value"),
+                 new ConstraintSecondOperand("input1.index_add[0].input", "input1.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("input1.index_add[0].value"),
                new ConstraintFSubInst("input1.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[0].input", "input1.index_add[0].value"),
-                 new ConstraintSecondArgument("input1.index_add[0].addend", "input1.index_add[0].value")}),
+                 new ConstraintFirstOperand("input1.index_add[0].input", "input1.index_add[0].value"),
+                 new ConstraintSecondOperand("input1.index_add[0].addend", "input1.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[0].addend", "input1.index_add[0].value"),
-                 new ConstraintSecondArgument("input1.index_add[0].input", "input1.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("input1.index_add[0].addend", "input1.index_add[0].value"),
+                 new ConstraintSecondOperand("input1.index_add[0].input", "input1.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("input1.index_add[0].input"),
@@ -2687,9 +2686,9 @@ ConstraintAnd ConstraintGEMM()
              new ConstraintSame("loop[0].iterator", "input1.input_index[1]"),
              new ConstraintSame("loop[2].iterator", "input1.input_index[0]")})}),
          new ConstraintLoadInst("input2.value"),
-         new ConstraintFirstArgument("input2.access_pointer", "input2.value"),
+         new ConstraintFirstOperand("input2.access_pointer", "input2.value"),
          new ConstraintGEPInst("input2.access_pointer"),
-         new ConstraintFirstArgument("input2.base_pointer", "input2.access_pointer"),
+         new ConstraintFirstOperand("input2.base_pointer", "input2.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2698,7 +2697,7 @@ ConstraintAnd ConstraintGEMM()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("input2.base_pointer")})}),
-         new ConstraintSecondArgument("input2.output_index", "input2.access_pointer"),
+         new ConstraintSecondOperand("input2.output_index", "input2.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("input2.output_index"),
@@ -2718,22 +2717,22 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFAddInst("input2.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.offset_add.input", "input2.offset_add.value"),
-                 new ConstraintSecondArgument("input2.offset_add.addend", "input2.offset_add.value")}),
+                 new ConstraintFirstOperand("input2.offset_add.input", "input2.offset_add.value"),
+                 new ConstraintSecondOperand("input2.offset_add.addend", "input2.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.offset_add.addend", "input2.offset_add.value"),
-                 new ConstraintSecondArgument("input2.offset_add.input", "input2.offset_add.value")})})}),
+                 new ConstraintFirstOperand("input2.offset_add.addend", "input2.offset_add.value"),
+                 new ConstraintSecondOperand("input2.offset_add.input", "input2.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("input2.offset_add.value"),
                new ConstraintFSubInst("input2.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.offset_add.input", "input2.offset_add.value"),
-                 new ConstraintSecondArgument("input2.offset_add.addend", "input2.offset_add.value")}),
+                 new ConstraintFirstOperand("input2.offset_add.input", "input2.offset_add.value"),
+                 new ConstraintSecondOperand("input2.offset_add.addend", "input2.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.offset_add.addend", "input2.offset_add.value"),
-                 new ConstraintSecondArgument("input2.offset_add.input", "input2.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("input2.offset_add.addend", "input2.offset_add.value"),
+                 new ConstraintSecondOperand("input2.offset_add.input", "input2.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2754,20 +2753,20 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFMulInst("input2.stride_mul[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[1].input", "input2.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[1].multiplier", "input2.stride_mul[1].value")}),
+                 new ConstraintFirstOperand("input2.stride_mul[1].input", "input2.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[1].multiplier", "input2.stride_mul[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[1].multiplier", "input2.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[1].input", "input2.stride_mul[1].value")})})}),
+                 new ConstraintFirstOperand("input2.stride_mul[1].multiplier", "input2.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[1].input", "input2.stride_mul[1].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("input2.stride_mul[1].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[1].input", "input2.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[1].multiplier", "input2.stride_mul[1].value")}),
+                 new ConstraintFirstOperand("input2.stride_mul[1].input", "input2.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[1].multiplier", "input2.stride_mul[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[1].multiplier", "input2.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[1].input", "input2.stride_mul[1].value")})})})}),
+                 new ConstraintFirstOperand("input2.stride_mul[1].multiplier", "input2.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[1].input", "input2.stride_mul[1].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2788,22 +2787,22 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFAddInst("input2.index_add[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[1].input", "input2.index_add[1].value"),
-                 new ConstraintSecondArgument("input2.index_add[1].addend", "input2.index_add[1].value")}),
+                 new ConstraintFirstOperand("input2.index_add[1].input", "input2.index_add[1].value"),
+                 new ConstraintSecondOperand("input2.index_add[1].addend", "input2.index_add[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[1].addend", "input2.index_add[1].value"),
-                 new ConstraintSecondArgument("input2.index_add[1].input", "input2.index_add[1].value")})})}),
+                 new ConstraintFirstOperand("input2.index_add[1].addend", "input2.index_add[1].value"),
+                 new ConstraintSecondOperand("input2.index_add[1].input", "input2.index_add[1].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("input2.index_add[1].value"),
                new ConstraintFSubInst("input2.index_add[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[1].input", "input2.index_add[1].value"),
-                 new ConstraintSecondArgument("input2.index_add[1].addend", "input2.index_add[1].value")}),
+                 new ConstraintFirstOperand("input2.index_add[1].input", "input2.index_add[1].value"),
+                 new ConstraintSecondOperand("input2.index_add[1].addend", "input2.index_add[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[1].addend", "input2.index_add[1].value"),
-                 new ConstraintSecondArgument("input2.index_add[1].input", "input2.index_add[1].value")})})})}),
+                 new ConstraintFirstOperand("input2.index_add[1].addend", "input2.index_add[1].value"),
+                 new ConstraintSecondOperand("input2.index_add[1].input", "input2.index_add[1].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("input2.index_add[1].addend"),
@@ -2831,20 +2830,20 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFMulInst("input2.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[0].input", "input2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("input2.stride_mul[0].input", "input2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[0].input", "input2.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[0].input", "input2.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("input2.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[0].input", "input2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("input2.stride_mul[0].input", "input2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[0].input", "input2.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[0].input", "input2.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -2865,22 +2864,22 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFAddInst("input2.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[0].input", "input2.index_add[0].value"),
-                 new ConstraintSecondArgument("input2.index_add[0].addend", "input2.index_add[0].value")}),
+                 new ConstraintFirstOperand("input2.index_add[0].input", "input2.index_add[0].value"),
+                 new ConstraintSecondOperand("input2.index_add[0].addend", "input2.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[0].addend", "input2.index_add[0].value"),
-                 new ConstraintSecondArgument("input2.index_add[0].input", "input2.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("input2.index_add[0].addend", "input2.index_add[0].value"),
+                 new ConstraintSecondOperand("input2.index_add[0].input", "input2.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("input2.index_add[0].value"),
                new ConstraintFSubInst("input2.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[0].input", "input2.index_add[0].value"),
-                 new ConstraintSecondArgument("input2.index_add[0].addend", "input2.index_add[0].value")}),
+                 new ConstraintFirstOperand("input2.index_add[0].input", "input2.index_add[0].value"),
+                 new ConstraintSecondOperand("input2.index_add[0].addend", "input2.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[0].addend", "input2.index_add[0].value"),
-                 new ConstraintSecondArgument("input2.index_add[0].input", "input2.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("input2.index_add[0].addend", "input2.index_add[0].value"),
+                 new ConstraintSecondOperand("input2.index_add[0].input", "input2.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("input2.index_add[0].input"),
@@ -2973,19 +2972,19 @@ ConstraintAnd ConstraintGEMM()
          new ConstraintFAddInst("loop[2].new_ind"),
          new ConstraintOr({
            new ConstraintAnd({
-             new ConstraintFirstArgument("loop[2].old_ind", "loop[2].new_ind"),
-             new ConstraintSecondArgument("loop[2].dotvalue", "loop[2].new_ind")}),
+             new ConstraintFirstOperand("loop[2].old_ind", "loop[2].new_ind"),
+             new ConstraintSecondOperand("loop[2].dotvalue", "loop[2].new_ind")}),
            new ConstraintAnd({
-             new ConstraintFirstArgument("loop[2].dotvalue", "loop[2].new_ind"),
-             new ConstraintSecondArgument("loop[2].old_ind", "loop[2].new_ind")})}),
+             new ConstraintFirstOperand("loop[2].dotvalue", "loop[2].new_ind"),
+             new ConstraintSecondOperand("loop[2].old_ind", "loop[2].new_ind")})}),
          new ConstraintFMulInst("loop[2].dotvalue"),
          new ConstraintOr({
            new ConstraintAnd({
-             new ConstraintFirstArgument("input1.value", "loop[2].dotvalue"),
-             new ConstraintSecondArgument("input2.value", "loop[2].dotvalue")}),
+             new ConstraintFirstOperand("input1.value", "loop[2].dotvalue"),
+             new ConstraintSecondOperand("input2.value", "loop[2].dotvalue")}),
            new ConstraintAnd({
-             new ConstraintFirstArgument("input2.value", "loop[2].dotvalue"),
-             new ConstraintSecondArgument("input1.value", "loop[2].dotvalue")})}),
+             new ConstraintFirstOperand("input2.value", "loop[2].dotvalue"),
+             new ConstraintSecondOperand("input1.value", "loop[2].dotvalue")})}),
          new ConstraintIncomingValue("loop[2].initial", "loop[2].precursor", "loop[2].old_ind"),
          new ConstraintOr({
            new ConstraintAnd({
@@ -2994,7 +2993,7 @@ ConstraintAnd ConstraintGEMM()
            new ConstraintAnd({
              new ConstraintFloatZero("loop[2].initial"),
              new ConstraintGEPInst("output.access_pointer")})}),
-         new ConstraintFirstArgument("final_value", "output.store"),
+         new ConstraintFirstOperand("final_value", "output.store"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintSame("scaled_reduc", "final_value"),
@@ -3006,22 +3005,22 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFAddInst("final_value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("scaled_reduc", "final_value"),
-                 new ConstraintSecondArgument("scaled_prev", "final_value")}),
+                 new ConstraintFirstOperand("scaled_reduc", "final_value"),
+                 new ConstraintSecondOperand("scaled_prev", "final_value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("scaled_prev", "final_value"),
-                 new ConstraintSecondArgument("scaled_reduc", "final_value")})})}),
+                 new ConstraintFirstOperand("scaled_prev", "final_value"),
+                 new ConstraintSecondOperand("scaled_reduc", "final_value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("final_value"),
                new ConstraintFSubInst("final_value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("scaled_reduc", "final_value"),
-                 new ConstraintSecondArgument("scaled_prev", "final_value")}),
+                 new ConstraintFirstOperand("scaled_reduc", "final_value"),
+                 new ConstraintSecondOperand("scaled_prev", "final_value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("scaled_prev", "final_value"),
-                 new ConstraintSecondArgument("scaled_reduc", "final_value")})})})}),
+                 new ConstraintFirstOperand("scaled_prev", "final_value"),
+                 new ConstraintSecondOperand("scaled_reduc", "final_value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintSame("loop[2].old_ind", "scaled_reduc"),
@@ -3033,20 +3032,20 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFMulInst("scaled_reduc")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("loop[2].old_ind", "scaled_reduc"),
-                 new ConstraintSecondArgument("alpha", "scaled_reduc")}),
+                 new ConstraintFirstOperand("loop[2].old_ind", "scaled_reduc"),
+                 new ConstraintSecondOperand("alpha", "scaled_reduc")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("alpha", "scaled_reduc"),
-                 new ConstraintSecondArgument("loop[2].old_ind", "scaled_reduc")})})}),
+                 new ConstraintFirstOperand("alpha", "scaled_reduc"),
+                 new ConstraintSecondOperand("loop[2].old_ind", "scaled_reduc")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("scaled_reduc"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("loop[2].old_ind", "scaled_reduc"),
-                 new ConstraintSecondArgument("alpha", "scaled_reduc")}),
+                 new ConstraintFirstOperand("loop[2].old_ind", "scaled_reduc"),
+                 new ConstraintSecondOperand("alpha", "scaled_reduc")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("alpha", "scaled_reduc"),
-                 new ConstraintSecondArgument("loop[2].old_ind", "scaled_reduc")})})})}),
+                 new ConstraintFirstOperand("alpha", "scaled_reduc"),
+                 new ConstraintSecondOperand("loop[2].old_ind", "scaled_reduc")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3066,27 +3065,27 @@ ConstraintAnd ConstraintGEMM()
                new ConstraintFMulInst("scaled_prev")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("prev", "scaled_prev"),
-                 new ConstraintSecondArgument("beta", "scaled_prev")}),
+                 new ConstraintFirstOperand("prev", "scaled_prev"),
+                 new ConstraintSecondOperand("beta", "scaled_prev")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("beta", "scaled_prev"),
-                 new ConstraintSecondArgument("prev", "scaled_prev")})})}),
+                 new ConstraintFirstOperand("beta", "scaled_prev"),
+                 new ConstraintSecondOperand("prev", "scaled_prev")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("scaled_prev"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("prev", "scaled_prev"),
-                 new ConstraintSecondArgument("beta", "scaled_prev")}),
+                 new ConstraintFirstOperand("prev", "scaled_prev"),
+                 new ConstraintSecondOperand("beta", "scaled_prev")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("beta", "scaled_prev"),
-                 new ConstraintSecondArgument("prev", "scaled_prev")})})})}),
+                 new ConstraintFirstOperand("beta", "scaled_prev"),
+                 new ConstraintSecondOperand("prev", "scaled_prev")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintUnused("prev"),
              new ConstraintGEPInst("output.access_pointer")}),
            new ConstraintAnd({
              new ConstraintLoadInst("prev"),
-             new ConstraintFirstArgument("output.access_pointer", "prev")})}),
+             new ConstraintFirstOperand("output.access_pointer", "prev")})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3285,9 +3284,9 @@ ConstraintAnd ConstraintGEMV()
          new ConstraintSame("body_sese.end", "loop[1].body_sese.end"),
          new ConstraintSame("body_sese.successor", "loop[1].body_sese.successor"),
          new ConstraintStoreInst("output.store"),
-         new ConstraintSecondArgument("output.access_pointer", "output.store"),
+         new ConstraintSecondOperand("output.access_pointer", "output.store"),
          new ConstraintGEPInst("output.access_pointer"),
-         new ConstraintFirstArgument("output.base_pointer", "output.access_pointer"),
+         new ConstraintFirstOperand("output.base_pointer", "output.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3296,7 +3295,7 @@ ConstraintAnd ConstraintGEMV()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("output.base_pointer")})}),
-         new ConstraintSecondArgument("output.output_index", "output.access_pointer"),
+         new ConstraintSecondOperand("output.output_index", "output.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("output.output_index"),
@@ -3316,22 +3315,22 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFAddInst("output.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.offset_add.input", "output.offset_add.value"),
-                 new ConstraintSecondArgument("output.offset_add.addend", "output.offset_add.value")}),
+                 new ConstraintFirstOperand("output.offset_add.input", "output.offset_add.value"),
+                 new ConstraintSecondOperand("output.offset_add.addend", "output.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.offset_add.addend", "output.offset_add.value"),
-                 new ConstraintSecondArgument("output.offset_add.input", "output.offset_add.value")})})}),
+                 new ConstraintFirstOperand("output.offset_add.addend", "output.offset_add.value"),
+                 new ConstraintSecondOperand("output.offset_add.input", "output.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("output.offset_add.value"),
                new ConstraintFSubInst("output.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.offset_add.input", "output.offset_add.value"),
-                 new ConstraintSecondArgument("output.offset_add.addend", "output.offset_add.value")}),
+                 new ConstraintFirstOperand("output.offset_add.input", "output.offset_add.value"),
+                 new ConstraintSecondOperand("output.offset_add.addend", "output.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.offset_add.addend", "output.offset_add.value"),
-                 new ConstraintSecondArgument("output.offset_add.input", "output.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("output.offset_add.addend", "output.offset_add.value"),
+                 new ConstraintSecondOperand("output.offset_add.input", "output.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3352,20 +3351,20 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFMulInst("output.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[0].input", "output.stride_mul[0].value"),
-                 new ConstraintSecondArgument("output.stride_mul[0].multiplier", "output.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("output.stride_mul[0].input", "output.stride_mul[0].value"),
+                 new ConstraintSecondOperand("output.stride_mul[0].multiplier", "output.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[0].multiplier", "output.stride_mul[0].value"),
-                 new ConstraintSecondArgument("output.stride_mul[0].input", "output.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("output.stride_mul[0].multiplier", "output.stride_mul[0].value"),
+                 new ConstraintSecondOperand("output.stride_mul[0].input", "output.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("output.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[0].input", "output.stride_mul[0].value"),
-                 new ConstraintSecondArgument("output.stride_mul[0].multiplier", "output.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("output.stride_mul[0].input", "output.stride_mul[0].value"),
+                 new ConstraintSecondOperand("output.stride_mul[0].multiplier", "output.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.stride_mul[0].multiplier", "output.stride_mul[0].value"),
-                 new ConstraintSecondArgument("output.stride_mul[0].input", "output.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("output.stride_mul[0].multiplier", "output.stride_mul[0].value"),
+                 new ConstraintSecondOperand("output.stride_mul[0].input", "output.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3386,22 +3385,22 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFAddInst("output.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[0].input", "output.index_add[0].value"),
-                 new ConstraintSecondArgument("output.index_add[0].addend", "output.index_add[0].value")}),
+                 new ConstraintFirstOperand("output.index_add[0].input", "output.index_add[0].value"),
+                 new ConstraintSecondOperand("output.index_add[0].addend", "output.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[0].addend", "output.index_add[0].value"),
-                 new ConstraintSecondArgument("output.index_add[0].input", "output.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("output.index_add[0].addend", "output.index_add[0].value"),
+                 new ConstraintSecondOperand("output.index_add[0].input", "output.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("output.index_add[0].value"),
                new ConstraintFSubInst("output.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[0].input", "output.index_add[0].value"),
-                 new ConstraintSecondArgument("output.index_add[0].addend", "output.index_add[0].value")}),
+                 new ConstraintFirstOperand("output.index_add[0].input", "output.index_add[0].value"),
+                 new ConstraintSecondOperand("output.index_add[0].addend", "output.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("output.index_add[0].addend", "output.index_add[0].value"),
-                 new ConstraintSecondArgument("output.index_add[0].input", "output.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("output.index_add[0].addend", "output.index_add[0].value"),
+                 new ConstraintSecondOperand("output.index_add[0].input", "output.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("output.index_add[0].input"),
@@ -3428,9 +3427,9 @@ ConstraintAnd ConstraintGEMV()
              new ConstraintUnused("output.base_index")})}),
          new ConstraintSame("loop[0].iterator", "output.input_index[0]"),
          new ConstraintLoadInst("input1.value"),
-         new ConstraintFirstArgument("input1.access_pointer", "input1.value"),
+         new ConstraintFirstOperand("input1.access_pointer", "input1.value"),
          new ConstraintGEPInst("input1.access_pointer"),
-         new ConstraintFirstArgument("input1.base_pointer", "input1.access_pointer"),
+         new ConstraintFirstOperand("input1.base_pointer", "input1.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3439,7 +3438,7 @@ ConstraintAnd ConstraintGEMV()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("input1.base_pointer")})}),
-         new ConstraintSecondArgument("input1.output_index", "input1.access_pointer"),
+         new ConstraintSecondOperand("input1.output_index", "input1.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("input1.output_index"),
@@ -3459,22 +3458,22 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFAddInst("input1.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.offset_add.input", "input1.offset_add.value"),
-                 new ConstraintSecondArgument("input1.offset_add.addend", "input1.offset_add.value")}),
+                 new ConstraintFirstOperand("input1.offset_add.input", "input1.offset_add.value"),
+                 new ConstraintSecondOperand("input1.offset_add.addend", "input1.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.offset_add.addend", "input1.offset_add.value"),
-                 new ConstraintSecondArgument("input1.offset_add.input", "input1.offset_add.value")})})}),
+                 new ConstraintFirstOperand("input1.offset_add.addend", "input1.offset_add.value"),
+                 new ConstraintSecondOperand("input1.offset_add.input", "input1.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("input1.offset_add.value"),
                new ConstraintFSubInst("input1.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.offset_add.input", "input1.offset_add.value"),
-                 new ConstraintSecondArgument("input1.offset_add.addend", "input1.offset_add.value")}),
+                 new ConstraintFirstOperand("input1.offset_add.input", "input1.offset_add.value"),
+                 new ConstraintSecondOperand("input1.offset_add.addend", "input1.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.offset_add.addend", "input1.offset_add.value"),
-                 new ConstraintSecondArgument("input1.offset_add.input", "input1.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("input1.offset_add.addend", "input1.offset_add.value"),
+                 new ConstraintSecondOperand("input1.offset_add.input", "input1.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3495,20 +3494,20 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFMulInst("input1.stride_mul[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[1].input", "input1.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value")}),
+                 new ConstraintFirstOperand("input1.stride_mul[1].input", "input1.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[1].input", "input1.stride_mul[1].value")})})}),
+                 new ConstraintFirstOperand("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[1].input", "input1.stride_mul[1].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("input1.stride_mul[1].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[1].input", "input1.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value")}),
+                 new ConstraintFirstOperand("input1.stride_mul[1].input", "input1.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[1].input", "input1.stride_mul[1].value")})})})}),
+                 new ConstraintFirstOperand("input1.stride_mul[1].multiplier", "input1.stride_mul[1].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[1].input", "input1.stride_mul[1].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3529,22 +3528,22 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFAddInst("input1.index_add[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[1].input", "input1.index_add[1].value"),
-                 new ConstraintSecondArgument("input1.index_add[1].addend", "input1.index_add[1].value")}),
+                 new ConstraintFirstOperand("input1.index_add[1].input", "input1.index_add[1].value"),
+                 new ConstraintSecondOperand("input1.index_add[1].addend", "input1.index_add[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[1].addend", "input1.index_add[1].value"),
-                 new ConstraintSecondArgument("input1.index_add[1].input", "input1.index_add[1].value")})})}),
+                 new ConstraintFirstOperand("input1.index_add[1].addend", "input1.index_add[1].value"),
+                 new ConstraintSecondOperand("input1.index_add[1].input", "input1.index_add[1].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("input1.index_add[1].value"),
                new ConstraintFSubInst("input1.index_add[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[1].input", "input1.index_add[1].value"),
-                 new ConstraintSecondArgument("input1.index_add[1].addend", "input1.index_add[1].value")}),
+                 new ConstraintFirstOperand("input1.index_add[1].input", "input1.index_add[1].value"),
+                 new ConstraintSecondOperand("input1.index_add[1].addend", "input1.index_add[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[1].addend", "input1.index_add[1].value"),
-                 new ConstraintSecondArgument("input1.index_add[1].input", "input1.index_add[1].value")})})})}),
+                 new ConstraintFirstOperand("input1.index_add[1].addend", "input1.index_add[1].value"),
+                 new ConstraintSecondOperand("input1.index_add[1].input", "input1.index_add[1].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("input1.index_add[1].addend"),
@@ -3572,20 +3571,20 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFMulInst("input1.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[0].input", "input1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("input1.stride_mul[0].input", "input1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[0].input", "input1.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[0].input", "input1.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("input1.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[0].input", "input1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("input1.stride_mul[0].input", "input1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input1.stride_mul[0].input", "input1.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("input1.stride_mul[0].multiplier", "input1.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input1.stride_mul[0].input", "input1.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3606,22 +3605,22 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFAddInst("input1.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[0].input", "input1.index_add[0].value"),
-                 new ConstraintSecondArgument("input1.index_add[0].addend", "input1.index_add[0].value")}),
+                 new ConstraintFirstOperand("input1.index_add[0].input", "input1.index_add[0].value"),
+                 new ConstraintSecondOperand("input1.index_add[0].addend", "input1.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[0].addend", "input1.index_add[0].value"),
-                 new ConstraintSecondArgument("input1.index_add[0].input", "input1.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("input1.index_add[0].addend", "input1.index_add[0].value"),
+                 new ConstraintSecondOperand("input1.index_add[0].input", "input1.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("input1.index_add[0].value"),
                new ConstraintFSubInst("input1.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[0].input", "input1.index_add[0].value"),
-                 new ConstraintSecondArgument("input1.index_add[0].addend", "input1.index_add[0].value")}),
+                 new ConstraintFirstOperand("input1.index_add[0].input", "input1.index_add[0].value"),
+                 new ConstraintSecondOperand("input1.index_add[0].addend", "input1.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input1.index_add[0].addend", "input1.index_add[0].value"),
-                 new ConstraintSecondArgument("input1.index_add[0].input", "input1.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("input1.index_add[0].addend", "input1.index_add[0].value"),
+                 new ConstraintSecondOperand("input1.index_add[0].input", "input1.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("input1.index_add[0].input"),
@@ -3654,9 +3653,9 @@ ConstraintAnd ConstraintGEMV()
              new ConstraintSame("loop[0].iterator", "input1.input_index[1]"),
              new ConstraintSame("loop[1].iterator", "input1.input_index[0]")})}),
          new ConstraintLoadInst("input2.value"),
-         new ConstraintFirstArgument("input2.access_pointer", "input2.value"),
+         new ConstraintFirstOperand("input2.access_pointer", "input2.value"),
          new ConstraintGEPInst("input2.access_pointer"),
-         new ConstraintFirstArgument("input2.base_pointer", "input2.access_pointer"),
+         new ConstraintFirstOperand("input2.base_pointer", "input2.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3665,7 +3664,7 @@ ConstraintAnd ConstraintGEMV()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("input2.base_pointer")})}),
-         new ConstraintSecondArgument("input2.output_index", "input2.access_pointer"),
+         new ConstraintSecondOperand("input2.output_index", "input2.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("input2.output_index"),
@@ -3685,22 +3684,22 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFAddInst("input2.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.offset_add.input", "input2.offset_add.value"),
-                 new ConstraintSecondArgument("input2.offset_add.addend", "input2.offset_add.value")}),
+                 new ConstraintFirstOperand("input2.offset_add.input", "input2.offset_add.value"),
+                 new ConstraintSecondOperand("input2.offset_add.addend", "input2.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.offset_add.addend", "input2.offset_add.value"),
-                 new ConstraintSecondArgument("input2.offset_add.input", "input2.offset_add.value")})})}),
+                 new ConstraintFirstOperand("input2.offset_add.addend", "input2.offset_add.value"),
+                 new ConstraintSecondOperand("input2.offset_add.input", "input2.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("input2.offset_add.value"),
                new ConstraintFSubInst("input2.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.offset_add.input", "input2.offset_add.value"),
-                 new ConstraintSecondArgument("input2.offset_add.addend", "input2.offset_add.value")}),
+                 new ConstraintFirstOperand("input2.offset_add.input", "input2.offset_add.value"),
+                 new ConstraintSecondOperand("input2.offset_add.addend", "input2.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.offset_add.addend", "input2.offset_add.value"),
-                 new ConstraintSecondArgument("input2.offset_add.input", "input2.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("input2.offset_add.addend", "input2.offset_add.value"),
+                 new ConstraintSecondOperand("input2.offset_add.input", "input2.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3721,20 +3720,20 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFMulInst("input2.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[0].input", "input2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("input2.stride_mul[0].input", "input2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[0].input", "input2.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[0].input", "input2.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("input2.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[0].input", "input2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("input2.stride_mul[0].input", "input2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value"),
-                 new ConstraintSecondArgument("input2.stride_mul[0].input", "input2.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("input2.stride_mul[0].multiplier", "input2.stride_mul[0].value"),
+                 new ConstraintSecondOperand("input2.stride_mul[0].input", "input2.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3755,22 +3754,22 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFAddInst("input2.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[0].input", "input2.index_add[0].value"),
-                 new ConstraintSecondArgument("input2.index_add[0].addend", "input2.index_add[0].value")}),
+                 new ConstraintFirstOperand("input2.index_add[0].input", "input2.index_add[0].value"),
+                 new ConstraintSecondOperand("input2.index_add[0].addend", "input2.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[0].addend", "input2.index_add[0].value"),
-                 new ConstraintSecondArgument("input2.index_add[0].input", "input2.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("input2.index_add[0].addend", "input2.index_add[0].value"),
+                 new ConstraintSecondOperand("input2.index_add[0].input", "input2.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("input2.index_add[0].value"),
                new ConstraintFSubInst("input2.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[0].input", "input2.index_add[0].value"),
-                 new ConstraintSecondArgument("input2.index_add[0].addend", "input2.index_add[0].value")}),
+                 new ConstraintFirstOperand("input2.index_add[0].input", "input2.index_add[0].value"),
+                 new ConstraintSecondOperand("input2.index_add[0].addend", "input2.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("input2.index_add[0].addend", "input2.index_add[0].value"),
-                 new ConstraintSecondArgument("input2.index_add[0].input", "input2.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("input2.index_add[0].addend", "input2.index_add[0].value"),
+                 new ConstraintSecondOperand("input2.index_add[0].input", "input2.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("input2.index_add[0].input"),
@@ -3857,19 +3856,19 @@ ConstraintAnd ConstraintGEMV()
          new ConstraintFAddInst("loop[1].new_ind"),
          new ConstraintOr({
            new ConstraintAnd({
-             new ConstraintFirstArgument("loop[1].old_ind", "loop[1].new_ind"),
-             new ConstraintSecondArgument("loop[1].dotvalue", "loop[1].new_ind")}),
+             new ConstraintFirstOperand("loop[1].old_ind", "loop[1].new_ind"),
+             new ConstraintSecondOperand("loop[1].dotvalue", "loop[1].new_ind")}),
            new ConstraintAnd({
-             new ConstraintFirstArgument("loop[1].dotvalue", "loop[1].new_ind"),
-             new ConstraintSecondArgument("loop[1].old_ind", "loop[1].new_ind")})}),
+             new ConstraintFirstOperand("loop[1].dotvalue", "loop[1].new_ind"),
+             new ConstraintSecondOperand("loop[1].old_ind", "loop[1].new_ind")})}),
          new ConstraintFMulInst("loop[1].dotvalue"),
          new ConstraintOr({
            new ConstraintAnd({
-             new ConstraintFirstArgument("input1.value", "loop[1].dotvalue"),
-             new ConstraintSecondArgument("input2.value", "loop[1].dotvalue")}),
+             new ConstraintFirstOperand("input1.value", "loop[1].dotvalue"),
+             new ConstraintSecondOperand("input2.value", "loop[1].dotvalue")}),
            new ConstraintAnd({
-             new ConstraintFirstArgument("input2.value", "loop[1].dotvalue"),
-             new ConstraintSecondArgument("input1.value", "loop[1].dotvalue")})}),
+             new ConstraintFirstOperand("input2.value", "loop[1].dotvalue"),
+             new ConstraintSecondOperand("input1.value", "loop[1].dotvalue")})}),
          new ConstraintIncomingValue("loop[1].initial", "loop[1].precursor", "loop[1].old_ind"),
          new ConstraintOr({
            new ConstraintAnd({
@@ -3878,7 +3877,7 @@ ConstraintAnd ConstraintGEMV()
            new ConstraintAnd({
              new ConstraintFloatZero("loop[1].initial"),
              new ConstraintGEPInst("output.access_pointer")})}),
-         new ConstraintFirstArgument("final_value", "output.store"),
+         new ConstraintFirstOperand("final_value", "output.store"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintSame("scaled_reduc", "final_value"),
@@ -3890,22 +3889,22 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFAddInst("final_value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("scaled_reduc", "final_value"),
-                 new ConstraintSecondArgument("scaled_prev", "final_value")}),
+                 new ConstraintFirstOperand("scaled_reduc", "final_value"),
+                 new ConstraintSecondOperand("scaled_prev", "final_value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("scaled_prev", "final_value"),
-                 new ConstraintSecondArgument("scaled_reduc", "final_value")})})}),
+                 new ConstraintFirstOperand("scaled_prev", "final_value"),
+                 new ConstraintSecondOperand("scaled_reduc", "final_value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("final_value"),
                new ConstraintFSubInst("final_value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("scaled_reduc", "final_value"),
-                 new ConstraintSecondArgument("scaled_prev", "final_value")}),
+                 new ConstraintFirstOperand("scaled_reduc", "final_value"),
+                 new ConstraintSecondOperand("scaled_prev", "final_value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("scaled_prev", "final_value"),
-                 new ConstraintSecondArgument("scaled_reduc", "final_value")})})})}),
+                 new ConstraintFirstOperand("scaled_prev", "final_value"),
+                 new ConstraintSecondOperand("scaled_reduc", "final_value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintSame("loop[1].old_ind", "scaled_reduc"),
@@ -3917,20 +3916,20 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFMulInst("scaled_reduc")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("loop[1].old_ind", "scaled_reduc"),
-                 new ConstraintSecondArgument("alpha", "scaled_reduc")}),
+                 new ConstraintFirstOperand("loop[1].old_ind", "scaled_reduc"),
+                 new ConstraintSecondOperand("alpha", "scaled_reduc")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("alpha", "scaled_reduc"),
-                 new ConstraintSecondArgument("loop[1].old_ind", "scaled_reduc")})})}),
+                 new ConstraintFirstOperand("alpha", "scaled_reduc"),
+                 new ConstraintSecondOperand("loop[1].old_ind", "scaled_reduc")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("scaled_reduc"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("loop[1].old_ind", "scaled_reduc"),
-                 new ConstraintSecondArgument("alpha", "scaled_reduc")}),
+                 new ConstraintFirstOperand("loop[1].old_ind", "scaled_reduc"),
+                 new ConstraintSecondOperand("alpha", "scaled_reduc")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("alpha", "scaled_reduc"),
-                 new ConstraintSecondArgument("loop[1].old_ind", "scaled_reduc")})})})}),
+                 new ConstraintFirstOperand("alpha", "scaled_reduc"),
+                 new ConstraintSecondOperand("loop[1].old_ind", "scaled_reduc")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -3950,27 +3949,27 @@ ConstraintAnd ConstraintGEMV()
                new ConstraintFMulInst("scaled_prev")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("prev", "scaled_prev"),
-                 new ConstraintSecondArgument("beta", "scaled_prev")}),
+                 new ConstraintFirstOperand("prev", "scaled_prev"),
+                 new ConstraintSecondOperand("beta", "scaled_prev")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("beta", "scaled_prev"),
-                 new ConstraintSecondArgument("prev", "scaled_prev")})})}),
+                 new ConstraintFirstOperand("beta", "scaled_prev"),
+                 new ConstraintSecondOperand("prev", "scaled_prev")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("scaled_prev"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("prev", "scaled_prev"),
-                 new ConstraintSecondArgument("beta", "scaled_prev")}),
+                 new ConstraintFirstOperand("prev", "scaled_prev"),
+                 new ConstraintSecondOperand("beta", "scaled_prev")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("beta", "scaled_prev"),
-                 new ConstraintSecondArgument("prev", "scaled_prev")})})})}),
+                 new ConstraintFirstOperand("beta", "scaled_prev"),
+                 new ConstraintSecondOperand("prev", "scaled_prev")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintUnused("prev"),
              new ConstraintGEPInst("output.access_pointer")}),
            new ConstraintAnd({
              new ConstraintLoadInst("prev"),
-             new ConstraintFirstArgument("output.access_pointer", "prev")})}),
+             new ConstraintFirstOperand("output.access_pointer", "prev")})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4043,9 +4042,9 @@ ConstraintAnd ConstraintSPMV()
              new ConstraintUnused("iter_step")})}),
          new ConstraintUnused("begin_idx.offset_add.addend"),
          new ConstraintLoadInst("begin_idx.value"),
-         new ConstraintFirstArgument("begin_idx.access_pointer", "begin_idx.value"),
+         new ConstraintFirstOperand("begin_idx.access_pointer", "begin_idx.value"),
          new ConstraintGEPInst("begin_idx.access_pointer"),
-         new ConstraintFirstArgument("begin_idx.base_pointer", "begin_idx.access_pointer"),
+         new ConstraintFirstOperand("begin_idx.base_pointer", "begin_idx.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4054,7 +4053,7 @@ ConstraintAnd ConstraintSPMV()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("begin_idx.base_pointer")})}),
-         new ConstraintSecondArgument("begin_idx.output_index", "begin_idx.access_pointer"),
+         new ConstraintSecondOperand("begin_idx.output_index", "begin_idx.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("begin_idx.output_index"),
@@ -4074,22 +4073,22 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFAddInst("begin_idx.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.offset_add.input", "begin_idx.offset_add.value"),
-                 new ConstraintSecondArgument("begin_idx.offset_add.addend", "begin_idx.offset_add.value")}),
+                 new ConstraintFirstOperand("begin_idx.offset_add.input", "begin_idx.offset_add.value"),
+                 new ConstraintSecondOperand("begin_idx.offset_add.addend", "begin_idx.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.offset_add.addend", "begin_idx.offset_add.value"),
-                 new ConstraintSecondArgument("begin_idx.offset_add.input", "begin_idx.offset_add.value")})})}),
+                 new ConstraintFirstOperand("begin_idx.offset_add.addend", "begin_idx.offset_add.value"),
+                 new ConstraintSecondOperand("begin_idx.offset_add.input", "begin_idx.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("begin_idx.offset_add.value"),
                new ConstraintFSubInst("begin_idx.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.offset_add.input", "begin_idx.offset_add.value"),
-                 new ConstraintSecondArgument("begin_idx.offset_add.addend", "begin_idx.offset_add.value")}),
+                 new ConstraintFirstOperand("begin_idx.offset_add.input", "begin_idx.offset_add.value"),
+                 new ConstraintSecondOperand("begin_idx.offset_add.addend", "begin_idx.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.offset_add.addend", "begin_idx.offset_add.value"),
-                 new ConstraintSecondArgument("begin_idx.offset_add.input", "begin_idx.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("begin_idx.offset_add.addend", "begin_idx.offset_add.value"),
+                 new ConstraintSecondOperand("begin_idx.offset_add.input", "begin_idx.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4110,20 +4109,20 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFMulInst("begin_idx.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.stride_mul[0].input", "begin_idx.stride_mul[0].value"),
-                 new ConstraintSecondArgument("begin_idx.stride_mul[0].multiplier", "begin_idx.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("begin_idx.stride_mul[0].input", "begin_idx.stride_mul[0].value"),
+                 new ConstraintSecondOperand("begin_idx.stride_mul[0].multiplier", "begin_idx.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.stride_mul[0].multiplier", "begin_idx.stride_mul[0].value"),
-                 new ConstraintSecondArgument("begin_idx.stride_mul[0].input", "begin_idx.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("begin_idx.stride_mul[0].multiplier", "begin_idx.stride_mul[0].value"),
+                 new ConstraintSecondOperand("begin_idx.stride_mul[0].input", "begin_idx.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("begin_idx.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.stride_mul[0].input", "begin_idx.stride_mul[0].value"),
-                 new ConstraintSecondArgument("begin_idx.stride_mul[0].multiplier", "begin_idx.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("begin_idx.stride_mul[0].input", "begin_idx.stride_mul[0].value"),
+                 new ConstraintSecondOperand("begin_idx.stride_mul[0].multiplier", "begin_idx.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.stride_mul[0].multiplier", "begin_idx.stride_mul[0].value"),
-                 new ConstraintSecondArgument("begin_idx.stride_mul[0].input", "begin_idx.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("begin_idx.stride_mul[0].multiplier", "begin_idx.stride_mul[0].value"),
+                 new ConstraintSecondOperand("begin_idx.stride_mul[0].input", "begin_idx.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4144,22 +4143,22 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFAddInst("begin_idx.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.index_add[0].input", "begin_idx.index_add[0].value"),
-                 new ConstraintSecondArgument("begin_idx.index_add[0].addend", "begin_idx.index_add[0].value")}),
+                 new ConstraintFirstOperand("begin_idx.index_add[0].input", "begin_idx.index_add[0].value"),
+                 new ConstraintSecondOperand("begin_idx.index_add[0].addend", "begin_idx.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.index_add[0].addend", "begin_idx.index_add[0].value"),
-                 new ConstraintSecondArgument("begin_idx.index_add[0].input", "begin_idx.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("begin_idx.index_add[0].addend", "begin_idx.index_add[0].value"),
+                 new ConstraintSecondOperand("begin_idx.index_add[0].input", "begin_idx.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("begin_idx.index_add[0].value"),
                new ConstraintFSubInst("begin_idx.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.index_add[0].input", "begin_idx.index_add[0].value"),
-                 new ConstraintSecondArgument("begin_idx.index_add[0].addend", "begin_idx.index_add[0].value")}),
+                 new ConstraintFirstOperand("begin_idx.index_add[0].input", "begin_idx.index_add[0].value"),
+                 new ConstraintSecondOperand("begin_idx.index_add[0].addend", "begin_idx.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("begin_idx.index_add[0].addend", "begin_idx.index_add[0].value"),
-                 new ConstraintSecondArgument("begin_idx.index_add[0].input", "begin_idx.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("begin_idx.index_add[0].addend", "begin_idx.index_add[0].value"),
+                 new ConstraintSecondOperand("begin_idx.index_add[0].input", "begin_idx.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("begin_idx.index_add[0].input"),
@@ -4188,9 +4187,9 @@ ConstraintAnd ConstraintSPMV()
          new ConstraintSame("begin_idx.base_index", "end_idx.base_index"),
          new ConstraintSame("begin_idx.base_pointer", "end_idx.base_pointer"),
          new ConstraintLoadInst("end_idx.value"),
-         new ConstraintFirstArgument("end_idx.access_pointer", "end_idx.value"),
+         new ConstraintFirstOperand("end_idx.access_pointer", "end_idx.value"),
          new ConstraintGEPInst("end_idx.access_pointer"),
-         new ConstraintFirstArgument("end_idx.base_pointer", "end_idx.access_pointer"),
+         new ConstraintFirstOperand("end_idx.base_pointer", "end_idx.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4199,7 +4198,7 @@ ConstraintAnd ConstraintSPMV()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("end_idx.base_pointer")})}),
-         new ConstraintSecondArgument("end_idx.output_index", "end_idx.access_pointer"),
+         new ConstraintSecondOperand("end_idx.output_index", "end_idx.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("end_idx.output_index"),
@@ -4219,22 +4218,22 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFAddInst("end_idx.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.offset_add.input", "end_idx.offset_add.value"),
-                 new ConstraintSecondArgument("end_idx.offset_add.addend", "end_idx.offset_add.value")}),
+                 new ConstraintFirstOperand("end_idx.offset_add.input", "end_idx.offset_add.value"),
+                 new ConstraintSecondOperand("end_idx.offset_add.addend", "end_idx.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.offset_add.addend", "end_idx.offset_add.value"),
-                 new ConstraintSecondArgument("end_idx.offset_add.input", "end_idx.offset_add.value")})})}),
+                 new ConstraintFirstOperand("end_idx.offset_add.addend", "end_idx.offset_add.value"),
+                 new ConstraintSecondOperand("end_idx.offset_add.input", "end_idx.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("end_idx.offset_add.value"),
                new ConstraintFSubInst("end_idx.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.offset_add.input", "end_idx.offset_add.value"),
-                 new ConstraintSecondArgument("end_idx.offset_add.addend", "end_idx.offset_add.value")}),
+                 new ConstraintFirstOperand("end_idx.offset_add.input", "end_idx.offset_add.value"),
+                 new ConstraintSecondOperand("end_idx.offset_add.addend", "end_idx.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.offset_add.addend", "end_idx.offset_add.value"),
-                 new ConstraintSecondArgument("end_idx.offset_add.input", "end_idx.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("end_idx.offset_add.addend", "end_idx.offset_add.value"),
+                 new ConstraintSecondOperand("end_idx.offset_add.input", "end_idx.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4255,20 +4254,20 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFMulInst("end_idx.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.stride_mul[0].input", "end_idx.stride_mul[0].value"),
-                 new ConstraintSecondArgument("end_idx.stride_mul[0].multiplier", "end_idx.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("end_idx.stride_mul[0].input", "end_idx.stride_mul[0].value"),
+                 new ConstraintSecondOperand("end_idx.stride_mul[0].multiplier", "end_idx.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.stride_mul[0].multiplier", "end_idx.stride_mul[0].value"),
-                 new ConstraintSecondArgument("end_idx.stride_mul[0].input", "end_idx.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("end_idx.stride_mul[0].multiplier", "end_idx.stride_mul[0].value"),
+                 new ConstraintSecondOperand("end_idx.stride_mul[0].input", "end_idx.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("end_idx.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.stride_mul[0].input", "end_idx.stride_mul[0].value"),
-                 new ConstraintSecondArgument("end_idx.stride_mul[0].multiplier", "end_idx.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("end_idx.stride_mul[0].input", "end_idx.stride_mul[0].value"),
+                 new ConstraintSecondOperand("end_idx.stride_mul[0].multiplier", "end_idx.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.stride_mul[0].multiplier", "end_idx.stride_mul[0].value"),
-                 new ConstraintSecondArgument("end_idx.stride_mul[0].input", "end_idx.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("end_idx.stride_mul[0].multiplier", "end_idx.stride_mul[0].value"),
+                 new ConstraintSecondOperand("end_idx.stride_mul[0].input", "end_idx.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4289,22 +4288,22 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFAddInst("end_idx.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.index_add[0].input", "end_idx.index_add[0].value"),
-                 new ConstraintSecondArgument("end_idx.index_add[0].addend", "end_idx.index_add[0].value")}),
+                 new ConstraintFirstOperand("end_idx.index_add[0].input", "end_idx.index_add[0].value"),
+                 new ConstraintSecondOperand("end_idx.index_add[0].addend", "end_idx.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.index_add[0].addend", "end_idx.index_add[0].value"),
-                 new ConstraintSecondArgument("end_idx.index_add[0].input", "end_idx.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("end_idx.index_add[0].addend", "end_idx.index_add[0].value"),
+                 new ConstraintSecondOperand("end_idx.index_add[0].input", "end_idx.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("end_idx.index_add[0].value"),
                new ConstraintFSubInst("end_idx.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.index_add[0].input", "end_idx.index_add[0].value"),
-                 new ConstraintSecondArgument("end_idx.index_add[0].addend", "end_idx.index_add[0].value")}),
+                 new ConstraintFirstOperand("end_idx.index_add[0].input", "end_idx.index_add[0].value"),
+                 new ConstraintSecondOperand("end_idx.index_add[0].addend", "end_idx.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("end_idx.index_add[0].addend", "end_idx.index_add[0].value"),
-                 new ConstraintSecondArgument("end_idx.index_add[0].input", "end_idx.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("end_idx.index_add[0].addend", "end_idx.index_add[0].value"),
+                 new ConstraintSecondOperand("end_idx.index_add[0].input", "end_idx.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("end_idx.index_add[0].input"),
@@ -4404,9 +4403,9 @@ ConstraintAnd ConstraintSPMV()
              new ConstraintInstruction("begin"),
              new ConstraintUnused("iter_step")})}),
          new ConstraintLoadInst("idx_read.value"),
-         new ConstraintFirstArgument("idx_read.access_pointer", "idx_read.value"),
+         new ConstraintFirstOperand("idx_read.access_pointer", "idx_read.value"),
          new ConstraintGEPInst("idx_read.access_pointer"),
-         new ConstraintFirstArgument("idx_read.base_pointer", "idx_read.access_pointer"),
+         new ConstraintFirstOperand("idx_read.base_pointer", "idx_read.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4415,7 +4414,7 @@ ConstraintAnd ConstraintSPMV()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("idx_read.base_pointer")})}),
-         new ConstraintSecondArgument("idx_read.output_index", "idx_read.access_pointer"),
+         new ConstraintSecondOperand("idx_read.output_index", "idx_read.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("idx_read.output_index"),
@@ -4435,22 +4434,22 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFAddInst("idx_read.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.offset_add.input", "idx_read.offset_add.value"),
-                 new ConstraintSecondArgument("idx_read.offset_add.addend", "idx_read.offset_add.value")}),
+                 new ConstraintFirstOperand("idx_read.offset_add.input", "idx_read.offset_add.value"),
+                 new ConstraintSecondOperand("idx_read.offset_add.addend", "idx_read.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.offset_add.addend", "idx_read.offset_add.value"),
-                 new ConstraintSecondArgument("idx_read.offset_add.input", "idx_read.offset_add.value")})})}),
+                 new ConstraintFirstOperand("idx_read.offset_add.addend", "idx_read.offset_add.value"),
+                 new ConstraintSecondOperand("idx_read.offset_add.input", "idx_read.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("idx_read.offset_add.value"),
                new ConstraintFSubInst("idx_read.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.offset_add.input", "idx_read.offset_add.value"),
-                 new ConstraintSecondArgument("idx_read.offset_add.addend", "idx_read.offset_add.value")}),
+                 new ConstraintFirstOperand("idx_read.offset_add.input", "idx_read.offset_add.value"),
+                 new ConstraintSecondOperand("idx_read.offset_add.addend", "idx_read.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.offset_add.addend", "idx_read.offset_add.value"),
-                 new ConstraintSecondArgument("idx_read.offset_add.input", "idx_read.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("idx_read.offset_add.addend", "idx_read.offset_add.value"),
+                 new ConstraintSecondOperand("idx_read.offset_add.input", "idx_read.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4471,20 +4470,20 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFMulInst("idx_read.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.stride_mul[0].input", "idx_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("idx_read.stride_mul[0].multiplier", "idx_read.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("idx_read.stride_mul[0].input", "idx_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("idx_read.stride_mul[0].multiplier", "idx_read.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.stride_mul[0].multiplier", "idx_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("idx_read.stride_mul[0].input", "idx_read.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("idx_read.stride_mul[0].multiplier", "idx_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("idx_read.stride_mul[0].input", "idx_read.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("idx_read.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.stride_mul[0].input", "idx_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("idx_read.stride_mul[0].multiplier", "idx_read.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("idx_read.stride_mul[0].input", "idx_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("idx_read.stride_mul[0].multiplier", "idx_read.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.stride_mul[0].multiplier", "idx_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("idx_read.stride_mul[0].input", "idx_read.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("idx_read.stride_mul[0].multiplier", "idx_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("idx_read.stride_mul[0].input", "idx_read.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4505,22 +4504,22 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFAddInst("idx_read.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.index_add[0].input", "idx_read.index_add[0].value"),
-                 new ConstraintSecondArgument("idx_read.index_add[0].addend", "idx_read.index_add[0].value")}),
+                 new ConstraintFirstOperand("idx_read.index_add[0].input", "idx_read.index_add[0].value"),
+                 new ConstraintSecondOperand("idx_read.index_add[0].addend", "idx_read.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.index_add[0].addend", "idx_read.index_add[0].value"),
-                 new ConstraintSecondArgument("idx_read.index_add[0].input", "idx_read.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("idx_read.index_add[0].addend", "idx_read.index_add[0].value"),
+                 new ConstraintSecondOperand("idx_read.index_add[0].input", "idx_read.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("idx_read.index_add[0].value"),
                new ConstraintFSubInst("idx_read.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.index_add[0].input", "idx_read.index_add[0].value"),
-                 new ConstraintSecondArgument("idx_read.index_add[0].addend", "idx_read.index_add[0].value")}),
+                 new ConstraintFirstOperand("idx_read.index_add[0].input", "idx_read.index_add[0].value"),
+                 new ConstraintSecondOperand("idx_read.index_add[0].addend", "idx_read.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("idx_read.index_add[0].addend", "idx_read.index_add[0].value"),
-                 new ConstraintSecondArgument("idx_read.index_add[0].input", "idx_read.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("idx_read.index_add[0].addend", "idx_read.index_add[0].value"),
+                 new ConstraintSecondOperand("idx_read.index_add[0].input", "idx_read.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("idx_read.index_add[0].input"),
@@ -4547,9 +4546,9 @@ ConstraintAnd ConstraintSPMV()
              new ConstraintUnused("idx_read.base_index")})}),
          new ConstraintSame("iterator", "idx_read.input_index[0]"),
          new ConstraintLoadInst("indir_read.value"),
-         new ConstraintFirstArgument("indir_read.access_pointer", "indir_read.value"),
+         new ConstraintFirstOperand("indir_read.access_pointer", "indir_read.value"),
          new ConstraintGEPInst("indir_read.access_pointer"),
-         new ConstraintFirstArgument("indir_read.base_pointer", "indir_read.access_pointer"),
+         new ConstraintFirstOperand("indir_read.base_pointer", "indir_read.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4558,7 +4557,7 @@ ConstraintAnd ConstraintSPMV()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("indir_read.base_pointer")})}),
-         new ConstraintSecondArgument("indir_read.output_index", "indir_read.access_pointer"),
+         new ConstraintSecondOperand("indir_read.output_index", "indir_read.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("indir_read.output_index"),
@@ -4578,22 +4577,22 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFAddInst("indir_read.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.offset_add.input", "indir_read.offset_add.value"),
-                 new ConstraintSecondArgument("indir_read.offset_add.addend", "indir_read.offset_add.value")}),
+                 new ConstraintFirstOperand("indir_read.offset_add.input", "indir_read.offset_add.value"),
+                 new ConstraintSecondOperand("indir_read.offset_add.addend", "indir_read.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.offset_add.addend", "indir_read.offset_add.value"),
-                 new ConstraintSecondArgument("indir_read.offset_add.input", "indir_read.offset_add.value")})})}),
+                 new ConstraintFirstOperand("indir_read.offset_add.addend", "indir_read.offset_add.value"),
+                 new ConstraintSecondOperand("indir_read.offset_add.input", "indir_read.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("indir_read.offset_add.value"),
                new ConstraintFSubInst("indir_read.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.offset_add.input", "indir_read.offset_add.value"),
-                 new ConstraintSecondArgument("indir_read.offset_add.addend", "indir_read.offset_add.value")}),
+                 new ConstraintFirstOperand("indir_read.offset_add.input", "indir_read.offset_add.value"),
+                 new ConstraintSecondOperand("indir_read.offset_add.addend", "indir_read.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.offset_add.addend", "indir_read.offset_add.value"),
-                 new ConstraintSecondArgument("indir_read.offset_add.input", "indir_read.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("indir_read.offset_add.addend", "indir_read.offset_add.value"),
+                 new ConstraintSecondOperand("indir_read.offset_add.input", "indir_read.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4614,20 +4613,20 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFMulInst("indir_read.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.stride_mul[0].input", "indir_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("indir_read.stride_mul[0].multiplier", "indir_read.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("indir_read.stride_mul[0].input", "indir_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("indir_read.stride_mul[0].multiplier", "indir_read.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.stride_mul[0].multiplier", "indir_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("indir_read.stride_mul[0].input", "indir_read.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("indir_read.stride_mul[0].multiplier", "indir_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("indir_read.stride_mul[0].input", "indir_read.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("indir_read.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.stride_mul[0].input", "indir_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("indir_read.stride_mul[0].multiplier", "indir_read.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("indir_read.stride_mul[0].input", "indir_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("indir_read.stride_mul[0].multiplier", "indir_read.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.stride_mul[0].multiplier", "indir_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("indir_read.stride_mul[0].input", "indir_read.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("indir_read.stride_mul[0].multiplier", "indir_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("indir_read.stride_mul[0].input", "indir_read.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4648,22 +4647,22 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFAddInst("indir_read.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.index_add[0].input", "indir_read.index_add[0].value"),
-                 new ConstraintSecondArgument("indir_read.index_add[0].addend", "indir_read.index_add[0].value")}),
+                 new ConstraintFirstOperand("indir_read.index_add[0].input", "indir_read.index_add[0].value"),
+                 new ConstraintSecondOperand("indir_read.index_add[0].addend", "indir_read.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.index_add[0].addend", "indir_read.index_add[0].value"),
-                 new ConstraintSecondArgument("indir_read.index_add[0].input", "indir_read.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("indir_read.index_add[0].addend", "indir_read.index_add[0].value"),
+                 new ConstraintSecondOperand("indir_read.index_add[0].input", "indir_read.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("indir_read.index_add[0].value"),
                new ConstraintFSubInst("indir_read.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.index_add[0].input", "indir_read.index_add[0].value"),
-                 new ConstraintSecondArgument("indir_read.index_add[0].addend", "indir_read.index_add[0].value")}),
+                 new ConstraintFirstOperand("indir_read.index_add[0].input", "indir_read.index_add[0].value"),
+                 new ConstraintSecondOperand("indir_read.index_add[0].addend", "indir_read.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("indir_read.index_add[0].addend", "indir_read.index_add[0].value"),
-                 new ConstraintSecondArgument("indir_read.index_add[0].input", "indir_read.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("indir_read.index_add[0].addend", "indir_read.index_add[0].value"),
+                 new ConstraintSecondOperand("indir_read.index_add[0].input", "indir_read.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("indir_read.index_add[0].input"),
@@ -4690,9 +4689,9 @@ ConstraintAnd ConstraintSPMV()
              new ConstraintUnused("indir_read.base_index")})}),
          new ConstraintSame("idx_read.value", "indir_read.input_index[0]"),
          new ConstraintLoadInst("seq_read.value"),
-         new ConstraintFirstArgument("seq_read.access_pointer", "seq_read.value"),
+         new ConstraintFirstOperand("seq_read.access_pointer", "seq_read.value"),
          new ConstraintGEPInst("seq_read.access_pointer"),
-         new ConstraintFirstArgument("seq_read.base_pointer", "seq_read.access_pointer"),
+         new ConstraintFirstOperand("seq_read.base_pointer", "seq_read.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4701,7 +4700,7 @@ ConstraintAnd ConstraintSPMV()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("seq_read.base_pointer")})}),
-         new ConstraintSecondArgument("seq_read.output_index", "seq_read.access_pointer"),
+         new ConstraintSecondOperand("seq_read.output_index", "seq_read.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("seq_read.output_index"),
@@ -4721,22 +4720,22 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFAddInst("seq_read.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.offset_add.input", "seq_read.offset_add.value"),
-                 new ConstraintSecondArgument("seq_read.offset_add.addend", "seq_read.offset_add.value")}),
+                 new ConstraintFirstOperand("seq_read.offset_add.input", "seq_read.offset_add.value"),
+                 new ConstraintSecondOperand("seq_read.offset_add.addend", "seq_read.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.offset_add.addend", "seq_read.offset_add.value"),
-                 new ConstraintSecondArgument("seq_read.offset_add.input", "seq_read.offset_add.value")})})}),
+                 new ConstraintFirstOperand("seq_read.offset_add.addend", "seq_read.offset_add.value"),
+                 new ConstraintSecondOperand("seq_read.offset_add.input", "seq_read.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("seq_read.offset_add.value"),
                new ConstraintFSubInst("seq_read.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.offset_add.input", "seq_read.offset_add.value"),
-                 new ConstraintSecondArgument("seq_read.offset_add.addend", "seq_read.offset_add.value")}),
+                 new ConstraintFirstOperand("seq_read.offset_add.input", "seq_read.offset_add.value"),
+                 new ConstraintSecondOperand("seq_read.offset_add.addend", "seq_read.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.offset_add.addend", "seq_read.offset_add.value"),
-                 new ConstraintSecondArgument("seq_read.offset_add.input", "seq_read.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("seq_read.offset_add.addend", "seq_read.offset_add.value"),
+                 new ConstraintSecondOperand("seq_read.offset_add.input", "seq_read.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4757,20 +4756,20 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFMulInst("seq_read.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.stride_mul[0].input", "seq_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("seq_read.stride_mul[0].multiplier", "seq_read.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("seq_read.stride_mul[0].input", "seq_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("seq_read.stride_mul[0].multiplier", "seq_read.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.stride_mul[0].multiplier", "seq_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("seq_read.stride_mul[0].input", "seq_read.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("seq_read.stride_mul[0].multiplier", "seq_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("seq_read.stride_mul[0].input", "seq_read.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("seq_read.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.stride_mul[0].input", "seq_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("seq_read.stride_mul[0].multiplier", "seq_read.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("seq_read.stride_mul[0].input", "seq_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("seq_read.stride_mul[0].multiplier", "seq_read.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.stride_mul[0].multiplier", "seq_read.stride_mul[0].value"),
-                 new ConstraintSecondArgument("seq_read.stride_mul[0].input", "seq_read.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("seq_read.stride_mul[0].multiplier", "seq_read.stride_mul[0].value"),
+                 new ConstraintSecondOperand("seq_read.stride_mul[0].input", "seq_read.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -4791,22 +4790,22 @@ ConstraintAnd ConstraintSPMV()
                new ConstraintFAddInst("seq_read.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.index_add[0].input", "seq_read.index_add[0].value"),
-                 new ConstraintSecondArgument("seq_read.index_add[0].addend", "seq_read.index_add[0].value")}),
+                 new ConstraintFirstOperand("seq_read.index_add[0].input", "seq_read.index_add[0].value"),
+                 new ConstraintSecondOperand("seq_read.index_add[0].addend", "seq_read.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.index_add[0].addend", "seq_read.index_add[0].value"),
-                 new ConstraintSecondArgument("seq_read.index_add[0].input", "seq_read.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("seq_read.index_add[0].addend", "seq_read.index_add[0].value"),
+                 new ConstraintSecondOperand("seq_read.index_add[0].input", "seq_read.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("seq_read.index_add[0].value"),
                new ConstraintFSubInst("seq_read.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.index_add[0].input", "seq_read.index_add[0].value"),
-                 new ConstraintSecondArgument("seq_read.index_add[0].addend", "seq_read.index_add[0].value")}),
+                 new ConstraintFirstOperand("seq_read.index_add[0].input", "seq_read.index_add[0].value"),
+                 new ConstraintSecondOperand("seq_read.index_add[0].addend", "seq_read.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("seq_read.index_add[0].addend", "seq_read.index_add[0].value"),
-                 new ConstraintSecondArgument("seq_read.index_add[0].input", "seq_read.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("seq_read.index_add[0].addend", "seq_read.index_add[0].value"),
+                 new ConstraintSecondOperand("seq_read.index_add[0].input", "seq_read.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("seq_read.index_add[0].input"),
@@ -4893,19 +4892,19 @@ ConstraintAnd ConstraintSPMV()
          new ConstraintFAddInst("new_ind"),
          new ConstraintOr({
            new ConstraintAnd({
-             new ConstraintFirstArgument("old_ind", "new_ind"),
-             new ConstraintSecondArgument("dotvalue", "new_ind")}),
+             new ConstraintFirstOperand("old_ind", "new_ind"),
+             new ConstraintSecondOperand("dotvalue", "new_ind")}),
            new ConstraintAnd({
-             new ConstraintFirstArgument("dotvalue", "new_ind"),
-             new ConstraintSecondArgument("old_ind", "new_ind")})}),
+             new ConstraintFirstOperand("dotvalue", "new_ind"),
+             new ConstraintSecondOperand("old_ind", "new_ind")})}),
          new ConstraintFMulInst("dotvalue"),
          new ConstraintOr({
            new ConstraintAnd({
-             new ConstraintFirstArgument("indir_read.value", "dotvalue"),
-             new ConstraintSecondArgument("seq_read.value", "dotvalue")}),
+             new ConstraintFirstOperand("indir_read.value", "dotvalue"),
+             new ConstraintSecondOperand("seq_read.value", "dotvalue")}),
            new ConstraintAnd({
-             new ConstraintFirstArgument("seq_read.value", "dotvalue"),
-             new ConstraintSecondArgument("indir_read.value", "dotvalue")})}),
+             new ConstraintFirstOperand("seq_read.value", "dotvalue"),
+             new ConstraintSecondOperand("indir_read.value", "dotvalue")})}),
          new ConstraintIncomingValue("initial", "precursor", "old_ind")});
 }
 
@@ -4975,18 +4974,18 @@ ConstraintAnd ConstraintHisto()
          new ConstraintCFGEdge("store_instr", "store_instr_after"),
          new ConstraintCFGBlocked("store_instr_after", "body_sese.successor", "store_instr"),
          new ConstraintCFGBlocked("store_instr_after", "body_sese.precursor", "store_instr"),
-         new ConstraintSecondArgument("index_expr.output", "store_instr"),
+         new ConstraintSecondOperand("index_expr.output", "store_instr"),
          new ConstraintGEPInst("index_expr.output"),
-         new ConstraintFirstArgument("index_expr.output", "old_value"),
+         new ConstraintFirstOperand("index_expr.output", "old_value"),
          new ConstraintLoadInst("old_value"),
-         new ConstraintFirstArgument("update_expr.output", "store_instr"),
-         new ConstraintFirstArgument("reduction_array", "index_expr.output"),
+         new ConstraintFirstOperand("update_expr.output", "store_instr"),
+         new ConstraintFirstOperand("reduction_array", "index_expr.output"),
          new ConstraintCollect(30, "i",
            new ConstraintAnd({
              new ConstraintLoadInst("read[i].value"),
-             new ConstraintFirstArgument("read[i].access_pointer", "read[i].value"),
+             new ConstraintFirstOperand("read[i].access_pointer", "read[i].value"),
              new ConstraintGEPInst("read[i].access_pointer"),
-             new ConstraintFirstArgument("read[i].base_pointer", "read[i].access_pointer"),
+             new ConstraintFirstOperand("read[i].base_pointer", "read[i].access_pointer"),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -4995,7 +4994,7 @@ ConstraintAnd ConstraintHisto()
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
                  new ConstraintUnused("read[i].base_pointer")})}),
-             new ConstraintSecondArgument("read[i].output_index", "read[i].access_pointer"),
+             new ConstraintSecondOperand("read[i].output_index", "read[i].access_pointer"),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintZExtInst("read[i].output_index"),
@@ -5015,22 +5014,22 @@ ConstraintAnd ConstraintHisto()
                    new ConstraintFAddInst("read[i].offset_add.value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].offset_add.input", "read[i].offset_add.value"),
-                     new ConstraintSecondArgument("read[i].offset_add.addend", "read[i].offset_add.value")}),
+                     new ConstraintFirstOperand("read[i].offset_add.input", "read[i].offset_add.value"),
+                     new ConstraintSecondOperand("read[i].offset_add.addend", "read[i].offset_add.value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].offset_add.addend", "read[i].offset_add.value"),
-                     new ConstraintSecondArgument("read[i].offset_add.input", "read[i].offset_add.value")})})}),
+                     new ConstraintFirstOperand("read[i].offset_add.addend", "read[i].offset_add.value"),
+                     new ConstraintSecondOperand("read[i].offset_add.input", "read[i].offset_add.value")})})}),
                new ConstraintAnd({
                  new ConstraintOr({
                    new ConstraintSubInst("read[i].offset_add.value"),
                    new ConstraintFSubInst("read[i].offset_add.value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].offset_add.input", "read[i].offset_add.value"),
-                     new ConstraintSecondArgument("read[i].offset_add.addend", "read[i].offset_add.value")}),
+                     new ConstraintFirstOperand("read[i].offset_add.input", "read[i].offset_add.value"),
+                     new ConstraintSecondOperand("read[i].offset_add.addend", "read[i].offset_add.value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].offset_add.addend", "read[i].offset_add.value"),
-                     new ConstraintSecondArgument("read[i].offset_add.input", "read[i].offset_add.value")})})})}),
+                     new ConstraintFirstOperand("read[i].offset_add.addend", "read[i].offset_add.value"),
+                     new ConstraintSecondOperand("read[i].offset_add.input", "read[i].offset_add.value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -5051,20 +5050,20 @@ ConstraintAnd ConstraintHisto()
                    new ConstraintFMulInst("read[i].stride_mul[0].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].stride_mul[0].input", "read[i].stride_mul[0].value"),
-                     new ConstraintSecondArgument("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value")}),
+                     new ConstraintFirstOperand("read[i].stride_mul[0].input", "read[i].stride_mul[0].value"),
+                     new ConstraintSecondOperand("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value"),
-                     new ConstraintSecondArgument("read[i].stride_mul[0].input", "read[i].stride_mul[0].value")})})}),
+                     new ConstraintFirstOperand("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value"),
+                     new ConstraintSecondOperand("read[i].stride_mul[0].input", "read[i].stride_mul[0].value")})})}),
                new ConstraintAnd({
                  new ConstraintFDivInst("read[i].stride_mul[0].value"),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].stride_mul[0].input", "read[i].stride_mul[0].value"),
-                     new ConstraintSecondArgument("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value")}),
+                     new ConstraintFirstOperand("read[i].stride_mul[0].input", "read[i].stride_mul[0].value"),
+                     new ConstraintSecondOperand("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value"),
-                     new ConstraintSecondArgument("read[i].stride_mul[0].input", "read[i].stride_mul[0].value")})})})}),
+                     new ConstraintFirstOperand("read[i].stride_mul[0].multiplier", "read[i].stride_mul[0].value"),
+                     new ConstraintSecondOperand("read[i].stride_mul[0].input", "read[i].stride_mul[0].value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -5085,22 +5084,22 @@ ConstraintAnd ConstraintHisto()
                    new ConstraintFAddInst("read[i].index_add[0].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].index_add[0].input", "read[i].index_add[0].value"),
-                     new ConstraintSecondArgument("read[i].index_add[0].addend", "read[i].index_add[0].value")}),
+                     new ConstraintFirstOperand("read[i].index_add[0].input", "read[i].index_add[0].value"),
+                     new ConstraintSecondOperand("read[i].index_add[0].addend", "read[i].index_add[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].index_add[0].addend", "read[i].index_add[0].value"),
-                     new ConstraintSecondArgument("read[i].index_add[0].input", "read[i].index_add[0].value")})})}),
+                     new ConstraintFirstOperand("read[i].index_add[0].addend", "read[i].index_add[0].value"),
+                     new ConstraintSecondOperand("read[i].index_add[0].input", "read[i].index_add[0].value")})})}),
                new ConstraintAnd({
                  new ConstraintOr({
                    new ConstraintSubInst("read[i].index_add[0].value"),
                    new ConstraintFSubInst("read[i].index_add[0].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].index_add[0].input", "read[i].index_add[0].value"),
-                     new ConstraintSecondArgument("read[i].index_add[0].addend", "read[i].index_add[0].value")}),
+                     new ConstraintFirstOperand("read[i].index_add[0].input", "read[i].index_add[0].value"),
+                     new ConstraintSecondOperand("read[i].index_add[0].addend", "read[i].index_add[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("read[i].index_add[0].addend", "read[i].index_add[0].value"),
-                     new ConstraintSecondArgument("read[i].index_add[0].input", "read[i].index_add[0].value")})})})}),
+                     new ConstraintFirstOperand("read[i].index_add[0].addend", "read[i].index_add[0].value"),
+                     new ConstraintSecondOperand("read[i].index_add[0].input", "read[i].index_add[0].value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintZExtInst("read[i].index_add[0].input"),
@@ -5133,9 +5132,9 @@ ConstraintAnd ConstraintHisto()
          new ConstraintCollect(2, "i",
            new ConstraintAnd({
              new ConstraintLoadInst("closure[i].value"),
-             new ConstraintFirstArgument("closure[i].access_pointer", "closure[i].value"),
+             new ConstraintFirstOperand("closure[i].access_pointer", "closure[i].value"),
              new ConstraintGEPInst("closure[i].access_pointer"),
-             new ConstraintFirstArgument("closure[i].base_pointer", "closure[i].access_pointer"),
+             new ConstraintFirstOperand("closure[i].base_pointer", "closure[i].access_pointer"),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -5144,7 +5143,7 @@ ConstraintAnd ConstraintHisto()
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
                  new ConstraintUnused("closure[i].base_pointer")})}),
-             new ConstraintSecondArgument("closure[i].output_index", "closure[i].access_pointer"),
+             new ConstraintSecondOperand("closure[i].output_index", "closure[i].access_pointer"),
              new ConstraintCFGDominate("body_sese.begin", "closure[i].value"),
              new ConstraintCFGPostdom("body_sese.end", "closure[i].value"),
              new ConstraintDistinct("closure[i].base_pointer", "read[0].base_pointer"),
@@ -5727,9 +5726,9 @@ ConstraintAnd ConstraintStencil()
          new ConstraintSame("body_sese.end", "loop[2].body_sese.end"),
          new ConstraintSame("body_sese.successor", "loop[2].body_sese.successor"),
          new ConstraintStoreInst("write.store"),
-         new ConstraintSecondArgument("write.access_pointer", "write.store"),
+         new ConstraintSecondOperand("write.access_pointer", "write.store"),
          new ConstraintGEPInst("write.access_pointer"),
-         new ConstraintFirstArgument("write.base_pointer", "write.access_pointer"),
+         new ConstraintFirstOperand("write.base_pointer", "write.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -5738,7 +5737,7 @@ ConstraintAnd ConstraintStencil()
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
              new ConstraintUnused("write.base_pointer")})}),
-         new ConstraintSecondArgument("write.output_index", "write.access_pointer"),
+         new ConstraintSecondOperand("write.output_index", "write.access_pointer"),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("write.output_index"),
@@ -5758,22 +5757,22 @@ ConstraintAnd ConstraintStencil()
                new ConstraintFAddInst("write.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.offset_add.input", "write.offset_add.value"),
-                 new ConstraintSecondArgument("write.offset_add.addend", "write.offset_add.value")}),
+                 new ConstraintFirstOperand("write.offset_add.input", "write.offset_add.value"),
+                 new ConstraintSecondOperand("write.offset_add.addend", "write.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.offset_add.addend", "write.offset_add.value"),
-                 new ConstraintSecondArgument("write.offset_add.input", "write.offset_add.value")})})}),
+                 new ConstraintFirstOperand("write.offset_add.addend", "write.offset_add.value"),
+                 new ConstraintSecondOperand("write.offset_add.input", "write.offset_add.value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("write.offset_add.value"),
                new ConstraintFSubInst("write.offset_add.value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.offset_add.input", "write.offset_add.value"),
-                 new ConstraintSecondArgument("write.offset_add.addend", "write.offset_add.value")}),
+                 new ConstraintFirstOperand("write.offset_add.input", "write.offset_add.value"),
+                 new ConstraintSecondOperand("write.offset_add.addend", "write.offset_add.value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.offset_add.addend", "write.offset_add.value"),
-                 new ConstraintSecondArgument("write.offset_add.input", "write.offset_add.value")})})})}),
+                 new ConstraintFirstOperand("write.offset_add.addend", "write.offset_add.value"),
+                 new ConstraintSecondOperand("write.offset_add.input", "write.offset_add.value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -5794,20 +5793,20 @@ ConstraintAnd ConstraintStencil()
                new ConstraintFMulInst("write.stride_mul[2].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[2].input", "write.stride_mul[2].value"),
-                 new ConstraintSecondArgument("write.stride_mul[2].multiplier", "write.stride_mul[2].value")}),
+                 new ConstraintFirstOperand("write.stride_mul[2].input", "write.stride_mul[2].value"),
+                 new ConstraintSecondOperand("write.stride_mul[2].multiplier", "write.stride_mul[2].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[2].multiplier", "write.stride_mul[2].value"),
-                 new ConstraintSecondArgument("write.stride_mul[2].input", "write.stride_mul[2].value")})})}),
+                 new ConstraintFirstOperand("write.stride_mul[2].multiplier", "write.stride_mul[2].value"),
+                 new ConstraintSecondOperand("write.stride_mul[2].input", "write.stride_mul[2].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("write.stride_mul[2].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[2].input", "write.stride_mul[2].value"),
-                 new ConstraintSecondArgument("write.stride_mul[2].multiplier", "write.stride_mul[2].value")}),
+                 new ConstraintFirstOperand("write.stride_mul[2].input", "write.stride_mul[2].value"),
+                 new ConstraintSecondOperand("write.stride_mul[2].multiplier", "write.stride_mul[2].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[2].multiplier", "write.stride_mul[2].value"),
-                 new ConstraintSecondArgument("write.stride_mul[2].input", "write.stride_mul[2].value")})})})}),
+                 new ConstraintFirstOperand("write.stride_mul[2].multiplier", "write.stride_mul[2].value"),
+                 new ConstraintSecondOperand("write.stride_mul[2].input", "write.stride_mul[2].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -5828,22 +5827,22 @@ ConstraintAnd ConstraintStencil()
                new ConstraintFAddInst("write.index_add[2].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[2].input", "write.index_add[2].value"),
-                 new ConstraintSecondArgument("write.index_add[2].addend", "write.index_add[2].value")}),
+                 new ConstraintFirstOperand("write.index_add[2].input", "write.index_add[2].value"),
+                 new ConstraintSecondOperand("write.index_add[2].addend", "write.index_add[2].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[2].addend", "write.index_add[2].value"),
-                 new ConstraintSecondArgument("write.index_add[2].input", "write.index_add[2].value")})})}),
+                 new ConstraintFirstOperand("write.index_add[2].addend", "write.index_add[2].value"),
+                 new ConstraintSecondOperand("write.index_add[2].input", "write.index_add[2].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("write.index_add[2].value"),
                new ConstraintFSubInst("write.index_add[2].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[2].input", "write.index_add[2].value"),
-                 new ConstraintSecondArgument("write.index_add[2].addend", "write.index_add[2].value")}),
+                 new ConstraintFirstOperand("write.index_add[2].input", "write.index_add[2].value"),
+                 new ConstraintSecondOperand("write.index_add[2].addend", "write.index_add[2].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[2].addend", "write.index_add[2].value"),
-                 new ConstraintSecondArgument("write.index_add[2].input", "write.index_add[2].value")})})})}),
+                 new ConstraintFirstOperand("write.index_add[2].addend", "write.index_add[2].value"),
+                 new ConstraintSecondOperand("write.index_add[2].input", "write.index_add[2].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("write.index_add[2].addend"),
@@ -5871,20 +5870,20 @@ ConstraintAnd ConstraintStencil()
                new ConstraintFMulInst("write.stride_mul[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[1].input", "write.stride_mul[1].value"),
-                 new ConstraintSecondArgument("write.stride_mul[1].multiplier", "write.stride_mul[1].value")}),
+                 new ConstraintFirstOperand("write.stride_mul[1].input", "write.stride_mul[1].value"),
+                 new ConstraintSecondOperand("write.stride_mul[1].multiplier", "write.stride_mul[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[1].multiplier", "write.stride_mul[1].value"),
-                 new ConstraintSecondArgument("write.stride_mul[1].input", "write.stride_mul[1].value")})})}),
+                 new ConstraintFirstOperand("write.stride_mul[1].multiplier", "write.stride_mul[1].value"),
+                 new ConstraintSecondOperand("write.stride_mul[1].input", "write.stride_mul[1].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("write.stride_mul[1].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[1].input", "write.stride_mul[1].value"),
-                 new ConstraintSecondArgument("write.stride_mul[1].multiplier", "write.stride_mul[1].value")}),
+                 new ConstraintFirstOperand("write.stride_mul[1].input", "write.stride_mul[1].value"),
+                 new ConstraintSecondOperand("write.stride_mul[1].multiplier", "write.stride_mul[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[1].multiplier", "write.stride_mul[1].value"),
-                 new ConstraintSecondArgument("write.stride_mul[1].input", "write.stride_mul[1].value")})})})}),
+                 new ConstraintFirstOperand("write.stride_mul[1].multiplier", "write.stride_mul[1].value"),
+                 new ConstraintSecondOperand("write.stride_mul[1].input", "write.stride_mul[1].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -5905,22 +5904,22 @@ ConstraintAnd ConstraintStencil()
                new ConstraintFAddInst("write.index_add[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[1].input", "write.index_add[1].value"),
-                 new ConstraintSecondArgument("write.index_add[1].addend", "write.index_add[1].value")}),
+                 new ConstraintFirstOperand("write.index_add[1].input", "write.index_add[1].value"),
+                 new ConstraintSecondOperand("write.index_add[1].addend", "write.index_add[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[1].addend", "write.index_add[1].value"),
-                 new ConstraintSecondArgument("write.index_add[1].input", "write.index_add[1].value")})})}),
+                 new ConstraintFirstOperand("write.index_add[1].addend", "write.index_add[1].value"),
+                 new ConstraintSecondOperand("write.index_add[1].input", "write.index_add[1].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("write.index_add[1].value"),
                new ConstraintFSubInst("write.index_add[1].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[1].input", "write.index_add[1].value"),
-                 new ConstraintSecondArgument("write.index_add[1].addend", "write.index_add[1].value")}),
+                 new ConstraintFirstOperand("write.index_add[1].input", "write.index_add[1].value"),
+                 new ConstraintSecondOperand("write.index_add[1].addend", "write.index_add[1].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[1].addend", "write.index_add[1].value"),
-                 new ConstraintSecondArgument("write.index_add[1].input", "write.index_add[1].value")})})})}),
+                 new ConstraintFirstOperand("write.index_add[1].addend", "write.index_add[1].value"),
+                 new ConstraintSecondOperand("write.index_add[1].input", "write.index_add[1].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("write.index_add[1].addend"),
@@ -5948,20 +5947,20 @@ ConstraintAnd ConstraintStencil()
                new ConstraintFMulInst("write.stride_mul[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[0].input", "write.stride_mul[0].value"),
-                 new ConstraintSecondArgument("write.stride_mul[0].multiplier", "write.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("write.stride_mul[0].input", "write.stride_mul[0].value"),
+                 new ConstraintSecondOperand("write.stride_mul[0].multiplier", "write.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[0].multiplier", "write.stride_mul[0].value"),
-                 new ConstraintSecondArgument("write.stride_mul[0].input", "write.stride_mul[0].value")})})}),
+                 new ConstraintFirstOperand("write.stride_mul[0].multiplier", "write.stride_mul[0].value"),
+                 new ConstraintSecondOperand("write.stride_mul[0].input", "write.stride_mul[0].value")})})}),
            new ConstraintAnd({
              new ConstraintFDivInst("write.stride_mul[0].value"),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[0].input", "write.stride_mul[0].value"),
-                 new ConstraintSecondArgument("write.stride_mul[0].multiplier", "write.stride_mul[0].value")}),
+                 new ConstraintFirstOperand("write.stride_mul[0].input", "write.stride_mul[0].value"),
+                 new ConstraintSecondOperand("write.stride_mul[0].multiplier", "write.stride_mul[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.stride_mul[0].multiplier", "write.stride_mul[0].value"),
-                 new ConstraintSecondArgument("write.stride_mul[0].input", "write.stride_mul[0].value")})})})}),
+                 new ConstraintFirstOperand("write.stride_mul[0].multiplier", "write.stride_mul[0].value"),
+                 new ConstraintSecondOperand("write.stride_mul[0].input", "write.stride_mul[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintInstruction("begin"),
@@ -5982,22 +5981,22 @@ ConstraintAnd ConstraintStencil()
                new ConstraintFAddInst("write.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[0].input", "write.index_add[0].value"),
-                 new ConstraintSecondArgument("write.index_add[0].addend", "write.index_add[0].value")}),
+                 new ConstraintFirstOperand("write.index_add[0].input", "write.index_add[0].value"),
+                 new ConstraintSecondOperand("write.index_add[0].addend", "write.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[0].addend", "write.index_add[0].value"),
-                 new ConstraintSecondArgument("write.index_add[0].input", "write.index_add[0].value")})})}),
+                 new ConstraintFirstOperand("write.index_add[0].addend", "write.index_add[0].value"),
+                 new ConstraintSecondOperand("write.index_add[0].input", "write.index_add[0].value")})})}),
            new ConstraintAnd({
              new ConstraintOr({
                new ConstraintSubInst("write.index_add[0].value"),
                new ConstraintFSubInst("write.index_add[0].value")}),
              new ConstraintOr({
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[0].input", "write.index_add[0].value"),
-                 new ConstraintSecondArgument("write.index_add[0].addend", "write.index_add[0].value")}),
+                 new ConstraintFirstOperand("write.index_add[0].input", "write.index_add[0].value"),
+                 new ConstraintSecondOperand("write.index_add[0].addend", "write.index_add[0].value")}),
                new ConstraintAnd({
-                 new ConstraintFirstArgument("write.index_add[0].addend", "write.index_add[0].value"),
-                 new ConstraintSecondArgument("write.index_add[0].input", "write.index_add[0].value")})})})}),
+                 new ConstraintFirstOperand("write.index_add[0].addend", "write.index_add[0].value"),
+                 new ConstraintSecondOperand("write.index_add[0].input", "write.index_add[0].value")})})})}),
          new ConstraintOr({
            new ConstraintAnd({
              new ConstraintZExtInst("write.index_add[0].input"),
@@ -6050,13 +6049,13 @@ ConstraintAnd ConstraintStencil()
                new ConstraintAnd({
                  new ConstraintSame("loop[1].iterator", "write.input_index[0]"),
                  new ConstraintSame("loop[2].iterator", "write.input_index[1]")})})})}),
-         new ConstraintFirstArgument("compute_expr.output", "write.store"),
+         new ConstraintFirstOperand("compute_expr.output", "write.store"),
          new ConstraintCollect(32, "i",
            new ConstraintAnd({
              new ConstraintLoadInst("reads[i].value"),
-             new ConstraintFirstArgument("reads[i].access_pointer", "reads[i].value"),
+             new ConstraintFirstOperand("reads[i].access_pointer", "reads[i].value"),
              new ConstraintGEPInst("reads[i].read.access_pointer"),
-             new ConstraintFirstArgument("reads[i].read.base_pointer", "reads[i].read.access_pointer"),
+             new ConstraintFirstOperand("reads[i].read.base_pointer", "reads[i].read.access_pointer"),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -6065,7 +6064,7 @@ ConstraintAnd ConstraintStencil()
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
                  new ConstraintUnused("reads[i].read.base_pointer")})}),
-             new ConstraintSecondArgument("reads[i].read.output_index", "reads[i].read.access_pointer"),
+             new ConstraintSecondOperand("reads[i].read.output_index", "reads[i].read.access_pointer"),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintZExtInst("reads[i].read.output_index"),
@@ -6085,22 +6084,22 @@ ConstraintAnd ConstraintStencil()
                    new ConstraintFAddInst("reads[i].read.offset_add.value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.offset_add.input", "reads[i].read.offset_add.value"),
-                     new ConstraintSecondArgument("reads[i].read.offset_add.addend", "reads[i].read.offset_add.value")}),
+                     new ConstraintFirstOperand("reads[i].read.offset_add.input", "reads[i].read.offset_add.value"),
+                     new ConstraintSecondOperand("reads[i].read.offset_add.addend", "reads[i].read.offset_add.value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.offset_add.addend", "reads[i].read.offset_add.value"),
-                     new ConstraintSecondArgument("reads[i].read.offset_add.input", "reads[i].read.offset_add.value")})})}),
+                     new ConstraintFirstOperand("reads[i].read.offset_add.addend", "reads[i].read.offset_add.value"),
+                     new ConstraintSecondOperand("reads[i].read.offset_add.input", "reads[i].read.offset_add.value")})})}),
                new ConstraintAnd({
                  new ConstraintOr({
                    new ConstraintSubInst("reads[i].read.offset_add.value"),
                    new ConstraintFSubInst("reads[i].read.offset_add.value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.offset_add.input", "reads[i].read.offset_add.value"),
-                     new ConstraintSecondArgument("reads[i].read.offset_add.addend", "reads[i].read.offset_add.value")}),
+                     new ConstraintFirstOperand("reads[i].read.offset_add.input", "reads[i].read.offset_add.value"),
+                     new ConstraintSecondOperand("reads[i].read.offset_add.addend", "reads[i].read.offset_add.value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.offset_add.addend", "reads[i].read.offset_add.value"),
-                     new ConstraintSecondArgument("reads[i].read.offset_add.input", "reads[i].read.offset_add.value")})})})}),
+                     new ConstraintFirstOperand("reads[i].read.offset_add.addend", "reads[i].read.offset_add.value"),
+                     new ConstraintSecondOperand("reads[i].read.offset_add.input", "reads[i].read.offset_add.value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -6121,20 +6120,20 @@ ConstraintAnd ConstraintStencil()
                    new ConstraintFMulInst("reads[i].read.stride_mul[2].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[2].input", "reads[i].read.stride_mul[2].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[2].multiplier", "reads[i].read.stride_mul[2].value")}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[2].input", "reads[i].read.stride_mul[2].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[2].multiplier", "reads[i].read.stride_mul[2].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[2].multiplier", "reads[i].read.stride_mul[2].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[2].input", "reads[i].read.stride_mul[2].value")})})}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[2].multiplier", "reads[i].read.stride_mul[2].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[2].input", "reads[i].read.stride_mul[2].value")})})}),
                new ConstraintAnd({
                  new ConstraintFDivInst("reads[i].read.stride_mul[2].value"),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[2].input", "reads[i].read.stride_mul[2].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[2].multiplier", "reads[i].read.stride_mul[2].value")}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[2].input", "reads[i].read.stride_mul[2].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[2].multiplier", "reads[i].read.stride_mul[2].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[2].multiplier", "reads[i].read.stride_mul[2].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[2].input", "reads[i].read.stride_mul[2].value")})})})}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[2].multiplier", "reads[i].read.stride_mul[2].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[2].input", "reads[i].read.stride_mul[2].value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -6155,22 +6154,22 @@ ConstraintAnd ConstraintStencil()
                    new ConstraintFAddInst("reads[i].read.index_add[2].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[2].input", "reads[i].read.index_add[2].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[2].addend", "reads[i].read.index_add[2].value")}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[2].input", "reads[i].read.index_add[2].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[2].addend", "reads[i].read.index_add[2].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[2].addend", "reads[i].read.index_add[2].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[2].input", "reads[i].read.index_add[2].value")})})}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[2].addend", "reads[i].read.index_add[2].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[2].input", "reads[i].read.index_add[2].value")})})}),
                new ConstraintAnd({
                  new ConstraintOr({
                    new ConstraintSubInst("reads[i].read.index_add[2].value"),
                    new ConstraintFSubInst("reads[i].read.index_add[2].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[2].input", "reads[i].read.index_add[2].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[2].addend", "reads[i].read.index_add[2].value")}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[2].input", "reads[i].read.index_add[2].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[2].addend", "reads[i].read.index_add[2].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[2].addend", "reads[i].read.index_add[2].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[2].input", "reads[i].read.index_add[2].value")})})})}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[2].addend", "reads[i].read.index_add[2].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[2].input", "reads[i].read.index_add[2].value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintZExtInst("reads[i].read.index_add[2].addend"),
@@ -6198,20 +6197,20 @@ ConstraintAnd ConstraintStencil()
                    new ConstraintFMulInst("reads[i].read.stride_mul[1].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[1].input", "reads[i].read.stride_mul[1].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[1].multiplier", "reads[i].read.stride_mul[1].value")}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[1].input", "reads[i].read.stride_mul[1].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[1].multiplier", "reads[i].read.stride_mul[1].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[1].multiplier", "reads[i].read.stride_mul[1].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[1].input", "reads[i].read.stride_mul[1].value")})})}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[1].multiplier", "reads[i].read.stride_mul[1].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[1].input", "reads[i].read.stride_mul[1].value")})})}),
                new ConstraintAnd({
                  new ConstraintFDivInst("reads[i].read.stride_mul[1].value"),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[1].input", "reads[i].read.stride_mul[1].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[1].multiplier", "reads[i].read.stride_mul[1].value")}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[1].input", "reads[i].read.stride_mul[1].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[1].multiplier", "reads[i].read.stride_mul[1].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[1].multiplier", "reads[i].read.stride_mul[1].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[1].input", "reads[i].read.stride_mul[1].value")})})})}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[1].multiplier", "reads[i].read.stride_mul[1].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[1].input", "reads[i].read.stride_mul[1].value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -6232,22 +6231,22 @@ ConstraintAnd ConstraintStencil()
                    new ConstraintFAddInst("reads[i].read.index_add[1].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[1].input", "reads[i].read.index_add[1].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[1].addend", "reads[i].read.index_add[1].value")}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[1].input", "reads[i].read.index_add[1].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[1].addend", "reads[i].read.index_add[1].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[1].addend", "reads[i].read.index_add[1].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[1].input", "reads[i].read.index_add[1].value")})})}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[1].addend", "reads[i].read.index_add[1].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[1].input", "reads[i].read.index_add[1].value")})})}),
                new ConstraintAnd({
                  new ConstraintOr({
                    new ConstraintSubInst("reads[i].read.index_add[1].value"),
                    new ConstraintFSubInst("reads[i].read.index_add[1].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[1].input", "reads[i].read.index_add[1].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[1].addend", "reads[i].read.index_add[1].value")}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[1].input", "reads[i].read.index_add[1].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[1].addend", "reads[i].read.index_add[1].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[1].addend", "reads[i].read.index_add[1].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[1].input", "reads[i].read.index_add[1].value")})})})}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[1].addend", "reads[i].read.index_add[1].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[1].input", "reads[i].read.index_add[1].value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintZExtInst("reads[i].read.index_add[1].addend"),
@@ -6275,20 +6274,20 @@ ConstraintAnd ConstraintStencil()
                    new ConstraintFMulInst("reads[i].read.stride_mul[0].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[0].input", "reads[i].read.stride_mul[0].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[0].multiplier", "reads[i].read.stride_mul[0].value")}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[0].input", "reads[i].read.stride_mul[0].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[0].multiplier", "reads[i].read.stride_mul[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[0].multiplier", "reads[i].read.stride_mul[0].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[0].input", "reads[i].read.stride_mul[0].value")})})}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[0].multiplier", "reads[i].read.stride_mul[0].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[0].input", "reads[i].read.stride_mul[0].value")})})}),
                new ConstraintAnd({
                  new ConstraintFDivInst("reads[i].read.stride_mul[0].value"),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[0].input", "reads[i].read.stride_mul[0].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[0].multiplier", "reads[i].read.stride_mul[0].value")}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[0].input", "reads[i].read.stride_mul[0].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[0].multiplier", "reads[i].read.stride_mul[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.stride_mul[0].multiplier", "reads[i].read.stride_mul[0].value"),
-                     new ConstraintSecondArgument("reads[i].read.stride_mul[0].input", "reads[i].read.stride_mul[0].value")})})})}),
+                     new ConstraintFirstOperand("reads[i].read.stride_mul[0].multiplier", "reads[i].read.stride_mul[0].value"),
+                     new ConstraintSecondOperand("reads[i].read.stride_mul[0].input", "reads[i].read.stride_mul[0].value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintInstruction("begin"),
@@ -6309,22 +6308,22 @@ ConstraintAnd ConstraintStencil()
                    new ConstraintFAddInst("reads[i].read.index_add[0].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[0].input", "reads[i].read.index_add[0].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[0].addend", "reads[i].read.index_add[0].value")}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[0].input", "reads[i].read.index_add[0].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[0].addend", "reads[i].read.index_add[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[0].addend", "reads[i].read.index_add[0].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[0].input", "reads[i].read.index_add[0].value")})})}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[0].addend", "reads[i].read.index_add[0].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[0].input", "reads[i].read.index_add[0].value")})})}),
                new ConstraintAnd({
                  new ConstraintOr({
                    new ConstraintSubInst("reads[i].read.index_add[0].value"),
                    new ConstraintFSubInst("reads[i].read.index_add[0].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[0].input", "reads[i].read.index_add[0].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[0].addend", "reads[i].read.index_add[0].value")}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[0].input", "reads[i].read.index_add[0].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[0].addend", "reads[i].read.index_add[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].read.index_add[0].addend", "reads[i].read.index_add[0].value"),
-                     new ConstraintSecondArgument("reads[i].read.index_add[0].input", "reads[i].read.index_add[0].value")})})})}),
+                     new ConstraintFirstOperand("reads[i].read.index_add[0].addend", "reads[i].read.index_add[0].value"),
+                     new ConstraintSecondOperand("reads[i].read.index_add[0].input", "reads[i].read.index_add[0].value")})})})}),
              new ConstraintOr({
                new ConstraintAnd({
                  new ConstraintZExtInst("reads[i].read.index_add[0].input"),
@@ -6363,22 +6362,22 @@ ConstraintAnd ConstraintStencil()
                    new ConstraintFAddInst("reads[i].index[0].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[0].input", "reads[i].index[0].value"),
-                     new ConstraintSecondArgument("reads[i].index[0].addend", "reads[i].index[0].value")}),
+                     new ConstraintFirstOperand("reads[i].index[0].input", "reads[i].index[0].value"),
+                     new ConstraintSecondOperand("reads[i].index[0].addend", "reads[i].index[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[0].addend", "reads[i].index[0].value"),
-                     new ConstraintSecondArgument("reads[i].index[0].input", "reads[i].index[0].value")})})}),
+                     new ConstraintFirstOperand("reads[i].index[0].addend", "reads[i].index[0].value"),
+                     new ConstraintSecondOperand("reads[i].index[0].input", "reads[i].index[0].value")})})}),
                new ConstraintAnd({
                  new ConstraintOr({
                    new ConstraintSubInst("reads[i].index[0].value"),
                    new ConstraintFSubInst("reads[i].index[0].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[0].input", "reads[i].index[0].value"),
-                     new ConstraintSecondArgument("reads[i].index[0].addend", "reads[i].index[0].value")}),
+                     new ConstraintFirstOperand("reads[i].index[0].input", "reads[i].index[0].value"),
+                     new ConstraintSecondOperand("reads[i].index[0].addend", "reads[i].index[0].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[0].addend", "reads[i].index[0].value"),
-                     new ConstraintSecondArgument("reads[i].index[0].input", "reads[i].index[0].value")})})})}),
+                     new ConstraintFirstOperand("reads[i].index[0].addend", "reads[i].index[0].value"),
+                     new ConstraintSecondOperand("reads[i].index[0].input", "reads[i].index[0].value")})})})}),
              new ConstraintOr({
                new ConstraintConstant("reads[i].index[0].addend"),
                new ConstraintUnused("reads[i].index[0].addend")}),
@@ -6395,22 +6394,22 @@ ConstraintAnd ConstraintStencil()
                    new ConstraintFAddInst("reads[i].index[1].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[1].input", "reads[i].index[1].value"),
-                     new ConstraintSecondArgument("reads[i].index[1].addend", "reads[i].index[1].value")}),
+                     new ConstraintFirstOperand("reads[i].index[1].input", "reads[i].index[1].value"),
+                     new ConstraintSecondOperand("reads[i].index[1].addend", "reads[i].index[1].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[1].addend", "reads[i].index[1].value"),
-                     new ConstraintSecondArgument("reads[i].index[1].input", "reads[i].index[1].value")})})}),
+                     new ConstraintFirstOperand("reads[i].index[1].addend", "reads[i].index[1].value"),
+                     new ConstraintSecondOperand("reads[i].index[1].input", "reads[i].index[1].value")})})}),
                new ConstraintAnd({
                  new ConstraintOr({
                    new ConstraintSubInst("reads[i].index[1].value"),
                    new ConstraintFSubInst("reads[i].index[1].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[1].input", "reads[i].index[1].value"),
-                     new ConstraintSecondArgument("reads[i].index[1].addend", "reads[i].index[1].value")}),
+                     new ConstraintFirstOperand("reads[i].index[1].input", "reads[i].index[1].value"),
+                     new ConstraintSecondOperand("reads[i].index[1].addend", "reads[i].index[1].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[1].addend", "reads[i].index[1].value"),
-                     new ConstraintSecondArgument("reads[i].index[1].input", "reads[i].index[1].value")})})})}),
+                     new ConstraintFirstOperand("reads[i].index[1].addend", "reads[i].index[1].value"),
+                     new ConstraintSecondOperand("reads[i].index[1].input", "reads[i].index[1].value")})})})}),
              new ConstraintOr({
                new ConstraintConstant("reads[i].index[1].addend"),
                new ConstraintUnused("reads[i].index[1].addend")}),
@@ -6427,22 +6426,22 @@ ConstraintAnd ConstraintStencil()
                    new ConstraintFAddInst("reads[i].index[2].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[2].input", "reads[i].index[2].value"),
-                     new ConstraintSecondArgument("reads[i].index[2].addend", "reads[i].index[2].value")}),
+                     new ConstraintFirstOperand("reads[i].index[2].input", "reads[i].index[2].value"),
+                     new ConstraintSecondOperand("reads[i].index[2].addend", "reads[i].index[2].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[2].addend", "reads[i].index[2].value"),
-                     new ConstraintSecondArgument("reads[i].index[2].input", "reads[i].index[2].value")})})}),
+                     new ConstraintFirstOperand("reads[i].index[2].addend", "reads[i].index[2].value"),
+                     new ConstraintSecondOperand("reads[i].index[2].input", "reads[i].index[2].value")})})}),
                new ConstraintAnd({
                  new ConstraintOr({
                    new ConstraintSubInst("reads[i].index[2].value"),
                    new ConstraintFSubInst("reads[i].index[2].value")}),
                  new ConstraintOr({
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[2].input", "reads[i].index[2].value"),
-                     new ConstraintSecondArgument("reads[i].index[2].addend", "reads[i].index[2].value")}),
+                     new ConstraintFirstOperand("reads[i].index[2].input", "reads[i].index[2].value"),
+                     new ConstraintSecondOperand("reads[i].index[2].addend", "reads[i].index[2].value")}),
                    new ConstraintAnd({
-                     new ConstraintFirstArgument("reads[i].index[2].addend", "reads[i].index[2].value"),
-                     new ConstraintSecondArgument("reads[i].index[2].input", "reads[i].index[2].value")})})})}),
+                     new ConstraintFirstOperand("reads[i].index[2].addend", "reads[i].index[2].value"),
+                     new ConstraintSecondOperand("reads[i].index[2].input", "reads[i].index[2].value")})})})}),
              new ConstraintOr({
                new ConstraintConstant("reads[i].index[2].addend"),
                new ConstraintUnused("reads[i].index[2].addend")}),
@@ -6587,4 +6586,3 @@ ConstraintAnd ConstraintStencil()
            std::vector<std::string>{
              "compute_expr.output"}})});
 }
-

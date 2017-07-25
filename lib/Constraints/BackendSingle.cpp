@@ -1,12 +1,12 @@
-#include "llvm/Constraints/Backends.hpp"
+#include "llvm/Constraints/BackendClasses.hpp"
 #include <vector>
 
-BackendSingle_::BackendSingle_(std::vector<Specialized::Value> h)
+BackendSingle::BackendSingle(std::vector<Specialized::Value> h)
               : hits(std::move(h))
 { }
 
 template<unsigned idx>
-SkipResult BackendSingle_::skip_invalid(Specialized::Value& c) 
+SkipResult BackendSingle::skip_invalid(Specialized::Value& c) 
 {
     for(; hit_start != hits.end(); hit_start++)
     {
@@ -24,4 +24,4 @@ SkipResult BackendSingle_::skip_invalid(Specialized::Value& c)
     return SkipResult::FAIL;
 }
 
-template SkipResult BackendSingle_::skip_invalid<0>(Specialized::Value&);
+template SkipResult BackendSingle::skip_invalid<0>(Specialized::Value&);

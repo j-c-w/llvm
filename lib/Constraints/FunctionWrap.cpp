@@ -82,7 +82,7 @@ void FunctionWrapper::allocate_graphs()
     pdg.resize (extra_values.size() + instructions.size());
     rpdg.resize(extra_values.size() + instructions.size());
 
-    for(unsigned i = 0; i < 32; i++)
+    for(unsigned i = 0; i < 4; i++)
     {
         odfg[i].resize (extra_values.size() + instructions.size());
         rodfg[i].resize(extra_values.size() + instructions.size());
@@ -195,7 +195,7 @@ void FunctionWrapper::construct_odfg_from_llvm(InstructionHashmap& instr_hash, V
 {
     for(auto instruction : instructions)
     {
-        for(unsigned i = 0; i < instruction->getNumOperands(); i++)
+        for(unsigned i = 0; i < instruction->getNumOperands() && i < 4; i++)
         {
             llvm::Value*       value = instruction->getOperand(i);
             llvm::Instruction* instr = llvm::dyn_cast<llvm::Instruction>(value);
@@ -229,7 +229,7 @@ void FunctionWrapper::assemble_subgraphs()
             rcfg[i].insert(rcfg[i].end(), rocfg[j][i].begin(), rocfg[j][i].end());
         }
 
-        for(unsigned j = 0; j < 32; j++)
+        for(unsigned j = 0; j < 4; j++)
         {
              dfg[i].reserve( dfg[i].size() +  odfg[j][i].size());
             rdfg[i].reserve(rdfg[i].size() + rodfg[j][i].size());
@@ -284,7 +284,7 @@ void FunctionWrapper::sort_graphs()
         std::sort(rpdg[i].begin(), rpdg[i].end());
         rpdg[i].erase(std::unique(rpdg[i].begin(), rpdg[i].end()), rpdg[i].end());
  
-        for(unsigned j = 0; j < 32; j++)
+        for(unsigned j = 0; j < 4; j++)
         {
             std::sort( odfg[j][i].begin(),  odfg[j][i].end());
             odfg[j][i].erase(std::unique(odfg[j][i].begin(), odfg[j][i].end()), odfg[j][i].end());
@@ -553,7 +553,7 @@ void FunctionWrapper::construct_odfg_from_superset(FunctionWrapper& superset,
 {
     for(unsigned i = 0; i < instr_indizes.size(); i++)
     {
-        for(unsigned j = 0; j < 32 && superset.rodfg[j][instr_indizes[i]].size() == 1; j++)
+        for(unsigned j = 0; j < 4 && superset.rodfg[j][instr_indizes[i]].size() == 1; j++)
         {
             unsigned parameter = superset.rodfg[j][instr_indizes[i]][0];
 
@@ -640,7 +640,7 @@ std::vector<llvm::BasicBlock*> FunctionWrapper::rebuild_llvm_structure(llvm::LLV
 
     for(unsigned i = 0; i < instructions.size(); i++)
     {
-        for(unsigned j = 0; j < 32 && rodfg[j][extra_values.size() + i].size() == 1; j++)
+        for(unsigned j = 0; j < 4 && rodfg[j][extra_values.size() + i].size() == 1; j++)
         {
             if(rodfg[j][extra_values.size() + i][0] < extra_values.size())
                 instructions[i]->setOperand(j, extra_values[rodfg[j][extra_values.size() + i][0]]);

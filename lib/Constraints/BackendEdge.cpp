@@ -1,10 +1,10 @@
-#include "llvm/Constraints/Backends.hpp"
+#include "llvm/Constraints/BackendClasses.hpp"
 
-BackendEdge_::BackendEdge_(const Graph& gf, const Graph& gb)
+BackendEdge::BackendEdge(const Graph& gf, const Graph& gb)
            : graphs{{gf,gb}}, src_ptr(nullptr), dst_ptr(nullptr) { }
 
 template<unsigned idx>
-SkipResult BackendEdge_::skip_invalid(unsigned& c)
+SkipResult BackendEdge::skip_invalid(unsigned& c)
 {
     if(src_ptr == nullptr)
     {
@@ -36,5 +36,5 @@ SkipResult BackendEdge_::skip_invalid(unsigned& c)
     }
 }
 
-template SkipResult BackendEdge_::skip_invalid<0>(unsigned&);
-template SkipResult BackendEdge_::skip_invalid<1>(unsigned&);
+template SkipResult BackendEdge::skip_invalid<0>(unsigned&);
+template SkipResult BackendEdge::skip_invalid<1>(unsigned&);

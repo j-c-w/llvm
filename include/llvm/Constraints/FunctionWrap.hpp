@@ -136,8 +136,8 @@ public:
     Graph            incoming[4];
     Graph            dfg;
     Graph            rdfg;
-    Graph            odfg[32];
-    Graph            rodfg[32];
+    Graph            odfg[4];
+    Graph            rodfg[4];
     Graph            cdg;
     Graph            rcdg;
     Graph            pdg;

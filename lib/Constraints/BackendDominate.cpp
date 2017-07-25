@@ -1,7 +1,7 @@
-#include "llvm/Constraints/Backends.hpp"
+#include "llvm/Constraints/BackendClasses.hpp"
 
 template<bool reverse,bool allow_unstrict>
-BackendDominate_<reverse,allow_unstrict>::BackendDominate_(std::array<unsigned,3> size, const GraphEngine::Graph& gf)
+BackendDominate<reverse,allow_unstrict>::BackendDominate(std::array<unsigned,3> size, const GraphEngine::Graph& gf)
                : graph_engine(gf), used_values{{0, 0, 0}}, remaining_values(size),
                  filled_values{{std::vector<unsigned>(std::get<0>(size)), std::vector<unsigned>(std::get<1>(size)),
                                 std::vector<unsigned>(std::get<2>(size))}}
@@ -9,7 +9,7 @@ BackendDominate_<reverse,allow_unstrict>::BackendDominate_(std::array<unsigned,3
 
 template<bool reverse,bool allow_unstrict>
 template<unsigned idx1>
-SkipResult BackendDominate_<reverse,allow_unstrict>::skip_invalid(unsigned idx2, Specialized::Value& c)
+SkipResult BackendDominate<reverse,allow_unstrict>::skip_invalid(unsigned idx2, Specialized::Value& c)
 {
     if(c >= graph_engine.graph_forw.size() && c != UINT_MAX-1)
     {
@@ -63,19 +63,19 @@ SkipResult BackendDominate_<reverse,allow_unstrict>::skip_invalid(unsigned idx2,
     }
 }
 
-template      class BackendDominate_<false,false>;
-template SkipResult BackendDominate_<false,false>::skip_invalid<0>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate_<false,false>::skip_invalid<1>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate_<false,false>::skip_invalid<2>(unsigned,Specialized::Value&);
-template      class BackendDominate_<false,true>;
-template SkipResult BackendDominate_<false,true>::skip_invalid<0>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate_<false,true>::skip_invalid<1>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate_<false,true>::skip_invalid<2>(unsigned,Specialized::Value&);
-template      class BackendDominate_<true,false>;
-template SkipResult BackendDominate_<true,false>::skip_invalid<0>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate_<true,false>::skip_invalid<1>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate_<true,false>::skip_invalid<2>(unsigned,Specialized::Value&);
-template      class BackendDominate_<true,true>;
-template SkipResult BackendDominate_<true,true>::skip_invalid<0>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate_<true,true>::skip_invalid<1>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate_<true,true>::skip_invalid<2>(unsigned,Specialized::Value&);
+template      class BackendDominate<false,false>;
+template SkipResult BackendDominate<false,false>::skip_invalid<0>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<false,false>::skip_invalid<1>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<false,false>::skip_invalid<2>(unsigned,Specialized::Value&);
+template      class BackendDominate<false,true>;
+template SkipResult BackendDominate<false,true>::skip_invalid<0>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<false,true>::skip_invalid<1>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<false,true>::skip_invalid<2>(unsigned,Specialized::Value&);
+template      class BackendDominate<true,false>;
+template SkipResult BackendDominate<true,false>::skip_invalid<0>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<true,false>::skip_invalid<1>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<true,false>::skip_invalid<2>(unsigned,Specialized::Value&);
+template      class BackendDominate<true,true>;
+template SkipResult BackendDominate<true,true>::skip_invalid<0>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<true,true>::skip_invalid<1>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<true,true>::skip_invalid<2>(unsigned,Specialized::Value&);

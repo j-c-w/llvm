@@ -1,7 +1,7 @@
 #ifndef _CONSTRAINTS_BASIC_HPP_
 #define _CONSTRAINTS_BASIC_HPP_
 #include "llvm/Constraints/BackendSpecializations.hpp"
-#include "llvm/Constraints/ConstraintAtomic.hpp"
+#include "llvm/Constraints/ConstraintClasses.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
 #include "llvm/Constraints/GraphEngine.hpp"
 #include "llvm/IR/Function.h"
@@ -55,10 +55,10 @@ using ConstraintCFGEdge  = ConstraintScalar<BackendLLVMEdge<&FunctionWrapper::cf
 using ConstraintCDGEdge  = ConstraintScalar<BackendLLVMEdge<&FunctionWrapper::cdg, &FunctionWrapper::rcdg>,2>;
 using ConstraintPDGEdge  = ConstraintScalar<BackendLLVMEdge<&FunctionWrapper::pdg, &FunctionWrapper::rpdg>,2>;
 
-using ConstraintFirstOp  = ConstraintScalar<BackendLLVMOperand<0,4, &FunctionWrapper::odfg, &FunctionWrapper::rodfg>,2>;
-using ConstraintSecondOp = ConstraintScalar<BackendLLVMOperand<1,4, &FunctionWrapper::odfg, &FunctionWrapper::rodfg>,2>;
-using ConstraintThirdOp  = ConstraintScalar<BackendLLVMOperand<2,4, &FunctionWrapper::odfg, &FunctionWrapper::rodfg>,2>;
-using ConstraintFourthOp = ConstraintScalar<BackendLLVMOperand<3,4, &FunctionWrapper::odfg, &FunctionWrapper::rodfg>,2>;
+using ConstraintFirstOperand  = ConstraintScalar<BackendLLVMOperand<0,4, &FunctionWrapper::odfg, &FunctionWrapper::rodfg>,2>;
+using ConstraintSecondOperand = ConstraintScalar<BackendLLVMOperand<1,4, &FunctionWrapper::odfg, &FunctionWrapper::rodfg>,2>;
+using ConstraintThirdOperand  = ConstraintScalar<BackendLLVMOperand<2,4, &FunctionWrapper::odfg, &FunctionWrapper::rodfg>,2>;
+using ConstraintFourthOperand = ConstraintScalar<BackendLLVMOperand<3,4, &FunctionWrapper::odfg, &FunctionWrapper::rodfg>,2>;
 
 using ConstraintDFGDominate       = ConstraintVector<BackendLLVMDominate<false, true,  0, &FunctionWrapper:: dfg>,3>;
 using ConstraintDFGPostdom        = ConstraintVector<BackendLLVMDominate<false, true,  1, &FunctionWrapper::rdfg>,3>;
