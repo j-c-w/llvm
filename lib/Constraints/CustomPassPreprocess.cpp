@@ -47,7 +47,7 @@ bool ResearchPreprocessor::runOnModule(Module& module)
             {
                 while(true)
                 {
-                    FunctionWrapper wrap(function);
+                    FunctionWrap wrap(function);
 
                     auto solutions = LLVMSolver(std::get<1>(spec), wrap).all_solutions(1);
 

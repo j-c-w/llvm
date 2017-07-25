@@ -1,5 +1,6 @@
 #include "llvm/Constraints/ConstraintClasses.hpp"
 #include "llvm/Constraints/BackendSpecializations.hpp"
+#include <vector>
 
 ConstraintCollect::ConstraintCollect(unsigned n, std::string prefix, Constraint* c)
                  : constraint(c), size(n)
@@ -60,9 +61,8 @@ std::vector<std::string> ConstraintCollect::get_labels(std::vector<std::string> 
     return use_vector;
 }
 
-
-std::vector<SpecializedContainer> ConstraintCollect::get_specials(FunctionWrapper& wrap,
-                                                              std::vector<SpecializedContainer> use_vector) const
+std::vector<SpecializedContainer> ConstraintCollect::get_specials(FunctionWrap& wrap,
+                                                                  std::vector<SpecializedContainer> use_vector) const
 {
     std::vector<SpecializedContainer> globals;
     std::vector<SpecializedContainer> locals;

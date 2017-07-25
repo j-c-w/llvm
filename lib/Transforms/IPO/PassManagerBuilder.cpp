@@ -517,8 +517,8 @@ void PassManagerBuilder::populateModulePassManager(
       MPM.add(createResearchFlattenPass());
       MPM.add(createResearchPreprocessorPass());
       MPM.add(createLICMPass());
-      MPM.add(createCFGSimplificationPass());
       MPM.add(createEarlyCSEPass());
+      MPM.add(createLateCFGSimplificationPass());
       MPM.add(createResearchReplacerPass());
   }
 

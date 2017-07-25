@@ -1,8 +1,6 @@
 #include "llvm/Constraints/BackendClasses.hpp"
 
-BackendAnd::BackendAnd(std::vector<SpecializedContainer> c)
-           : constraints(std::move(c))
-{ }
+BackendAnd::BackendAnd(std::vector<std::unique_ptr<Specialized>> c) : constraints(std::move(c)) { }
 
 template<unsigned idx>
 SkipResult BackendAnd::skip_invalid(Specialized::Value& c)

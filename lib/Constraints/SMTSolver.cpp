@@ -1,10 +1,9 @@
 #include "llvm/Constraints/SMTSolver.hpp"
-#include "llvm/Constraints/Constraint.hpp"
 #include <vector>
 #include <cstdio>
 #include <iostream>
 
-Solver::Solver(std::vector<std::pair<std::string,SpecializedContainer>> s)
+Solver::Solver(std::vector<std::pair<std::string,std::unique_ptr<Specialized>>> s)
       : iterator(0), variables{}, solution{}, specializations(std::move(s))
 { }
 

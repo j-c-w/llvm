@@ -1,5 +1,5 @@
-#ifndef _FUNCTIONWRAP_HH_
-#define _FUNCTIONWRAP_HH_
+#ifndef _FUNCTION_WRAP_HH_
+#define _FUNCTION_WRAP_HH_
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/BasicBlock.h"
@@ -12,13 +12,13 @@
    particular constellation.
    The most crucial part is the mapping unsigned->{llvm::Value* instanced used by a given llvm::Function} as well as the
    extraction of data and control flow graphs. */
-class FunctionWrapper
+class FunctionWrap
 {
 public:
-    FunctionWrapper(FunctionWrapper& superset,
+    FunctionWrap(FunctionWrap& superset,
                     const std::vector<unsigned>& value_indizes,
                     const std::vector<unsigned>& instr_indizes, unsigned stop_index);
-    FunctionWrapper(llvm::Function& llvm_function);
+    FunctionWrap(llvm::Function& llvm_function);
 
     using Graph              = std::vector<std::vector<unsigned>>;
     using InstructionHashmap = std::unordered_map<llvm::Instruction*,unsigned>;
@@ -40,28 +40,28 @@ public:
 
     void make_value_undefined(unsigned a);
 
-    void construct_llvm_values_from_superset(FunctionWrapper& superset,
+    void construct_llvm_values_from_superset(FunctionWrap& superset,
                                              const std::vector<unsigned>& value_indizes,
                                              const std::vector<unsigned>& instr_indizes);
 
-    void construct_opcodes_from_superset(FunctionWrapper& superset,
+    void construct_opcodes_from_superset(FunctionWrap& superset,
                                          const std::vector<unsigned>& value_indizes,
                                          const std::vector<unsigned>& instr_indizes);
 
-    void construct_cdg_from_superset(FunctionWrapper& superset,
+    void construct_cdg_from_superset(FunctionWrap& superset,
                                      const std::vector<unsigned>& value_indizes,
                                      const std::vector<unsigned>& instr_indizes);
 
-    void construct_ocfg_from_superset(FunctionWrapper& superset,
+    void construct_ocfg_from_superset(FunctionWrap& superset,
                                       const std::vector<unsigned>& value_indizes,
                                       const std::vector<unsigned>& instr_indizes, unsigned stop_index);
 
 
-    void construct_incoming_from_superset(FunctionWrapper& superset,
+    void construct_incoming_from_superset(FunctionWrap& superset,
                                           const std::vector<unsigned>& value_indizes,
                                           const std::vector<unsigned>& instr_indizes);
 
-    void construct_odfg_from_superset(FunctionWrapper& superset,
+    void construct_odfg_from_superset(FunctionWrap& superset,
                                       const std::vector<unsigned>& value_indizes,
                                       const std::vector<unsigned>& instr_indizes);
 

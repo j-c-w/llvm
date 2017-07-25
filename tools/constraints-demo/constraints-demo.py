@@ -15,7 +15,6 @@ from gi.repository import GtkSource
 
 BINARY_DIRECTORY   = "/".join(sys.argv[0].split("/")[:-1])+"/"
 CLANGPP_EXECUTABLE = BINARY_DIRECTORY+"clang++"
-WRAPPER_SCRIPT     = BINARY_DIRECTORY+"constraints-wrapper.py"
 SOURCE_FILENAME    = "input.cc"
 LLVM_FILENAME      = "input.ll"
 TARGET_FILENAME    = "output.ll"
@@ -323,7 +322,7 @@ def generate_gemm_call(solutions):
 def wait_thread(source_code):
     global already_running_analysis, already_running_analysis_lock
 
-    process = subprocess.Popen([WRAPPER_SCRIPT, CLANGPP_EXECUTABLE, "-std=c++14",  "-S", "-emit-llvm",
+    process = subprocess.Popen([CLANGPP_EXECUTABLE, "-std=c++14",  "-S", "-emit-llvm",
                                 "-o", TARGET_FILENAME, "-gline-tables-only", SOURCE_FILENAME], stderr=subprocess.PIPE)
     process.wait()
 
@@ -413,7 +412,7 @@ def wait_thread(source_code):
 def flatwait_thread(source_code):
     global already_running_analysis, already_running_analysis_lock
 
-    process = subprocess.Popen([WRAPPER_SCRIPT, CLANGPP_EXECUTABLE, "-std=c++14",  "-S", "-emit-llvm",
+    process = subprocess.Popen([CLANGPP_EXECUTABLE, "-std=c++14",  "-S", "-emit-llvm",
                                 "-o", TARGET_FILENAME, "-gline-tables-only", SOURCE_FILENAME], stderr=subprocess.PIPE)
     process.wait()
 

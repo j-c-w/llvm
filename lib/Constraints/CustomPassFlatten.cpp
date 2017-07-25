@@ -142,12 +142,8 @@ bool ResearchFlatten::runOnModule(Module& module)
                             {
                                 merged_index = gep_instr->getOperand(active_index);
                             }
-                            else if(llvm::dyn_cast<llvm::ConstantInt>(gep_instr->getOperand(active_index)) &&
-                                    llvm::dyn_cast<llvm::ConstantInt>(gep_instr->getOperand(active_index))->getSExtValue() == 0)
-                            {
-                                merged_index = merged_index;
-                            }
-                            else
+                            else if(llvm::dyn_cast<llvm::ConstantInt>(gep_instr->getOperand(active_index)) == nullptr ||
+                                    llvm::dyn_cast<llvm::ConstantInt>(gep_instr->getOperand(active_index))->getSExtValue() != 0)
                             {
                                 merged_index = BinaryOperator::Create(Instruction::Add, merged_index,
                                                                             gep_instr->getOperand(active_index),
@@ -276,9 +272,6 @@ bool ResearchFlatten::runOnModule(Module& module)
 }
 
 char ResearchFlatten::ID = 0;
-
-//INITIALIZE_PASS_BEGIN(ResearchFlatten, "research-flatten", "Research flatten", false, false)
-//INITIALIZE_PASS_END(ResearchFlatten, "research-flatten", "Research flatten", false, false)
 
 static RegisterPass<ResearchFlatten> X("research-flatten", "Research flatten", false, false);
 

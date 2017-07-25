@@ -1,8 +1,6 @@
 #include "llvm/Constraints/BackendClasses.hpp"
 
-BackendIncomingValue::BackendIncomingValue(const FunctionWrapper& w)
-                     : wrap(w), values(nullptr,nullptr,nullptr)
-{ }
+BackendIncomingValue::BackendIncomingValue(const FunctionWrap& w) : wrap(w), values(nullptr,nullptr,nullptr) { }
 
 template<unsigned idx>
 SkipResult BackendIncomingValue::skip_invalid(unsigned& c)

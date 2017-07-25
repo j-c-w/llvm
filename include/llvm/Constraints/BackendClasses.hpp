@@ -1,8 +1,9 @@
-#ifndef _BACKENDS_HPP_
-#define _BACKENDS_HPP_
-#include "llvm/Constraints/Constraint.hpp"
+#ifndef _BACKEND_CLASSES_HPP_
+#define _BACKEND_CLASSES_HPP_
+#include "llvm/Constraints/SMTSolver.hpp"
 #include "llvm/Constraints/GraphEngine.hpp"
 #include <vector>
+#include <memory>
 
 /* This class implements he logical dicjunction in the constraint description system.
    The constructor takes an arbitrary amount of constraints and the resulting constraints enforces that all of them are
@@ -10,7 +11,7 @@
 class BackendAnd
 {
 public:
-    BackendAnd(std::vector<SpecializedContainer> c);
+    BackendAnd(std::vector<std::unique_ptr<Specialized>> c);
 
     template<unsigned idx> SkipResult skip_invalid(Specialized::Value& c);
 
@@ -20,13 +21,13 @@ public:
     template<unsigned idx> void cancel();
 
 private:
-    std::vector<SpecializedContainer> constraints;
+    std::vector<std::unique_ptr<Specialized>> constraints;
 };
 
 class BackendOr
 {
 public:
-    BackendOr(std::array<unsigned,1>, std::vector<std::vector<SpecializedContainer>> c);
+    BackendOr(std::array<unsigned,1>, std::vector<std::vector<std::unique_ptr<Specialized>>> c);
 
     template<unsigned idx1> SkipResult skip_invalid(unsigned idx, Specialized::Value& c);
 
@@ -36,15 +37,15 @@ public:
     template<unsigned idx1> void cancel(unsigned idx);
 
 private:
-    std::vector<std::vector<SpecializedContainer>> constraints;
-    std::vector<unsigned>                          disabled_since;
+    std::vector<std::vector<std::unique_ptr<Specialized>>> constraints;
+    std::vector<unsigned>                                  disabled_since;
 };
 
 class BackendCollect
 {
 public:
-    BackendCollect(std::array<unsigned,2> size, std::vector<SpecializedContainer> nloc,
-                                                std::vector<SpecializedContainer> loc);
+    BackendCollect(std::array<unsigned,2> size, std::vector<std::unique_ptr<Specialized>> nloc,
+                                                std::vector<std::unique_ptr<Specialized>> loc);
 
     template<unsigned idx1> SkipResult skip_invalid(unsigned idx2, Specialized::Value &c);
 
@@ -54,11 +55,11 @@ public:
     template<unsigned idx1> void cancel(unsigned idx2);
 
 private:
-    std::vector<SpecializedContainer>  nonlocals;
-    std::vector<SpecializedContainer>  locals;
-    unsigned                           filled_nonlocals;
-    std::vector<unsigned>              filled_locals;
-    std::vector<Specialized::Value>    solutions;
+    std::vector<std::unique_ptr<Specialized>>  nonlocals;
+    std::vector<std::unique_ptr<Specialized>>  locals;
+    unsigned                                   filled_nonlocals;
+    std::vector<unsigned>                      filled_locals;
+    std::vector<Specialized::Value>            solutions;
 };
 
 class BackendSingle
@@ -100,18 +101,18 @@ private:
 class BackendSameBlock
 {
 public:
-    BackendSameBlock(const FunctionWrapper& w);
+    BackendSameBlock(const FunctionWrap& w);
 
     template<bool idx> SkipResult skip_invalid(unsigned& c);
 
     template<bool idx> void begin()            { }
-    template<bool idx> void fixate(unsigned c) { }
+    template<bool idx> void fixate(unsigned c) { std::get<idx>(blocks) = wrap.get_instruction(c)->getParent(); }
     template<bool idx> void resume(unsigned c) { }
     template<bool idx> void cancel()           { std::get<idx>(blocks) = nullptr; }
 
 private:
-    const FunctionWrapper&                          wrap;
-    std::tuple<llvm::BasicBlock*,llvm::BasicBlock*> blocks;
+    const FunctionWrap&             wrap;
+    std::array<llvm::BasicBlock*,2> blocks;
 };
 
 template<bool lt, bool eq, bool gt>
@@ -135,7 +136,7 @@ private:
 class BackendIncomingValue
 {
 public:
-    BackendIncomingValue(const FunctionWrapper& w);
+    BackendIncomingValue(const FunctionWrap& w);
 
     template<unsigned idx> SkipResult skip_invalid(unsigned& c);
 
@@ -145,7 +146,7 @@ public:
     template<unsigned idx> void cancel()           { std::get<idx>(values) = nullptr; }
 
 private:
-    const FunctionWrapper&                                        wrap;
+    const FunctionWrap&                                        wrap;
     std::tuple<llvm::Value*,llvm::TerminatorInst*,llvm::PHINode*> values;
 };
 

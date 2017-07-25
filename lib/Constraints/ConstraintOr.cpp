@@ -1,10 +1,8 @@
-#include "llvm/Constraints/BackendSpecializations.hpp"
 #include "llvm/Constraints/ConstraintClasses.hpp"
+#include "llvm/Constraints/BackendClasses.hpp"
 #include "llvm/Constraints/ConstraintSpecializations.hpp"
 #include <unordered_map>
 #include <vector>
-#include <list>
-#include <iostream>
 
 ConstraintOr::ConstraintOr(std::vector<Constraint*> cvec)
 {
@@ -75,8 +73,8 @@ std::vector<Constraint::Label> ConstraintOr::get_labels(std::vector<Constraint::
     return use_vector;
 }
 
-std::vector<SpecializedContainer> ConstraintOr::get_specials(FunctionWrapper& wrap,
-                                                                     std::vector<SpecializedContainer> use_vector) const
+std::vector<SpecializedContainer> ConstraintOr::get_specials(FunctionWrap& wrap,
+                                                             std::vector<SpecializedContainer> use_vector) const
 {
     auto old_result_size = use_vector.size();
 
@@ -97,7 +95,7 @@ std::vector<SpecializedContainer> ConstraintOr::get_specials(FunctionWrapper& wr
                 special_vectors[i].emplace_back(std::move(use_vector[old_result_size+value]));
             }
             else
-            {
+            {   // This is highly unsatisfactory and a big problem, sad!
                 special_vectors[i].emplace_back(std::move(ConstraintUnused().get_specials(wrap)[0]));
             }
         }

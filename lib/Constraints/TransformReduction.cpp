@@ -8,7 +8,6 @@
 #include <iostream>
 #include "llvm/Support/raw_os_ostream.h"
 
-
 using namespace llvm;
 
 void transform_reduction_operator(Function& function, std::vector<std::map<std::string,Value*>> scalars,

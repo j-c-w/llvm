@@ -1,8 +1,9 @@
-#ifndef _CONSTRAINTS_ATOMIC_HPP_
-#define _CONSTRAINTS_ATOMIC_HPP_
+#ifndef _CONSTRAINT_CLASSES_HPP_
+#define _CONSTRAINT_CLASSES_HPP_
 #include "llvm/Constraints/BackendSpecializations.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
 #include "llvm/Constraints/GraphEngine.hpp"
+#include "llvm/Constraints/Constraint.hpp"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/Type.h"
@@ -19,7 +20,7 @@ public:
     std::vector<Constraint::Label> get_labels(std::vector<Constraint::Label> use_vector = {}) const final;
 
     std::vector<SpecializedContainer>
-             get_specials(FunctionWrapper& wrap, std::vector<SpecializedContainer> use_vector = {}) const final;
+             get_specials(FunctionWrap& wrap, std::vector<SpecializedContainer> use_vector = {}) const final;
 
 private:
     std::vector<std::unique_ptr<Constraint>> constraints;
@@ -36,7 +37,7 @@ public:
     ConstraintOr(std::vector<Constraint*> cvec);
 
     std::vector<Constraint::Label>    get_labels(std::vector<Constraint::Label> use_vector = {}) const final;
-    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap, std::vector<SpecializedContainer> use_vector = {}) const final;
+    std::vector<SpecializedContainer> get_specials(FunctionWrap& wrap, std::vector<SpecializedContainer> use_vector = {}) const final;
 
 private:
     std::vector<std::unique_ptr<Constraint>> constraints;
@@ -51,7 +52,7 @@ public:
 
     std::vector<std::string> get_labels(std::vector<std::string> use_vector = {}) const final;
 
-    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
+    std::vector<SpecializedContainer> get_specials(FunctionWrap& wrap,
                                                   std::vector<SpecializedContainer> use_vector = {}) const final;
 
 private:
@@ -97,7 +98,7 @@ public:
         return use_vector;
     }
 
-    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap, std::vector<SpecializedContainer> use_vector = {}) const final
+    std::vector<SpecializedContainer> get_specials(FunctionWrap& wrap, std::vector<SpecializedContainer> use_vector = {}) const final
     {
         std::shared_ptr<Backend> backend(new Backend(wrap));
 
@@ -154,7 +155,7 @@ public:
         return use_vector;
     }
 
-    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap, std::vector<SpecializedContainer> use_vector = {}) const final
+    std::vector<SpecializedContainer> get_specials(FunctionWrap& wrap, std::vector<SpecializedContainer> use_vector = {}) const final
     {
         auto temp_sizes = sizes;
         if(temp_sizes[2] == 0)

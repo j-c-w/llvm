@@ -102,7 +102,7 @@ bool ResearchReplacer::runOnModule(Module& module)
     {
         if(!function.isDeclaration())
         {
-            FunctionWrapper wrap(function);
+            FunctionWrap wrap(function);
 
             std::vector<std::pair<std::string,std::vector<Solution>>> raw_solutions;
 

@@ -1,7 +1,6 @@
 #include "llvm/Constraints/BackendClasses.hpp"
 
-BackendEdge::BackendEdge(const Graph& gf, const Graph& gb)
-           : graphs{{gf,gb}}, src_ptr(nullptr), dst_ptr(nullptr) { }
+BackendEdge::BackendEdge(const Graph& gf, const Graph& gb) : graphs{{gf,gb}}, src_ptr(nullptr), dst_ptr(nullptr) { }
 
 template<unsigned idx>
 SkipResult BackendEdge::skip_invalid(unsigned& c)
