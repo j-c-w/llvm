@@ -1,8 +1,7 @@
 #include "llvm/Constraints/ConstraintClasses.hpp"
-#include "llvm/Constraints/BackendSpecializations.hpp"
+#include "llvm/Constraints/BackendClasses.hpp"
 #include <unordered_map>
 #include <vector>
-#include <list>
 
 ConstraintAnd::ConstraintAnd(std::vector<Constraint*> cvec)
 {
@@ -48,7 +47,7 @@ std::vector<Constraint::Label> ConstraintAnd::get_labels(std::vector<Constraint:
     return use_vector;
 }
 
-std::vector<SpecializedContainer> ConstraintAnd::get_specials(FunctionWrapper& wrap,
+std::vector<SpecializedContainer> ConstraintAnd::get_specials(FunctionWrap& wrap,
                                                               std::vector<SpecializedContainer> use_vector) const
 {
     auto old_result_size = use_vector.size();

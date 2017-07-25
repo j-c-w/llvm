@@ -3,9 +3,8 @@
 #include <vector>
 #include <limits>
 
-BackendOr::BackendOr(std::array<unsigned,1>, std::vector<std::vector<SpecializedContainer>> c)
-          : constraints(std::move(c)), disabled_since(constraints.empty()?0:constraints.front().size(), 0)
-{ }
+BackendOr::BackendOr(std::array<unsigned,1>, std::vector<std::vector<std::unique_ptr<Specialized>>> c)
+          : constraints(std::move(c)), disabled_since(constraints.empty()?0:constraints.front().size(), 0) { }
 
 template<unsigned idx1> 
 SkipResult BackendOr::skip_invalid(unsigned idx2, Specialized::Value& c)

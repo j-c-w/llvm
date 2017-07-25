@@ -1,7 +1,7 @@
 #include "llvm/Constraints/BackendClasses.hpp"
 
-BackendCollect::BackendCollect(std::array<unsigned,2>, std::vector<SpecializedContainer> nloc,
-                                                         std::vector<SpecializedContainer> loc)
+BackendCollect::BackendCollect(std::array<unsigned,2>, std::vector<std::unique_ptr<Specialized>> nloc,
+                                                       std::vector<std::unique_ptr<Specialized>> loc)
                : nonlocals(std::move(nloc)), locals(std::move(loc)),
                  filled_nonlocals(0), filled_locals(locals.size(), 0)
 { }
@@ -53,7 +53,7 @@ void BackendCollect::begin(unsigned idx2)
 }
 
 template<unsigned idx1>
-void BackendCollect::fixate(unsigned idx2, Specialized::Value c)
+void BackendCollect::fixate(unsigned idx2, Specialized::Value c) // This runs the whole solver in a nested way, sad!
 {
     unsigned max_steps = UINT_MAX;
     if(idx1 == 0)

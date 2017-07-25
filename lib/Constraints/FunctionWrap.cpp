@@ -11,7 +11,7 @@
 #include <sstream>
 #include <vector>
 
-FunctionWrapper::InstructionHashmap FunctionWrapper::get_instruction_hashmap()
+FunctionWrap::InstructionHashmap FunctionWrap::get_instruction_hashmap()
 {
     InstructionHashmap instr_hash;
 
@@ -23,7 +23,7 @@ FunctionWrapper::InstructionHashmap FunctionWrapper::get_instruction_hashmap()
     return instr_hash;
 }
 
-FunctionWrapper::ValueHashmap FunctionWrapper::get_value_hashmap()
+FunctionWrap::ValueHashmap FunctionWrap::get_value_hashmap()
 {
     ValueHashmap value_hash;
 
@@ -35,7 +35,7 @@ FunctionWrapper::ValueHashmap FunctionWrapper::get_value_hashmap()
     return value_hash;
 }
 
-FunctionWrapper::ValueHashmap FunctionWrapper::gather_non_instruction_values(InstructionHashmap& instr_hash)
+FunctionWrap::ValueHashmap FunctionWrap::gather_non_instruction_values(InstructionHashmap& instr_hash)
 {
     ValueHashmap value_hash;
 
@@ -59,7 +59,7 @@ FunctionWrapper::ValueHashmap FunctionWrapper::gather_non_instruction_values(Ins
     return value_hash;
 }
 
-void FunctionWrapper::allocate_graphs()
+void FunctionWrap::allocate_graphs()
 {
     cfg.resize (extra_values.size() + instructions.size());
     rcfg.resize(extra_values.size() + instructions.size());
@@ -90,7 +90,7 @@ void FunctionWrapper::allocate_graphs()
 }
 
 
-void FunctionWrapper::construct_opcodes_from_llvm(InstructionHashmap& instr_hash)
+void FunctionWrap::construct_opcodes_from_llvm(InstructionHashmap& instr_hash)
 {
     opcodes.resize(extra_values.size() + instructions.size(), 0);
 
@@ -100,7 +100,7 @@ void FunctionWrapper::construct_opcodes_from_llvm(InstructionHashmap& instr_hash
     }
 }
 
-void FunctionWrapper::construct_cdg_from_llvm(InstructionHashmap& instr_hash)
+void FunctionWrap::construct_cdg_from_llvm(InstructionHashmap& instr_hash)
 {
     for(auto instruction : instructions)
     {
@@ -123,7 +123,7 @@ void FunctionWrapper::construct_cdg_from_llvm(InstructionHashmap& instr_hash)
     }
 }
 
-void FunctionWrapper::construct_incoming_from_llvm(InstructionHashmap& instr_hash)
+void FunctionWrap::construct_incoming_from_llvm(InstructionHashmap& instr_hash)
 {
     for(auto instruction : instructions)
     {
@@ -139,7 +139,7 @@ void FunctionWrapper::construct_incoming_from_llvm(InstructionHashmap& instr_has
 }
 
 
-void FunctionWrapper::construct_ocfg_from_llvm(InstructionHashmap& instr_hash)
+void FunctionWrap::construct_ocfg_from_llvm(InstructionHashmap& instr_hash)
 {
     for(auto instruction : instructions)
     {
@@ -191,7 +191,7 @@ void FunctionWrapper::construct_ocfg_from_llvm(InstructionHashmap& instr_hash)
     }
 }
 
-void FunctionWrapper::construct_odfg_from_llvm(InstructionHashmap& instr_hash, ValueHashmap& value_hash)
+void FunctionWrap::construct_odfg_from_llvm(InstructionHashmap& instr_hash, ValueHashmap& value_hash)
 {
     for(auto instruction : instructions)
     {
@@ -216,7 +216,7 @@ void FunctionWrapper::construct_odfg_from_llvm(InstructionHashmap& instr_hash, V
     }
 }
 
-void FunctionWrapper::assemble_subgraphs()
+void FunctionWrap::assemble_subgraphs()
 {
     for(unsigned i = 0; i < extra_values.size() + instructions.size(); i++)
     {
@@ -240,7 +240,7 @@ void FunctionWrapper::assemble_subgraphs()
     }
 }
 
-void FunctionWrapper::generate_pdg()
+void FunctionWrap::generate_pdg()
 {
     for(unsigned i = 0; i < extra_values.size() + instructions.size(); i++)
     {
@@ -254,7 +254,7 @@ void FunctionWrapper::generate_pdg()
     }
 }
 
-void FunctionWrapper::sort_graphs()
+void FunctionWrap::sort_graphs()
 {
     for(unsigned i = 0; i < extra_values.size() + instructions.size(); i++)
     {
@@ -294,12 +294,12 @@ void FunctionWrapper::sort_graphs()
     }
 }
 
-void FunctionWrapper::make_value_undefined(unsigned a)
+void FunctionWrap::make_value_undefined(unsigned a)
 {
     extra_values[a] = llvm::UndefValue::get(extra_values[a]->getType());
 }
 
-void FunctionWrapper::construct_llvm_values_from_superset(FunctionWrapper& superset,
+void FunctionWrap::construct_llvm_values_from_superset(FunctionWrap& superset,
                                                           const std::vector<unsigned>& value_indizes,
                                                           const std::vector<unsigned>& instr_indizes)
 {
@@ -324,7 +324,7 @@ void FunctionWrapper::construct_llvm_values_from_superset(FunctionWrapper& super
     }
 }
 
-void FunctionWrapper::construct_opcodes_from_superset(FunctionWrapper& superset,
+void FunctionWrap::construct_opcodes_from_superset(FunctionWrap& superset,
                                                       const std::vector<unsigned>& value_indizes,
                                                       const std::vector<unsigned>& instr_indizes)
 {
@@ -340,7 +340,7 @@ void FunctionWrapper::construct_opcodes_from_superset(FunctionWrapper& superset,
 }
 
 
-void FunctionWrapper::construct_cdg_from_superset(FunctionWrapper& superset,
+void FunctionWrap::construct_cdg_from_superset(FunctionWrap& superset,
                                                   const std::vector<unsigned>& value_indizes,
                                                   const std::vector<unsigned>& instr_indizes)
 {
@@ -376,7 +376,7 @@ void FunctionWrapper::construct_cdg_from_superset(FunctionWrapper& superset,
 }
 
 // Open ends are denoted by self-references
-void FunctionWrapper::construct_ocfg_from_superset(FunctionWrapper& superset,
+void FunctionWrap::construct_ocfg_from_superset(FunctionWrap& superset,
                                                    const std::vector<unsigned>& value_indizes,
                                                    const std::vector<unsigned>& instr_indizes,
                                                    unsigned cfg_successor)
@@ -463,7 +463,7 @@ void FunctionWrapper::construct_ocfg_from_superset(FunctionWrapper& superset,
 }
 
 // Open ends are denoted by self-references
-void FunctionWrapper::construct_incoming_from_superset(FunctionWrapper& superset,
+void FunctionWrap::construct_incoming_from_superset(FunctionWrap& superset,
                                                        const std::vector<unsigned>& value_indizes,
                                                        const std::vector<unsigned>& instr_indizes)
 {
@@ -547,7 +547,7 @@ void FunctionWrapper::construct_incoming_from_superset(FunctionWrapper& superset
     }
 }
 
-void FunctionWrapper::construct_odfg_from_superset(FunctionWrapper& superset,
+void FunctionWrap::construct_odfg_from_superset(FunctionWrap& superset,
                                                    const std::vector<unsigned>& value_indizes,
                                                    const std::vector<unsigned>& instr_indizes)
 {
@@ -582,7 +582,7 @@ void FunctionWrapper::construct_odfg_from_superset(FunctionWrapper& superset,
     }
 }
 
-std::vector<llvm::BasicBlock*> FunctionWrapper::rebuild_llvm_structure(llvm::LLVMContext& llvm_context)
+std::vector<llvm::BasicBlock*> FunctionWrap::rebuild_llvm_structure(llvm::LLVMContext& llvm_context)
 {
     for(unsigned i = 0; i < extra_values.size(); i++)
     {
@@ -687,7 +687,7 @@ std::vector<llvm::BasicBlock*> FunctionWrapper::rebuild_llvm_structure(llvm::LLV
 }
 
 // THIS IS DEPRECATED
-llvm::Function* FunctionWrapper::reimplement(llvm::LLVMContext& llvm_context, std::vector<llvm::Type*> extra_arguments)
+llvm::Function* FunctionWrap::reimplement(llvm::LLVMContext& llvm_context, std::vector<llvm::Type*> extra_arguments)
 {
     std::vector<llvm::BasicBlock*> llvm_basic_blocks = rebuild_llvm_structure(llvm_context);
 
@@ -755,7 +755,7 @@ llvm::Function* FunctionWrapper::reimplement(llvm::LLVMContext& llvm_context, st
     return llvm_function;
 }
 
-FunctionWrapper::FunctionWrapper(FunctionWrapper& superset,
+FunctionWrap::FunctionWrap(FunctionWrap& superset,
                                  const std::vector<unsigned>& value_indizes,
                                  const std::vector<unsigned>& instr_indizes,
                                  unsigned stop_index)
@@ -772,7 +772,7 @@ FunctionWrapper::FunctionWrapper(FunctionWrapper& superset,
     sort_graphs();
 }
 
-FunctionWrapper::FunctionWrapper(llvm::Function& llvm_function)
+FunctionWrap::FunctionWrap(llvm::Function& llvm_function)
 {
     for(auto& block : llvm_function.getBasicBlockList())
     {

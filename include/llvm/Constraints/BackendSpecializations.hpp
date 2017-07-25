@@ -6,7 +6,7 @@ template<unsigned ... constants>
 class BackendConstantValue : public BackendSingle
 {
 public:
-    BackendConstantValue(FunctionWrapper& wrap)
+    BackendConstantValue(FunctionWrap& wrap)
       : BackendSingle(std::vector<unsigned>{constants...}) { }
 };
 
@@ -14,11 +14,11 @@ template<typename Type>
 class BackendLLVMSingle : public BackendSingle
 {
 public:
-    BackendLLVMSingle(FunctionWrapper& wrap, std::function<bool(Type&)> pred)
+    BackendLLVMSingle(FunctionWrap& wrap, std::function<bool(Type&)> pred)
       : BackendSingle(compute_hits(wrap, pred)) { }
 
 private:
-    static std::vector<unsigned> compute_hits(FunctionWrapper& wrap, std::function<bool(Type&)> pred)
+    static std::vector<unsigned> compute_hits(FunctionWrap& wrap, std::function<bool(Type&)> pred)
     {
         std::vector<unsigned> hits;
 
@@ -39,7 +39,7 @@ private:
 class BackendNotNumericConstant : public BackendLLVMSingle<llvm::Value>
 {
 public:
-    BackendNotNumericConstant(FunctionWrapper& wrap)
+    BackendNotNumericConstant(FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Value>(wrap, [](llvm::Value& value)
                                               { return !llvm::isa<llvm::ConstantInt>(value) &&
                                                        !llvm::isa<llvm::ConstantFP>(value)  &&
@@ -50,7 +50,7 @@ public:
 class BackendConstant : public BackendLLVMSingle<llvm::Constant>
 {
 public:
-    BackendConstant(FunctionWrapper& wrap)
+    BackendConstant(FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Constant>(wrap, nullptr) { }
 };
 
@@ -58,7 +58,7 @@ public:
 class BackendPreexecution : public BackendLLVMSingle<llvm::Value>
 {
 public:
-    BackendPreexecution(FunctionWrapper& wrap)
+    BackendPreexecution(FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Value>(wrap, [](llvm::Value& value)
                                              { return !llvm::isa<llvm::Instruction>(value); }) { }
 };
@@ -66,21 +66,21 @@ public:
 class BackendArgument : public BackendLLVMSingle<llvm::Argument>
 {
 public:
-    BackendArgument(FunctionWrapper& wrap)
+    BackendArgument(FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Argument>(wrap, nullptr) { }
 };
 
 class BackendInstruction : public BackendLLVMSingle<llvm::Instruction>
 {
 public:
-    BackendInstruction(FunctionWrapper& wrap)
+    BackendInstruction(FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Instruction>(wrap, nullptr) { }
 };
 
 class BackendFloatZero : public BackendLLVMSingle<llvm::ConstantFP>
 {
 public:
-    BackendFloatZero(FunctionWrapper& wrap)
+    BackendFloatZero(FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::ConstantFP>(wrap, [](llvm::ConstantFP& value) { return value.isZero(); }) { }
 };
 
@@ -88,7 +88,7 @@ template<unsigned op>
 class BackendOpcode : public BackendLLVMSingle<llvm::Instruction>
 {
 public:
-    BackendOpcode(FunctionWrapper& wrap)
+    BackendOpcode(FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Instruction>(wrap, [](llvm::Instruction& inst) { return inst.getOpcode() == op; }) { }
 };
 
@@ -96,44 +96,42 @@ template<bool(llvm::Type::*predicate)() const>
 class BackendLLVMType: public BackendLLVMSingle<llvm::Value>
 {
 public:
-    BackendLLVMType(FunctionWrapper& wrap)
+    BackendLLVMType(FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Value>(wrap, [](llvm::Value& value)
                                               { return (value.getType()->*predicate)(); }) { }
 };
 
-template<std::vector<std::vector<unsigned>> FunctionWrapper::* forw_graph,
-         std::vector<std::vector<unsigned>> FunctionWrapper::* back_graph>
+template<std::vector<std::vector<unsigned>> FunctionWrap::* forw_graph,
+         std::vector<std::vector<unsigned>> FunctionWrap::* back_graph>
 class BackendLLVMEdge : public BackendEdge
 {
 public:
-    BackendLLVMEdge(FunctionWrapper& wrap)
+    BackendLLVMEdge(FunctionWrap& wrap)
       : BackendEdge(wrap.*forw_graph, wrap.*back_graph) { }
 };
 
-template<unsigned i, unsigned N,
-         std::vector<std::vector<unsigned>> (FunctionWrapper::* forw_graph)[N],
-         std::vector<std::vector<unsigned>> (FunctionWrapper::* back_graph)[N]>
+template<unsigned i>
 class BackendLLVMOperand : public BackendEdge
 {
 public:
-    BackendLLVMOperand(FunctionWrapper& wrap)
-      : BackendEdge((wrap.*forw_graph)[i], (wrap.*back_graph)[i]) { }
+    BackendLLVMOperand(FunctionWrap& wrap)
+      : BackendEdge(wrap.odfg[i], wrap.rodfg[i]) { }
 };
 
 template<bool lt, bool eq, bool gt>
 class BackendOrderWrap : public BackendOrdering<lt,eq,gt>
 {
 public:
-    BackendOrderWrap(FunctionWrapper&)
+    BackendOrderWrap(FunctionWrap&)
       : BackendOrdering<lt,eq,gt>() { }
 };
 
 template<bool inverted, bool unstrict, unsigned origin_calc,
-         std::vector<std::vector<unsigned>> FunctionWrapper::* forw_graph>
+         std::vector<std::vector<unsigned>> FunctionWrap::* forw_graph>
 class BackendLLVMDominate : public BackendDominate<inverted,unstrict>
 {
 public:
-    BackendLLVMDominate(std::array<unsigned,3> sizes, const FunctionWrapper& wrap)
+    BackendLLVMDominate(std::array<unsigned,3> sizes, const FunctionWrap& wrap)
       : BackendDominate<inverted,unstrict>({{(unsigned)std::get<0>(sizes) + (unsigned)get_origins(wrap).size(),
                                              (unsigned)std::get<1>(sizes), (unsigned)std::get<2>(sizes)}},
                                             wrap.*forw_graph),
@@ -173,7 +171,7 @@ public:
     }
 
 private:
-    static std::vector<unsigned> get_origins(const FunctionWrapper& wrap)
+    static std::vector<unsigned> get_origins(const FunctionWrap& wrap)
     {
         bool data_origins    = origin_calc==0 || origin_calc==4;
         bool data_sinks      = origin_calc==1 || origin_calc==5;

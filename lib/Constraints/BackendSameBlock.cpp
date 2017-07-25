@@ -1,19 +1,16 @@
 #include "llvm/Constraints/BackendClasses.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
-#include <tuple>
 
-BackendSameBlock::BackendSameBlock(const FunctionWrapper& w)
-                 : wrap(w), blocks{nullptr,nullptr} { }
+BackendSameBlock::BackendSameBlock(const FunctionWrap& w) : wrap(w), blocks{{nullptr,nullptr}} { }
 
 template<bool idx>
 SkipResult BackendSameBlock::skip_invalid(unsigned& c)
 {
     if(auto* instr = wrap.get_instruction(c))
     {
-        if(std::get<(idx+1)%2>(blocks) == nullptr ||
-           std::get<(idx+1)%2>(blocks) == instr->getParent())
+        if(std::get<1-idx>(blocks) == nullptr ||
+           std::get<1-idx>(blocks) == instr->getParent())
         {
-            std::get<idx>(blocks) = instr->getParent();
             return SkipResult::PASS;
         }
     }

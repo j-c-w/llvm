@@ -2,7 +2,6 @@ add_llvm_library(LLVMConstraints
 
   SMTSolver.cpp
   PrintSlots.cpp
-  GraphEngine.cpp
   FunctionWrap.cpp
 
   BackendOr.cpp

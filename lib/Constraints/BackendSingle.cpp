@@ -1,9 +1,6 @@
 #include "llvm/Constraints/BackendClasses.hpp"
-#include <vector>
 
-BackendSingle::BackendSingle(std::vector<Specialized::Value> h)
-              : hits(std::move(h))
-{ }
+BackendSingle::BackendSingle(std::vector<Specialized::Value> h) : hits(std::move(h)) { }
 
 template<unsigned idx>
 SkipResult BackendSingle::skip_invalid(Specialized::Value& c) 

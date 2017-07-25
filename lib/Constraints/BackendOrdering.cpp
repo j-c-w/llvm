@@ -1,9 +1,7 @@
 #include "llvm/Constraints/BackendClasses.hpp"
 
 template<bool lt, bool eq, bool gt>
-BackendOrdering<lt,eq,gt>::BackendOrdering()
-                                : amount_completed(0)
-{ }
+BackendOrdering<lt,eq,gt>::BackendOrdering() : amount_completed(0) { }
 
 template<bool lt, bool eq, bool gt>
 template<unsigned idx>
