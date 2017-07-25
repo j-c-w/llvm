@@ -1,108 +1,66 @@
 #ifndef _CONSTRAINTS_ATOMIC_HPP_
 #define _CONSTRAINTS_ATOMIC_HPP_
 #include "llvm/Constraints/BackendSpecializations.hpp"
-#include "llvm/Constraints/ConstraintCollect.hpp"
-#include "llvm/Constraints/ConstraintAnd.hpp"
-#include "llvm/Constraints/ConstraintOr.hpp"
-#include "llvm/Constraints/ConstraintPrefix.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
-#include "llvm/Constraints/ConstraintRange.hpp"
 #include "llvm/Constraints/GraphEngine.hpp"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/Type.h"
 #include <vector>
 
-inline std::vector<std::string> expand_variables(std::string var)
+/* This class implements he logical dicjunction in the constraint description system.
+   The constructor takes an arbitrary amount of constraints and the resulting constraints enforces that all of them are
+   satisfied at once. */
+class ConstraintAnd : public Constraint
 {
-    std::vector<std::string> result;
+public:
+    ConstraintAnd(std::vector<Constraint*> cvec);
 
-    std::string::const_iterator part_begin = var.cbegin();
-    std::string::const_iterator part_end   = std::find(var.cbegin(), var.cend(), ',');
+    std::vector<Constraint::Label> get_labels(std::vector<Constraint::Label> use_vector = {}) const final;
 
-    while(true)
-    {
-        std::string::const_iterator idx_begin;
-        std::string::const_iterator idx_end;
+    std::vector<SpecializedContainer>
+             get_specials(FunctionWrapper& wrap, std::vector<SpecializedContainer> use_vector = {}) const final;
 
-        if((idx_begin = std::find(part_begin, part_end, '[')) != part_end)
-        {
-            unsigned begin_int = 0;
+private:
+    std::vector<std::unique_ptr<Constraint>> constraints;
+    std::vector<Constraint::Label>           labels;
+    std::vector<std::vector<unsigned>>       groupings;
+};
 
-            for(idx_end = ++idx_begin; idx_end != part_end; idx_end++)
-            {
-                if(*idx_end >= '0' && *idx_end <= '9')
-                {
-                    begin_int = 10 * begin_int + (*idx_end - '0');
-                }
-                else break;
-            }
-
-            if(idx_end+0 != part_end && *(idx_end+0) == '.' && idx_end+1 != part_end && *(idx_end+1) == '.')
-            {
-                unsigned end_int = 0;
-
-                for(idx_end = idx_end+2; idx_end != part_end; idx_end++)
-                {
-                    if(*idx_end >= '0' && *idx_end <= '9')
-                    {
-                        end_int = 10 * end_int + (*idx_end - '0');
-                    }
-                    else break;
-                }
-
-                if(idx_end != part_end && *idx_end == ']' && begin_int <= end_int && end_int < 1000)
-                {
-                    for(unsigned i = begin_int; i < end_int; i++)
-                    {
-                        std::string new_string;
-
-                        new_string.reserve((idx_begin-part_begin) + (part_end - idx_end) + 1 + (i>=10) + (i>=100));
-
-                        new_string.insert(new_string.end(), part_begin, idx_begin);
-                        if(i>=100) new_string.push_back('0'+((i/100)%10));
-                        if(i>=10)  new_string.push_back('0'+((i/10)%10));
-                        if(true)   new_string.push_back('0'+((i/1)%10));
-
-                        new_string.insert(new_string.end(), idx_end, part_end);
-
-                        result.push_back(new_string);
-                    }
-                }
-                else result.emplace_back(part_begin, part_end);
-            }
-            else result.emplace_back(part_begin, part_end);
-        }
-        else result.emplace_back(part_begin, part_end);
-
-        if(part_end != var.cend())
-        {
-            part_begin = part_end + 1;
-            part_end   = std::find(part_begin, var.cend(), ',');
-        }
-        else break;
-    }
-
-    return result;
-}
-
-inline std::vector<std::string> expand_variables(std::string prefix, unsigned N, std::string postfix = "")
+/* This class implements he logical dicjunction in the constraint description system.
+   The constructor takes an arbitrary amount of constraints and the resulting constraints enforces that at least one of
+   them is satisfied. */
+class ConstraintOr : public Constraint
 {
-    std::vector<std::string> result;
+public:
+    ConstraintOr(std::vector<Constraint*> cvec);
 
-    std::string indexed_prefix = prefix+"[";
-    for(unsigned i = 0; i < N; i++)
-    {
-        if(i == 0 || i == 10 || i == 100) indexed_prefix.push_back('0');
-        if(i>=100) indexed_prefix[indexed_prefix.size()-3] = '0'+((i/100)%10);
-        if(i>=10)  indexed_prefix[indexed_prefix.size()-2] = '0'+((i/10)%10);
-        if(true)   indexed_prefix[indexed_prefix.size()-1] = '0'+((i/1)%10);
+    std::vector<Constraint::Label>   get_labels(std::vector<Constraint::Label> use_vector = {}) const final;
+    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap, std::vector<SpecializedContainer> use_vector = {}) const final;
 
-        result.push_back(indexed_prefix+"]"+(postfix.empty()?"":("."+postfix)));
-    }
+private:
+    std::vector<std::unique_ptr<Constraint>> constraints;
+    std::vector<Constraint::Label>           labels;
+    std::vector<std::vector<unsigned>>       groupings;
+};
 
-    return result;
-}
+class ConstraintCollect : public Constraint
+{
+public:
+    ConstraintCollect(unsigned n, std::string prefix, Constraint* c);
+
+    std::vector<std::string> get_labels(std::vector<std::string> use_vector = {}) const final;
+
+    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
+                                                  std::vector<SpecializedContainer> use_vector = {}) const final;
+
+private:
+    std::unique_ptr<Constraint> constraint;
+    std::vector<std::string>    labels;
+    std::vector<unsigned>       global_indices;
+    std::vector<unsigned>       local_indices;
+    unsigned                    size;
+};
 
 template<typename Backend, unsigned idx>
 class ScalarSelector : public Specialized
@@ -180,7 +138,7 @@ class ConstraintVector : public Constraint
 public:
     template<typename ... LabelTypes>
     ConstraintVector(std::string v1, LabelTypes ... vars)
-      : variables{{expand_variables(v1), expand_variables(vars)...}}, sizes{{(unsigned)expand_variables(v1).size(), (unsigned)expand_variables(vars).size() ...}} { }
+      : variables{{{v1}, {vars}...}}, sizes{{1, (unsigned)sizeof(vars)*0+1 ...}} { }
 
     template<typename ... LabelTypes>
     ConstraintVector(std::vector<std::string> v1, LabelTypes ... vars)

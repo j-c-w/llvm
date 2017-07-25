@@ -33,46 +33,4 @@ public:
     }
 };
 
-class ConstraintContainer : public Constraint, public std::unique_ptr<Constraint>
-{
-private:
-    class TrivialConstraint : public Constraint
-    {
-    public:
-        std::vector<Constraint::Label> get_labels(std::vector<Constraint::Label> use_vector = {}) const final
-        {
-            return use_vector;
-        }
-
-        std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
-                                                        std::vector<SpecializedContainer> use_vector) const final
-        {
-            return use_vector;
-        }
-    };
-
-public:
-    ConstraintContainer() : std::unique_ptr<Constraint>(new TrivialConstraint) { }
-
-    explicit ConstraintContainer(Constraint* c) : std::unique_ptr<Constraint>(std::move(c)) { }
-
-
-    template<typename Type,
-             typename std::enable_if< std::is_base_of<Constraint,Type>::value>::type* = nullptr>
-    ConstraintContainer(Type value) : std::unique_ptr<Constraint>(new Type(std::move(value))) { }
-
-    ConstraintContainer(ConstraintContainer&& c) = default;
-
-    std::vector<Label> get_labels(std::vector<Label> use_vector = {}) const final
-    {
-        return this->get()->get_labels(std::move(use_vector));
-    }
-
-    std::vector<SpecializedContainer> get_specials(FunctionWrapper& wrap,
-                                                   std::vector<SpecializedContainer> use_vector = {}) const final
-    {
-        return this->get()->get_specials(wrap, std::move(use_vector));
-    }
-};
-
 #endif

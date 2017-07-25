@@ -9,7 +9,6 @@
 #include <iomanip>
 #include <algorithm>
 
-
 SolutionHierarchical::SolutionHierarchical(std::vector<std::pair<std::string,std::string>> input)
 {
     if(input.size() == 1 && input.begin()->first.empty())

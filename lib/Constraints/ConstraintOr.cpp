@@ -1,4 +1,3 @@
-#include "llvm/Constraints/ConstraintOr.hpp"
 #include "llvm/Constraints/BackendSpecializations.hpp"
 #include "llvm/Constraints/ConstraintAtomic.hpp"
 #include "llvm/Constraints/ConstraintsBasic.hpp"
@@ -7,8 +6,11 @@
 #include <list>
 #include <iostream>
 
-void ConstraintOr::generate_groupings()
+ConstraintOr::ConstraintOr(std::vector<Constraint*> cvec)
 {
+    for(auto c : cvec)
+        constraints.emplace_back(std::unique_ptr<Constraint>(c));
+
     std::vector<std::string> flat_labels;
     std::vector<unsigned>    result_boundaries;
 

@@ -1,9 +1,8 @@
-#include "llvm/Constraints/ConstraintCollect.hpp"
 #include "llvm/Constraints/ConstraintAtomic.hpp"
 #include "llvm/Constraints/BackendSpecializations.hpp"
 
-ConstraintCollect::ConstraintCollect(unsigned n, std::string prefix, ConstraintContainer c)
-                 : constraint(std::move(c)), size(n)
+ConstraintCollect::ConstraintCollect(unsigned n, std::string prefix, Constraint* c)
+                 : constraint(c), size(n)
 {
     std::vector<std::string>                        global_names;
     std::vector<std::pair<std::string,std::string>> local_names;

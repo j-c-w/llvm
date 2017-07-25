@@ -125,17 +125,34 @@ bool ResearchFlatten::runOnModule(Module& module)
 
                     while(auto array_type = dyn_cast<ArrayType>(source_element_type))
                     {
-                        merged_index = BinaryOperator::Create(Instruction::Mul, merged_index,
-                                                 ConstantInt::get(merged_index->getType(), 
-                                                                        array_type->getNumElements()),
-                                                                         "", &instruction);
+                        if(llvm::dyn_cast<llvm::ConstantInt>(merged_index) == nullptr ||
+                           llvm::dyn_cast<llvm::ConstantInt>(merged_index)->getSExtValue() != 0)
+                        {
+                            merged_index = BinaryOperator::Create(Instruction::Mul, merged_index,
+                                                     ConstantInt::get(merged_index->getType(), 
+                                                                            array_type->getNumElements()),
+                                                                             "", &instruction);
+                        }
 
                         if(active_index < gep_instr->getNumOperands() &&
                            gep_instr->getOperand(active_index)->getType() == merged_index->getType())
                         {
-                            merged_index = BinaryOperator::Create(Instruction::Add, merged_index,
-                                                                        gep_instr->getOperand(active_index),
-                                                                        "", &instruction);
+                            if(llvm::dyn_cast<llvm::ConstantInt>(merged_index) &&
+                               llvm::dyn_cast<llvm::ConstantInt>(merged_index)->getSExtValue() == 0)
+                            {
+                                merged_index = gep_instr->getOperand(active_index);
+                            }
+                            else if(llvm::dyn_cast<llvm::ConstantInt>(gep_instr->getOperand(active_index)) &&
+                                    llvm::dyn_cast<llvm::ConstantInt>(gep_instr->getOperand(active_index))->getSExtValue() == 0)
+                            {
+                                merged_index = merged_index;
+                            }
+                            else
+                            {
+                                merged_index = BinaryOperator::Create(Instruction::Add, merged_index,
+                                                                            gep_instr->getOperand(active_index),
+                                                                            "", &instruction);
+                            }
                         }
                         active_index++;
 

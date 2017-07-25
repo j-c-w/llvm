@@ -19,17 +19,21 @@ class ResearchPreprocessor : public ModulePass
 public:
     static char ID;
 
-    ResearchPreprocessor() : ModulePass(ID) {}
+    ResearchPreprocessor() : ModulePass(ID)
+    {
+        constraint_specs.emplace_back("HOISTSELECT",  ConstraintHoistSelect(),  &transform_hoistselect_pattern);
+        constraint_specs.emplace_back("DISTRIBUTIVE", ConstraintDistributive(), &transform_distributive);
+    }
 
     bool runOnModule(Module& module) override;
+
+private:
+    std::vector<std::tuple<std::string,ConstraintAnd,void(*)(Function&,std::map<std::string,Value*>)>> constraint_specs;
 };
 
 bool ResearchPreprocessor::runOnModule(Module& module)
 {
     ModuleSlotTracker slot_tracker(&module);
-
-    auto constraint_hoist_select = ConstraintHoistSelect();
-    auto constraint_distributive = ConstraintDistributive();
 
     std::ofstream ofs("preprocess-report.txt");
 
@@ -39,68 +43,29 @@ bool ResearchPreprocessor::runOnModule(Module& module)
         {
             bool found_something = false;
 
-            while(true)
+            for(const auto& spec : constraint_specs)
             {
-                FunctionWrapper wrap(function);
-
-                auto hoistselect_solutions = LLVMSolver(constraint_hoist_select, wrap).all_solutions(1);
-
-                if(hoistselect_solutions.size() > 0)
+                while(true)
                 {
+                    FunctionWrapper wrap(function);
+
+                    auto solutions = LLVMSolver(std::get<1>(spec), wrap).all_solutions(1);
+
+                    if(solutions.empty()) break;
+
                     if(!found_something)
                     {
-                        std::stringstream str_str;
-                        raw_os_ostream out_stream(str_str);
-                        function.printAsOperand(out_stream);
-                        out_stream.flush();
-                        str_str.flush();
-                        ofs<<"BEGIN FUNCTION PREPROCESSING "<< str_str.str()<<"\n";
+                        ofs<<"BEGIN FUNCTION PREPROCESSING "<<(std::string)function.getName()<<"\n";
                         found_something = true;
                     }
 
-                    ofs<<"BEGIN HOISTSELECT\n"
-                       <<SolutionHierarchical(hoistselect_solutions[0], slot_tracker).print_pythonesque()<<"\n"
-                       <<"END HOISTSELECT\n";
+                    ofs<<"BEGIN "<<std::get<0>(spec)<<"\n"
+                       <<SolutionHierarchical(solutions[0], slot_tracker).print_pythonesque()<<"\n"
+                       <<"END "<<std::get<0>(spec)<<"\n";
 
-                    std::map<std::string,Value*> solution_map(hoistselect_solutions[0].begin(),
-                                                                    hoistselect_solutions[0].end());
-                    transform_hoistselect_pattern(function, solution_map);
-
-                    continue;
+                    std::map<std::string,Value*> solution_map(solutions[0].begin(), solutions[0].end());
+                    (*std::get<2>(spec))(function, solution_map);
                 }
-                else break;
-            }
-
-            while(true)
-            {
-                FunctionWrapper wrap(function);
-
-                auto distributive_solutions = LLVMSolver(constraint_distributive, wrap).all_solutions(1);
-
-                if(distributive_solutions.size() > 0)
-                {
-                    if(!found_something)
-                    {
-                        std::stringstream str_str;
-                        raw_os_ostream out_stream(str_str);
-                        function.printAsOperand(out_stream);
-                        out_stream.flush();
-                        str_str.flush();
-                        ofs<<"BEGIN FUNCTION PREPROCESSING "<< str_str.str()<<"\n";
-                        found_something = true;
-                    }
-
-                    ofs<<"BEGIN DISTRIBUTIVE\n"
-                       <<SolutionHierarchical(distributive_solutions[0], slot_tracker).print_pythonesque()<<"\n"
-                       <<"END DISTRIBUTIVE\n";
-
-                    std::map<std::string,Value*> solution_map(distributive_solutions[0].begin(),
-                                                                    distributive_solutions[0].end());
-                    transform_distributive(function, solution_map);
-
-                    continue;
-                }
-                else break;
             }
 
             if(found_something)

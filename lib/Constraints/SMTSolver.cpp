@@ -67,13 +67,6 @@ std::vector<std::pair<std::string,Specialized::Value>> Solver::next_solution(uns
         }
     }
 
-/*  std::cerr<<"begin solver histogram"<<std::endl;
-    for(unsigned i = 0; i < specializations.size(); i++)
-    {
-        std::cerr<<"  "<<solver_histogram[i]<<" in "<<specializations[i].first<<std::endl;
-    }
-    std::cerr<<"end solver histogram"<<std::endl;*/
-
     if(max_steps && iterator == specializations.size())
     {
         std::vector<std::pair<std::string,Specialized::Value>> result;

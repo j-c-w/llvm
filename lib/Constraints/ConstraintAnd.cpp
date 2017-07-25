@@ -1,12 +1,14 @@
-#include "llvm/Constraints/ConstraintAnd.hpp"
 #include "llvm/Constraints/ConstraintAtomic.hpp"
 #include "llvm/Constraints/BackendSpecializations.hpp"
 #include <unordered_map>
 #include <vector>
 #include <list>
 
-void ConstraintAnd::generate_groupings()
+ConstraintAnd::ConstraintAnd(std::vector<Constraint*> cvec)
 {
+    for(auto c : cvec)
+        constraints.emplace_back(std::unique_ptr<Constraint>(c));
+
     std::vector<std::string> flat_labels;
 
     for(auto& constraint : this->constraints)

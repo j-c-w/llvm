@@ -61,8 +61,9 @@ for idx in source_file_indizes:
 
     # Optimize LLVM assembly output by clang using modified version of opt.
     process3 = subprocess.Popen([BINARY_OPT, "-S", "-o", modified_filename, "-"]
+                                + OPTIMIZATION_PASSES
                                 + ["-research-flatten", "-research-preprocessor"]
-                                + OPTIMIZATION_PASSES  + ["-research-replacer"],
+                                + ["-licm", "-simplifycfg", "-early-cse"] + ["-research-replacer"],
                                 stdin = subprocess.PIPE)
 
     blacklist = ["noinline", "optnone"]

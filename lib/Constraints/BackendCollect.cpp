@@ -55,7 +55,7 @@ void BackendCollect_::begin(unsigned idx2)
 template<unsigned idx1>
 void BackendCollect_::fixate(unsigned idx2, Specialized::Value c)
 {
-	unsigned max_steps = UINT_MAX;
+    unsigned max_steps = UINT_MAX;
     if(idx1 == 0)
     {
         nonlocals[idx2]->fixate(c);

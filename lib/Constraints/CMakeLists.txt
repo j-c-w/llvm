@@ -17,8 +17,6 @@ add_llvm_library(LLVMConstraints
 
   ConstraintOr.cpp
   ConstraintAnd.cpp
-  ConstraintRange.cpp
-  ConstraintPrefix.cpp
   ConstraintCollect.cpp
 
   ConstraintSpecifications.cpp

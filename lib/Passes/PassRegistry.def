@@ -38,9 +38,6 @@ MODULE_ALIAS_ANALYSIS("globals-aa", GlobalsAA())
 #ifndef MODULE_PASS
 #define MODULE_PASS(NAME, CREATE_PASS)
 #endif
-MODULE_PASS("research-flatten", ResearchFlattenPass())
-MODULE_PASS("research-preprocessor", ResearchPreprocessorPass())
-MODULE_PASS("research-replacer", ResearchReplacerPass())
 MODULE_PASS("always-inline", AlwaysInlinerPass())
 MODULE_PASS("constmerge", ConstantMergePass())
 MODULE_PASS("cross-dso-cfi", CrossDSOCFIPass())
