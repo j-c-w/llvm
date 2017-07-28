@@ -2,14 +2,17 @@
 
 template<bool reverse,bool allow_unstrict>
 BackendDominate<reverse,allow_unstrict>::BackendDominate(std::array<unsigned,3> size, const GraphEngine::Graph& gf)
-               : graph_engine(gf), used_values{{0, 0, 0}}, remaining_values(size),
-                 filled_values{{std::vector<unsigned>(std::get<0>(size)), std::vector<unsigned>(std::get<1>(size)),
-                                std::vector<unsigned>(std::get<2>(size))}}
-{ }
+               : graph_engine(gf), used_values{{0,0,0}}, remaining_values(size),
+                 filled_values{{std::vector<unsigned>(size[0]),
+                                std::vector<unsigned>(size[1]),
+                                std::vector<unsigned>(size[2])}},
+                 value_masks{{std::vector<bool>(size[0],false),
+                              std::vector<bool>(size[1],false),
+                              std::vector<bool>(size[2],false)}} { }
 
 template<bool reverse,bool allow_unstrict>
 template<unsigned idx1>
-SkipResult BackendDominate<reverse,allow_unstrict>::skip_invalid(unsigned idx2, Specialized::Value& c)
+SkipResult BackendDominate<reverse,allow_unstrict>::skip_invalid(unsigned idx2, SolverAtom::Value& c)
 {
     if(c >= graph_engine.graph_forw.size() && c != UINT_MAX-1)
     {
@@ -22,25 +25,45 @@ SkipResult BackendDominate<reverse,allow_unstrict>::skip_invalid(unsigned idx2, 
     }
     else 
     {
-        std::get<idx1>(filled_values)[std::get<idx1>(used_values)] = c;
-
-        if(std::get<(idx1+1)%3>(remaining_values) + std::get<(idx1+2)%3>(remaining_values) > 0 ||
-           (idx1 != 1 && std::get<idx1>(remaining_values) > 0))
+        if(remaining_values[(idx1+1)%3] + remaining_values[(idx1+2)%3] > 0 || (idx1 != 1 && remaining_values[idx1] > 1))
         {
             return SkipResult::PASS;
         }
         else
         {
-            bool domination_holds = graph_engine.compute_domination(
-                  std::get<0>(filled_values).begin(),
-                  std::get<0>(filled_values).begin() + std::get<0>(used_values) + (c != UINT_MAX-1 && idx1 == 0),
-                  std::get<1>(filled_values).begin(),
-                  std::get<1>(filled_values).begin() + std::get<1>(used_values) + (c != UINT_MAX-1 && idx1 == 1),
-                  std::get<2>(filled_values).begin(),
-                  std::get<2>(filled_values).begin() + std::get<2>(used_values) + (c != UINT_MAX-1 && idx1 == 2),
-                  allow_unstrict);
+            bool domination_holds = false;
 
-            if(std::get<1>(remaining_values) == 0 && ((domination_holds && reverse) || (!domination_holds && !reverse)))
+            graph_engine.initialize();
+
+            if(allow_unstrict)
+            {
+                graph_engine.set_destinations(filled_values[2].begin(), filled_values[2].begin() + used_values[2]);
+
+                if(c != UINT_MAX-1 && idx1 == 2) graph_engine.set_destinations(&c, &c+1);
+
+                graph_engine.set_dominators(filled_values[1].begin(), filled_values[1].begin() + used_values[1]);
+
+                if(c != UINT_MAX-1 && idx1 == 1)  graph_engine.set_dominators(&c, &c+1);
+            }
+            else
+            {
+                graph_engine.set_dominators(filled_values[1].begin(), filled_values[1].begin() + used_values[1]);
+
+                if(c != UINT_MAX-1 && idx1 == 1) graph_engine.set_dominators(&c, &c+1);
+
+                graph_engine.set_destinations(filled_values[2].begin(), filled_values[2].begin() + used_values[2]);
+
+                if(c != UINT_MAX-1 && idx1 == 2) graph_engine.set_destinations(&c, &c+1);
+            }
+
+
+            if(graph_engine.set_origins(filled_values[0].begin(), filled_values[0].begin() + used_values[0]) &&
+               (c == UINT_MAX-1 || idx1 != 0 || graph_engine.set_origins(&c, &c+1)))
+            {
+                domination_holds = graph_engine.fill();
+            }
+
+            if(remaining_values[1] == (idx1==1) && ((domination_holds && reverse) || (!domination_holds && !reverse)))
             {
                 if(c >= UINT_MAX-1)
                 {
@@ -64,18 +87,18 @@ SkipResult BackendDominate<reverse,allow_unstrict>::skip_invalid(unsigned idx2, 
 }
 
 template      class BackendDominate<false,false>;
-template SkipResult BackendDominate<false,false>::skip_invalid<0>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate<false,false>::skip_invalid<1>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate<false,false>::skip_invalid<2>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<false,false>::skip_invalid<0>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<false,false>::skip_invalid<1>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<false,false>::skip_invalid<2>(unsigned,SolverAtom::Value&);
 template      class BackendDominate<false,true>;
-template SkipResult BackendDominate<false,true>::skip_invalid<0>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate<false,true>::skip_invalid<1>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate<false,true>::skip_invalid<2>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<false,true>::skip_invalid<0>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<false,true>::skip_invalid<1>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<false,true>::skip_invalid<2>(unsigned,SolverAtom::Value&);
 template      class BackendDominate<true,false>;
-template SkipResult BackendDominate<true,false>::skip_invalid<0>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate<true,false>::skip_invalid<1>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate<true,false>::skip_invalid<2>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<true,false>::skip_invalid<0>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<true,false>::skip_invalid<1>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<true,false>::skip_invalid<2>(unsigned,SolverAtom::Value&);
 template      class BackendDominate<true,true>;
-template SkipResult BackendDominate<true,true>::skip_invalid<0>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate<true,true>::skip_invalid<1>(unsigned,Specialized::Value&);
-template SkipResult BackendDominate<true,true>::skip_invalid<2>(unsigned,Specialized::Value&);
+template SkipResult BackendDominate<true,true>::skip_invalid<0>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<true,true>::skip_invalid<1>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<true,true>::skip_invalid<2>(unsigned,SolverAtom::Value&);

@@ -10,44 +10,43 @@
 
 /* In this file, many individual constraints are defined that are simply specializations of some of the very genric
    constraint definitions in the included files. */
-using ConstraintUnused = ConstraintScalar<BackendConstantValue<UINT_MAX-1>,1>;
+using ConstraintUnused = ConstraintSingle<BackendConstantValue<UINT_MAX-1>>;
 
-using ConstraintIntegerType = ConstraintScalar<BackendLLVMType<&llvm::Type::isIntegerTy>,1>;
-using ConstraintFloatType   = ConstraintScalar<BackendLLVMType<&llvm::Type::isFloatTy>,1>;
-using ConstraintPointerType = ConstraintScalar<BackendLLVMType<&llvm::Type::isPointerTy>,1>;
+using ConstraintIntegerType = ConstraintSingle<BackendLLVMType<&llvm::Type::isIntegerTy>>;
+using ConstraintFloatType   = ConstraintSingle<BackendLLVMType<&llvm::Type::isFloatTy>>;
+using ConstraintPointerType = ConstraintSingle<BackendLLVMType<&llvm::Type::isPointerTy>>;
 
-using ConstraintNotNumericConstant = ConstraintScalar<BackendNotNumericConstant,1>;
-using ConstraintConstant           = ConstraintScalar<BackendConstant,1>;
-using ConstraintPreexecution       = ConstraintScalar<BackendPreexecution,1>;
-using ConstraintArgument           = ConstraintScalar<BackendArgument,1>;
-using ConstraintInstruction        = ConstraintScalar<BackendInstruction,1>;
-using ConstraintFloatZero          = ConstraintScalar<BackendFloatZero,1>;
+using ConstraintNotNumericConstant = ConstraintSingle<BackendNotNumericConstant>;
+using ConstraintConstant           = ConstraintSingle<BackendConstant>;
+using ConstraintPreexecution       = ConstraintSingle<BackendPreexecution>;
+using ConstraintArgument           = ConstraintSingle<BackendArgument>;
+using ConstraintInstruction        = ConstraintSingle<BackendInstruction>;
+using ConstraintFloatZero          = ConstraintSingle<BackendFloatZero>;
 
-using ConstraintPHIInst    = ConstraintScalar<BackendOpcode<llvm::Instruction::PHI>,1>;
-using ConstraintStoreInst  = ConstraintScalar<BackendOpcode<llvm::Instruction::Store>,1>;
-using ConstraintLoadInst   = ConstraintScalar<BackendOpcode<llvm::Instruction::Load>,1>;
-using ConstraintReturnInst = ConstraintScalar<BackendOpcode<llvm::Instruction::Ret>,1>;
-using ConstraintBranchInst = ConstraintScalar<BackendOpcode<llvm::Instruction::Br>,1>;
-using ConstraintAddInst    = ConstraintScalar<BackendOpcode<llvm::Instruction::Add>,1>;
-using ConstraintSubInst    = ConstraintScalar<BackendOpcode<llvm::Instruction::Sub>,1>;
-using ConstraintMulInst    = ConstraintScalar<BackendOpcode<llvm::Instruction::Mul>,1>;
-using ConstraintFAddInst   = ConstraintScalar<BackendOpcode<llvm::Instruction::FAdd>,1>;
-using ConstraintFSubInst   = ConstraintScalar<BackendOpcode<llvm::Instruction::FSub>,1>;
-using ConstraintFMulInst   = ConstraintScalar<BackendOpcode<llvm::Instruction::FMul>,1>;
-using ConstraintFDivInst   = ConstraintScalar<BackendOpcode<llvm::Instruction::FDiv>,1>;
-using ConstraintBitOrInst  = ConstraintScalar<BackendOpcode<llvm::Instruction::Or>,1>;
-using ConstraintLShiftInst = ConstraintScalar<BackendOpcode<llvm::Instruction::Shl>,1>;
-using ConstraintSelectInst = ConstraintScalar<BackendOpcode<llvm::Instruction::Select>,1>;
-using ConstraintSExtInst   = ConstraintScalar<BackendOpcode<llvm::Instruction::SExt>,1>;
-using ConstraintZExtInst   = ConstraintScalar<BackendOpcode<llvm::Instruction::ZExt>,1>;
-using ConstraintGEPInst    = ConstraintScalar<BackendOpcode<llvm::Instruction::GetElementPtr>,1>;
-using ConstraintICmpInst   = ConstraintScalar<BackendOpcode<llvm::Instruction::ICmp>,1>;
+using ConstraintPHIInst    = ConstraintSingle<BackendOpcode<llvm::Instruction::PHI>>;
+using ConstraintStoreInst  = ConstraintSingle<BackendOpcode<llvm::Instruction::Store>>;
+using ConstraintLoadInst   = ConstraintSingle<BackendOpcode<llvm::Instruction::Load>>;
+using ConstraintReturnInst = ConstraintSingle<BackendOpcode<llvm::Instruction::Ret>>;
+using ConstraintBranchInst = ConstraintSingle<BackendOpcode<llvm::Instruction::Br>>;
+using ConstraintAddInst    = ConstraintSingle<BackendOpcode<llvm::Instruction::Add>>;
+using ConstraintSubInst    = ConstraintSingle<BackendOpcode<llvm::Instruction::Sub>>;
+using ConstraintMulInst    = ConstraintSingle<BackendOpcode<llvm::Instruction::Mul>>;
+using ConstraintFAddInst   = ConstraintSingle<BackendOpcode<llvm::Instruction::FAdd>>;
+using ConstraintFSubInst   = ConstraintSingle<BackendOpcode<llvm::Instruction::FSub>>;
+using ConstraintFMulInst   = ConstraintSingle<BackendOpcode<llvm::Instruction::FMul>>;
+using ConstraintFDivInst   = ConstraintSingle<BackendOpcode<llvm::Instruction::FDiv>>;
+using ConstraintBitOrInst  = ConstraintSingle<BackendOpcode<llvm::Instruction::Or>>;
+using ConstraintLShiftInst = ConstraintSingle<BackendOpcode<llvm::Instruction::Shl>>;
+using ConstraintSelectInst = ConstraintSingle<BackendOpcode<llvm::Instruction::Select>>;
+using ConstraintSExtInst   = ConstraintSingle<BackendOpcode<llvm::Instruction::SExt>>;
+using ConstraintZExtInst   = ConstraintSingle<BackendOpcode<llvm::Instruction::ZExt>>;
+using ConstraintGEPInst    = ConstraintSingle<BackendOpcode<llvm::Instruction::GetElementPtr>>;
+using ConstraintICmpInst   = ConstraintSingle<BackendOpcode<llvm::Instruction::ICmp>>;
 
 using ConstraintSame     = ConstraintScalar<BackendOrderWrap<false,true,false>,2>;
 using ConstraintDistinct = ConstraintScalar<BackendOrderWrap<true,false,true>,2>;
 using ConstraintOrder    = ConstraintScalar<BackendOrderWrap<true,false,false>,2>;
 
-using ConstraintSameBlock     = ConstraintScalar<BackendSameBlock,2>;
 using ConstraintIncomingValue = ConstraintScalar<BackendIncomingValue,3>;
 
 using ConstraintDFGEdge  = ConstraintScalar<BackendLLVMEdge<&FunctionWrap::dfg, &FunctionWrap::rdfg>,2>;

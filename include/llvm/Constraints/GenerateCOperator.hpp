@@ -385,6 +385,10 @@ std::string print_c_operator(llvm::Function& function)
                         case llvm::CmpInst::Predicate::FCMP_OLE: new_expr = Expression::Lesseq   (left, right); break;
                         case llvm::CmpInst::Predicate::FCMP_OGE: new_expr = Expression::Greatereq(left, right); break;
                         case llvm::CmpInst::Predicate::FCMP_OGT: new_expr = Expression::Greater  (left, right); break;
+                        case llvm::CmpInst::Predicate::FCMP_ULT: new_expr = Expression::Less     (left, right); break;
+                        case llvm::CmpInst::Predicate::FCMP_ULE: new_expr = Expression::Lesseq   (left, right); break;
+                        case llvm::CmpInst::Predicate::FCMP_UGE: new_expr = Expression::Greatereq(left, right); break;
+                        case llvm::CmpInst::Predicate::FCMP_UGT: new_expr = Expression::Greater  (left, right); break;
                         default:;
                         }
                     }

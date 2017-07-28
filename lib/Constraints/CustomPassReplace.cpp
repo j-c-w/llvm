@@ -107,7 +107,7 @@ bool ResearchReplacer::runOnModule(Module& module)
             std::vector<std::pair<std::string,std::vector<Solution>>> raw_solutions;
 
             for(const auto& spec : constraint_specs)
-                raw_solutions.push_back({spec.first, LLVMSolver(spec.second, wrap).all_solutions()});
+                raw_solutions.push_back({spec.first, llvm_solver(spec.second, wrap)});
 
             auto clustered_solutions = cluster_solutions(std::move(raw_solutions));
 

@@ -1,6 +1,6 @@
 #include "llvm/Constraints/ConstraintClasses.hpp"
 #include "llvm/Constraints/BackendClasses.hpp"
-#include "llvm/Constraints/ConstraintSpecializations.hpp"
+#include "llvm/Constraints/BackendSpecializations.hpp"
 #include <unordered_map>
 #include <vector>
 
@@ -14,7 +14,8 @@ ConstraintOr::ConstraintOr(std::vector<Constraint*> cvec)
 
     for(auto& constraint : this->constraints)
     {
-        flat_labels = constraint->get_labels(std::move(flat_labels));
+        flat_labels.insert(flat_labels.end(), std::make_move_iterator(constraint->begin()),
+                                              std::make_move_iterator(constraint->end()));
         result_boundaries.push_back(flat_labels.size());
     }
 
@@ -22,7 +23,7 @@ ConstraintOr::ConstraintOr(std::vector<Constraint*> cvec)
 
     unsigned active_branch = 0;
 
-    std::unordered_map<Label,unsigned> string_position(flat_labels.size() / 2);
+    std::unordered_map<std::string,unsigned> string_position(flat_labels.size() / 2);
     for(unsigned i = 0; i < flat_labels.size(); i++)
     {
         if(i == result_boundaries.back())
@@ -51,11 +52,11 @@ ConstraintOr::ConstraintOr(std::vector<Constraint*> cvec)
         }
     }
 
-    labels.resize(string_position.size());
+    resize(string_position.size());
 
     for(auto& entry : string_position)
     {
-        labels[entry.second] = std::move(entry.first);
+        (*this)[entry.second] = std::move(entry.first);
     }
 
     for(auto& group : groupings)
@@ -67,23 +68,16 @@ ConstraintOr::ConstraintOr(std::vector<Constraint*> cvec)
     }
 }
 
-std::vector<Constraint::Label> ConstraintOr::get_labels(std::vector<Constraint::Label> use_vector) const
-{
-    use_vector.insert(use_vector.end(), labels.begin(), labels.end());
-    return use_vector;
-}
-
-std::vector<SpecializedContainer> ConstraintOr::get_specials(FunctionWrap& wrap,
-                                                             std::vector<SpecializedContainer> use_vector) const
+void ConstraintOr::get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const
 {
     auto old_result_size = use_vector.size();
 
     for(auto& constraint : constraints)
     {
-        use_vector = constraint->get_specials(wrap, std::move(use_vector));
+        constraint->get_specials(wrap, use_vector);
     }
 
-    std::vector<std::vector<SpecializedContainer>> special_vectors(groupings.size());
+    std::vector<std::vector<std::unique_ptr<SolverAtom>>> special_vectors(groupings.size());
 
     for(unsigned i = 0; i < groupings.size(); i++)
     {
@@ -96,7 +90,7 @@ std::vector<SpecializedContainer> ConstraintOr::get_specials(FunctionWrap& wrap,
             }
             else
             {   // This is highly unsatisfactory and a big problem, sad!
-                special_vectors[i].emplace_back(std::move(ConstraintUnused().get_specials(wrap)[0]));
+                special_vectors[i].emplace_back(std::unique_ptr<SolverAtom>(new BackendConstantValue<UINT_MAX-1>(wrap)));
             }
         }
     }
@@ -108,10 +102,8 @@ std::vector<SpecializedContainer> ConstraintOr::get_specials(FunctionWrap& wrap,
 
     std::shared_ptr<BackendOr> backend(new BackendOr({{size}}, std::move(special_vectors)));
 
-    for(unsigned i = 0; i < size && i < labels.size(); i++)
+    for(unsigned i = 0; i < size; i++)
     {
-        use_vector.emplace_back((VectorSelector<BackendOr,0>(backend, i)));
+        use_vector.emplace_back(std::unique_ptr<SolverAtom>(new VectorSelector<BackendOr>(backend, i)));
     }
-
-    return use_vector;
 }

@@ -3,82 +3,73 @@
 #include <cstdio>
 #include <iostream>
 
-Solver::Solver(std::vector<std::pair<std::string,std::unique_ptr<Specialized>>> s)
-      : iterator(0), variables{}, solution{}, specializations(std::move(s))
-{ }
-
-std::vector<std::pair<std::string,Specialized::Value>> Solver::next_solution(unsigned max_steps)
+Solver::Solver(std::vector<std::unique_ptr<SolverAtom>> s) : iterator(UINT_MAX)
 {
-    std::vector<unsigned> solver_histogram(specializations.size(), 0);
+    swap_specials(std::move(s));
+}
 
-    if(specializations.size() == 0)
-    {
-        return {};
-    }
-    else if(iterator == 0)
-    {
-        solution.push_back(Specialized::Value());
-        variables.push_back(&specializations[iterator].first);
-        specializations[iterator].second->begin();
-    }
-    else if(iterator == specializations.size())
-    {
-        --iterator;
-        specializations[iterator].second->resume(solution[iterator]);
-        ++solution[iterator];
-    }
+Solver::~Solver()
+{
+    swap_specials();
+}
 
-    while(iterator <  specializations.size() && (max_steps--))
+std::vector<std::unique_ptr<SolverAtom>> Solver::swap_specials(std::vector<std::unique_ptr<SolverAtom>> specials)
+{
+    if(iterator != UINT_MAX)
     {
-        solver_histogram[iterator]++;
-
-        SkipResult result = SkipResult::CHANGE;
-
-        while(result == SkipResult::CHANGE)
+        while(--iterator != UINT_MAX)
         {
-            result = specializations[iterator].second->skip_invalid(solution[iterator]);
-        }
-
-        if(result != SkipResult::FAIL)
-        {
-            specializations[iterator].second->fixate(solution[iterator]);
-            ++iterator;
-
-            if(iterator <  specializations.size())
-            {
-                variables.push_back(&specializations[iterator].first);
-                solution.push_back(Specialized::Value());
-                specializations[iterator].second->begin();
-            }
-        }
-        else
-        {
-            specializations[iterator--].second->cancel();
-
-            variables.pop_back();
-            solution.pop_back();
-
-            if(iterator <  specializations.size())
-            {
-                specializations[iterator].second->resume(solution[iterator]);
-                ++solution[iterator];
-            }
+            specializations[iterator]->resume(solution[iterator]);
         }
     }
 
-    if(max_steps && iterator == specializations.size())
+    if(specials.empty())
     {
-        std::vector<std::pair<std::string,Specialized::Value>> result;
-
-        result.reserve(variables.size());
-        for(unsigned i = 0; i < variables.size(); i++)
-            result.emplace_back(*variables[i], solution[i]);
-
-        return result;
+        iterator = UINT_MAX;
     }
     else
     {
-        return {};
+        iterator = 0;
+        specials[iterator]->begin();
     }
+
+    solution.assign(specials.size(), SolverAtom::Value());
+
+    std::swap(specializations, specials);
+    return specials;
 }
 
+std::vector<SolverAtom::Value> Solver::next_solution(unsigned max_steps)
+{
+    if(iterator == UINT_MAX)
+        return {};
+
+    while(true)
+    {
+        SkipResult result = specializations[iterator]->skip_invalid(solution[iterator]);
+
+        if(result == SkipResult::CHANGE)
+            continue;
+
+        if(result == SkipResult::FAIL)
+        {
+            if(--iterator == UINT_MAX)
+                return {};
+
+            specializations[iterator]->resume(solution[iterator]++);
+            continue;
+        }
+
+        specializations[iterator]->fixate(solution[iterator]);
+
+        if(iterator + 1 == specializations.size())
+        {
+            auto solution_copy = solution;
+            specializations[iterator]->resume(solution[iterator]++);
+            return solution_copy;
+        }
+
+        specializations[++iterator]->begin();
+        solution[iterator] = SolverAtom::Value();
+    }
+}

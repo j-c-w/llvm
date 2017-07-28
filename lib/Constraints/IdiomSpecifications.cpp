@@ -1,5 +1,6 @@
 #include "llvm/Constraints/IdiomSpecifications.hpp"
 #include "llvm/Constraints/ConstraintSpecializations.hpp"
+#include "llvm/Constraints/BackendDirectClasses.hpp"
 
 ConstraintAnd ConstraintDistributive()
 {
@@ -731,13 +732,13 @@ ConstraintAnd ConstraintDistributive()
 ConstraintAnd ConstraintHoistSelect()
 {
     return ConstraintAnd({
-         new ConstraintSelectInst("select"),
-         new ConstraintSecondOperand("input1", "select"),
-         new ConstraintFirstOperand("base", "input1"),
-         new ConstraintThirdOperand("input2", "select"),
-         new ConstraintFirstOperand("base", "input2"),
-         new ConstraintGEPInst("input1"),
-         new ConstraintGEPInst("input2")});
+        new ConstraintSelectInst("select"),
+        new ConstraintSecondOperand("input1", "select"),
+        new ConstraintFirstOperand("base", "input1"),
+        new ConstraintThirdOperand("input2", "select"),
+        new ConstraintFirstOperand("base", "input2"),
+        new ConstraintGEPInst("input1"),
+        new ConstraintGEPInst("input2")});
 }
 
 ConstraintAnd ConstraintReduction()

@@ -1,65 +1,54 @@
 #include "llvm/Constraints/BackendClasses.hpp"
 
-BackendAnd::BackendAnd(std::vector<std::unique_ptr<Specialized>> c) : constraints(std::move(c)) { }
+BackendAnd::BackendAnd(std::vector<std::unique_ptr<SolverAtom>> c)
+  : constraints_head(std::move(c.front())),
+    constraints_tail(std::make_move_iterator(c.begin() + 1),
+                     std::make_move_iterator(c.end())) { }
 
-template<unsigned idx>
-SkipResult BackendAnd::skip_invalid(Specialized::Value& c)
+SkipResult BackendAnd::skip_invalid(SolverAtom::Value& c)
 {
-    for(auto& constraint : constraints)
+    SkipResult result = constraints_head->skip_invalid(c);
+
+    if(result == SkipResult::FAIL || result == SkipResult::CHANGE)
+        return result;
+
+    for(auto& constraint : constraints_tail)
     {
         SkipResult local_result = constraint->skip_invalid(c);
 
         if(local_result == SkipResult::FAIL)
-        {
             return SkipResult::FAIL;
-        }
-        else if(local_result == SkipResult::CHANGE || local_result == SkipResult::CHANGEPASS)
-        {
+        if(local_result != SkipResult::PASS)
             return SkipResult::CHANGE;
-        }
     }
 
-    return SkipResult::PASS;
+    return result;
 }
 
-template<unsigned idx>
 void BackendAnd::begin()
 {
-    for(auto& constraint : constraints)
-    {
+    constraints_head->begin();
+    for(auto& constraint : constraints_tail)
         constraint->begin();
-    }
 }
 
-template<unsigned idx>
-void BackendAnd::fixate(Specialized::Value c)
+void BackendAnd::fixate(SolverAtom::Value c)
 {
-    for(auto& constraint : constraints)
-    {
+    constraints_head->fixate(c);
+    for(auto& constraint : constraints_tail)
         constraint->fixate(c);
-    }
 }
 
-template<unsigned idx>
-void BackendAnd::resume(Specialized::Value c)
+void BackendAnd::resume(SolverAtom::Value c)
 {
-    for(auto& constraint : constraints)
-    {
+    constraints_head->resume(c);
+    for(auto& constraint : constraints_tail)
         constraint->resume(c);
-    }
 }
 
-template<unsigned idx>
 void BackendAnd::cancel()
 {
-    for(auto& constraint : constraints)
-    {
+    constraints_head->cancel();
+    for(auto& constraint : constraints_tail)
         constraint->cancel();
-    }
 }
-
-template SkipResult BackendAnd::skip_invalid<0>(Specialized::Value&);
-template       void BackendAnd::begin<0>();
-template       void BackendAnd::fixate<0>(Specialized::Value);
-template       void BackendAnd::resume<0>(Specialized::Value);
-template       void BackendAnd::cancel<0>();

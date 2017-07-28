@@ -519,7 +519,9 @@ void PassManagerBuilder::populateModulePassManager(
       MPM.add(createLICMPass());
       MPM.add(createEarlyCSEPass());
       MPM.add(createLateCFGSimplificationPass());
+      MPM.add(createCFGSimplificationPass());
       MPM.add(createResearchReplacerPass());
+      return;
   }
 
   // FIXME: This is a HACK! The inliner pass above implicitly creates a CGSCC

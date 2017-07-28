@@ -1,6 +1,7 @@
 #ifndef _BACKEND_SPECIALIZATIONS_HPP_
 #define _BACKEND_SPECIALIZATIONS_HPP_
 #include "llvm/Constraints/BackendClasses.hpp"
+#include "llvm/Constraints/BackendDirectClasses.hpp"
 
 template<unsigned ... constants>
 class BackendConstantValue : public BackendSingle

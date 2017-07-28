@@ -2,35 +2,14 @@
 #define _CONSTRAINT_HPP_
 #include "llvm/Constraints/SMTSolver.hpp"
 
-using SpecializedContainer = std::unique_ptr<Specialized>;
-
-/* Constraints essentially only exist to generate instances of the above shown Specialized class. */
-class Constraint
+/* Constraints essentially only exist to generate instances of the above shown SolverAtom class. */
+class Constraint : public std::vector<std::string>
 {
 public:
-    using Label = std::string;
-
+    using std::vector<std::string>::vector;
     virtual ~Constraint() { };
 
-    virtual std::vector<Label> get_labels(std::vector<Label> use_vector = {}) const = 0;
-
-    virtual std::vector<SpecializedContainer> get_specials(FunctionWrap& wrap,
-                                                           std::vector<SpecializedContainer> use_vector = {}) const = 0;
-
-    std::vector<std::pair<Label,SpecializedContainer>> get_specializations(FunctionWrap& wrap,
-                                std::vector<std::pair<Label,SpecializedContainer>> use_vector = {}) const
-    {
-        auto labels   = get_labels();
-        auto specials = get_specials(wrap);
-
-        use_vector.reserve(labels.size());
-        for(unsigned i = 0; i < labels.size() && i < specials.size(); i++)
-        {
-            use_vector.emplace_back(std::move(labels[i]), std::move(specials[i]));
-        }
-
-        return use_vector;
-    }
+    virtual void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const = 0;
 };
 
 #endif

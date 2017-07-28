@@ -15,16 +15,14 @@
 class ConstraintAnd : public Constraint
 {
 public:
+    ConstraintAnd(ConstraintAnd&&) = default;
+
     ConstraintAnd(std::vector<Constraint*> cvec);
 
-    std::vector<Constraint::Label> get_labels(std::vector<Constraint::Label> use_vector = {}) const final;
-
-    std::vector<SpecializedContainer>
-             get_specials(FunctionWrap& wrap, std::vector<SpecializedContainer> use_vector = {}) const final;
+    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final;
 
 private:
     std::vector<std::unique_ptr<Constraint>> constraints;
-    std::vector<Constraint::Label>           labels;
     std::vector<std::vector<unsigned>>       groupings;
 };
 
@@ -36,12 +34,10 @@ class ConstraintOr : public Constraint
 public:
     ConstraintOr(std::vector<Constraint*> cvec);
 
-    std::vector<Constraint::Label>    get_labels(std::vector<Constraint::Label> use_vector = {}) const final;
-    std::vector<SpecializedContainer> get_specials(FunctionWrap& wrap, std::vector<SpecializedContainer> use_vector = {}) const final;
+    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final;
 
 private:
     std::vector<std::unique_ptr<Constraint>> constraints;
-    std::vector<Constraint::Label>           labels;
     std::vector<std::vector<unsigned>>       groupings;
 };
 
@@ -50,133 +46,184 @@ class ConstraintCollect : public Constraint
 public:
     ConstraintCollect(unsigned n, std::string prefix, Constraint* c);
 
-    std::vector<std::string> get_labels(std::vector<std::string> use_vector = {}) const final;
-
-    std::vector<SpecializedContainer> get_specials(FunctionWrap& wrap,
-                                                  std::vector<SpecializedContainer> use_vector = {}) const final;
+    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final;
 
 private:
     std::unique_ptr<Constraint> constraint;
-    std::vector<std::string>    labels;
     std::vector<unsigned>       global_indices;
     std::vector<unsigned>       local_indices;
     unsigned                    size;
 };
 
-template<typename Backend, unsigned idx>
-class ScalarSelector : public Specialized
+template<typename Backend>
+class ConstraintSingle : public Constraint
 {
 public:
-    ScalarSelector(std::shared_ptr<Backend> b) : base(b) { }
+    ConstraintSingle(std::string var) : Constraint {{var}} { }
 
-    SkipResult skip_invalid(Specialized::Value& c) final { return base->template skip_invalid<idx>(c); }
+    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
+    {
+        use_vector.emplace_back(std::unique_ptr<SolverAtom>(new Backend(wrap)));
+    }
 
-    void begin()                      final { base->template begin<idx>(); }
-    void fixate(Specialized::Value c) final { base->template fixate<idx>(c); }
-    void resume(Specialized::Value c) final { base->template resume<idx>(c); }
-    void cancel()                     final { base->template cancel<idx>(); }
-
-    operator SpecializedContainer() const { return SpecializedContainer(new ScalarSelector<Backend,idx>(*this)); }
-
-private:
-    std::shared_ptr<Backend> base;
+    std::tuple<Backend> get_typed_specials(FunctionWrap& wrap) const
+    {
+        return {wrap};
+    }
 };
 
 template<typename Backend,unsigned N>
-class ConstraintScalar : public Constraint
+class ConstraintScalar;
+
+template<typename Backend>
+class ConstraintScalar<Backend,2> : public Constraint
 {
 public:
-    template<typename ... LabelTypes>
-    ConstraintScalar(LabelTypes ... vars)
-      : variables{{vars...}} { }
+    ConstraintScalar(std::string var1, std::string var2) : Constraint{{var1,var2}} { }
 
-    std::vector<std::string> get_labels(std::vector<std::string> use_vector = {}) const final
-    {
-        for(const auto& var : variables)
-            use_vector.emplace_back(var);
-
-        return use_vector;
-    }
-
-    std::vector<SpecializedContainer> get_specials(FunctionWrap& wrap, std::vector<SpecializedContainer> use_vector = {}) const final
+    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
     {
         std::shared_ptr<Backend> backend(new Backend(wrap));
-
-        if(N > 0) use_vector.emplace_back(ScalarSelector<Backend,(N>0?0:0)>(backend));
-        if(N > 1) use_vector.emplace_back(ScalarSelector<Backend,(N>1?1:0)>(backend));
-        if(N > 2) use_vector.emplace_back(ScalarSelector<Backend,(N>2?2:0)>(backend));
-
-        return use_vector;
+        use_vector.emplace_back(std::unique_ptr<SolverAtom>(new ScalarSelector<Backend,0>(backend)));
+        use_vector.emplace_back(std::unique_ptr<SolverAtom>(new ScalarSelector<Backend,1>(backend)));
     }
 
-private:
-    std::array<std::string,N> variables;
+    std::tuple<ScalarSelector<Backend,0>,
+               ScalarSelector<Backend,1>> get_typed_specials(FunctionWrap& wrap) const
+    {
+        std::shared_ptr<Backend> backend(new Backend(wrap));
+        return std::make_tuple(backend, backend);
+    }
 };
 
-template<typename Backend, unsigned idx1>
-class VectorSelector : public Specialized
+template<typename Backend>
+class ConstraintScalar<Backend,3> : public Constraint
 {
 public:
-    VectorSelector(std::shared_ptr<Backend> b, unsigned i2) : base(b), idx2(i2) { }
+    ConstraintScalar(std::string var1, std::string var2, std::string var3) : Constraint{{var1,var2,var3}} { }
 
-    SkipResult skip_invalid(Specialized::Value &c) final { return base->template skip_invalid<idx1>(idx2, c); }
+    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
+    {
+        std::shared_ptr<Backend> backend(new Backend(wrap));
+        use_vector.emplace_back(std::unique_ptr<SolverAtom>(new ScalarSelector<Backend,0>(backend)));
+        use_vector.emplace_back(std::unique_ptr<SolverAtom>(new ScalarSelector<Backend,1>(backend)));
+        use_vector.emplace_back(std::unique_ptr<SolverAtom>(new ScalarSelector<Backend,2>(backend)));
+    }
 
-    void begin()                      final { base->template begin<idx1>(idx2); }
-    void fixate(Specialized::Value c) final { base->template fixate<idx1>(idx2, c); }
-    void resume(Specialized::Value c) final { base->template resume<idx1>(idx2, c); }
-    void cancel()                     final { base->template cancel<idx1>(idx2); }
-
-    operator SpecializedContainer() const { return SpecializedContainer(new VectorSelector<Backend,idx1>(*this)); }
-
-private:
-    std::shared_ptr<Backend> base;
-    unsigned                 idx2;
+    std::tuple<ScalarSelector<Backend,0>,
+               ScalarSelector<Backend,1>,
+               ScalarSelector<Backend,2>> get_typed_specials(FunctionWrap& wrap) const
+    {
+        std::shared_ptr<Backend> backend(new Backend(wrap));
+        return std::make_tuple(backend, backend, backend);
+    }
 };
 
 template<typename Backend,unsigned N>
-class ConstraintVector : public Constraint
+class ConstraintVector;
+
+template<typename Backend>
+class ConstraintVector<Backend,1> : public Constraint
 {
 public:
-    template<typename ... LabelTypes>
-    ConstraintVector(std::string v1, LabelTypes ... vars)
-      : variables{{{v1}, {vars}...}}, sizes{{1, (unsigned)sizeof(vars)*0+1 ...}} { }
-
-    template<typename ... LabelTypes>
-    ConstraintVector(std::vector<std::string> v1, LabelTypes ... vars)
-      : variables{{v1, vars...}}, sizes{{(unsigned)v1.size(), (unsigned)vars.size() ...}} { }
-
-
-    std::vector<std::string> get_labels(std::vector<std::string> use_vector = {}) const final
+    ConstraintVector(std::vector<std::string> var)
     {
-        for(const auto& vars : variables)
-            for(const auto& var : vars)
-                use_vector.emplace_back(var);
-
-        return use_vector;
+        variables[0] = var.size();
+        emplace_back(var);
     }
 
-    std::vector<SpecializedContainer> get_specials(FunctionWrap& wrap, std::vector<SpecializedContainer> use_vector = {}) const final
+    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
     {
-        auto temp_sizes = sizes;
-        if(temp_sizes[2] == 0)
-        {
-            temp_sizes[2] = temp_sizes[1];
-            temp_sizes[1] = temp_sizes[0];
-            temp_sizes[0] = 0;
-        }
-
-        std::shared_ptr<Backend> backend(new Backend(temp_sizes, wrap));
-
-        if(N > 0) for(unsigned i = 0; i < temp_sizes[0]; i++) use_vector.emplace_back(VectorSelector<Backend,(N>0?0:0)>(backend, i));
-        if(N > 1) for(unsigned i = 0; i < temp_sizes[1]; i++) use_vector.emplace_back(VectorSelector<Backend,(N>1?1:0)>(backend, i));
-        if(N > 2) for(unsigned i = 0; i < temp_sizes[2]; i++) use_vector.emplace_back(VectorSelector<Backend,(N>2?2:0)>(backend, i));
-
-        return use_vector;
+        auto specials = get_typed_specials(wrap);
+        for(auto s : std::get<0>(specials)) use_vector.emplace_back(llvm::make_unique<decltype(s)>(s));
+    }
+    std::tuple<std::vector<VectorSelector<Backend>>> get_typed_specials(FunctionWrap& wrap) const
+    {
+        std::vector<VectorSelector<Backend>> special1;
+        std::shared_ptr<Backend> backend(new Backend(variables, wrap));
+        for(unsigned i = 0; i < variables[0]; i++) special1.emplace_back(backend, i);
+        return std::make_tuple(special1);
     }
 
 private:
-    std::array<std::vector<std::string>,N> variables;
-    std::array<unsigned,N> sizes;
+    std::array<unsigned,1> variables;
+};
+
+template<typename Backend>
+class ConstraintVector<Backend,2> : public Constraint
+{
+public:
+    ConstraintVector(std::vector<std::string> var1, std::vector<std::string> var2)
+    {
+        variables[0] = var1.size();
+        insert(end(), var1.begin(), var1.end());
+        variables[1] = var2.size();
+        insert(end(), var2.begin(), var2.end());
+    }
+
+    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
+    {
+        auto specials = get_typed_specials(wrap);
+        for(auto s : std::get<0>(specials)) use_vector.emplace_back(llvm::make_unique<decltype(s)>(s));
+        for(auto s : std::get<1>(specials)) use_vector.emplace_back(llvm::make_unique<decltype(s)>(s));
+    }
+
+    std::tuple<std::vector<MultiVectorSelector<Backend,0>>,
+               std::vector<MultiVectorSelector<Backend,1>>> get_typed_specials(FunctionWrap& wrap) const
+    {
+        std::vector<MultiVectorSelector<Backend,0>> special1;
+        std::vector<MultiVectorSelector<Backend,1>> special2;
+        std::shared_ptr<Backend> backend(new Backend(variables, wrap));
+        for(unsigned i = 0; i < variables[0]; i++) special1.emplace_back(backend, i);
+        for(unsigned i = 0; i < variables[1]; i++) special2.emplace_back(backend, i);
+        return std::make_tuple(special1, special2);
+    }
+
+private:
+    std::array<unsigned,2> variables;
+};
+
+template<typename Backend>
+class ConstraintVector<Backend,3> : public Constraint
+{
+public:
+    ConstraintVector(std::string v1, std::string v2) : Constraint{{v1, v2}}, variables{{0,1,1}} { }
+    ConstraintVector(std::string v1, std::string v2, std::string v3) : Constraint{{v1, v2, v3}}, variables{{1,1,1}} { }
+
+    ConstraintVector(std::vector<std::string> v1, std::vector<std::string> v2, std::vector<std::string> v3)
+    {
+        variables[0] = v1.size();
+        insert(end(), v1.begin(), v1.end());
+        variables[1] = v2.size();
+        insert(end(), v2.begin(), v2.end());
+        variables[2] = v3.size();
+        insert(end(), v3.begin(), v3.end());
+    }
+
+    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
+    {
+        auto specials = get_typed_specials(wrap);
+        for(auto s : std::get<0>(specials)) use_vector.emplace_back(llvm::make_unique<decltype(s)>(s));
+        for(auto s : std::get<1>(specials)) use_vector.emplace_back(llvm::make_unique<decltype(s)>(s));
+        for(auto s : std::get<2>(specials)) use_vector.emplace_back(llvm::make_unique<decltype(s)>(s));
+    }
+
+    std::tuple<std::vector<MultiVectorSelector<Backend,0>>,
+               std::vector<MultiVectorSelector<Backend,1>>,
+               std::vector<MultiVectorSelector<Backend,2>>> get_typed_specials(FunctionWrap& wrap) const
+    {
+        std::vector<MultiVectorSelector<Backend,0>> special1;
+        std::vector<MultiVectorSelector<Backend,1>> special2;
+        std::vector<MultiVectorSelector<Backend,2>> special3;
+        std::shared_ptr<Backend> backend(new Backend(variables, wrap));
+        for(unsigned i = 0; i < variables[0]; i++) special1.emplace_back(backend, i);
+        for(unsigned i = 0; i < variables[1]; i++) special2.emplace_back(backend, i);
+        for(unsigned i = 0; i < variables[2]; i++) special3.emplace_back(backend, i);
+        return std::make_tuple(special1, special2, special3);
+    }
+
+private:
+    std::array<unsigned,3> variables;
 };
 
 #endif

@@ -1,13 +1,14 @@
 #include "llvm/Constraints/BackendClasses.hpp"
+#include "llvm/Constraints/SMTSolver.hpp"
 
-BackendCollect::BackendCollect(std::array<unsigned,2>, std::vector<std::unique_ptr<Specialized>> nloc,
-                                                       std::vector<std::unique_ptr<Specialized>> loc)
+BackendCollect::BackendCollect(std::array<unsigned,2>, std::vector<std::unique_ptr<SolverAtom>> nloc,
+                                                       std::vector<std::unique_ptr<SolverAtom>> loc)
                : nonlocals(std::move(nloc)), locals(std::move(loc)),
                  filled_nonlocals(0), filled_locals(locals.size(), 0)
 { }
 
 template<unsigned idx1>
-SkipResult BackendCollect::skip_invalid(unsigned idx2, Specialized::Value &c)
+SkipResult BackendCollect::skip_invalid(unsigned idx2, SolverAtom::Value &c)
 {
     if(idx1 == 0)
     {
@@ -53,70 +54,26 @@ void BackendCollect::begin(unsigned idx2)
 }
 
 template<unsigned idx1>
-void BackendCollect::fixate(unsigned idx2, Specialized::Value c) // This runs the whole solver in a nested way, sad!
+void BackendCollect::fixate(unsigned idx2, SolverAtom::Value c)
 {
-    unsigned max_steps = UINT_MAX;
     if(idx1 == 0)
     {
         nonlocals[idx2]->fixate(c);
 
         if(++filled_nonlocals == nonlocals.size())
         {
-            std::vector<Specialized::Value> solution;
+            Solver solver(std::move(locals));
 
-            unsigned iterator = 0;
-
-            if(iterator < locals.size())
+            while(true)
             {
-                solution.push_back(0);
-                locals[0]->begin();
+                auto solution = solver.next_solution();
+
+                if(solution.empty()) break;
+
+                solutions.insert(solutions.end(), solution.begin(), solution.end());
             }
 
-            while(iterator < locals.size() && (max_steps--))
-            {
-                while(iterator < locals.size())
-                {
-                    SkipResult result = SkipResult::CHANGE;
-
-                    while(result == SkipResult::CHANGE)
-                    {
-                        result = locals[iterator]->skip_invalid(solution[iterator]);
-                    }
-
-                    if(result != SkipResult::FAIL)
-                    {
-                        locals[iterator]->fixate(solution[iterator]);
-                        ++iterator;
-
-                        if(iterator <  locals.size())
-                        {
-                            solution.push_back(0);
-                            locals[iterator]->begin();
-                        }
-                    }
-                    else
-                    {
-                        locals[iterator--]->cancel();
-
-                        solution.pop_back();
-
-                        if(iterator <  locals.size())
-                        {
-                            locals[iterator]->resume(solution[iterator]);
-                            ++solution[iterator];
-                        }
-                    }
-                }
-
-                if(iterator == locals.size())
-                {
-                    solutions.insert(solutions.end(), solution.begin(), solution.end());
-
-                    iterator--;
-                    locals[iterator]->resume(solution[iterator]);
-                    solution[iterator]++;
-                }
-            }
+            locals = solver.swap_specials();
         }
     }
     else if(idx1 == 1)
@@ -126,7 +83,7 @@ void BackendCollect::fixate(unsigned idx2, Specialized::Value c) // This runs th
 }
 
 template<unsigned idx1>
-void BackendCollect::resume(unsigned idx2, Specialized::Value c)
+void BackendCollect::resume(unsigned idx2, SolverAtom::Value c)
 {
     if(idx1 == 0)
     {
@@ -152,13 +109,13 @@ void BackendCollect::cancel(unsigned idx2)
     }
 }
 
-template SkipResult BackendCollect::skip_invalid<0>(unsigned,Specialized::Value&);
-template SkipResult BackendCollect::skip_invalid<1>(unsigned,Specialized::Value&);
+template SkipResult BackendCollect::skip_invalid<0>(unsigned,SolverAtom::Value&);
+template SkipResult BackendCollect::skip_invalid<1>(unsigned,SolverAtom::Value&);
 template       void BackendCollect::begin<0>(unsigned);
 template       void BackendCollect::begin<1>(unsigned);
-template       void BackendCollect::fixate<0>(unsigned,Specialized::Value);
-template       void BackendCollect::fixate<1>(unsigned,Specialized::Value);
-template       void BackendCollect::resume<0>(unsigned,Specialized::Value);
-template       void BackendCollect::resume<1>(unsigned,Specialized::Value);
+template       void BackendCollect::fixate<0>(unsigned,SolverAtom::Value);
+template       void BackendCollect::fixate<1>(unsigned,SolverAtom::Value);
+template       void BackendCollect::resume<0>(unsigned,SolverAtom::Value);
+template       void BackendCollect::resume<1>(unsigned,SolverAtom::Value);
 template       void BackendCollect::cancel<0>(unsigned);
 template       void BackendCollect::cancel<1>(unsigned);

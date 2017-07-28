@@ -15,9 +15,6 @@ from gi.repository import GtkSource
 
 BINARY_DIRECTORY   = "/".join(sys.argv[0].split("/")[:-1])+"/"
 CLANGPP_EXECUTABLE = BINARY_DIRECTORY+"clang++"
-SOURCE_FILENAME    = "input.cc"
-LLVM_FILENAME      = "input.ll"
-TARGET_FILENAME    = "output.ll"
 
 window          = Gtk.Window()
 toplevel_box    = Gtk.HBox(homogeneous=True, spacing=5)
@@ -107,17 +104,16 @@ def run_through_clang_format(code):
     return "".join([line.decode("utf8") for line in process.stdout])
 
 
-def map_IR_to_C_line(instruction):
+def map_IR_to_C_line(instruction, llvmir):
     has_hit = 0
-    with open(LLVM_FILENAME, 'r') as temp_file:
-        for line in temp_file:
-            if has_hit == 0 and line.strip() == instruction:
-                has_hit = 1
-            if has_hit == 1 and "!" in line:
-                instruction = line.strip().split("!")[-1]
-                has_hit = 2
-            if has_hit == 2 and line[:1] == "!" and line[1:][:len(instruction)] == instruction:
-                return int(line.split('(')[1].split(')')[0].split("line: ")[1].split(",")[0])
+    for line in llvmir:
+        if has_hit == 0 and line.strip() == instruction:
+            has_hit = 1
+        if has_hit == 1 and "!" in line:
+            instruction = line.strip().split("!")[-1]
+            has_hit = 2
+        if has_hit == 2 and line[:1] == "!" and line[1:][:len(instruction)] == instruction:
+            return int(line.split('(')[1].split(')')[0].split("line: ")[1].split(",")[0])
 
     return None
 
@@ -156,12 +152,10 @@ def on_analyze_clicked(widget):
 
     source_code = sourcecode.get_buffer().get_text(sourcecode.get_buffer().get_bounds()[0],
                                                    sourcecode.get_buffer().get_bounds()[1], False)
-    with open(SOURCE_FILENAME, 'w') as temp_file:
-        temp_file.write(source_code+"\n")
-    
+
     already_running_analysis_lock.acquire()
     if not already_running_analysis:
-        set_output("Running clang and SMT solver.")
+        set_output("Running clang with SMT solver.")
         threading.Thread(target=wait_thread, args=(source_code,)).start()
     already_running_analysis = True
     already_running_analysis_lock.release()
@@ -172,12 +166,10 @@ def on_flatana_clicked(widget):
 
     source_code = sourcecode.get_buffer().get_text(sourcecode.get_buffer().get_bounds()[0],
                                                    sourcecode.get_buffer().get_bounds()[1], False)
-    with open(SOURCE_FILENAME, 'w') as temp_file:
-        temp_file.write(source_code+"\n")
-    
+
     already_running_analysis_lock.acquire()
     if not already_running_analysis:
-        set_output("Running clang and SMT solver.")
+        set_output("Running clang with SMT solver.")
         threading.Thread(target=flatwait_thread, args=(source_code,)).start()
     already_running_analysis = True
     already_running_analysis_lock.release()
@@ -260,7 +252,10 @@ def generate_reduction(solutions):
                 if "addend" in read["index_add"][0]:
                     access_pattern = "("+access_pattern+"+"+read["index_add"][0]["addend"].split(" ")[-1]+")"
                 if "multiplier" in read["stride_mul"][0]:
-                    access_pattern = read["stride_mul"][0]["multiplier"].split(" ")[-1]+"*"+access_pattern
+                    if "value" in read["stride_mul"][0] and "mul" in read["stride_mul"][0]["value"]:
+                        access_pattern = access_pattern+"*"+read["stride_mul"][0]["multiplier"].split(" ")[-1]
+                    else:
+                        access_pattern = access_pattern+"<<"+read["stride_mul"][0]["multiplier"].split(" ")[-1]
                 if "addend" in read["offset_add"]:
                     access_pattern = access_pattern+"+"+read["offset_add"]["addend"].split(" ")[-1]
                 part2 += ",in"+str(baseptr_idx)+"["+access_pattern+"]"
@@ -282,6 +277,8 @@ def beautify_operator(operator):
 
     for label in labels_present:
         operator = re.sub("goto "+label+";([^\n]*)\n"+label, ";\\1\n"+label, operator)
+
+    operator = re.sub("else ;", "", operator)
 
     labels_targeted = re.findall("goto ([a-zA-Z0-9_]+);", operator)
 
@@ -322,10 +319,14 @@ def generate_gemm_call(solutions):
 def wait_thread(source_code):
     global already_running_analysis, already_running_analysis_lock
 
-    process = subprocess.Popen([CLANGPP_EXECUTABLE, "-std=c++14",  "-S", "-emit-llvm",
-                                "-o", TARGET_FILENAME, "-gline-tables-only", SOURCE_FILENAME], stderr=subprocess.PIPE)
-    process.wait()
+    process = subprocess.Popen([CLANGPP_EXECUTABLE,
+                                "-std=c++14", "-O2", "-S", "-emit-llvm", "-o", "-", "-xc++", "-", "-gline-tables-only"],
+                               stderr=subprocess.PIPE, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
+    process.stdin.write(source_code.encode("utf8"))
+    process.stdin.close()
+
+    llvmir        = [line for line in process.stdout]
     stderr_result = process.stderr.read().decode("utf8")
 
     Gdk.threads_enter()
@@ -338,17 +339,17 @@ def wait_thread(source_code):
         found_suitable_loop = False
 
         for loop in [p.split("END LOOP\n")[0] for p in stdout_result.split("BEGIN LOOP\n")[1:]]:
-            scalars  = [eval(p.split("END SCALAR REDUCTION\n")[0])       for p in loop.split("BEGIN SCALAR REDUCTION\n")[1:]]
-            histos   = [eval(p.split("END HISTOGRAM\n")[0])              for p in loop.split("BEGIN HISTOGRAM\n")[1:]]
-            matrix   = [eval(p.split("END MATRIX MULTIPLICATIONS\n")[0]) for p in loop.split("BEGIN MATRIX MULTIPLICATIONS\n")[1:]]
-            stencils = [eval(p.split("END STENCIL\n")[0])                for p in loop.split("BEGIN STENCIL\n")[1:]]
+            scalars  = [eval(p.split("END scalar\n")[0])  for p in loop.split("BEGIN scalar\n")[1:]]
+            histos   = [eval(p.split("END histo\n")[0])   for p in loop.split("BEGIN histo\n")[1:]]
+            matrix   = [eval(p.split("END GEMM\n")[0])    for p in loop.split("BEGIN GEMM\n")[1:]]
+            stencils = [eval(p.split("END stencil\n")[0]) for p in loop.split("BEGIN stencil\n")[1:]]
 
             found_suitable_loop = True
 
             if len(stencils):
 
-                line_begin = map_IR_to_C_line(stencils[0]["begin"])
-                line_end   = map_IR_to_C_line(stencils[0]["successor"]) - 1
+                line_begin = map_IR_to_C_line(stencils[0]["begin"], llvmir)
+                line_end   = map_IR_to_C_line(stencils[0]["successor"], llvmir) - 1
 
                 if line_begin >= len(source_code.split("\n")):
                     line_begin = None
@@ -359,8 +360,8 @@ def wait_thread(source_code):
 
             elif len(matrix):
 
-                line_begin = map_IR_to_C_line(matrix[0]["begin"])
-                line_end   = map_IR_to_C_line(matrix[0]["successor"]) - 1
+                line_begin = map_IR_to_C_line(matrix[0]["begin"], llvmir)
+                line_end   = map_IR_to_C_line(matrix[0]["successor"], llvmir) - 1
 
                 if line_begin >= len(source_code.split("\n")):
                     line_begin = None
@@ -373,11 +374,18 @@ def wait_thread(source_code):
             elif len(scalars+histos):
 
                 operator       = loop.split("BEGIN OPERATOR\n")[1]
-                reduction_type = operator.split("op(")[1].split("* acc")[0];
+                reduction_type = operator.split("op(")[1].split("* in0")[0];
                 operator       = operator.replace(reduction_type, "out_t")
 
-                line_begin = map_IR_to_C_line((scalars+histos)[0]["begin"])
-                line_end   = map_IR_to_C_line((scalars+histos)[0]["successor"]) - 1
+                line_begin = map_IR_to_C_line((scalars+histos)[0]["begin"], llvmir)
+                line_end   = map_IR_to_C_line((scalars+histos)[0]["successor"], llvmir)
+
+                if type(line_begin) is not int:
+                    line_begin = 0;
+                if type(line_end) is not int:
+                    line_end = len(source_code.split("\n"));
+
+                line_end = line_end-1;
 
                 if line_begin >= len(source_code.split("\n")):
                     line_begin = None
@@ -393,7 +401,6 @@ def wait_thread(source_code):
                            run_through_clang_format(generate_reduction(scalars+histos))+" ",
                            "This uses the reduction operator:",
                            run_through_clang_format(beautify_operator(operator))+" ")
-
             else:
             
                 found_suitable_loop = False
@@ -412,10 +419,14 @@ def wait_thread(source_code):
 def flatwait_thread(source_code):
     global already_running_analysis, already_running_analysis_lock
 
-    process = subprocess.Popen([CLANGPP_EXECUTABLE, "-std=c++14",  "-S", "-emit-llvm",
-                                "-o", TARGET_FILENAME, "-gline-tables-only", SOURCE_FILENAME], stderr=subprocess.PIPE)
-    process.wait()
+    process = subprocess.Popen([CLANGPP_EXECUTABLE,
+                                "-std=c++14", "-O2", "-S", "-emit-llvm", "-o", "-", "-xc++", "-", "-gline-tables-only"],
+                               stderr=subprocess.PIPE, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
+    process.stdin.write(source_code.encode("utf8"))
+    process.stdin.close()
+
+    llvmir        = [line for line in process.stdout]
     stderr_result = process.stderr.read().decode("utf8")
 
     Gdk.threads_enter()

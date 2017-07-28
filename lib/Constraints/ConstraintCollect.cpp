@@ -7,36 +7,35 @@ ConstraintCollect::ConstraintCollect(unsigned n, std::string prefix, Constraint*
 {
     std::vector<std::string>                        global_names;
     std::vector<std::pair<std::string,std::string>> local_names;
-    
-    auto use_vector = constraint->get_labels();
 
-    for(unsigned i = 0; i < use_vector.size(); i++)
+    for(auto& label : *constraint)
     {
         bool islocal = false;
 
-        for(unsigned j = 0; j + prefix.size() + 1 < use_vector[i].size() && !islocal; j++)
+        for(unsigned j = 0; j + prefix.size() + 1 < label.size() && !islocal; j++)
         {
-            if(use_vector[i][j] == '[' && use_vector[i][j+prefix.size()+1] == ']' &&
-               std::string(use_vector[i].begin() + j+1, use_vector[i].begin() + j+prefix.size()+1) == prefix)
+            if(label[j] == '[' && label[j+prefix.size()+1] == ']' &&
+               std::string(label.begin() + j+1, label.begin() + j+prefix.size()+1) == prefix)
             {
-                local_indices.push_back(i);
-                local_names.emplace_back(std::string(use_vector[i].begin(), use_vector[i].begin()+j+1),
-                                         std::string(use_vector[i].begin()+j+prefix.size()+1, use_vector[i].end()));
+                local_indices.push_back(local_indices.size() + global_indices.size());
+                local_names.emplace_back(std::string(label.begin(), label.begin()+j+1),
+                                         std::string(label.begin()+j+prefix.size()+1, label.end()));
                 islocal = true;
+                break;
             }
         }
 
         if(!islocal)
         {
-            global_indices.push_back(i);
-            global_names.push_back(use_vector[i]);
+            global_indices.push_back(local_indices.size() + global_indices.size());
+            global_names.push_back(label);
         }
     }
 
-    labels.reserve(global_names.size() + size * local_names.size());
+    reserve(global_names.size() + size * local_names.size());
     for(unsigned i = 0; i < global_names.size(); i++)
     {
-        labels.emplace_back(global_names[i]);
+        emplace_back(global_names[i]);
     }
 
     std::string number_string = "";
@@ -50,26 +49,19 @@ ConstraintCollect::ConstraintCollect(unsigned n, std::string prefix, Constraint*
         for(unsigned j = 0; j < local_names.size(); j++)
         {
             std::string final_name = local_names[j].first + number_string + local_names[j].second;
-            labels.emplace_back(final_name);
+            emplace_back(final_name);
         }
     }
 }
 
-std::vector<std::string> ConstraintCollect::get_labels(std::vector<std::string> use_vector) const
+void ConstraintCollect::get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const
 {
-    use_vector.insert(use_vector.end(), labels.begin(), labels.end());
-    return use_vector;
-}
-
-std::vector<SpecializedContainer> ConstraintCollect::get_specials(FunctionWrap& wrap,
-                                                                  std::vector<SpecializedContainer> use_vector) const
-{
-    std::vector<SpecializedContainer> globals;
-    std::vector<SpecializedContainer> locals;
+    std::vector<std::unique_ptr<SolverAtom>> globals;
+    std::vector<std::unique_ptr<SolverAtom>> locals;
 
     unsigned long old_result_size = use_vector.size();
 
-    use_vector = constraint->get_specials(wrap, std::move(use_vector));
+    constraint->get_specials(wrap, use_vector);
 
     for(auto index : global_indices)
     {
@@ -91,13 +83,11 @@ std::vector<SpecializedContainer> ConstraintCollect::get_specials(FunctionWrap& 
     use_vector.reserve(use_vector.size() + globals.size() + size * locals.size());
     for(unsigned i = 0; i < size1; i++)
     {
-        use_vector.push_back(VectorSelector<BackendCollect,0>(backend, i));
+        use_vector.emplace_back(std::unique_ptr<SolverAtom>(new MultiVectorSelector<BackendCollect,0>(backend, i)));
     }
 
     for(unsigned i = 0; i < size2; i++)
     {
-        use_vector.emplace_back(VectorSelector<BackendCollect,1>(backend, i));
+        use_vector.emplace_back(std::unique_ptr<SolverAtom>(new MultiVectorSelector<BackendCollect,1>(backend, i)));
     }
-
-    return use_vector;
 }

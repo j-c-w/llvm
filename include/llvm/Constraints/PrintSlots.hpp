@@ -8,8 +8,6 @@
 class SolutionHierarchical
 {
 public:
-    SolutionHierarchical() { }
-
     SolutionHierarchical(std::vector<std::pair<std::string,llvm::Value*>> input,
                          llvm::ModuleSlotTracker& slot_tracker)
       : SolutionHierarchical(generate_strings(input, slot_tracker)) { }

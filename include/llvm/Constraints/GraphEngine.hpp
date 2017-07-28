@@ -95,34 +95,6 @@ public:
     }
 
 public:
-
-    template<typename iter_type1, typename iter_type2, typename iter_type3>
-    bool compute_domination(iter_type1 origins_begin, iter_type1 origins_end,
-                            iter_type2 dominators_begin, iter_type2 dominators_end,
-                            iter_type3 destinations_begin, iter_type3 destinations_end, bool allow_unstrict = true)
-    {
-        initialize();
-
-        if(allow_unstrict)
-        {
-            set_destinations(destinations_begin, destinations_end);
-            set_dominators(dominators_begin, dominators_end);
-        }
-        else
-        {
-            set_dominators(dominators_begin, dominators_end);
-            set_destinations(destinations_begin, destinations_end);
-        }
-                
-        if(!set_origins(origins_begin, origins_end))
-            return false;
-        else
-        {
-            bool temp = fill();
-            return temp;
-        }
-    }
-
     template<typename iter_type>
     unsigned next_reachable(iter_type origins_begin, iter_type origins_end, unsigned destination)
     {

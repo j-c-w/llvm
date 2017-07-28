@@ -12,10 +12,11 @@ ConstraintAnd::ConstraintAnd(std::vector<Constraint*> cvec)
 
     for(auto& constraint : this->constraints)
     {
-        flat_labels = constraint->get_labels(std::move(flat_labels));
+        flat_labels.insert(flat_labels.end(), std::make_move_iterator(constraint->begin()),
+                                              std::make_move_iterator(constraint->end()));
     }
 
-    std::unordered_map<Label,std::pair<unsigned,unsigned>> string_position(flat_labels.size() / 2);
+    std::unordered_map<std::string,std::pair<unsigned,unsigned>> string_position(flat_labels.size() / 2);
 
     for(unsigned i = 0; i < flat_labels.size(); i++)
     {
@@ -33,31 +34,24 @@ ConstraintAnd::ConstraintAnd(std::vector<Constraint*> cvec)
         }
     }
 
-    labels.resize(string_position.size());
+    resize(string_position.size());
 
     for(auto& entry : string_position)
     {
-        labels[entry.second.first] = std::move(entry.first);
+        (*this)[entry.second.first] = std::move(entry.first);
     }
 }
 
-std::vector<Constraint::Label> ConstraintAnd::get_labels(std::vector<Constraint::Label> use_vector) const
-{
-    use_vector.insert(use_vector.end(), labels.begin(), labels.end());
-    return use_vector;
-}
-
-std::vector<SpecializedContainer> ConstraintAnd::get_specials(FunctionWrap& wrap,
-                                                              std::vector<SpecializedContainer> use_vector) const
+void ConstraintAnd::get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const
 {
     auto old_result_size = use_vector.size();
 
     for(auto& constraint : constraints)
     {
-        use_vector = constraint->get_specials(wrap, std::move(use_vector));
+        constraint->get_specials(wrap, use_vector);
     }
 
-    std::vector<std::vector<SpecializedContainer>> special_vectors(groupings.size());
+    std::vector<std::vector<std::unique_ptr<SolverAtom>>> special_vectors(groupings.size());
 
     for(unsigned i = 0; i < groupings.size(); i++)
     {
@@ -70,19 +64,15 @@ std::vector<SpecializedContainer> ConstraintAnd::get_specials(FunctionWrap& wrap
 
     while(use_vector.size() > old_result_size) use_vector.pop_back();
 
-    for(unsigned i = 0; i < special_vectors.size() && i < labels.size(); i++)
+    for(unsigned i = 0; i < special_vectors.size(); i++)
     {
         if(special_vectors[i].size() > 1)
         {
-            std::shared_ptr<BackendAnd> backend(new BackendAnd(std::move(special_vectors[i])));
-
-            use_vector.emplace_back(ScalarSelector<BackendAnd,0>(backend));
+            use_vector.emplace_back(std::unique_ptr<SolverAtom>(new BackendAnd(std::move(special_vectors[i]))));
         }
         else
         {
             use_vector.emplace_back(std::move(special_vectors[i][0]));
         }
     }
-
-    return use_vector;
 }

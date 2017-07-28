@@ -11,7 +11,6 @@ add_llvm_library(LLVMConstraints
   BackendCollect.cpp
   BackendDominate.cpp
   BackendOrdering.cpp
-  BackendSameBlock.cpp
   BackendIncomingValue.cpp
 
   ConstraintOr.cpp
@@ -33,4 +32,3 @@ add_llvm_library(LLVMConstraints
   DEPENDS
   intrinsics_gen
 )
-

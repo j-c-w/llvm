@@ -23,12 +23,12 @@ enum class SkipResult
    The "skip_invalid" member function is the crucial one and increments the argument that is passed to it until
    it does not contradict any constraint anymore.
    the return value depends on whether this was successfull. */
-class Specialized
+class SolverAtom
 {
 public:
     using Value = unsigned;
 
-    virtual ~Specialized() { }
+    virtual ~SolverAtom() { }
 
     virtual SkipResult skip_invalid(Value& c) = 0;
 
@@ -42,15 +42,17 @@ public:
 class Solver
 {
 public:
-    Solver(std::vector<std::pair<std::string,std::unique_ptr<Specialized>>> specializations);
+    Solver(std::vector<std::unique_ptr<SolverAtom>> specializations);
+    ~Solver();
 
-    std::vector<std::pair<std::string,Specialized::Value>> next_solution(unsigned max_steps = UINT_MAX);
+    std::vector<SolverAtom::Value> next_solution(unsigned max_steps = UINT_MAX);
 
-protected:
-    unsigned                                                         iterator;
-    std::vector<std::string*>                                        variables;
-    std::vector<Specialized::Value>                                  solution;
-    std::vector<std::pair<std::string,std::unique_ptr<Specialized>>> specializations;
+    std::vector<std::unique_ptr<SolverAtom>> swap_specials(std::vector<std::unique_ptr<SolverAtom>> specials = {});
+
+private:
+    unsigned                                 iterator;
+    std::vector<SolverAtom::Value>           solution;
+    std::vector<std::unique_ptr<SolverAtom>> specializations;
 };
 
 #endif

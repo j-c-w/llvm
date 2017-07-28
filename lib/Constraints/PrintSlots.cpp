@@ -4,10 +4,10 @@
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Value.h"
+#include <algorithm>
+#include <iomanip>
 #include <sstream>
 #include <string>
-#include <iomanip>
-#include <algorithm>
 
 SolutionHierarchical::SolutionHierarchical(std::vector<std::pair<std::string,std::string>> input)
 {
