@@ -1,8 +1,6 @@
 #ifndef _CONSTRAINT_CLASSES_HPP_
 #define _CONSTRAINT_CLASSES_HPP_
-#include "llvm/Constraints/BackendSpecializations.hpp"
-#include "llvm/Constraints/FunctionWrap.hpp"
-#include "llvm/Constraints/GraphEngine.hpp"
+#include "llvm/Constraints/BackendSelectors.hpp"
 #include "llvm/Constraints/Constraint.hpp"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Constant.h"
@@ -19,7 +17,7 @@ public:
 
     ConstraintAnd(std::vector<Constraint*> cvec);
 
-    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final;
+    void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final;
 
 private:
     std::vector<std::unique_ptr<Constraint>> constraints;
@@ -34,7 +32,7 @@ class ConstraintOr : public Constraint
 public:
     ConstraintOr(std::vector<Constraint*> cvec);
 
-    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final;
+    void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final;
 
 private:
     std::vector<std::unique_ptr<Constraint>> constraints;
@@ -46,7 +44,7 @@ class ConstraintCollect : public Constraint
 public:
     ConstraintCollect(unsigned n, std::string prefix, Constraint* c);
 
-    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final;
+    void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final;
 
 private:
     std::unique_ptr<Constraint> constraint;
@@ -61,7 +59,7 @@ class ConstraintSingle : public Constraint
 public:
     ConstraintSingle(std::string var) : Constraint {{var}} { }
 
-    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
+    void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
     {
         use_vector.emplace_back(std::unique_ptr<SolverAtom>(new Backend(wrap)));
     }
@@ -81,7 +79,7 @@ class ConstraintScalar<Backend,2> : public Constraint
 public:
     ConstraintScalar(std::string var1, std::string var2) : Constraint{{var1,var2}} { }
 
-    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
+    void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
     {
         std::shared_ptr<Backend> backend(new Backend(wrap));
         use_vector.emplace_back(std::unique_ptr<SolverAtom>(new ScalarSelector<Backend,0>(backend)));
@@ -102,7 +100,7 @@ class ConstraintScalar<Backend,3> : public Constraint
 public:
     ConstraintScalar(std::string var1, std::string var2, std::string var3) : Constraint{{var1,var2,var3}} { }
 
-    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
+    void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
     {
         std::shared_ptr<Backend> backend(new Backend(wrap));
         use_vector.emplace_back(std::unique_ptr<SolverAtom>(new ScalarSelector<Backend,0>(backend)));
@@ -112,7 +110,7 @@ public:
 
     std::tuple<ScalarSelector<Backend,0>,
                ScalarSelector<Backend,1>,
-               ScalarSelector<Backend,2>> get_typed_specials(FunctionWrap& wrap) const
+               ScalarSelector<Backend,2>> get_typed_specials(const FunctionWrap& wrap) const
     {
         std::shared_ptr<Backend> backend(new Backend(wrap));
         return std::make_tuple(backend, backend, backend);
@@ -132,12 +130,12 @@ public:
         emplace_back(var);
     }
 
-    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
+    void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
     {
         auto specials = get_typed_specials(wrap);
         for(auto s : std::get<0>(specials)) use_vector.emplace_back(llvm::make_unique<decltype(s)>(s));
     }
-    std::tuple<std::vector<VectorSelector<Backend>>> get_typed_specials(FunctionWrap& wrap) const
+    std::tuple<std::vector<VectorSelector<Backend>>> get_typed_specials(const FunctionWrap& wrap) const
     {
         std::vector<VectorSelector<Backend>> special1;
         std::shared_ptr<Backend> backend(new Backend(variables, wrap));
@@ -161,7 +159,7 @@ public:
         insert(end(), var2.begin(), var2.end());
     }
 
-    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
+    void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
     {
         auto specials = get_typed_specials(wrap);
         for(auto s : std::get<0>(specials)) use_vector.emplace_back(llvm::make_unique<decltype(s)>(s));
@@ -169,7 +167,7 @@ public:
     }
 
     std::tuple<std::vector<MultiVectorSelector<Backend,0>>,
-               std::vector<MultiVectorSelector<Backend,1>>> get_typed_specials(FunctionWrap& wrap) const
+               std::vector<MultiVectorSelector<Backend,1>>> get_typed_specials(const FunctionWrap& wrap) const
     {
         std::vector<MultiVectorSelector<Backend,0>> special1;
         std::vector<MultiVectorSelector<Backend,1>> special2;
@@ -200,7 +198,7 @@ public:
         insert(end(), v3.begin(), v3.end());
     }
 
-    void get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
+    void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final
     {
         auto specials = get_typed_specials(wrap);
         for(auto s : std::get<0>(specials)) use_vector.emplace_back(llvm::make_unique<decltype(s)>(s));
@@ -210,7 +208,7 @@ public:
 
     std::tuple<std::vector<MultiVectorSelector<Backend,0>>,
                std::vector<MultiVectorSelector<Backend,1>>,
-               std::vector<MultiVectorSelector<Backend,2>>> get_typed_specials(FunctionWrap& wrap) const
+               std::vector<MultiVectorSelector<Backend,2>>> get_typed_specials(const FunctionWrap& wrap) const
     {
         std::vector<MultiVectorSelector<Backend,0>> special1;
         std::vector<MultiVectorSelector<Backend,1>> special2;

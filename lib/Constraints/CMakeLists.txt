@@ -29,6 +29,9 @@ add_llvm_library(LLVMConstraints
   TransformDistributive.cpp
   TransformHoistSelection.cpp
 
+  SeparateSESE.cpp
+  GenerateCOperator.cpp
+
   DEPENDS
   intrinsics_gen
 )

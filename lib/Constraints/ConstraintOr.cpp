@@ -68,7 +68,7 @@ ConstraintOr::ConstraintOr(std::vector<Constraint*> cvec)
     }
 }
 
-void ConstraintOr::get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const
+void ConstraintOr::get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const
 {
     auto old_result_size = use_vector.size();
 

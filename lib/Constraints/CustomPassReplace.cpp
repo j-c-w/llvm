@@ -1,35 +1,32 @@
 #include "llvm/Constraints/CustomPasses.hpp"
-#include "llvm/Constraints/LLVMSolver.hpp"
 #include "llvm/Constraints/IdiomSpecifications.hpp"
-#include "llvm/Constraints/FunctionWrap.hpp"
+#include "llvm/Constraints/GenerateCOperator.hpp"
+#include "llvm/Constraints/SeparateSESE.hpp"
 #include "llvm/Constraints/PrintSlots.hpp"
 #include "llvm/Constraints/Transforms.hpp"
-#include "llvm/Constraints/GenerateCOperator.hpp"
+#include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
-#include "llvm/Constraints/SeparateSESE.hpp"
-#include "llvm/Support/raw_os_ostream.h"
-#include <iomanip>
+#include <unordered_map>
 #include <algorithm>
 #include <fstream>
-#include <sstream>
+#include <string>
+#include <vector>
 #include <map>
 
 using namespace llvm;
 
-using Solution = std::vector<std::pair<std::string,Value*>>;
-
 struct SolutionCluster
 {
-    Value*                                                begin;
-    Value*                                                end;
-    std::unordered_map<std::string,std::vector<Solution>> solutions;
+    Value*                                                     begin;
+    Value*                                                     end;
+    std::unordered_map<std::string,std::vector<IdiomInstance>> solutions;
 };
 
 // This function applies some postprocessing to bundle together reductions.
 // The proper way would be to encode it in a new constraint specification "composed reduction" but this will do for now.
-std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string,std::vector<Solution>>> inputs)
+std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string,std::vector<IdiomInstance>>> inputs)
 {
     std::vector<SolutionCluster> result;
 
@@ -59,7 +56,7 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string
                 if(new_entry)
                 {
                     result.push_back({find_begin_it->second, find_end_it->second,
-                                      std::unordered_map<std::string,std::vector<Solution>>()});
+                                      std::unordered_map<std::string,std::vector<IdiomInstance>>()});
                     result.back().solutions[cluster_spec.first].push_back(std::move(solution));
                 }
             }
@@ -76,20 +73,20 @@ public:
 
     ResearchReplacer() : ModulePass(ID)
     {
-        constraint_specs.emplace_back("histo",   ConstraintHisto());
-        constraint_specs.emplace_back("scalar",  ConstraintReduction());
-        constraint_specs.emplace_back("GEMM",    ConstraintGEMM());
-        constraint_specs.emplace_back("GEMV",    ConstraintGEMV());
-        constraint_specs.emplace_back("AXPY",    ConstraintAXPY());
-        constraint_specs.emplace_back("DOT",     ConstraintDOT());
-        constraint_specs.emplace_back("SPMV",    ConstraintSPMV());
-        constraint_specs.emplace_back("stencil", ConstraintStencil());
+        constraint_specs.emplace_back("histo",   DetectHisto);
+        constraint_specs.emplace_back("scalar",  DetectReduction);
+        constraint_specs.emplace_back("GEMM",    DetectGEMM);
+        constraint_specs.emplace_back("GEMV",    DetectGEMV);
+        constraint_specs.emplace_back("AXPY",    DetectAXPY);
+        constraint_specs.emplace_back("DOT",     DetectDOT);
+        constraint_specs.emplace_back("SPMV",    DetectSPMV);
+        constraint_specs.emplace_back("stencil", DetectStencil);
     }
 
     bool runOnModule(Module& module) override;
 
 private:
-    std::vector<std::pair<std::string,ConstraintAnd>> constraint_specs;
+    std::vector<std::pair<std::string,std::vector<IdiomInstance>(*)(llvm::Function&,unsigned)>> constraint_specs;
 };
 
 bool ResearchReplacer::runOnModule(Module& module)
@@ -102,12 +99,10 @@ bool ResearchReplacer::runOnModule(Module& module)
     {
         if(!function.isDeclaration())
         {
-            FunctionWrap wrap(function);
-
-            std::vector<std::pair<std::string,std::vector<Solution>>> raw_solutions;
+            std::vector<std::pair<std::string,std::vector<IdiomInstance>>> raw_solutions;
 
             for(const auto& spec : constraint_specs)
-                raw_solutions.push_back({spec.first, llvm_solver(spec.second, wrap)});
+                raw_solutions.push_back({spec.first, spec.second(function,UINT_MAX)});
 
             auto clustered_solutions = cluster_solutions(std::move(raw_solutions));
 
@@ -135,7 +130,7 @@ bool ResearchReplacer::runOnModule(Module& module)
                     ofs<<"BEGIN OPERATOR\n";
                     std::vector<Instruction*> outputs;
 
-                    SESEFunction sese_function(function, clustered_solutions[i].begin, clustered_solutions[i].end);
+                    SESEFunction sese_function(clustered_solutions[i].begin, clustered_solutions[i].end);
 
                     Function* function = sese_function.make_function();
 

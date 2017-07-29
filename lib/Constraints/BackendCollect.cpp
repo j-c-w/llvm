@@ -1,5 +1,4 @@
 #include "llvm/Constraints/BackendClasses.hpp"
-#include "llvm/Constraints/SMTSolver.hpp"
 
 BackendCollect::BackendCollect(std::array<unsigned,2>, std::vector<std::unique_ptr<SolverAtom>> nloc,
                                                        std::vector<std::unique_ptr<SolverAtom>> loc)

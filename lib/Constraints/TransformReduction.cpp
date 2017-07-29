@@ -1,5 +1,7 @@
 #include "llvm/Constraints/Transforms.hpp"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Value.h"
 #include <sstream>

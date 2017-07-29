@@ -1,9 +1,5 @@
 #ifndef _BACKEND_DIRECT_CLASSES_HPP_
 #define _BACKEND_DIRECT_CLASSES_HPP_
-#include "llvm/Constraints/SMTSolver.hpp"
-#include "llvm/Constraints/GraphEngine.hpp"
-#include <vector>
-#include <memory>
 
 template<typename ... SolverAtomN>
 class BackendDirectAnd;
@@ -22,18 +18,19 @@ public:
     template<unsigned idx> void cancel();
 
 private:
-    std::pair<SolverAtom1,SolverAtom2> constraints;
+    SolverAtom1 constraint_head;
+    SolverAtom2 constraint_tail;
 };
 
 template<typename SolverAtom1, typename SolverAtom2>
 BackendDirectAnd<SolverAtom1,SolverAtom2>::BackendDirectAnd(SolverAtom1 s1, SolverAtom2 s2)
-                                         : constraints(std::move(s1), std::move(s2)) { }
+                                         : constraint_head(std::move(s1)), constraint_tail(std::move(s2)) { }
 
 template<typename SolverAtom1, typename SolverAtom2>
 template<unsigned idx>
 SkipResult BackendDirectAnd<SolverAtom1,SolverAtom2>::skip_invalid(SolverAtom::Value& c)
 {
-    SkipResult local_result = constraints.first.skip_invalid(c);
+    SkipResult local_result = constraint_head.skip_invalid(c);
 
     if(local_result == SkipResult::FAIL)
     {
@@ -44,7 +41,7 @@ SkipResult BackendDirectAnd<SolverAtom1,SolverAtom2>::skip_invalid(SolverAtom::V
         return SkipResult::CHANGE;
     }
 
-    local_result = constraints.second.skip_invalid(c);
+    local_result = constraint_tail.skip_invalid(c);
 
     if(local_result == SkipResult::FAIL)
     {
@@ -62,32 +59,32 @@ template<typename SolverAtom1, typename SolverAtom2>
 template<unsigned idx>
 void BackendDirectAnd<SolverAtom1,SolverAtom2>::begin()
 {
-    constraints.first.begin();
-    constraints.second.begin();
+    constraint_head.begin();
+    constraint_tail.begin();
 }
 
 template<typename SolverAtom1, typename SolverAtom2>
 template<unsigned idx>
 void BackendDirectAnd<SolverAtom1,SolverAtom2>::fixate(SolverAtom::Value c)
 {
-    constraints.first.fixate(c);
-    constraints.second.fixate(c);
+    constraint_head.fixate(c);
+    constraint_tail.fixate(c);
 }
 
 template<typename SolverAtom1, typename SolverAtom2>
 template<unsigned idx>
 void BackendDirectAnd<SolverAtom1,SolverAtom2>::resume(SolverAtom::Value c)
 {
-    constraints.first.resume(c);
-    constraints.second.resume(c);
+    constraint_head.resume(c);
+    constraint_tail.resume(c);
 }
 
 template<typename SolverAtom1, typename SolverAtom2>
 template<unsigned idx>
 void BackendDirectAnd<SolverAtom1,SolverAtom2>::cancel()
 {
-    constraints.first.cancel();
-    constraints.second.cancel();
+    constraint_head.cancel();
+    constraint_tail.cancel();
 }
 
 template<typename SolverAtom1, typename SolverAtom2, typename SolverAtom3, typename ... SolverAtomN>

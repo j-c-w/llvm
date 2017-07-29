@@ -1,7 +1,8 @@
 #ifndef _BACKEND_CLASSES_HPP_
 #define _BACKEND_CLASSES_HPP_
-#include "llvm/Constraints/SMTSolver.hpp"
 #include "llvm/Constraints/GraphEngine.hpp"
+#include "llvm/Constraints/SMTSolver.hpp"
+#include "llvm/Constraints/FunctionWrap.hpp"
 #include <vector>
 #include <memory>
 
@@ -39,7 +40,7 @@ public:
 
 private:
     std::vector<std::vector<std::unique_ptr<SolverAtom>>> constraints;
-    std::vector<unsigned>                                  disabled_since;
+    std::vector<unsigned>                                 disabled_since;
 };
 
 class BackendCollect
@@ -58,8 +59,8 @@ public:
 private:
     std::vector<std::unique_ptr<SolverAtom>> nonlocals;
     std::vector<std::unique_ptr<SolverAtom>> locals;
-    unsigned                                  filled_nonlocals;
-    std::vector<unsigned>                     filled_locals;
+    unsigned                                 filled_nonlocals;
+    std::vector<unsigned>                    filled_locals;
     std::vector<SolverAtom::Value>           solutions;
 };
 
@@ -70,10 +71,10 @@ public:
 
     SkipResult skip_invalid(SolverAtom::Value& c) final;
 
-    void begin ()                     final { hit_start = hits.begin(); }
+    void begin ()                    final { hit_start = hits.begin(); }
     void fixate(SolverAtom::Value c) final { }
     void resume(SolverAtom::Value c) final { }
-    void cancel()                     final { }
+    void cancel()                    final { }
 
 private:
     std::vector<SolverAtom::Value>                          hits;
@@ -108,10 +109,10 @@ public:
 
     template<unsigned idx> SkipResult skip_invalid(SolverAtom::Value& c);
 
-    template<unsigned idx> void begin ()                     { }
+    template<unsigned idx> void begin ()                    { }
     template<unsigned idx> void fixate(SolverAtom::Value c) { amount_completed++; }
     template<unsigned idx> void resume(SolverAtom::Value c) { amount_completed--; }
-    template<unsigned idx> void cancel()                     { }
+    template<unsigned idx> void cancel()                    { }
 
 private:
     unsigned amount_completed;
@@ -174,59 +175,6 @@ private:
     std::array<unsigned,3>              remaining_values;
     std::array<std::vector<unsigned>,3> filled_values;
     std::array<std::vector<bool>,3>     value_masks;
-};
-
-template<typename Backend, unsigned idx>
-class ScalarSelector : public SolverAtom
-{
-public:
-    ScalarSelector(std::shared_ptr<Backend> b) : base(b) { }
-
-    SkipResult skip_invalid(SolverAtom::Value& c) final { return base->template skip_invalid<idx>(c); }
-
-    void begin()                      final { base->template begin<idx>(); }
-    void fixate(SolverAtom::Value c) final { base->template fixate<idx>(c); }
-    void resume(SolverAtom::Value c) final { base->template resume<idx>(c); }
-    void cancel()                     final { base->template cancel<idx>(); }
-
-private:
-    std::shared_ptr<Backend> base;
-};
-
-template<typename Backend>
-class VectorSelector : public SolverAtom
-{
-public:
-    VectorSelector(std::shared_ptr<Backend> b, unsigned i) : base(b), idx(i) { }
-
-    SkipResult skip_invalid(SolverAtom::Value &c) final { return base->template skip_invalid(idx, c); }
-
-    void begin()                      final { base->begin(idx); }
-    void fixate(SolverAtom::Value c) final { base->fixate(idx, c); }
-    void resume(SolverAtom::Value c) final { base->resume(idx, c); }
-    void cancel()                     final { base->cancel(idx); }
-
-private:
-    std::shared_ptr<Backend> base;
-    unsigned                 idx;
-};
-
-template<typename Backend, unsigned idx1>
-class MultiVectorSelector : public SolverAtom
-{
-public:
-    MultiVectorSelector(std::shared_ptr<Backend> b, unsigned i2) : base(b), idx2(i2) { }
-
-    SkipResult skip_invalid(SolverAtom::Value &c) final { return base->template skip_invalid<idx1>(idx2, c); }
-
-    void begin()                      final { base->template begin<idx1>(idx2); }
-    void fixate(SolverAtom::Value c) final { base->template fixate<idx1>(idx2, c); }
-    void resume(SolverAtom::Value c) final { base->template resume<idx1>(idx2, c); }
-    void cancel()                     final { base->template cancel<idx1>(idx2); }
-
-private:
-    std::shared_ptr<Backend> base;
-    unsigned                 idx2;
 };
 
 #endif

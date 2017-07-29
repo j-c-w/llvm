@@ -1,12 +1,8 @@
 #ifndef _CONSTRAINT_INTERFACE_HPP_
 #define _CONSTRAINT_INTERFACE_HPP_
-#include "FunctionWrap.hpp"
-#include <vector>
-#include <map>
 #include <climits>
 #include <memory>
-#include <deque>
-#include <iostream>
+#include <vector>
 
 enum class SkipResult
 {

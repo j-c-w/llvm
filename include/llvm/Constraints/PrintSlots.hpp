@@ -1,8 +1,13 @@
 #ifndef _PRINTSLOTS_HPP_
 #define _PRINTSLOTS_HPP_
-#include "llvm/Constraints/FunctionWrap.hpp"
-#include "llvm/IR/ModuleSlotTracker.h"
 #include <string>
+#include <vector>
+#include <map>
+
+namespace llvm {
+class ModuleSlotTracker;
+class Value;
+}
 
 /* This class is used to pretty print solutions that are output by the solver. */
 class SolutionHierarchical

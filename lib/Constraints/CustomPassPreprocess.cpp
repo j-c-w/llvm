@@ -1,16 +1,15 @@
 #include "llvm/Constraints/CustomPasses.hpp"
-#include "llvm/Constraints/LLVMSolver.hpp"
 #include "llvm/Constraints/IdiomSpecifications.hpp"
-#include "llvm/Constraints/FunctionWrap.hpp"
 #include "llvm/Constraints/PrintSlots.hpp"
 #include "llvm/Constraints/Transforms.hpp"
-#include "llvm/Constraints/ConstraintSpecializations.hpp"
+#include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
-#include "llvm/Support/raw_os_ostream.h"
 #include <fstream>
-#include <sstream>
+#include <string>
+#include <vector>
+#include <map>
 
 using namespace llvm;
 
@@ -21,14 +20,15 @@ public:
 
     ResearchPreprocessor() : ModulePass(ID)
     {
-        constraint_specs.emplace_back("HOISTSELECT",  ConstraintHoistSelect(),  &transform_hoistselect_pattern);
-        constraint_specs.emplace_back("DISTRIBUTIVE", ConstraintDistributive(), &transform_distributive);
+        constraint_specs.emplace_back("HOISTSELECT",  DetectHoistSelect,  &transform_hoistselect_pattern);
+        constraint_specs.emplace_back("DISTRIBUTIVE", DetectDistributive, &transform_distributive);
     }
 
     bool runOnModule(Module& module) override;
 
 private:
-    std::vector<std::tuple<std::string,ConstraintAnd,void(*)(Function&,std::map<std::string,Value*>)>> constraint_specs;
+    std::vector<std::tuple<std::string,std::vector<IdiomInstance>(*)(llvm::Function&,unsigned),
+                                       void(*)(Function&,std::map<std::string,Value*>)>> constraint_specs;
 };
 
 bool ResearchPreprocessor::runOnModule(Module& module)
@@ -47,9 +47,7 @@ bool ResearchPreprocessor::runOnModule(Module& module)
             {
                 while(true)
                 {
-                    FunctionWrap wrap(function);
-
-                    auto solutions = llvm_solver(std::get<1>(spec), wrap, 1);
+                    auto solutions = std::get<1>(spec)(function, 1);
 
                     if(solutions.empty()) break;
 

@@ -1,13 +1,14 @@
 #ifndef _LLVM_SOLVER_HPP_
 #define _LLVM_SOLVER_HPP_
+#include "llvm/Constraints/SMTSolver.hpp"
 #include "llvm/Constraints/Constraint.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
 
-inline
 std::vector<std::vector<std::pair<std::string,llvm::Value*>>> llvm_solver(const Constraint& constraint,
-                                                                          FunctionWrap& wrap,
+                                                                          llvm::Function& function,
                                                                           unsigned max_solutions = UINT_MAX)
 {
+    FunctionWrap wrap(function);
     std::vector<std::unique_ptr<SolverAtom>> specials;
     constraint.get_specials(wrap, specials);
     Solver solver(std::move(specials));

@@ -2,11 +2,6 @@
 #define _CONSTRAINT_SPECIALIZATIONS_HPP_
 #include "llvm/Constraints/BackendSpecializations.hpp"
 #include "llvm/Constraints/ConstraintClasses.hpp"
-#include "llvm/Constraints/FunctionWrap.hpp"
-#include "llvm/Constraints/GraphEngine.hpp"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/Constant.h"
-#include "llvm/IR/Type.h"
 
 /* In this file, many individual constraints are defined that are simply specializations of some of the very genric
    constraint definitions in the included files. */

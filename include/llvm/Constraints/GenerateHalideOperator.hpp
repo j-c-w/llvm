@@ -1,15 +1,10 @@
 #ifndef _PRINT_HALIDE_OPERATOR_
 #define _PRINT_HALIDE_OPERATOR_
-#include "llvm/IR/Function.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/Constraints/CustomPasses.hpp"
-#include "llvm/Analysis/DominanceFrontierImpl.h"
-#include "llvm/IR/CFG.h"
-#include "llvm/Pass.h"
-#include "llvm/Analysis/RegionInfo.h"
-#include "llvm/Support/raw_os_ostream.h"
-#include <unordered_set>
+#include <string>
+
+namespace llvm {
+class Function;
+}
 
 std::string print_halide_stencil(llvm::Function& function)
 {

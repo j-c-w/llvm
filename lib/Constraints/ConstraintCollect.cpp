@@ -54,7 +54,7 @@ ConstraintCollect::ConstraintCollect(unsigned n, std::string prefix, Constraint*
     }
 }
 
-void ConstraintCollect::get_specials(FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const
+void ConstraintCollect::get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const
 {
     std::vector<std::unique_ptr<SolverAtom>> globals;
     std::vector<std::unique_ptr<SolverAtom>> locals;
