@@ -4,6 +4,7 @@
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Value.h"
+#include <unordered_map>
 #include <algorithm>
 #include <iomanip>
 #include <sstream>

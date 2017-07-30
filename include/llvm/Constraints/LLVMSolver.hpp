@@ -28,7 +28,7 @@ std::vector<std::vector<std::pair<std::string,llvm::Value*>>> llvm_solver(const 
         for(unsigned i = 0; i < solution.size() && i < labels.size(); i++)
         {
             part_solution[i].first  = labels[i];
-            part_solution[i].second = wrap.get_value(solution[i]);
+            part_solution[i].second = solution[i] < wrap.size() ? wrap[solution[i]] : nullptr;
         }
 
         result.emplace_back(std::move(part_solution));

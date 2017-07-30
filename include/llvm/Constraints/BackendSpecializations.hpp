@@ -1,6 +1,8 @@
 #ifndef _BACKEND_SPECIALIZATIONS_HPP_
 #define _BACKEND_SPECIALIZATIONS_HPP_
 #include "llvm/Constraints/BackendClasses.hpp"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/Constants.h"
 #include <vector>
 
 template<unsigned ... constants>
@@ -23,13 +25,14 @@ private:
     {
         std::vector<unsigned> hits;
 
-        for(unsigned i = 0; i < wrap.get_size(); i++)
+        for(unsigned i = 0; i < wrap.size(); i++)
         {
-            Type* value = llvm::dyn_cast<Type>(wrap.get_value(i));
-
-            if(value && (pred == nullptr || pred(*value)))
+            if(auto value = llvm::dyn_cast<Type>(wrap[i]))
             {
-                hits.push_back(i);
+                if(pred == nullptr || pred(*value))
+                {
+                    hits.push_back(i);
+                }
             }
         }
 
@@ -181,11 +184,11 @@ private:
 
         std::vector<unsigned> origins;
 
-        for(unsigned i = 0; i < wrap.rdfg.size(); i++)
+        for(unsigned i = 0; i < wrap.size(); i++)
         {
-            if(data_origins && wrap.opcodes[i] == llvm::Instruction::Call)
+            if((data_sinks || data_origins) && llvm::isa<llvm::CallInst>(wrap[i]))
             {
-                if(auto call_inst = llvm::dyn_cast<llvm::CallInst>(wrap.get_value(i)))
+                if(auto call_inst = llvm::dyn_cast<llvm::CallInst>(wrap[i]))
                 {
                     if(call_inst->getCalledFunction() == nullptr)
                     {
@@ -203,10 +206,10 @@ private:
                     }
                 }
             }
-            else if((data_origins    && wrap.opcodes[i] == llvm::Instruction::Load)   ||
-                    (data_origins    && llvm::isa<llvm::Argument>(wrap.get_value(i))) ||
-                    (data_sinks      && wrap.opcodes[i])  ||
-                    (data_sinks      && wrap.opcodes[i] == llvm::Instruction::Ret)    ||
+            else if((data_origins    && llvm::isa<llvm::LoadInst>(wrap[i]))   ||
+                    (data_origins    && llvm::isa<llvm::Argument>(wrap[i])) ||
+                    (data_sinks      && llvm::isa<llvm::StoreInst>(wrap[i]))  ||
+                    (data_sinks      && llvm::isa<llvm::ReturnInst>(wrap[i]))    ||
                     (control_origins && wrap.rcfg[i].empty() && !wrap.cfg[i].empty()) ||
                     (control_sinks   && wrap.cfg[i].empty()  && !wrap.rcfg[i].empty()))
             {

@@ -1,4 +1,5 @@
 #include "llvm/Constraints/BackendClasses.hpp"
+#include "llvm/IR/Instructions.h"
 
 BackendIncomingValue::BackendIncomingValue(const FunctionWrap& w)
                     : wrap(w), values(nullptr,nullptr,nullptr) { }
@@ -6,7 +7,7 @@ BackendIncomingValue::BackendIncomingValue(const FunctionWrap& w)
 template<unsigned idx>
 SkipResult BackendIncomingValue::skip_invalid(unsigned& c)
 {
-    if(auto value = wrap.get_value(c))
+    if(auto value = c < wrap.size() ? wrap[c] : nullptr)
     {
         auto in_value  = std::get<0>(values);
         auto term_inst = std::get<1>(values);
@@ -30,7 +31,7 @@ SkipResult BackendIncomingValue::skip_invalid(unsigned& c)
         }
     }
 
-    if(c + 1 >= wrap.get_size())
+    if(c + 1 >= wrap.size())
         return SkipResult::FAIL;
 
     c = c + 1;
@@ -41,19 +42,19 @@ SkipResult BackendIncomingValue::skip_invalid(unsigned& c)
 template<>
 void BackendIncomingValue::fixate<0>(unsigned c)
 {
-    std::get<0>(values) = llvm::dyn_cast<llvm::Value>(wrap.get_value(c));
+    std::get<0>(values) = llvm::dyn_cast<llvm::Value>(wrap[c]);
 }
 
 template<>
 void BackendIncomingValue::fixate<1>(unsigned c)
 {
-    std::get<1>(values) = llvm::dyn_cast<llvm::TerminatorInst>(wrap.get_value(c));
+    std::get<1>(values) = llvm::dyn_cast<llvm::TerminatorInst>(wrap[c]);
 }
 
 template<>
 void BackendIncomingValue::fixate<2>(unsigned c)
 {
-    std::get<2>(values) = llvm::dyn_cast<llvm::PHINode>(wrap.get_value(c));
+    std::get<2>(values) = llvm::dyn_cast<llvm::PHINode>(wrap[c]);
 }
 
 template SkipResult BackendIncomingValue::skip_invalid<0>(unsigned&);

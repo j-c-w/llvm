@@ -7,7 +7,8 @@
 class FunctionWrap;
 class SolverAtom;
 
-/* Constraints essentially only exist to generate instances of the above shown SolverAtom class. */
+// Constraints essentially only exist to generate instances of the above shown SolverAtom class and to map these
+// instances to string labels.
 class Constraint : public std::vector<std::string>
 {
 public:
