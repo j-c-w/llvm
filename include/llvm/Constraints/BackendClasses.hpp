@@ -1,8 +1,9 @@
 #ifndef _BACKEND_CLASSES_HPP_
 #define _BACKEND_CLASSES_HPP_
-#include "llvm/Constraints/GraphEngine.hpp"
+#include "llvm/IR/Instructions.h"
 #include "llvm/Constraints/SMTSolver.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
+#include "llvm/Constraints/GraphEngine.hpp"
 #include <vector>
 #include <memory>
 
@@ -18,8 +19,7 @@ public:
 
     void begin() final;
     void fixate(SolverAtom::Value c) final;
-    void resume(SolverAtom::Value c) final;
-    void cancel() final;
+    void resume() final;
 
 private:
     std::unique_ptr<SolverAtom>              constraints_head;
@@ -35,8 +35,7 @@ public:
 
     void begin (unsigned idx);
     void fixate(unsigned idx, SolverAtom::Value c);
-    void resume(unsigned idx, SolverAtom::Value c);
-    void cancel(unsigned idx);
+    void resume(unsigned idx);
 
 private:
     std::vector<std::vector<std::unique_ptr<SolverAtom>>> constraints;
@@ -53,8 +52,7 @@ public:
 
     template<unsigned idx1> void begin (unsigned idx2);
     template<unsigned idx1> void fixate(unsigned idx2, SolverAtom::Value c);
-    template<unsigned idx1> void resume(unsigned idx2, SolverAtom::Value c);
-    template<unsigned idx1> void cancel(unsigned idx2);
+    template<unsigned idx1> void resume(unsigned idx2);
 
 private:
     std::vector<std::unique_ptr<SolverAtom>> nonlocals;
@@ -73,8 +71,7 @@ public:
 
     void begin ()                    final { hit_start = hits.begin(); }
     void fixate(SolverAtom::Value c) final { }
-    void resume(SolverAtom::Value c) final { }
-    void cancel()                    final { }
+    void resume()                    final { }
 
 private:
     std::vector<SolverAtom::Value>                          hits;
@@ -91,8 +88,7 @@ public:
 
     template<unsigned idx> void begin ()           { if(amount_completed == 1) dst_ptr = &src_ptr->front(); }
     template<unsigned idx> void fixate(unsigned c) { if(++amount_completed == 1) src_ptr = &std::get<idx>(graphs).get()[c]; }
-    template<unsigned idx> void resume(unsigned c) { amount_completed--; }
-    template<unsigned idx> void cancel()           { }
+    template<unsigned idx> void resume()           { amount_completed--; }
 
 private:
     std::array<std::reference_wrapper<const Graph>,2> graphs;
@@ -111,8 +107,7 @@ public:
 
     template<unsigned idx> void begin ()                    { }
     template<unsigned idx> void fixate(SolverAtom::Value c) { amount_completed++; }
-    template<unsigned idx> void resume(SolverAtom::Value c) { amount_completed--; }
-    template<unsigned idx> void cancel()                    { }
+    template<unsigned idx> void resume()                    { amount_completed--; }
 
 private:
     unsigned amount_completed;
@@ -126,10 +121,9 @@ public:
 
     template<unsigned idx> SkipResult skip_invalid(unsigned& c);
 
-    template<unsigned idx> void begin ()           { }
-    template<unsigned idx> void resume(unsigned c) { std::get<idx>(values) = nullptr; }
+    template<unsigned idx> void begin () { }
     template<unsigned idx> void fixate(unsigned c);
-    template<unsigned idx> void cancel()           { }
+    template<unsigned idx> void resume() { std::get<idx>(values) = nullptr; }
 
 private:
     const FunctionWrap&                                           wrap;
@@ -140,7 +134,7 @@ template<bool reverse,bool allow_unstrict>
 class BackendDominate
 {
 public:
-    BackendDominate(std::array<unsigned,3> size, const GraphEngine::Graph& graph_forw);
+    BackendDominate(std::array<unsigned,3> size, const std::vector<std::vector<unsigned>>& graph_forw);
 
     template<unsigned idx1> SkipResult skip_invalid(unsigned idx2, unsigned& c);
 
@@ -156,7 +150,7 @@ public:
 
         std::get<idx1>(remaining_values)--;
     }
-    template<unsigned idx1> void resume(unsigned idx2, unsigned c)
+    template<unsigned idx1> void resume(unsigned idx2)
     {
         if(std::get<idx1>(value_masks)[idx2])
         {
@@ -166,11 +160,10 @@ public:
 
         std::get<idx1>(remaining_values)++;
     }
-
-    template<unsigned idx1> void cancel(unsigned) { }
     
 private:
     GraphEngine                         graph_engine;
+    std::vector<std::vector<unsigned>>  graph_forw;
     std::array<unsigned,3>              used_values;
     std::array<unsigned,3>              remaining_values;
     std::array<std::vector<unsigned>,3> filled_values;

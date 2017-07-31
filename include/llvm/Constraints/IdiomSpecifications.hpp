@@ -1,5 +1,6 @@
 #ifndef _CONSTRAINTCOMPOSED_HPP_
 #define _CONSTRAINTCOMPOSED_HPP_
+#include "llvm/Constraints/Solution.hpp"
 #include <climits>
 #include <string>
 #include <vector>
@@ -9,18 +10,16 @@ class Function;
 class Value;
 }
 
-using IdiomInstance = std::vector<std::pair<std::string,llvm::Value*>>;
-
 // This file containts the constraint specifications that are used for idiom detection.
-std::vector<IdiomInstance> DetectDistributive(llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<IdiomInstance> DetectHoistSelect (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<IdiomInstance> DetectGEMM        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<IdiomInstance> DetectGEMV        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<IdiomInstance> DetectAXPY        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<IdiomInstance> DetectDOT         (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<IdiomInstance> DetectSPMV        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<IdiomInstance> DetectReduction   (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<IdiomInstance> DetectHisto       (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<IdiomInstance> DetectStencil     (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectDistributive(llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectHoistSelect (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectGEMM        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectGEMV        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectAXPY        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectDOT         (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectSPMV        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectReduction   (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectHisto       (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectStencil     (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 
 #endif

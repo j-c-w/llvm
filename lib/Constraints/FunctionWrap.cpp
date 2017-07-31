@@ -79,7 +79,7 @@ std::vector<std::vector<unsigned>> sort_graph(std::vector<std::vector<unsigned>>
         graph[i].erase(std::unique(graph[i].begin(), graph[i].end()), graph[i].end());
     }
 
-    return std::move(graph);
+    return graph;
 }
 
 std::vector<std::vector<unsigned>> construct_cdg(std::unordered_map<llvm::Instruction*,unsigned>& instr_hash,

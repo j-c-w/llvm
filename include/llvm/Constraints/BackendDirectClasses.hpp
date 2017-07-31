@@ -14,8 +14,7 @@ public:
 
     template<unsigned idx> void begin ();
     template<unsigned idx> void fixate(SolverAtom::Value c);
-    template<unsigned idx> void resume(SolverAtom::Value c);
-    template<unsigned idx> void cancel();
+    template<unsigned idx> void resume();
 
 private:
     SolverAtom1 constraint_head;
@@ -30,29 +29,23 @@ template<typename SolverAtom1, typename SolverAtom2>
 template<unsigned idx>
 SkipResult BackendDirectAnd<SolverAtom1,SolverAtom2>::skip_invalid(SolverAtom::Value& c)
 {
-    SkipResult local_result = constraint_head.skip_invalid(c);
+    SkipResult first_result = constraint_head.skip_invalid(c);
 
-    if(local_result == SkipResult::FAIL)
-    {
+    if(first_result == SkipResult::FAIL)
         return SkipResult::FAIL;
-    }
-    else if(local_result == SkipResult::CHANGE || local_result == SkipResult::CHANGEPASS)
-    {
+
+    if(first_result == SkipResult::CHANGE)
         return SkipResult::CHANGE;
-    }
 
-    local_result = constraint_tail.skip_invalid(c);
+    SkipResult second_result = constraint_tail.skip_invalid(c);
 
-    if(local_result == SkipResult::FAIL)
-    {
+    if(second_result == SkipResult::FAIL)
         return SkipResult::FAIL;
-    }
-    else if(local_result == SkipResult::CHANGE || local_result == SkipResult::CHANGEPASS)
-    {
-        return SkipResult::CHANGE;
-    }
 
-    return SkipResult::PASS;
+    if(second_result != SkipResult::PASS)
+        return SkipResult::CHANGE;
+
+    return first_result;
 }
 
 template<typename SolverAtom1, typename SolverAtom2>
@@ -73,18 +66,10 @@ void BackendDirectAnd<SolverAtom1,SolverAtom2>::fixate(SolverAtom::Value c)
 
 template<typename SolverAtom1, typename SolverAtom2>
 template<unsigned idx>
-void BackendDirectAnd<SolverAtom1,SolverAtom2>::resume(SolverAtom::Value c)
+void BackendDirectAnd<SolverAtom1,SolverAtom2>::resume()
 {
-    constraint_head.resume(c);
-    constraint_tail.resume(c);
-}
-
-template<typename SolverAtom1, typename SolverAtom2>
-template<unsigned idx>
-void BackendDirectAnd<SolverAtom1,SolverAtom2>::cancel()
-{
-    constraint_head.cancel();
-    constraint_tail.cancel();
+    constraint_head.resume();
+    constraint_tail.resume();
 }
 
 template<typename SolverAtom1, typename SolverAtom2, typename SolverAtom3, typename ... SolverAtomN>

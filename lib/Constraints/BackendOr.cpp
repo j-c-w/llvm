@@ -51,21 +51,6 @@ void BackendOr::begin(unsigned idx2)
     }
 }
 
-void BackendOr::resume(unsigned idx2, SolverAtom::Value c)
-{
-    for(unsigned i = 0; i < constraints[idx2].size(); i++)
-    {
-        if(disabled_since[i] > 0)
-        {
-            disabled_since[i]--;
-        }
-        else
-        {
-            constraints[idx2][i]->resume(c);
-        }
-    }
-}
-
 void BackendOr::fixate(unsigned idx2, SolverAtom::Value c)
 {
     for(unsigned i = 0; i < constraints[idx2].size(); i++)
@@ -87,13 +72,17 @@ void BackendOr::fixate(unsigned idx2, SolverAtom::Value c)
     }
 }
 
-void BackendOr::cancel(unsigned idx2)
+void BackendOr::resume(unsigned idx2)
 {
     for(unsigned i = 0; i < constraints[idx2].size(); i++)
     {
-        if(disabled_since[i] == 0)
+        if(disabled_since[i] > 0)
         {
-            constraints[idx2][i]->cancel();
+            disabled_since[i]--;
+        }
+        else
+        {
+            constraints[idx2][i]->resume();
         }
     }
 }

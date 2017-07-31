@@ -82,7 +82,7 @@ void BackendCollect::fixate(unsigned idx2, SolverAtom::Value c)
 }
 
 template<unsigned idx1>
-void BackendCollect::resume(unsigned idx2, SolverAtom::Value c)
+void BackendCollect::resume(unsigned idx2)
 {
     if(idx1 == 0)
     {
@@ -91,20 +91,11 @@ void BackendCollect::resume(unsigned idx2, SolverAtom::Value c)
             solutions.clear();
         }
 
-        nonlocals[idx2]->resume(c);
+        nonlocals[idx2]->resume();
     }
     else if(idx1 == 1)
     {
         filled_locals[idx2%locals.size()]--;
-    }
-}
-
-template<unsigned idx1>
-void BackendCollect::cancel(unsigned idx2)
-{
-    if(idx1 == 0)
-    {
-        nonlocals[idx2]->cancel();
     }
 }
 
@@ -114,7 +105,5 @@ template       void BackendCollect::begin<0>(unsigned);
 template       void BackendCollect::begin<1>(unsigned);
 template       void BackendCollect::fixate<0>(unsigned,SolverAtom::Value);
 template       void BackendCollect::fixate<1>(unsigned,SolverAtom::Value);
-template       void BackendCollect::resume<0>(unsigned,SolverAtom::Value);
-template       void BackendCollect::resume<1>(unsigned,SolverAtom::Value);
-template       void BackendCollect::cancel<0>(unsigned);
-template       void BackendCollect::cancel<1>(unsigned);
+template       void BackendCollect::resume<0>(unsigned);
+template       void BackendCollect::resume<1>(unsigned);

@@ -1,26 +1,16 @@
 #ifndef _GRAPHENGINE_HPP_
 #define _GRAPHENGINE_HPP_
-#include "llvm/IR/SymbolTableListTraits.h"
-#include "llvm/IR/Value.h"
-#include "llvm/IR/Instruction.h"
-#include "llvm/IR/BasicBlock.h"
+#include <climits>
 #include <vector>
-#include <deque>
-#include <map>
 
 /* This class implements helper functions to calculate fast graph domination tests. */
 class GraphEngine
 {
 public:
-    using Graph = std::vector<std::vector<unsigned>>;
-
-    GraphEngine(const Graph& gf) :
-        graph_forw(gf), counter(UINT_MAX),
-        working_status(graph_forw.size(), 0), working_queue(graph_forw.size(), 0) { }
+    GraphEngine(size_t size) : counter(UINT_MAX), working_status(size, 0), working_queue(size, 0) { }
 
     GraphEngine() = default;
 
-    Graph                 graph_forw;
     unsigned              counter;
     std::vector<unsigned> working_status;
     std::vector<unsigned> working_queue;
@@ -61,7 +51,7 @@ public:
             {
                 return false;
             }
-            else if(working_status[*origin] <= 5*counter)
+            if(working_status[*origin] <= 5*counter)
             {
                 working_status[*origin] = 5*counter+3;
                 *(queue_back++) = *origin;
@@ -71,19 +61,19 @@ public:
         return true;
     }
 
-    inline bool fill()
+    inline bool fill(const std::vector<std::vector<unsigned>>& graph)
     {
         while(queue_front != queue_back)
         {
             auto element = *(queue_front++);
     
-            for(unsigned i : graph_forw[element])
+            for(unsigned i : graph[element])
             {
                 if(working_status[i] == 5*counter+2)
                 {
                     return false;
                 }
-                else if(working_status[i] <= 5*counter)
+                if(working_status[i] <= 5*counter)
                 {
                     working_status[i] = 5*counter+3;
                     *(queue_back++) = i;
@@ -92,31 +82,6 @@ public:
         }
 
         return true;
-    }
-
-public:
-    template<typename iter_type>
-    unsigned next_reachable(iter_type origins_begin, iter_type origins_end, unsigned destination)
-    {
-        initialize();
-        set_destinations(&destination, &destination + 1);
-
-        if((!set_origins(origins_begin, origins_end)) || (!fill()))
-        {
-            return destination;
-        }
-        else
-        {
-            for(unsigned i = destination + 1; i < working_status.size(); i++)
-            {
-                if(working_status[i] == 5*counter+3 || working_status[i] == 5*counter+2)
-                {
-                    return i;
-                }
-            }
-
-            return working_status.size();
-        }
     }
 };
 

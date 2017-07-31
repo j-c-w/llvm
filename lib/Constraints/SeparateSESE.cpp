@@ -345,8 +345,9 @@ llvm::Function* SESEFunction::make_function()
 
 llvm::Instruction* SESEFunction::get_instr(llvm::Instruction* in) { return instr_frwd_transl[in]; }
 
-void SESEFunction::transform_forw(std::vector<std::pair<std::string,llvm::Value*>>& solution)
+std::map<std::string,llvm::Value*> SESEFunction::transform_forw(std::map<std::string,llvm::Value*> solution)
 {
+
     for(auto& entry : solution)
     {
         if(entry.second != nullptr)
@@ -363,4 +364,6 @@ void SESEFunction::transform_forw(std::vector<std::pair<std::string,llvm::Value*
             }
         }
     }
+
+    return solution;
 }

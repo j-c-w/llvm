@@ -18,6 +18,7 @@ SkipResult BackendAnd::skip_invalid(SolverAtom::Value& c)
 
         if(local_result == SkipResult::FAIL)
             return SkipResult::FAIL;
+
         if(local_result != SkipResult::PASS)
             return SkipResult::CHANGE;
     }
@@ -39,16 +40,9 @@ void BackendAnd::fixate(SolverAtom::Value c)
         constraint->fixate(c);
 }
 
-void BackendAnd::resume(SolverAtom::Value c)
+void BackendAnd::resume()
 {
-    constraints_head->resume(c);
+    constraints_head->resume();
     for(auto& constraint : constraints_tail)
-        constraint->resume(c);
-}
-
-void BackendAnd::cancel()
-{
-    constraints_head->cancel();
-    for(auto& constraint : constraints_tail)
-        constraint->cancel();
+        constraint->resume();
 }

@@ -19,7 +19,7 @@ std::vector<std::unique_ptr<SolverAtom>> Solver::swap_specials(std::vector<std::
     {
         while(--iterator != UINT_MAX)
         {
-            specializations[iterator]->resume(solution[iterator]);
+            specializations[iterator]->resume();
         }
     }
 
@@ -56,7 +56,8 @@ std::vector<SolverAtom::Value> Solver::next_solution(unsigned max_steps)
             if(--iterator == UINT_MAX)
                 return {};
 
-            specializations[iterator]->resume(solution[iterator]++);
+            specializations[iterator]->resume();
+            solution[iterator]++;
             continue;
         }
 
@@ -65,7 +66,8 @@ std::vector<SolverAtom::Value> Solver::next_solution(unsigned max_steps)
         if(iterator + 1 == specializations.size())
         {
             auto solution_copy = solution;
-            specializations[iterator]->resume(solution[iterator]++);
+            specializations[iterator]->resume();
+            solution[iterator]++;
             return solution_copy;
         }
 

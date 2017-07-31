@@ -13,8 +13,7 @@ public:
 
     void begin()                     final { base->template begin<idx>(); }
     void fixate(SolverAtom::Value c) final { base->template fixate<idx>(c); }
-    void resume(SolverAtom::Value c) final { base->template resume<idx>(c); }
-    void cancel()                    final { base->template cancel<idx>(); }
+    void resume()                    final { base->template resume<idx>(); }
 
 private:
     std::shared_ptr<Backend> base;
@@ -30,8 +29,7 @@ public:
 
     void begin()                     final { base->begin(idx); }
     void fixate(SolverAtom::Value c) final { base->fixate(idx, c); }
-    void resume(SolverAtom::Value c) final { base->resume(idx, c); }
-    void cancel()                    final { base->cancel(idx); }
+    void resume()                    final { base->resume(idx); }
 
 private:
     std::shared_ptr<Backend> base;
@@ -48,8 +46,7 @@ public:
 
     void begin()                     final { base->template begin<idx1>(idx2); }
     void fixate(SolverAtom::Value c) final { base->template fixate<idx1>(idx2, c); }
-    void resume(SolverAtom::Value c) final { base->template resume<idx1>(idx2, c); }
-    void cancel()                    final { base->template cancel<idx1>(idx2); }
+    void resume()                    final { base->template resume<idx1>(idx2); }
 
 private:
     std::shared_ptr<Backend> base;

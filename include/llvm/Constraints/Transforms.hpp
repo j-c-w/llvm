@@ -48,7 +48,7 @@ public:
 
     llvm::Function* make_function();
 
-    void transform_forw(std::vector<std::pair<std::string,llvm::Value*>>& solution);
+    std::map<std::string,llvm::Value*> transform_forw(std::map<std::string,llvm::Value*> solution);
 
 private:
 

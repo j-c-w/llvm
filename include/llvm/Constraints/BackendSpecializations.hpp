@@ -160,19 +160,8 @@ public:
     template<unsigned idx1> void fixate(unsigned idx2, unsigned c)
         { BackendDominate<inverted,unstrict>::template fixate<idx1>(idx2+(idx1?0:number_origins), c); }
 
-    template<unsigned idx1> void resume(unsigned idx2, unsigned c)
-        { BackendDominate<inverted,unstrict>::template resume<idx1>(idx2+(idx1?0:number_origins), c); }
-
-    template<unsigned idx1> void cancel(unsigned idx2)
-        { BackendDominate<inverted,unstrict>::template cancel<idx1>(idx2+(idx1?0:number_origins)); }
-
-    ~BackendLLVMDominate()
-    {
-        for(unsigned i = 0; i < number_origins; i++)
-        {
-            BackendDominate<inverted,unstrict>::template cancel<0>(i);
-        }
-    }
+    template<unsigned idx1> void resume(unsigned idx2)
+        { BackendDominate<inverted,unstrict>::template resume<idx1>(idx2+(idx1?0:number_origins)); }
 
 private:
     static std::vector<unsigned> get_origins(const FunctionWrap& wrap)

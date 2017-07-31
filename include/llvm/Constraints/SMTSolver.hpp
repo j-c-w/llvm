@@ -30,8 +30,7 @@ public:
 
     virtual void begin() = 0;
     virtual void fixate(Value c) = 0;
-    virtual void resume(Value c) = 0;
-    virtual void cancel() = 0;
+    virtual void resume() = 0;
 };
 
 /* The class performs the backtracking algorithm. */

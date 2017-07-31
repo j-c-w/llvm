@@ -1,8 +1,8 @@
 #include "llvm/Constraints/IdiomSpecifications.hpp"
 #include "llvm/Constraints/ConstraintSpecializations.hpp"
-#include "llvm/Constraints/LLVMSolver.hpp"
+#include "llvm/Constraints/Solution.hpp"
 
-std::vector<IdiomInstance> DetectDistributive(llvm::Function& function, unsigned max_solutions)
+std::vector<Solution> DetectDistributive(llvm::Function& function, unsigned max_solutions)
 {
     static const ConstraintAnd constraint({
         new ConstraintAddInst("value"),
@@ -728,10 +728,10 @@ std::vector<IdiomInstance> DetectDistributive(llvm::Function& function, unsigned
             new ConstraintUnused("product2.results[8]")})}),
         new ConstraintUnused("product2.factors[8]")});
 
-    return llvm_solver(constraint, function, max_solutions);
+    return Solution::Find(constraint, function, max_solutions);
 }
 
-std::vector<IdiomInstance> DetectHoistSelect(llvm::Function& function, unsigned max_solutions)
+std::vector<Solution> DetectHoistSelect(llvm::Function& function, unsigned max_solutions)
 {
     static const ConstraintAnd constraint({
         new ConstraintSelectInst("select"),
@@ -742,10 +742,10 @@ std::vector<IdiomInstance> DetectHoistSelect(llvm::Function& function, unsigned 
         new ConstraintGEPInst("input1"),
         new ConstraintGEPInst("input2")});
 
-    return llvm_solver(constraint, function, max_solutions);
+    return Solution::Find(constraint, function, max_solutions);
 }
 
-std::vector<IdiomInstance> DetectReduction(llvm::Function& function, unsigned max_solutions)
+std::vector<Solution> DetectReduction(llvm::Function& function, unsigned max_solutions)
 {
     static const ConstraintAnd constraint({
         new ConstraintBranchInst("precursor"),
@@ -1095,10 +1095,10 @@ std::vector<IdiomInstance> DetectReduction(llvm::Function& function, unsigned ma
             new ConstraintDFGEdge("incoming[i]", "old_value"),
             new ConstraintDistinct("incoming[i]", "update_expr.output")}))});
 
-    return llvm_solver(constraint, function, max_solutions);
+    return Solution::Find(constraint, function, max_solutions);
 }
 
-std::vector<IdiomInstance> DetectAXPY(llvm::Function& function, unsigned max_solutions)
+std::vector<Solution> DetectAXPY(llvm::Function& function, unsigned max_solutions)
 {
     static const ConstraintAnd constraint({
         new ConstraintBranchInst("precursor"),
@@ -1509,10 +1509,10 @@ std::vector<IdiomInstance> DetectAXPY(llvm::Function& function, unsigned max_sol
             new ConstraintInstruction("begin"),
             new ConstraintUnused("alpha")})})});
 
-    return llvm_solver(constraint, function, max_solutions);
+    return Solution::Find(constraint, function, max_solutions);
 }
 
-std::vector<IdiomInstance> DetectDOT(llvm::Function& function, unsigned max_solutions)
+std::vector<Solution> DetectDOT(llvm::Function& function, unsigned max_solutions)
 {
     static const ConstraintAnd constraint({
         new ConstraintBranchInst("precursor"),
@@ -1928,17 +1928,17 @@ std::vector<IdiomInstance> DetectDOT(llvm::Function& function, unsigned max_solu
         new ConstraintFMulInst("dotvalue"),
         new ConstraintOr({
           new ConstraintAnd({
-            new ConstraintFirstOperand("src1", "dotvalue"),
-            new ConstraintSecondOperand("src2", "dotvalue")}),
+            new ConstraintFirstOperand("src1.value", "dotvalue"),
+            new ConstraintSecondOperand("src2.value", "dotvalue")}),
           new ConstraintAnd({
-            new ConstraintFirstOperand("src2", "dotvalue"),
-            new ConstraintSecondOperand("src1", "dotvalue")})}),
+            new ConstraintFirstOperand("src2.value", "dotvalue"),
+            new ConstraintSecondOperand("src1.value", "dotvalue")})}),
         new ConstraintIncomingValue("initial", "precursor", "old_ind")});
 
-    return llvm_solver(constraint, function, max_solutions);
+    return Solution::Find(constraint, function, max_solutions);
 }
 
-std::vector<IdiomInstance> DetectGEMM(llvm::Function& function, unsigned max_solutions)
+std::vector<Solution> DetectGEMM(llvm::Function& function, unsigned max_solutions)
 {
     static const ConstraintAnd constraint({
         new ConstraintBranchInst("loop[0].precursor"),
@@ -3106,10 +3106,10 @@ std::vector<IdiomInstance> DetectGEMM(llvm::Function& function, unsigned max_sol
             new ConstraintInstruction("begin"),
             new ConstraintUnused("beta")})})});
 
-    return llvm_solver(constraint, function, max_solutions);
+    return Solution::Find(constraint, function, max_solutions);
 }
 
-std::vector<IdiomInstance> DetectGEMV(llvm::Function& function, unsigned max_solutions)
+std::vector<Solution> DetectGEMV(llvm::Function& function, unsigned max_solutions)
 {
     static const ConstraintAnd constraint({
         new ConstraintBranchInst("loop[0].precursor"),
@@ -3992,10 +3992,10 @@ std::vector<IdiomInstance> DetectGEMV(llvm::Function& function, unsigned max_sol
             new ConstraintInstruction("begin"),
             new ConstraintUnused("beta")})})});
 
-    return llvm_solver(constraint, function, max_solutions);
+    return Solution::Find(constraint, function, max_solutions);
 }
 
-std::vector<IdiomInstance> DetectSPMV(llvm::Function& function, unsigned max_solutions)
+std::vector<Solution> DetectSPMV(llvm::Function& function, unsigned max_solutions)
 {
     static const ConstraintAnd constraint({
         new ConstraintBranchInst("precursor"),
@@ -4922,10 +4922,10 @@ std::vector<IdiomInstance> DetectSPMV(llvm::Function& function, unsigned max_sol
             new ConstraintSecondOperand("indir_read.value", "dotvalue")})}),
         new ConstraintIncomingValue("initial", "precursor", "old_ind")});
 
-    return llvm_solver(constraint, function, max_solutions);
+    return Solution::Find(constraint, function, max_solutions);
 }
 
-std::vector<IdiomInstance> DetectHisto(llvm::Function& function, unsigned max_solutions)
+std::vector<Solution> DetectHisto(llvm::Function& function, unsigned max_solutions)
 {
     static const ConstraintAnd constraint({
         new ConstraintBranchInst("precursor"),
@@ -5435,10 +5435,10 @@ std::vector<IdiomInstance> DetectHisto(llvm::Function& function, unsigned max_so
           std::vector<std::string>{
             "index_expr.output"}})});
 
-    return llvm_solver(constraint, function, max_solutions);
+    return Solution::Find(constraint, function, max_solutions);
 }
 
-std::vector<IdiomInstance> DetectStencil(llvm::Function& function, unsigned max_solutions)
+std::vector<Solution> DetectStencil(llvm::Function& function, unsigned max_solutions)
 {
     static const ConstraintAnd constraint({
         new ConstraintBranchInst("loop[0].precursor"),
@@ -6605,5 +6605,5 @@ std::vector<IdiomInstance> DetectStencil(llvm::Function& function, unsigned max_
           std::vector<std::string>{
             "compute_expr.output"}})});
 
-    return llvm_solver(constraint, function, max_solutions);
+    return Solution::Find(constraint, function, max_solutions);
 }

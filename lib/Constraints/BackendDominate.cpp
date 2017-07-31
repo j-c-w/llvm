@@ -1,8 +1,9 @@
 #include "llvm/Constraints/BackendClasses.hpp"
 
 template<bool reverse,bool allow_unstrict>
-BackendDominate<reverse,allow_unstrict>::BackendDominate(std::array<unsigned,3> size, const GraphEngine::Graph& gf)
-               : graph_engine(gf), used_values{{0,0,0}}, remaining_values(size),
+BackendDominate<reverse,allow_unstrict>::BackendDominate(std::array<unsigned,3> size,
+                                                         const std::vector<std::vector<unsigned>>& gf)
+               : graph_engine(gf.size()), graph_forw(gf), used_values{{0,0,0}}, remaining_values(size),
                  filled_values{{std::vector<unsigned>(size[0]),
                                 std::vector<unsigned>(size[1]),
                                 std::vector<unsigned>(size[2])}},
@@ -14,7 +15,7 @@ template<bool reverse,bool allow_unstrict>
 template<unsigned idx1>
 SkipResult BackendDominate<reverse,allow_unstrict>::skip_invalid(unsigned idx2, SolverAtom::Value& c)
 {
-    if(c >= graph_engine.graph_forw.size() && c != UINT_MAX-1)
+    if(c >= graph_forw.size() && c != UINT_MAX-1)
     {
         if(c < UINT_MAX-1)
         {
@@ -60,7 +61,7 @@ SkipResult BackendDominate<reverse,allow_unstrict>::skip_invalid(unsigned idx2, 
             if(graph_engine.set_origins(filled_values[0].begin(), filled_values[0].begin() + used_values[0]) &&
                (c == UINT_MAX-1 || idx1 != 0 || graph_engine.set_origins(&c, &c+1)))
             {
-                domination_holds = graph_engine.fill();
+                domination_holds = graph_engine.fill(graph_forw);
             }
 
             if(remaining_values[1] == (idx1==1) && ((domination_holds && reverse) || (!domination_holds && !reverse)))
@@ -69,7 +70,7 @@ SkipResult BackendDominate<reverse,allow_unstrict>::skip_invalid(unsigned idx2, 
                 {
                     return SkipResult::FAIL;
                 }
-                else if(c + 1 < graph_engine.graph_forw.size())
+                else if(c + 1 < graph_forw.size())
                 {
                     c = c + 1;
                     return SkipResult::CHANGE;

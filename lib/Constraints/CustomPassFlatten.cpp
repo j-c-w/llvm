@@ -20,7 +20,7 @@ public:
 
 bool ResearchFlatten::runOnModule(Module& module)
 {
-    //Remove Premature GEP instructions
+    // Remove Premature GEP instructions
     for(Function& function : module.getFunctionList())
     {
         std::map<Value*,Value*> replacement_table;
@@ -102,7 +102,7 @@ bool ResearchFlatten::runOnModule(Module& module)
         }
     }
 
-    //Flatten array GEP instructions
+    // Flatten array GEP instructions
     for(Function& function : module.getFunctionList())
     {
         std::map<Value*,Value*> replacement_table;
@@ -203,7 +203,7 @@ bool ResearchFlatten::runOnModule(Module& module)
         }
     }
 
-    //Split so that only first index can be dynamic
+    // Split so that only first index can be dynamic
     for(Function& function : module.getFunctionList())
     {
         std::map<Value*,Value*> replacement_table;
