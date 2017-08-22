@@ -16,10 +16,12 @@ std::vector<Solution> DetectHoistSelect (llvm::Function& function, unsigned max_
 std::vector<Solution> DetectGEMM        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 std::vector<Solution> DetectGEMV        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 std::vector<Solution> DetectAXPY        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectAXPYn       (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 std::vector<Solution> DetectDOT         (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 std::vector<Solution> DetectSPMV        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 std::vector<Solution> DetectReduction   (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 std::vector<Solution> DetectHisto       (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 std::vector<Solution> DetectStencil     (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectStencilPlus (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 
 #endif

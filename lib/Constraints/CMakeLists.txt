@@ -17,7 +17,7 @@ add_llvm_library(LLVMConstraints
   ConstraintAnd.cpp
   ConstraintCollect.cpp
 
-  IdiomSpecifications.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
 
   CustomPassFlatten.cpp
   CustomPassReplace.cpp
@@ -35,3 +35,8 @@ add_llvm_library(LLVMConstraints
   DEPENDS
   intrinsics_gen
 )
+
+ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
+                   COMMAND cat ${CMAKE_CURRENT_SOURCE_DIR}/IdiomSpecifications.txt | pypy ${CMAKE_CURRENT_SOURCE_DIR}/IdiomSpecificationGenerator.py > ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
+                   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/IdiomSpecifications.txt ${CMAKE_CURRENT_SOURCE_DIR}/IdiomSpecificationGenerator.py
+                   COMMENT "Generate idiom specifications")

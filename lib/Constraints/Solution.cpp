@@ -20,6 +20,8 @@ std::vector<Solution> Solution::Find(const Constraint& constraint, llvm::Functio
     std::vector<Solution> result;
     while(result.size() < max_solutions)
     {
+        Solver::max_iterations = UINT_MAX;
+
         auto solution = solver.next_solution();
 
         if(solution.empty()) break;

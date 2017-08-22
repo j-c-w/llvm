@@ -30,8 +30,8 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string
     {
         for(const auto& solution : input.second)
         {
-            llvm::Value* begin     = solution.get("body_sese", "begin");
-            llvm::Value* successor = solution.get("body_sese", "successor");
+            llvm::Value* begin     = solution.get("body", "begin");
+            llvm::Value* successor = solution.get("body", "successor");
 
             if(!begin && !successor) continue;
 
@@ -59,9 +59,11 @@ public:
                                           {"GEMM",    DetectGEMM},
                                           {"GEMV",    DetectGEMV},
                                           {"AXPY",    DetectAXPY},
+                                          {"AXPYn",   DetectAXPYn},
                                           {"DOT",     DetectDOT},
                                           {"SPMV",    DetectSPMV},
-                                          {"stencil", DetectStencil}} { }
+                                          {"stencil", DetectStencil},
+                                          {"stenpls", DetectStencilPlus}} { }
 
     bool runOnModule(Module& module) override;
 
@@ -82,7 +84,7 @@ bool ResearchReplacer::runOnModule(Module& module)
             std::vector<std::pair<std::string,std::vector<Solution>>> raw_solutions;
 
             for(const auto& spec : constraint_specs)
-                raw_solutions.push_back({spec.first, spec.second(function,UINT_MAX)});
+                raw_solutions.push_back({spec.first, spec.second(function,10)});
 
             auto clustered_solutions = cluster_solutions(std::move(raw_solutions));
 

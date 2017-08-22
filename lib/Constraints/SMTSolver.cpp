@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <iostream>
 
+unsigned Solver::max_iterations = 0;
+
 Solver::Solver(std::vector<std::unique_ptr<SolverAtom>> s) : iterator(UINT_MAX)
 {
     swap_specials(std::move(s));
@@ -44,8 +46,10 @@ std::vector<SolverAtom::Value> Solver::next_solution(unsigned max_steps)
     if(iterator == UINT_MAX)
         return {};
 
-    while(true)
+    while(max_iterations > 0)
     {
+        max_iterations --;
+
         SkipResult result = specializations[iterator]->skip_invalid(solution[iterator]);
 
         if(result == SkipResult::CHANGE)
@@ -74,4 +78,6 @@ std::vector<SolverAtom::Value> Solver::next_solution(unsigned max_steps)
         specializations[++iterator]->begin();
         solution[iterator] = SolverAtom::Value();
     }
+
+    return {};
 }

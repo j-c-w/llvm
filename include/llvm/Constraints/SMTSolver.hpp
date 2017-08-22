@@ -36,6 +36,7 @@ public:
 /* The class performs the backtracking algorithm. */
 class Solver
 {
+friend class Solution;
 public:
     Solver(std::vector<std::unique_ptr<SolverAtom>> specializations);
     ~Solver();
@@ -48,6 +49,8 @@ private:
     unsigned                                 iterator;
     std::vector<SolverAtom::Value>           solution;
     std::vector<std::unique_ptr<SolverAtom>> specializations;
+
+    static unsigned max_iterations;
 };
 
 #endif
