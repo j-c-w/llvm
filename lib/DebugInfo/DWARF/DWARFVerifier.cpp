@@ -236,13 +236,13 @@ unsigned DWARFVerifier::verifyDebugInfoAttribute(const DWARFDie &Die,
         ++NumErrors;
         OS << "error: DW_AT_ranges offset is beyond .debug_ranges "
               "bounds:\n";
-        Die.dump(OS, 0);
+        Die.dump(OS, 0, 0, DumpOpts);
         OS << "\n";
       }
     } else {
       ++NumErrors;
       OS << "error: DIE has invalid DW_AT_ranges encoding:\n";
-      Die.dump(OS, 0);
+      Die.dump(OS, 0, 0, DumpOpts);
       OS << "\n";
     }
     break;
@@ -253,14 +253,14 @@ unsigned DWARFVerifier::verifyDebugInfoAttribute(const DWARFDie &Die,
         ++NumErrors;
         OS << "error: DW_AT_stmt_list offset is beyond .debug_line "
               "bounds: "
-           << format("0x%08" PRIx32, *SectionOffset) << "\n";
-        Die.dump(OS, 0);
+           << format("0x%08" PRIx64, *SectionOffset) << "\n";
+        Die.dump(OS, 0, 0, DumpOpts);
         OS << "\n";
       }
     } else {
       ++NumErrors;
       OS << "error: DIE has invalid DW_AT_stmt_list encoding:\n";
-      Die.dump(OS, 0);
+      Die.dump(OS, 0, 0, DumpOpts);
       OS << "\n";
     }
     break;
@@ -292,10 +292,10 @@ unsigned DWARFVerifier::verifyDebugInfoForm(const DWARFDie &Die,
       if (CUOffset >= CUSize) {
         ++NumErrors;
         OS << "error: " << FormEncodingString(Form) << " CU offset "
-           << format("0x%08" PRIx32, CUOffset)
+           << format("0x%08" PRIx64, CUOffset)
            << " is invalid (must be less than CU size of "
            << format("0x%08" PRIx32, CUSize) << "):\n";
-        Die.dump(OS, 0);
+        Die.dump(OS, 0, 0, DumpOpts);
         OS << "\n";
       } else {
         // Valid reference, but we will verify it points to an actual
@@ -315,7 +315,7 @@ unsigned DWARFVerifier::verifyDebugInfoForm(const DWARFDie &Die,
         ++NumErrors;
         OS << "error: DW_FORM_ref_addr offset beyond .debug_info "
               "bounds:\n";
-        Die.dump(OS, 0);
+        Die.dump(OS, 0, 0, DumpOpts);
         OS << "\n";
       } else {
         // Valid reference, but we will verify it points to an actual
@@ -331,7 +331,7 @@ unsigned DWARFVerifier::verifyDebugInfoForm(const DWARFDie &Die,
     if (SecOffset && *SecOffset >= DObj.getStringSection().size()) {
       ++NumErrors;
       OS << "error: DW_FORM_strp offset beyond .debug_str bounds:\n";
-      Die.dump(OS, 0);
+      Die.dump(OS, 0, 0, DumpOpts);
       OS << "\n";
     }
     break;
@@ -356,7 +356,7 @@ unsigned DWARFVerifier::verifyDebugInfoReferences() {
        << ". Offset is in between DIEs:\n";
     for (auto Offset : Pair.second) {
       auto ReferencingDie = DCtx.getDIEForOffset(Offset);
-      ReferencingDie.dump(OS, 0);
+      ReferencingDie.dump(OS, 0, 0, DumpOpts);
       OS << "\n";
     }
     OS << "\n";
@@ -381,7 +381,7 @@ void DWARFVerifier::verifyDebugLineStmtOffsets() {
         ++NumDebugLineErrors;
         OS << "error: .debug_line[" << format("0x%08" PRIx32, LineTableOffset)
            << "] was not able to be parsed for CU:\n";
-        Die.dump(OS, 0);
+        Die.dump(OS, 0, 0, DumpOpts);
         OS << '\n';
         continue;
       }
@@ -399,8 +399,8 @@ void DWARFVerifier::verifyDebugLineStmtOffsets() {
          << format("0x%08" PRIx32, Iter->second.getOffset()) << " and "
          << format("0x%08" PRIx32, Die.getOffset())
          << ", have the same DW_AT_stmt_list section offset:\n";
-      Iter->second.dump(OS, 0);
-      Die.dump(OS, 0);
+      Iter->second.dump(OS, 0, 0, DumpOpts);
+      Die.dump(OS, 0, 0, DumpOpts);
       OS << '\n';
       // Already verified this line table before, no need to do it again.
       continue;
@@ -417,14 +417,54 @@ void DWARFVerifier::verifyDebugLineRows() {
     // .debug_info verifier or in verifyDebugLineStmtOffsets().
     if (!LineTable)
       continue;
+
+    // Verify prologue.
     uint32_t MaxFileIndex = LineTable->Prologue.FileNames.size();
+    uint32_t MaxDirIndex = LineTable->Prologue.IncludeDirectories.size();
+    uint32_t FileIndex = 1;
+    StringMap<uint16_t> FullPathMap;
+    for (const auto &FileName : LineTable->Prologue.FileNames) {
+      // Verify directory index.
+      if (FileName.DirIdx > MaxDirIndex) {
+        ++NumDebugLineErrors;
+        OS << "error: .debug_line["
+           << format("0x%08" PRIx64,
+                     *toSectionOffset(Die.find(DW_AT_stmt_list)))
+           << "].prologue.file_names[" << FileIndex
+           << "].dir_idx contains an invalid index: " << FileName.DirIdx
+           << "\n";
+      }
+
+      // Check file paths for duplicates.
+      std::string FullPath;
+      const bool HasFullPath = LineTable->getFileNameByIndex(
+          FileIndex, CU->getCompilationDir(),
+          DILineInfoSpecifier::FileLineInfoKind::AbsoluteFilePath, FullPath);
+      assert(HasFullPath && "Invalid index?");
+      (void)HasFullPath;
+      auto It = FullPathMap.find(FullPath);
+      if (It == FullPathMap.end())
+        FullPathMap[FullPath] = FileIndex;
+      else if (It->second != FileIndex) {
+        OS << "warning: .debug_line["
+           << format("0x%08" PRIx64,
+                     *toSectionOffset(Die.find(DW_AT_stmt_list)))
+           << "].prologue.file_names[" << FileIndex
+           << "] is a duplicate of file_names[" << It->second << "]\n";
+      }
+
+      FileIndex++;
+    }
+
+    // Verify rows.
     uint64_t PrevAddress = 0;
     uint32_t RowIndex = 0;
     for (const auto &Row : LineTable->Rows) {
+      // Verify row address.
       if (Row.Address < PrevAddress) {
         ++NumDebugLineErrors;
         OS << "error: .debug_line["
-           << format("0x%08" PRIx32,
+           << format("0x%08" PRIx64,
                      *toSectionOffset(Die.find(DW_AT_stmt_list)))
            << "] row[" << RowIndex
            << "] decreases in address from previous row:\n";
@@ -436,10 +476,11 @@ void DWARFVerifier::verifyDebugLineRows() {
         OS << '\n';
       }
 
+      // Verify file index.
       if (Row.File > MaxFileIndex) {
         ++NumDebugLineErrors;
         OS << "error: .debug_line["
-           << format("0x%08" PRIx32,
+           << format("0x%08" PRIx64,
                      *toSectionOffset(Die.find(DW_AT_stmt_list)))
            << "][" << RowIndex << "] has invalid file index " << Row.File
            << " (valid values are [1," << MaxFileIndex << "]):\n";
@@ -464,94 +505,123 @@ bool DWARFVerifier::handleDebugLine() {
   return NumDebugLineErrors == 0;
 }
 
-bool DWARFVerifier::handleAppleNames() {
-  NumAppleNamesErrors = 0;
-  const DWARFObject &D = DCtx.getDWARFObj();
-  DWARFDataExtractor AppleNamesSection(D, D.getAppleNamesSection(),
-                                       DCtx.isLittleEndian(), 0);
-  DataExtractor StrData(D.getStringSection(), DCtx.isLittleEndian(), 0);
-  DWARFAcceleratorTable AppleNames(AppleNamesSection, StrData);
+unsigned DWARFVerifier::verifyAccelTable(const DWARFSection *AccelSection,
+                                         DataExtractor *StrData,
+                                         const char *SectionName) {
+  unsigned NumErrors = 0;
+  DWARFDataExtractor AccelSectionData(DCtx.getDWARFObj(), *AccelSection,
+                                      DCtx.isLittleEndian(), 0);
+  DWARFAcceleratorTable AccelTable(AccelSectionData, *StrData);
 
-  if (!AppleNames.extract()) {
-    return true;
+  OS << "Verifying " << SectionName << "...\n";
+  // Verify that the fixed part of the header is not too short.
+
+  if (!AccelSectionData.isValidOffset(AccelTable.getSizeHdr())) {
+    OS << "\terror: Section is too small to fit a section header.\n";
+    return 1;
   }
-
-  OS << "Verifying .apple_names...\n";
-
+  // Verify that the section is not too short.
+  if (!AccelTable.extract()) {
+    OS << "\terror: Section is smaller than size described in section header.\n";
+    return 1;
+  }
   // Verify that all buckets have a valid hash index or are empty.
-  uint32_t NumBuckets = AppleNames.getNumBuckets();
-  uint32_t NumHashes = AppleNames.getNumHashes();
+  uint32_t NumBuckets = AccelTable.getNumBuckets();
+  uint32_t NumHashes = AccelTable.getNumHashes();
 
   uint32_t BucketsOffset =
-      AppleNames.getSizeHdr() + AppleNames.getHeaderDataLength();
+      AccelTable.getSizeHdr() + AccelTable.getHeaderDataLength();
   uint32_t HashesBase = BucketsOffset + NumBuckets * 4;
   uint32_t OffsetsBase = HashesBase + NumHashes * 4;
-
   for (uint32_t BucketIdx = 0; BucketIdx < NumBuckets; ++BucketIdx) {
-    uint32_t HashIdx = AppleNamesSection.getU32(&BucketsOffset);
+    uint32_t HashIdx = AccelSectionData.getU32(&BucketsOffset);
     if (HashIdx >= NumHashes && HashIdx != UINT32_MAX) {
-      OS << format("error: Bucket[%d] has invalid hash index: %u\n", BucketIdx,
+      OS << format("\terror: Bucket[%d] has invalid hash index: %u.\n", BucketIdx,
                    HashIdx);
-      ++NumAppleNamesErrors;
+      ++NumErrors;
     }
   }
-
-  uint32_t NumAtoms = AppleNames.getAtomsDesc().size();
+  uint32_t NumAtoms = AccelTable.getAtomsDesc().size();
   if (NumAtoms == 0) {
-    OS << "error: no atoms; failed to read HashData\n";
-    ++NumAppleNamesErrors;
-    return false;
+    OS << "\terror: no atoms; failed to read HashData.\n";
+    return 1;
   }
-
-  if (!AppleNames.validateForms()) {
-    OS << "error: unsupported form; failed to read HashData\n";
-    ++NumAppleNamesErrors;
-    return false;
+  if (!AccelTable.validateForms()) {
+    OS << "\terror: unsupported form; failed to read HashData.\n";
+    return 1;
   }
 
   for (uint32_t HashIdx = 0; HashIdx < NumHashes; ++HashIdx) {
     uint32_t HashOffset = HashesBase + 4 * HashIdx;
     uint32_t DataOffset = OffsetsBase + 4 * HashIdx;
-    uint32_t Hash = AppleNamesSection.getU32(&HashOffset);
-    uint32_t HashDataOffset = AppleNamesSection.getU32(&DataOffset);
-    if (!AppleNamesSection.isValidOffsetForDataOfSize(HashDataOffset,
-                                                      sizeof(uint64_t))) {
-      OS << format("error: Hash[%d] has invalid HashData offset: 0x%08x\n",
+    uint32_t Hash = AccelSectionData.getU32(&HashOffset);
+    uint32_t HashDataOffset = AccelSectionData.getU32(&DataOffset);
+    if (!AccelSectionData.isValidOffsetForDataOfSize(HashDataOffset,
+                                                     sizeof(uint64_t))) {
+      OS << format("\terror: Hash[%d] has invalid HashData offset: 0x%08x.\n",
                    HashIdx, HashDataOffset);
-      ++NumAppleNamesErrors;
+      ++NumErrors;
     }
 
     uint32_t StrpOffset;
     uint32_t StringOffset;
     uint32_t StringCount = 0;
-    uint32_t DieOffset = dwarf::DW_INVALID_OFFSET;
-
-    while ((StrpOffset = AppleNamesSection.getU32(&HashDataOffset)) != 0) {
+    unsigned Offset;
+    unsigned Tag;
+    while ((StrpOffset = AccelSectionData.getU32(&HashDataOffset)) != 0) {
       const uint32_t NumHashDataObjects =
-          AppleNamesSection.getU32(&HashDataOffset);
+          AccelSectionData.getU32(&HashDataOffset);
       for (uint32_t HashDataIdx = 0; HashDataIdx < NumHashDataObjects;
            ++HashDataIdx) {
-        DieOffset = AppleNames.readAtoms(HashDataOffset);
-        if (!DCtx.getDIEForOffset(DieOffset)) {
+        std::tie(Offset, Tag) = AccelTable.readAtoms(HashDataOffset);
+        auto Die = DCtx.getDIEForOffset(Offset);
+        if (!Die) {
           const uint32_t BucketIdx =
               NumBuckets ? (Hash % NumBuckets) : UINT32_MAX;
           StringOffset = StrpOffset;
-          const char *Name = StrData.getCStr(&StringOffset);
+          const char *Name = StrData->getCStr(&StringOffset);
           if (!Name)
             Name = "<NULL>";
 
           OS << format(
-              "error: .apple_names Bucket[%d] Hash[%d] = 0x%08x "
+              "\terror: %s Bucket[%d] Hash[%d] = 0x%08x "
               "Str[%u] = 0x%08x "
               "DIE[%d] = 0x%08x is not a valid DIE offset for \"%s\".\n",
-              BucketIdx, HashIdx, Hash, StringCount, StrpOffset, HashDataIdx,
-              DieOffset, Name);
+              SectionName, BucketIdx, HashIdx, Hash, StringCount, StrpOffset,
+              HashDataIdx, Offset, Name);
 
-          ++NumAppleNamesErrors;
+          ++NumErrors;
+          continue;
+        }
+        if ((Tag != dwarf::DW_TAG_null) && (Die.getTag() != Tag)) {
+          OS << "\terror: Tag " << dwarf::TagString(Tag)
+             << " in accelerator table does not match Tag "
+             << dwarf::TagString(Die.getTag()) << " of DIE[" << HashDataIdx
+             << "].\n";
+          ++NumErrors;
         }
       }
       ++StringCount;
     }
   }
-  return NumAppleNamesErrors == 0;
+  return NumErrors;
+}
+
+bool DWARFVerifier::handleAccelTables() {
+  const DWARFObject &D = DCtx.getDWARFObj();
+  DataExtractor StrData(D.getStringSection(), DCtx.isLittleEndian(), 0);
+  unsigned NumErrors = 0;
+  if (!D.getAppleNamesSection().Data.empty())
+    NumErrors +=
+        verifyAccelTable(&D.getAppleNamesSection(), &StrData, ".apple_names");
+  if (!D.getAppleTypesSection().Data.empty())
+    NumErrors +=
+        verifyAccelTable(&D.getAppleTypesSection(), &StrData, ".apple_types");
+  if (!D.getAppleNamespacesSection().Data.empty())
+    NumErrors += verifyAccelTable(&D.getAppleNamespacesSection(), &StrData,
+                                  ".apple_namespaces");
+  if (!D.getAppleObjCSection().Data.empty())
+    NumErrors +=
+        verifyAccelTable(&D.getAppleObjCSection(), &StrData, ".apple_objc");
+  return NumErrors == 0;
 }

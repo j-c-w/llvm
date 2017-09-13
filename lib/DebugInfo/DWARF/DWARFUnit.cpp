@@ -160,7 +160,7 @@ void DWARFUnit::clear() {
   Length = 0;
   Abbrevs = nullptr;
   FormParams = DWARFFormParams({0, 0, DWARF32});
-  BaseAddr = 0;
+  BaseAddr.reset();
   RangeSectionBase = 0;
   AddrOffsetSectionBase = 0;
   clearDIEs(false);
@@ -242,11 +242,17 @@ size_t DWARFUnit::extractDIEsIfNeeded(bool CUDieOnly) {
   // If CU DIE was just parsed, copy several attribute values from it.
   if (!HasCUDie) {
     DWARFDie UnitDie = getUnitDIE();
-    auto BaseAddr = toAddress(UnitDie.find({DW_AT_low_pc, DW_AT_entry_pc}));
-    if (BaseAddr)
-      setBaseAddress(*BaseAddr);
-    AddrOffsetSectionBase = toSectionOffset(UnitDie.find(DW_AT_GNU_addr_base), 0);
-    RangeSectionBase = toSectionOffset(UnitDie.find(DW_AT_rnglists_base), 0);
+    Optional<DWARFFormValue> PC = UnitDie.find({DW_AT_low_pc, DW_AT_entry_pc});
+    if (Optional<uint64_t> Addr = toAddress(PC))
+        setBaseAddress({*Addr, PC->getSectionIndex()});
+
+    if (!isDWO) {
+      assert(AddrOffsetSectionBase == 0);
+      assert(RangeSectionBase == 0);
+      AddrOffsetSectionBase =
+          toSectionOffset(UnitDie.find(DW_AT_GNU_addr_base), 0);
+      RangeSectionBase = toSectionOffset(UnitDie.find(DW_AT_rnglists_base), 0);
+    }
 
     // In general, we derive the offset of the unit's contibution to the
     // debug_str_offsets{.dwo} section from the unit DIE's
@@ -303,18 +309,8 @@ bool DWARFUnit::parseDWO() {
 
 void DWARFUnit::clearDIEs(bool KeepCUDie) {
   if (DieArray.size() > (unsigned)KeepCUDie) {
-    // std::vectors never get any smaller when resized to a smaller size,
-    // or when clear() or erase() are called, the size will report that it
-    // is smaller, but the memory allocated remains intact (call capacity()
-    // to see this). So we need to create a temporary vector and swap the
-    // contents which will cause just the internal pointers to be swapped
-    // so that when temporary vector goes out of scope, it will destroy the
-    // contents.
-    std::vector<DWARFDebugInfoEntry> TmpArray;
-    DieArray.swap(TmpArray);
-    // Save at least the compile unit DIE
-    if (KeepCUDie)
-      DieArray.push_back(TmpArray.front());
+    DieArray.resize((unsigned)KeepCUDie);
+    DieArray.shrink_to_fit();
   }
 }
 

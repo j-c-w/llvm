@@ -346,9 +346,6 @@ namespace llvm {
       ADD, SUB, ADC, SBB, SMUL,
       INC, DEC, OR, XOR, AND,
 
-      // Bit field extract.
-      BEXTR,
-
       // LOW, HI, FLAGS = umul LHS, RHS.
       UMUL,
 
@@ -474,7 +471,7 @@ namespace llvm {
       VPMADD52L, VPMADD52H,
 
       // FMA nodes.
-      FMADD,
+      // We use the target independent ISD::FMA for the non-inverted case.
       FNMADD,
       FMSUB,
       FNMSUB,
@@ -780,6 +777,19 @@ namespace llvm {
       return true;
     }
 
+    // Return true if it is profitable to combine a BUILD_VECTOR with a
+    // stride-pattern to a shuffle and a truncate.
+    // Example of such a combine:
+    // v4i32 build_vector((extract_elt V, 1),
+    //                    (extract_elt V, 3),
+    //                    (extract_elt V, 5),
+    //                    (extract_elt V, 7))
+    //  -->
+    // v4i32 truncate (bitcast (shuffle<1,u,3,u,4,u,5,u,6,u,7,u> V, u) to
+    // v4i64)
+    bool isDesirableToCombineBuildVectorToShuffleTruncate(
+        ArrayRef<int> ShuffleMask, EVT SrcVT, EVT TruncVT) const override;
+
     /// Return true if the target has native support for
     /// the specified value type and it is 'desirable' to use the type for the
     /// given node type. e.g. On x86 i16 is legal, but undesirable since i16
@@ -798,6 +808,11 @@ namespace llvm {
 
     /// This method returns the name of a target specific DAG node.
     const char *getTargetNodeName(unsigned Opcode) const override;
+
+    bool mergeStoresAfterLegalization() const override { return true; }
+
+    bool canMergeStoresTo(unsigned AddressSpace, EVT MemVT,
+                          const SelectionDAG &DAG) const override;
 
     bool isCheapToSpeculateCttz() const override;
 
@@ -853,6 +868,8 @@ namespace llvm {
                                              const APInt &DemandedElts,
                                              const SelectionDAG &DAG,
                                              unsigned Depth) const override;
+
+    SDValue unwrapAddress(SDValue N) const override;
 
     bool isGAPlusOffset(SDNode *N, const GlobalValue* &GA,
                         int64_t &Offset) const override;
@@ -978,8 +995,7 @@ namespace llvm {
     /// VECTOR_SHUFFLE operations, those with specific masks. By default, if a
     /// target supports the VECTOR_SHUFFLE node, all mask values are assumed to
     /// be legal.
-    bool isShuffleMaskLegal(const SmallVectorImpl<int> &Mask,
-                            EVT VT) const override;
+    bool isShuffleMaskLegal(ArrayRef<int> Mask, EVT VT) const override;
 
     /// Similar to isShuffleMaskLegal. This is used by Targets can use this to
     /// indicate if there is a suitable VECTOR_SHUFFLE that can be used to
@@ -1014,13 +1030,12 @@ namespace llvm {
     bool shouldConvertConstantLoadToIntImm(const APInt &Imm,
                                            Type *Ty) const override;
 
-    bool convertSelectOfConstantsToMath() const override {
-      return true;
-    }
+    bool convertSelectOfConstantsToMath(EVT VT) const override;
 
     /// Return true if EXTRACT_SUBVECTOR is cheap for this result type
     /// with this index.
-    bool isExtractSubvectorCheap(EVT ResVT, unsigned Index) const override;
+    bool isExtractSubvectorCheap(EVT ResVT, EVT SrcVT,
+                                 unsigned Index) const override;
 
     /// Intel processors have a unified instruction and data cache
     const char * getClearCacheBuiltinName() const override {
@@ -1185,8 +1200,6 @@ namespace llvm {
     SDValue lowerUINT_TO_FP_vec(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerTRUNCATE(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerFP_TO_INT(SDValue Op, SelectionDAG &DAG) const;
-    SDValue LowerToBT(SDValue And, ISD::CondCode CC, const SDLoc &dl,
-                      SelectionDAG &DAG) const;
     SDValue LowerSETCC(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerSETCCCARRY(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerSELECT(SDValue Op, SelectionDAG &DAG) const;
@@ -1268,6 +1281,10 @@ namespace llvm {
     MachineBasicBlock *
     EmitVAStartSaveXMMRegsWithCustomInserter(MachineInstr &BInstr,
                                              MachineBasicBlock *BB) const;
+
+    MachineBasicBlock *EmitLoweredCascadedSelect(MachineInstr &MI1,
+                                                 MachineInstr &MI2,
+                                                 MachineBasicBlock *BB) const;
 
     MachineBasicBlock *EmitLoweredSelect(MachineInstr &I,
                                          MachineBasicBlock *BB) const;
@@ -1435,6 +1452,48 @@ namespace llvm {
     }
   };
 
+  /// Generate unpacklo/unpackhi shuffle mask.
+  template <typename T = int>
+  void createUnpackShuffleMask(MVT VT, SmallVectorImpl<T> &Mask, bool Lo,
+                               bool Unary) {
+    assert(Mask.empty() && "Expected an empty shuffle mask vector");
+    int NumElts = VT.getVectorNumElements();
+    int NumEltsInLane = 128 / VT.getScalarSizeInBits();
+    for (int i = 0; i < NumElts; ++i) {
+      unsigned LaneStart = (i / NumEltsInLane) * NumEltsInLane;
+      int Pos = (i % NumEltsInLane) / 2 + LaneStart;
+      Pos += (Unary ? 0 : NumElts * (i % 2));
+      Pos += (Lo ? 0 : NumEltsInLane / 2);
+      Mask.push_back(Pos);
+    }
+  }
+
+  /// Helper function to scale a shuffle or target shuffle mask, replacing each
+  /// mask index with the scaled sequential indices for an equivalent narrowed
+  /// mask. This is the reverse process to canWidenShuffleElements, but can
+  /// always succeed.
+  template <typename T>
+  void scaleShuffleMask(int Scale, ArrayRef<T> Mask,
+                        SmallVectorImpl<T> &ScaledMask) {
+    assert(0 < Scale && "Unexpected scaling factor");
+    int NumElts = Mask.size();
+    ScaledMask.assign(static_cast<size_t>(NumElts * Scale), -1);
+
+    for (int i = 0; i != NumElts; ++i) {
+      int M = Mask[i];
+
+      // Repeat sentinel values in every mask element.
+      if (M < 0) {
+        for (int s = 0; s != Scale; ++s)
+          ScaledMask[(Scale * i) + s] = M;
+        continue;
+      }
+
+      // Scale mask element and increment across each mask element.
+      for (int s = 0; s != Scale; ++s)
+        ScaledMask[(Scale * i) + s] = (Scale * M) + s;
+    }
+  }
 } // end namespace llvm
 
 #endif // LLVM_LIB_TARGET_X86_X86ISELLOWERING_H

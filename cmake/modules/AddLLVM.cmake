@@ -687,7 +687,7 @@ macro(add_llvm_executable name)
     # it forces Xcode to properly link the static library.
     list(APPEND ALL_FILES "${LLVM_MAIN_SRC_DIR}/cmake/dummy.cpp")
   endif()
-  
+
   if( EXCLUDE_FROM_ALL )
     add_executable(${name} EXCLUDE_FROM_ALL ${ALL_FILES})
   else()
@@ -892,6 +892,18 @@ macro(add_llvm_utility name)
   endif()
 endmacro(add_llvm_utility name)
 
+macro(add_llvm_fuzzer name)
+  cmake_parse_arguments(ARG "" "DUMMY_MAIN" "" ${ARGN})
+  if( LLVM_USE_SANITIZE_COVERAGE )
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer")
+    set(LLVM_OPTIONAL_SOURCES ${ARG_DUMMY_MAIN})
+    add_llvm_executable(${name} ${ARG_UNPARSED_ARGUMENTS})
+    set_target_properties(${name} PROPERTIES FOLDER "Fuzzers")
+  elseif( ARG_DUMMY_MAIN )
+    add_llvm_executable(${name} ${ARG_DUMMY_MAIN} ${ARG_UNPARSED_ARGUMENTS})
+    set_target_properties(${name} PROPERTIES FOLDER "Fuzzers")
+endif()
+endmacro()
 
 macro(add_llvm_target target_name)
   include_directories(BEFORE
@@ -907,6 +919,37 @@ function(canonicalize_tool_name name output)
   string(TOUPPER ${nameUNDERSCORE} nameUPPER)
   set(${output} "${nameUPPER}" PARENT_SCOPE)
 endfunction(canonicalize_tool_name)
+
+macro(find_llvm_enabled_projects base_dir)
+  set(specific_project_list "${ARGN}")
+  if("${specific_project_list}" STREQUAL "")
+    file(GLOB entries "${base_dir}/*")
+    set(list_of_project_dirs "")
+    foreach(entry ${entries})
+      if(IS_DIRECTORY ${entry} AND EXISTS ${entry}/CMakeLists.txt)
+        get_filename_component(filename "${entry}" NAME)
+        list(APPEND specific_project_list "${filename}")
+      endif()
+    endforeach(entry)
+  endif()
+
+  foreach(proj ${specific_project_list})
+    canonicalize_tool_name(${proj} projUPPER)
+
+    if (${LLVM_PROJECT_${projUPPER}_ENABLED})
+      if (EXISTS "${base_dir}/${proj}")
+        message(WARNING "Project ${projUPPER} in ${base_dir}/${proj} previously found in ${LLVM_PROJECT_${projUPPER}_SOURCE_DIR}")
+      endif()
+      continue()
+    elseif(EXISTS "${LLVM_EXTERNAL_${projUPPER}_SOURCE_DIR}")
+      set(LLVM_PROJECT_${projUPPER}_ENABLED ON)
+      set(LLVM_PROJECT_${projUPPER}_SOURCE_DIR "${LLVM_EXTERNAL_${projUPPER}_SOURCE_DIR}")
+    elseif(EXISTS "${base_dir}/${proj}")
+      set(LLVM_PROJECT_${projUPPER}_ENABLED ON)
+      set(LLVM_PROJECT_${projUPPER}_SOURCE_DIR "${base_dir}/${proj}")
+    endif()
+  endforeach()
+endmacro()
 
 # Custom add_subdirectory wrapper
 # Takes in a project name (i.e. LLVM), the subdirectory name, and an optional
@@ -1338,7 +1381,7 @@ function(add_llvm_tool_symlink link_name target)
   # magic. First we grab one of the types, and a type-specific path. Then from
   # the type-specific path we find the last occurrence of the type in the path,
   # and replace it with CMAKE_CFG_INTDIR. This allows the build step to be type
-  # agnostic again. 
+  # agnostic again.
   if(NOT ARG_OUTPUT_DIR)
     # If you're not overriding the OUTPUT_DIR, we can make the link relative in
     # the same directory.
@@ -1488,3 +1531,36 @@ function(setup_dependency_debugging name)
   set(sandbox_command "sandbox-exec -p '(version 1) (allow default) ${deny_attributes_gen} ${deny_intrinsics_gen}'")
   set_target_properties(${name} PROPERTIES RULE_LAUNCH_COMPILE ${sandbox_command})
 endfunction()
+
+# Figure out if we can track VC revisions.
+function(find_first_existing_file out_var)
+  foreach(file ${ARGN})
+    if(EXISTS "${file}")
+      set(${out_var} "${file}" PARENT_SCOPE)
+      return()
+    endif()
+  endforeach()
+endfunction()
+
+macro(find_first_existing_vc_file out_var path)
+    find_program(git_executable NAMES git git.exe git.cmd)
+    # Run from a subdirectory to force git to print an absolute path.
+    execute_process(COMMAND ${git_executable} rev-parse --git-dir
+      WORKING_DIRECTORY ${path}/cmake
+      RESULT_VARIABLE git_result
+      OUTPUT_VARIABLE git_dir
+      ERROR_QUIET)
+    if(git_result EQUAL 0)
+      string(STRIP "${git_dir}" git_dir)
+      set(${out_var} "${git_dir}/logs/HEAD")
+      # some branchless cases (e.g. 'repo') may not yet have .git/logs/HEAD
+      if (NOT EXISTS "${git_dir}/logs/HEAD")
+        file(WRITE "${git_dir}/logs/HEAD" "")
+      endif()
+    else()
+      find_first_existing_file(${out_var}
+        "${path}/.svn/wc.db"   # SVN 1.7
+        "${path}/.svn/entries" # SVN 1.6
+      )
+    endif()
+endmacro()

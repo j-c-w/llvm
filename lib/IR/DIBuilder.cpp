@@ -127,7 +127,7 @@ DICompileUnit *DIBuilder::createCompileUnit(
     unsigned Lang, DIFile *File, StringRef Producer, bool isOptimized,
     StringRef Flags, unsigned RunTimeVer, StringRef SplitName,
     DICompileUnit::DebugEmissionKind Kind, uint64_t DWOId,
-    bool SplitDebugInlining, bool DebugInfoForProfiling) {
+    bool SplitDebugInlining, bool DebugInfoForProfiling, bool GnuPubnames) {
 
   assert(((Lang <= dwarf::DW_LANG_Fortran08 && Lang >= dwarf::DW_LANG_C89) ||
           (Lang <= dwarf::DW_LANG_hi_user && Lang >= dwarf::DW_LANG_lo_user)) &&
@@ -137,7 +137,7 @@ DICompileUnit *DIBuilder::createCompileUnit(
   CUNode = DICompileUnit::getDistinct(
       VMContext, Lang, File, Producer, isOptimized, Flags, RunTimeVer,
       SplitName, Kind, nullptr, nullptr, nullptr, nullptr, nullptr, DWOId,
-      SplitDebugInlining, DebugInfoForProfiling);
+      SplitDebugInlining, DebugInfoForProfiling, GnuPubnames);
 
   // Create a named metadata so that it is easier to find cu in a module.
   NamedMDNode *NMD = M.getOrInsertNamedMetadata("llvm.dbg.cu");
@@ -595,6 +595,8 @@ DIGlobalVariableExpression *DIBuilder::createGlobalVariableExpression(
       VMContext, cast_or_null<DIScope>(Context), Name, LinkageName, F,
       LineNumber, Ty, isLocalToUnit, true, cast_or_null<DIDerivedType>(Decl),
       AlignInBits);
+  if (!Expr)
+    Expr = createExpression();
   auto *N = DIGlobalVariableExpression::get(VMContext, GV, Expr);
   AllGVs.push_back(N);
   return N;
@@ -666,12 +668,6 @@ DIExpression *DIBuilder::createExpression(ArrayRef<int64_t> Signed) {
   // TODO: Remove the callers of this signed version and delete.
   SmallVector<uint64_t, 8> Addr(Signed.begin(), Signed.end());
   return createExpression(Addr);
-}
-
-DIExpression *DIBuilder::createFragmentExpression(unsigned OffsetInBytes,
-                                                  unsigned SizeInBytes) {
-  uint64_t Addr[] = {dwarf::DW_OP_LLVM_fragment, OffsetInBytes, SizeInBytes};
-  return DIExpression::get(VMContext, Addr);
 }
 
 template <class... Ts>
@@ -823,7 +819,7 @@ Instruction *DIBuilder::insertDeclare(Value *Storage, DILocalVariable *VarInfo,
   return withDebugLoc(CallInst::Create(DeclareFn, Args, "", InsertAtEnd), DL);
 }
 
-Instruction *DIBuilder::insertDbgValueIntrinsic(Value *V, uint64_t Offset,
+Instruction *DIBuilder::insertDbgValueIntrinsic(Value *V,
                                                 DILocalVariable *VarInfo,
                                                 DIExpression *Expr,
                                                 const DILocation *DL,
@@ -840,13 +836,12 @@ Instruction *DIBuilder::insertDbgValueIntrinsic(Value *V, uint64_t Offset,
   trackIfUnresolved(VarInfo);
   trackIfUnresolved(Expr);
   Value *Args[] = {getDbgIntrinsicValueImpl(VMContext, V),
-                   ConstantInt::get(Type::getInt64Ty(VMContext), Offset),
                    MetadataAsValue::get(VMContext, VarInfo),
                    MetadataAsValue::get(VMContext, Expr)};
   return withDebugLoc(CallInst::Create(ValueFn, Args, "", InsertBefore), DL);
 }
 
-Instruction *DIBuilder::insertDbgValueIntrinsic(Value *V, uint64_t Offset,
+Instruction *DIBuilder::insertDbgValueIntrinsic(Value *V,
                                                 DILocalVariable *VarInfo,
                                                 DIExpression *Expr,
                                                 const DILocation *DL,
@@ -863,7 +858,6 @@ Instruction *DIBuilder::insertDbgValueIntrinsic(Value *V, uint64_t Offset,
   trackIfUnresolved(VarInfo);
   trackIfUnresolved(Expr);
   Value *Args[] = {getDbgIntrinsicValueImpl(VMContext, V),
-                   ConstantInt::get(Type::getInt64Ty(VMContext), Offset),
                    MetadataAsValue::get(VMContext, VarInfo),
                    MetadataAsValue::get(VMContext, Expr)};
 

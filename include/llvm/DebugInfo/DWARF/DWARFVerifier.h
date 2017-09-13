@@ -10,6 +10,8 @@
 #ifndef LLVM_DEBUGINFO_DWARF_DWARFVERIFIER_H
 #define LLVM_DEBUGINFO_DWARF_DWARFVERIFIER_H
 
+#include "llvm/DebugInfo/DIContext.h"
+
 #include <cstdint>
 #include <map>
 #include <set>
@@ -23,17 +25,19 @@ class DWARFUnit;
 class DWARFAcceleratorTable;
 class DWARFDataExtractor;
 class DWARFDebugAbbrev;
+class DataExtractor;
+struct DWARFSection;
 
 /// A class that verifies DWARF debug information given a DWARF Context.
 class DWARFVerifier {
   raw_ostream &OS;
   DWARFContext &DCtx;
+  DIDumpOptions DumpOpts;
   /// A map that tracks all references (converted absolute references) so we
   /// can verify each reference points to a valid DIE and not an offset that
   /// lies between to valid DIEs.
   std::map<uint64_t, std::set<uint32_t>> ReferenceToDIEOffsets;
   uint32_t NumDebugLineErrors = 0;
-  uint32_t NumAppleNamesErrors = 0;
 
   /// Verifies the abbreviations section.
   ///
@@ -133,9 +137,29 @@ class DWARFVerifier {
   /// - invalid file indexes
   void verifyDebugLineRows();
 
+  /// Verify that an Apple-style accelerator table is valid.
+  ///
+  /// This function currently checks that:
+  /// - The fixed part of the header fits in the section
+  /// - The size of the section is as large as what the header describes
+  /// - There is at least one atom
+  /// - The form for each atom is valid
+  /// - The tag for each DIE in the table is valid
+  /// - The buckets have a valid index, or they are empty
+  /// - Each hashdata offset is valid
+  /// - Each DIE is valid
+  ///
+  /// \param AccelSection pointer to the section containing the acceleration table
+  /// \param StrData pointer to the string section
+  /// \param SectionName the name of the table we're verifying
+  ///
+  /// \returns The number of errors occured during verification
+  unsigned verifyAccelTable(const DWARFSection *AccelSection,
+                            DataExtractor *StrData, const char *SectionName);
+
 public:
-  DWARFVerifier(raw_ostream &S, DWARFContext &D)
-      : OS(S), DCtx(D) {}
+  DWARFVerifier(raw_ostream &S, DWARFContext &D, DIDumpOptions DumpOpts = {})
+      : OS(S), DCtx(D), DumpOpts(std::move(DumpOpts)) {}
   /// Verify the information in any of the following sections, if available:
   /// .debug_abbrev, debug_abbrev.dwo
   ///
@@ -162,13 +186,14 @@ public:
   /// \returns true if the .debug_line verifies successfully, false otherwise.
   bool handleDebugLine();
 
-  /// Verify the information in the .apple_names accelerator table.
+  /// Verify the information in accelerator tables, if they exist.
   ///
   /// Any errors are reported to the stream that was this object was
   /// constructed with.
   ///
-  /// \returns true if the .apple_names verifies successfully, false otherwise.
-  bool handleAppleNames();
+  /// \returns true if the existing Apple-style accelerator tables verify
+  /// successfully, false otherwise.
+  bool handleAccelTables();
 };
 
 } // end namespace llvm

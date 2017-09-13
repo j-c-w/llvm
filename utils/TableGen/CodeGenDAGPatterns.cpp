@@ -713,7 +713,7 @@ bool EEVT::TypeSet::EnforceSameSize(EEVT::TypeSet &VTOperand,
 //===----------------------------------------------------------------------===//
 // Helpers for working with extended types.
 
-/// Dependent variable map for CodeGenDAGPattern variant generation
+/// Dependent variable map for CodeGenDAGPattern variant generation.
 typedef std::map<std::string, int> DepVarMap;
 
 static void FindDepVarsOf(TreePatternNode *N, DepVarMap &DepMap) {
@@ -726,7 +726,7 @@ static void FindDepVarsOf(TreePatternNode *N, DepVarMap &DepMap) {
   }
 }
   
-/// Find dependent variables within child patterns
+/// Find dependent variables within child patterns.
 static void FindDepVars(TreePatternNode *N, MultipleUseVarSet &DepVars) {
   DepVarMap depcounts;
   FindDepVarsOf(N, depcounts);
@@ -737,7 +737,8 @@ static void FindDepVars(TreePatternNode *N, MultipleUseVarSet &DepVars) {
 }
 
 #ifndef NDEBUG
-/// Dump the dependent variable set:
+/// Dump the dependent variable set.
+LLVM_DUMP_METHOD
 static void DumpDepVars(MultipleUseVarSet &DepVars) {
   if (DepVars.empty()) {
     DEBUG(errs() << "<empty set>");
@@ -1975,18 +1976,6 @@ bool TreePatternNode::ApplyTypeConstraints(TreePattern &TP, bool NotRegisters) {
   }
 
   bool MadeChange = getChild(0)->ApplyTypeConstraints(TP, NotRegisters);
-
-
-  // If either the output or input of the xform does not have exact
-  // type info. We assume they must be the same. Otherwise, it is perfectly
-  // legal to transform from one type to a completely different type.
-#if 0
-  if (!hasTypeSet() || !getChild(0)->hasTypeSet()) {
-    bool MadeChange = UpdateNodeType(getChild(0)->getExtType(), TP);
-    MadeChange |= getChild(0)->UpdateNodeType(getExtType(), TP);
-    return MadeChange;
-  }
-#endif
   return MadeChange;
 }
 
@@ -2304,7 +2293,7 @@ InferAllTypes(const StringMap<SmallVector<TreePatternNode*,1> > *InNamedTypes) {
   bool MadeChange = true;
   while (MadeChange) {
     MadeChange = false;
-    for (TreePatternNode *Tree : Trees) {
+    for (TreePatternNode *&Tree : Trees) {
       MadeChange |= Tree->ApplyTypeConstraints(*this, false);
       MadeChange |= SimplifyTree(Tree);
     }
@@ -3262,8 +3251,6 @@ void CodeGenDAGPatterns::AddPatternToMatch(TreePattern *Pattern,
   PatternsToMatch.push_back(std::move(PTM));
 }
 
-
-
 void CodeGenDAGPatterns::InferInstructionFlags() {
   ArrayRef<const CodeGenInstruction*> Instructions =
     Target.getInstructionsByEnumValue();
@@ -3744,7 +3731,7 @@ static void GenerateVariantsOf(TreePatternNode *N,
   // If this node is commutative, consider the commuted order.
   bool isCommIntrinsic = N->isCommutativeIntrinsic(CDP);
   if (NodeInfo.hasProperty(SDNPCommutative) || isCommIntrinsic) {
-    assert((N->getNumChildren()==2 || isCommIntrinsic) &&
+    assert((N->getNumChildren()>=2 || isCommIntrinsic) &&
            "Commutative but doesn't have 2 children!");
     // Don't count children which are actually register references.
     unsigned NC = 0;
@@ -3772,9 +3759,14 @@ static void GenerateVariantsOf(TreePatternNode *N,
       for (unsigned i = 3; i != NC; ++i)
         Variants.push_back(ChildVariants[i]);
       CombineChildVariants(N, Variants, OutVariants, CDP, DepVars);
-    } else if (NC == 2)
-      CombineChildVariants(N, ChildVariants[1], ChildVariants[0],
-                           OutVariants, CDP, DepVars);
+    } else if (NC == N->getNumChildren()) {
+      std::vector<std::vector<TreePatternNode*> > Variants;
+      Variants.push_back(ChildVariants[1]);
+      Variants.push_back(ChildVariants[0]);
+      for (unsigned i = 2; i != NC; ++i)
+        Variants.push_back(ChildVariants[i]);
+      CombineChildVariants(N, Variants, OutVariants, CDP, DepVars);
+    }
   }
 }
 

@@ -930,5 +930,225 @@ TEST_F(ScalarEvolutionsTest, SCEVZeroExtendExprNonIntegral) {
   EXPECT_FALSE(verifyFunction(*F, &errs()));
 }
 
+// Make sure that SCEV invalidates exit limits after invalidating the values it
+// depends on when we forget a loop.
+TEST_F(ScalarEvolutionsTest, SCEVExitLimitForgetLoop) {
+  /*
+   * Create the following code:
+   * func(i64 addrspace(10)* %arg)
+   * top:
+   *  br label %L.ph
+   * L.ph:
+   *  br label %L
+   * L:
+   *  %phi = phi i64 [i64 0, %L.ph], [ %add, %L2 ]
+   *  %add = add i64 %phi2, 1
+   *  %cond = icmp slt i64 %add, 1000; then becomes 2000.
+   *  br i1 %cond, label %post, label %L2
+   * post:
+   *  ret void
+   *
+   */
+
+  // Create a module with non-integral pointers in it's datalayout
+  Module NIM("nonintegral", Context);
+  std::string DataLayout = M.getDataLayoutStr();
+  if (!DataLayout.empty())
+    DataLayout += "-";
+  DataLayout += "ni:10";
+  NIM.setDataLayout(DataLayout);
+
+  Type *T_int64 = Type::getInt64Ty(Context);
+  Type *T_pint64 = T_int64->getPointerTo(10);
+
+  FunctionType *FTy =
+      FunctionType::get(Type::getVoidTy(Context), {T_pint64}, false);
+  Function *F = cast<Function>(NIM.getOrInsertFunction("foo", FTy));
+
+  BasicBlock *Top = BasicBlock::Create(Context, "top", F);
+  BasicBlock *LPh = BasicBlock::Create(Context, "L.ph", F);
+  BasicBlock *L = BasicBlock::Create(Context, "L", F);
+  BasicBlock *Post = BasicBlock::Create(Context, "post", F);
+
+  IRBuilder<> Builder(Top);
+  Builder.CreateBr(LPh);
+
+  Builder.SetInsertPoint(LPh);
+  Builder.CreateBr(L);
+
+  Builder.SetInsertPoint(L);
+  PHINode *Phi = Builder.CreatePHI(T_int64, 2);
+  auto *Add = cast<Instruction>(
+      Builder.CreateAdd(Phi, ConstantInt::get(T_int64, 1), "add"));
+  auto *Limit = ConstantInt::get(T_int64, 1000);
+  auto *Cond = cast<Instruction>(
+      Builder.CreateICmp(ICmpInst::ICMP_SLT, Add, Limit, "cond"));
+  auto *Br = cast<Instruction>(Builder.CreateCondBr(Cond, L, Post));
+  Phi->addIncoming(ConstantInt::get(T_int64, 0), LPh);
+  Phi->addIncoming(Add, L);
+
+  Builder.SetInsertPoint(Post);
+  Builder.CreateRetVoid();
+
+  ScalarEvolution SE = buildSE(*F);
+  auto *Loop = LI->getLoopFor(L);
+  const SCEV *EC = SE.getBackedgeTakenCount(Loop);
+  EXPECT_FALSE(isa<SCEVCouldNotCompute>(EC));
+  EXPECT_TRUE(isa<SCEVConstant>(EC));
+  EXPECT_EQ(cast<SCEVConstant>(EC)->getAPInt().getLimitedValue(), 999u);
+
+  SE.forgetLoop(Loop);
+  Br->eraseFromParent();
+  Cond->eraseFromParent();
+
+  Builder.SetInsertPoint(L);
+  auto *NewCond = Builder.CreateICmp(
+      ICmpInst::ICMP_SLT, Add, ConstantInt::get(T_int64, 2000), "new.cond");
+  Builder.CreateCondBr(NewCond, L, Post);
+  const SCEV *NewEC = SE.getBackedgeTakenCount(Loop);
+  EXPECT_FALSE(isa<SCEVCouldNotCompute>(NewEC));
+  EXPECT_TRUE(isa<SCEVConstant>(NewEC));
+  EXPECT_EQ(cast<SCEVConstant>(NewEC)->getAPInt().getLimitedValue(), 1999u);
+}
+
+// Make sure that SCEV invalidates exit limits after invalidating the values it
+// depends on when we forget a value.
+TEST_F(ScalarEvolutionsTest, SCEVExitLimitForgetValue) {
+  /*
+   * Create the following code:
+   * func(i64 addrspace(10)* %arg)
+   * top:
+   *  br label %L.ph
+   * L.ph:
+   *  %load = load i64 addrspace(10)* %arg
+   *  br label %L
+   * L:
+   *  %phi = phi i64 [i64 0, %L.ph], [ %add, %L2 ]
+   *  %add = add i64 %phi2, 1
+   *  %cond = icmp slt i64 %add, %load ; then becomes 2000.
+   *  br i1 %cond, label %post, label %L2
+   * post:
+   *  ret void
+   *
+   */
+
+  // Create a module with non-integral pointers in it's datalayout
+  Module NIM("nonintegral", Context);
+  std::string DataLayout = M.getDataLayoutStr();
+  if (!DataLayout.empty())
+    DataLayout += "-";
+  DataLayout += "ni:10";
+  NIM.setDataLayout(DataLayout);
+
+  Type *T_int64 = Type::getInt64Ty(Context);
+  Type *T_pint64 = T_int64->getPointerTo(10);
+
+  FunctionType *FTy =
+      FunctionType::get(Type::getVoidTy(Context), {T_pint64}, false);
+  Function *F = cast<Function>(NIM.getOrInsertFunction("foo", FTy));
+
+  Argument *Arg = &*F->arg_begin();
+
+  BasicBlock *Top = BasicBlock::Create(Context, "top", F);
+  BasicBlock *LPh = BasicBlock::Create(Context, "L.ph", F);
+  BasicBlock *L = BasicBlock::Create(Context, "L", F);
+  BasicBlock *Post = BasicBlock::Create(Context, "post", F);
+
+  IRBuilder<> Builder(Top);
+  Builder.CreateBr(LPh);
+
+  Builder.SetInsertPoint(LPh);
+  auto *Load = cast<Instruction>(Builder.CreateLoad(T_int64, Arg, "load"));
+  Builder.CreateBr(L);
+
+  Builder.SetInsertPoint(L);
+  PHINode *Phi = Builder.CreatePHI(T_int64, 2);
+  auto *Add = cast<Instruction>(
+      Builder.CreateAdd(Phi, ConstantInt::get(T_int64, 1), "add"));
+  auto *Cond = cast<Instruction>(
+      Builder.CreateICmp(ICmpInst::ICMP_SLT, Add, Load, "cond"));
+  auto *Br = cast<Instruction>(Builder.CreateCondBr(Cond, L, Post));
+  Phi->addIncoming(ConstantInt::get(T_int64, 0), LPh);
+  Phi->addIncoming(Add, L);
+
+  Builder.SetInsertPoint(Post);
+  Builder.CreateRetVoid();
+
+  ScalarEvolution SE = buildSE(*F);
+  auto *Loop = LI->getLoopFor(L);
+  const SCEV *EC = SE.getBackedgeTakenCount(Loop);
+  EXPECT_FALSE(isa<SCEVCouldNotCompute>(EC));
+  EXPECT_FALSE(isa<SCEVConstant>(EC));
+
+  SE.forgetValue(Load);
+  Br->eraseFromParent();
+  Cond->eraseFromParent();
+  Load->eraseFromParent();
+
+  Builder.SetInsertPoint(L);
+  auto *NewCond = Builder.CreateICmp(
+      ICmpInst::ICMP_SLT, Add, ConstantInt::get(T_int64, 2000), "new.cond");
+  Builder.CreateCondBr(NewCond, L, Post);
+  const SCEV *NewEC = SE.getBackedgeTakenCount(Loop);
+  EXPECT_FALSE(isa<SCEVCouldNotCompute>(NewEC));
+  EXPECT_TRUE(isa<SCEVConstant>(NewEC));
+  EXPECT_EQ(cast<SCEVConstant>(NewEC)->getAPInt().getLimitedValue(), 1999u);
+}
+
+TEST_F(ScalarEvolutionsTest, SCEVAddRecFromPHIwithLargeConstants) {
+  // Reference: https://reviews.llvm.org/D37265
+  // Make sure that SCEV does not blow up when constructing an AddRec
+  // with predicates for a phi with the update pattern:
+  //  (SExt/ZExt ix (Trunc iy (%SymbolicPHI) to ix) to iy) + InvariantAccum
+  // when either the initial value of the Phi or the InvariantAccum are
+  // constants that are too large to fit in an ix but are zero when truncated to
+  // ix.
+  FunctionType *FTy =
+      FunctionType::get(Type::getVoidTy(Context), std::vector<Type *>(), false);
+  Function *F = cast<Function>(M.getOrInsertFunction("addrecphitest", FTy));
+
+  /*
+    Create IR:
+    entry:
+     br label %loop
+    loop:
+     %0 = phi i64 [-9223372036854775808, %entry], [%3, %loop]
+     %1 = shl i64 %0, 32
+     %2 = ashr exact i64 %1, 32
+     %3 = add i64 %2, -9223372036854775808
+     br i1 undef, label %exit, label %loop
+    exit:
+     ret void
+   */
+  BasicBlock *EntryBB = BasicBlock::Create(Context, "entry", F);
+  BasicBlock *LoopBB = BasicBlock::Create(Context, "loop", F);
+  BasicBlock *ExitBB = BasicBlock::Create(Context, "exit", F);
+
+  // entry:
+  BranchInst::Create(LoopBB, EntryBB);
+  // loop:
+  auto *MinInt64 =
+      ConstantInt::get(Context, APInt(64, 0x8000000000000000U, true));
+  auto *Int64_32 = ConstantInt::get(Context, APInt(64, 32));
+  auto *Br = BranchInst::Create(
+      LoopBB, ExitBB, UndefValue::get(Type::getInt1Ty(Context)), LoopBB);
+  auto *Phi = PHINode::Create(Type::getInt64Ty(Context), 2, "", Br);
+  auto *Shl = BinaryOperator::CreateShl(Phi, Int64_32, "", Br);
+  auto *AShr = BinaryOperator::CreateExactAShr(Shl, Int64_32, "", Br);
+  auto *Add = BinaryOperator::CreateAdd(AShr, MinInt64, "", Br);
+  Phi->addIncoming(MinInt64, EntryBB);
+  Phi->addIncoming(Add, LoopBB);
+  // exit:
+  ReturnInst::Create(Context, nullptr, ExitBB);
+
+  // Make sure that SCEV doesn't blow up
+  ScalarEvolution SE = buildSE(*F);
+  SCEVUnionPredicate Preds;
+  const SCEV *Expr = SE.getSCEV(Phi);
+  EXPECT_NE(nullptr, Expr);
+  EXPECT_TRUE(isa<SCEVUnknown>(Expr));
+  auto Result = SE.createAddRecFromPHIWithCasts(cast<SCEVUnknown>(Expr));
+}
+
 }  // end anonymous namespace
 }  // end namespace llvm

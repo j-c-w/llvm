@@ -181,18 +181,22 @@ void CoverageReport::render(const FileCoverageSummary &File,
   SmallString<256> FileName = File.Name;
   sys::path::remove_dots(FileName, /*remove_dot_dots=*/true);
   sys::path::native(FileName);
-  OS << column(FileName, FileReportColumns[0], Column::NoTrim)
-     << format("%*u", FileReportColumns[1],
-               (unsigned)File.RegionCoverage.NumRegions);
-  Options.colored_ostream(OS, FileCoverageColor) << format(
-      "%*u", FileReportColumns[2], (unsigned)File.RegionCoverage.NotCovered);
-  if (File.RegionCoverage.NumRegions)
-    Options.colored_ostream(OS, FileCoverageColor)
-        << format("%*.2f", FileReportColumns[3] - 1,
-                  File.RegionCoverage.getPercentCovered())
-        << '%';
-  else
-    OS << column("-", FileReportColumns[3], Column::RightAlignment);
+  OS << column(FileName, FileReportColumns[0], Column::NoTrim);
+
+  if (Options.ShowRegionSummary) {
+    OS << format("%*u", FileReportColumns[1],
+                 (unsigned)File.RegionCoverage.NumRegions);
+    Options.colored_ostream(OS, FileCoverageColor) << format(
+        "%*u", FileReportColumns[2], (unsigned)File.RegionCoverage.NotCovered);
+    if (File.RegionCoverage.NumRegions)
+      Options.colored_ostream(OS, FileCoverageColor)
+          << format("%*.2f", FileReportColumns[3] - 1,
+                    File.RegionCoverage.getPercentCovered())
+          << '%';
+    else
+      OS << column("-", FileReportColumns[3], Column::RightAlignment);
+  }
+
   OS << format("%*u", FileReportColumns[4],
                (unsigned)File.FunctionCoverage.NumFunctions);
   OS << format("%*u", FileReportColumns[5],
@@ -205,18 +209,22 @@ void CoverageReport::render(const FileCoverageSummary &File,
         << '%';
   else
     OS << column("-", FileReportColumns[6], Column::RightAlignment);
-  OS << format("%*u", FileReportColumns[7],
-               (unsigned)File.InstantiationCoverage.NumFunctions);
-  OS << format("%*u", FileReportColumns[8],
-               (unsigned)(File.InstantiationCoverage.NumFunctions -
-                          File.InstantiationCoverage.Executed));
-  if (File.InstantiationCoverage.NumFunctions)
-    Options.colored_ostream(OS, InstantiationCoverageColor)
-        << format("%*.2f", FileReportColumns[9] - 1,
-                  File.InstantiationCoverage.getPercentCovered())
-        << '%';
-  else
-    OS << column("-", FileReportColumns[9], Column::RightAlignment);
+
+  if (Options.ShowInstantiationSummary) {
+    OS << format("%*u", FileReportColumns[7],
+                 (unsigned)File.InstantiationCoverage.NumFunctions);
+    OS << format("%*u", FileReportColumns[8],
+                 (unsigned)(File.InstantiationCoverage.NumFunctions -
+                            File.InstantiationCoverage.Executed));
+    if (File.InstantiationCoverage.NumFunctions)
+      Options.colored_ostream(OS, InstantiationCoverageColor)
+          << format("%*.2f", FileReportColumns[9] - 1,
+                    File.InstantiationCoverage.getPercentCovered())
+          << '%';
+    else
+      OS << column("-", FileReportColumns[9], Column::RightAlignment);
+  }
+
   OS << format("%*u", FileReportColumns[10],
                (unsigned)File.LineCoverage.NumLines);
   Options.colored_ostream(OS, LineCoverageColor) << format(
@@ -307,35 +315,33 @@ void CoverageReport::renderFunctionReports(ArrayRef<std::string> Files,
   }
 }
 
-std::vector<FileCoverageSummary>
-CoverageReport::prepareFileReports(const coverage::CoverageMapping &Coverage,
-                                   FileCoverageSummary &Totals,
-                                   ArrayRef<std::string> Files) {
+std::vector<FileCoverageSummary> CoverageReport::prepareFileReports(
+    const coverage::CoverageMapping &Coverage, FileCoverageSummary &Totals,
+    ArrayRef<std::string> Files, const CoverageViewOptions &Options) {
   std::vector<FileCoverageSummary> FileReports;
   unsigned LCP = getRedundantPrefixLen(Files);
 
   for (StringRef Filename : Files) {
     FileCoverageSummary Summary(Filename.drop_front(LCP));
 
-    // Map source locations to aggregate function coverage summaries.
-    DenseMap<std::pair<unsigned, unsigned>, FunctionCoverageSummary> Summaries;
+    for (const auto &Group : Coverage.getInstantiationGroups(Filename)) {
+      std::vector<FunctionCoverageSummary> InstantiationSummaries;
+      for (const coverage::FunctionRecord *F : Group.getInstantiations()) {
+        auto InstantiationSummary = FunctionCoverageSummary::get(*F);
+        Summary.addInstantiation(InstantiationSummary);
+        Totals.addInstantiation(InstantiationSummary);
+        InstantiationSummaries.push_back(InstantiationSummary);
+      }
 
-    for (const auto &F : Coverage.getCoveredFunctions(Filename)) {
-      FunctionCoverageSummary Function = FunctionCoverageSummary::get(F);
-      auto StartLoc = F.CountedRegions[0].startLoc();
+      auto GroupSummary =
+          FunctionCoverageSummary::get(Group, InstantiationSummaries);
 
-      auto UniquedSummary = Summaries.insert({StartLoc, Function});
-      if (!UniquedSummary.second)
-        UniquedSummary.first->second.update(Function);
+      if (Options.Debug)
+        outs() << "InstantiationGroup: " << GroupSummary.Name << " with "
+               << "size = " << Group.size() << "\n";
 
-      Summary.addInstantiation(Function);
-      Totals.addInstantiation(Function);
-    }
-
-    for (const auto &UniquedSummary : Summaries) {
-      const FunctionCoverageSummary &FCS = UniquedSummary.second;
-      Summary.addFunction(FCS);
-      Totals.addFunction(FCS);
+      Summary.addFunction(GroupSummary);
+      Totals.addFunction(GroupSummary);
     }
 
     FileReports.push_back(Summary);
@@ -354,31 +360,47 @@ void CoverageReport::renderFileReports(raw_ostream &OS) const {
 void CoverageReport::renderFileReports(raw_ostream &OS,
                                        ArrayRef<std::string> Files) const {
   FileCoverageSummary Totals("TOTAL");
-  auto FileReports = prepareFileReports(Coverage, Totals, Files);
+  auto FileReports = prepareFileReports(Coverage, Totals, Files, Options);
 
   std::vector<StringRef> Filenames;
   for (const FileCoverageSummary &FCS : FileReports)
     Filenames.emplace_back(FCS.Name);
   adjustColumnWidths(Filenames, {});
 
-  OS << column("Filename", FileReportColumns[0])
-     << column("Regions", FileReportColumns[1], Column::RightAlignment)
-     << column("Missed Regions", FileReportColumns[2], Column::RightAlignment)
-     << column("Cover", FileReportColumns[3], Column::RightAlignment)
-     << column("Functions", FileReportColumns[4], Column::RightAlignment)
+  OS << column("Filename", FileReportColumns[0]);
+  if (Options.ShowRegionSummary)
+    OS << column("Regions", FileReportColumns[1], Column::RightAlignment)
+       << column("Missed Regions", FileReportColumns[2], Column::RightAlignment)
+       << column("Cover", FileReportColumns[3], Column::RightAlignment);
+  OS << column("Functions", FileReportColumns[4], Column::RightAlignment)
      << column("Missed Functions", FileReportColumns[5], Column::RightAlignment)
-     << column("Executed", FileReportColumns[6], Column::RightAlignment)
-     << column("Instantiations", FileReportColumns[7], Column::RightAlignment)
-     << column("Missed Insts.", FileReportColumns[8], Column::RightAlignment)
-     << column("Executed", FileReportColumns[9], Column::RightAlignment)
-     << column("Lines", FileReportColumns[10], Column::RightAlignment)
+     << column("Executed", FileReportColumns[6], Column::RightAlignment);
+  if (Options.ShowInstantiationSummary)
+    OS << column("Instantiations", FileReportColumns[7], Column::RightAlignment)
+       << column("Missed Insts.", FileReportColumns[8], Column::RightAlignment)
+       << column("Executed", FileReportColumns[9], Column::RightAlignment);
+  OS << column("Lines", FileReportColumns[10], Column::RightAlignment)
      << column("Missed Lines", FileReportColumns[11], Column::RightAlignment)
      << column("Cover", FileReportColumns[12], Column::RightAlignment) << "\n";
   renderDivider(FileReportColumns, OS);
   OS << "\n";
 
-  for (const FileCoverageSummary &FCS : FileReports)
-    render(FCS, OS);
+  bool EmptyFiles = false;
+  for (const FileCoverageSummary &FCS : FileReports) {
+    if (FCS.FunctionCoverage.NumFunctions)
+      render(FCS, OS);
+    else
+      EmptyFiles = true;
+  }
+
+  if (EmptyFiles) {
+    OS << "\n"
+       << "Files which contain no functions:\n";
+
+    for (const FileCoverageSummary &FCS : FileReports)
+      if (!FCS.FunctionCoverage.NumFunctions)
+        render(FCS, OS);
+  }
 
   renderDivider(FileReportColumns, OS);
   OS << "\n";

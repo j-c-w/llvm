@@ -22,8 +22,8 @@
 #include "llvm/Support/PrettyStackTrace.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/Signals.h"
-#include "llvm/Support/WindowsManifestMerger.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/WindowsManifest/WindowsManifestMerger.h"
 
 #include <system_error>
 
@@ -95,13 +95,15 @@ int main(int argc, const char **argv) {
   SpecificBumpPtrAllocator<char> ArgAllocator;
   ExitOnErr(errorCodeToError(sys::Process::GetArgumentVector(
       argv_buf, makeArrayRef(argv, argc), ArgAllocator)));
-
   llvm_shutdown_obj Y; // Call llvm_shutdown() on exit.
 
   CvtResOptTable T;
   unsigned MAI, MAC;
   ArrayRef<const char *> ArgsArr = makeArrayRef(argv + 1, argc);
   opt::InputArgList InputArgs = T.ParseArgs(ArgsArr, MAI, MAC);
+
+  for (auto *Arg : InputArgs.filtered(OPT_INPUT))
+    reportError(Twine("invalid option ") + Arg->getSpelling());
 
   for (auto &Arg : InputArgs) {
     if (Arg->getOption().matches(OPT_unsupported)) {
@@ -130,7 +132,7 @@ int main(int argc, const char **argv) {
     reportError("no output file specified");
   }
 
-  WindowsManifestMerger Merger;
+  windows_manifest::WindowsManifestMerger Merger;
 
   for (const auto &File : InputFiles) {
     ErrorOr<std::unique_ptr<MemoryBuffer>> ManifestOrErr =

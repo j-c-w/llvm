@@ -5122,6 +5122,7 @@ bool MipsAsmParser::MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
                  "expected 11-bit signed immediate");
   case Match_UImm16:
   case Match_UImm16_Relaxed:
+  case Match_UImm16_AltRelaxed:
     return Error(RefineErrorLoc(IDLoc, Operands, ErrorInfo),
                  "expected 16-bit unsigned immediate");
   case Match_SImm16:
@@ -5439,12 +5440,12 @@ bool MipsAsmParser::isEvaluated(const MCExpr *Expr) {
     return true;
   case MCExpr::SymbolRef:
     return (cast<MCSymbolRefExpr>(Expr)->getKind() != MCSymbolRefExpr::VK_None);
-  case MCExpr::Binary:
-    if (const MCBinaryExpr *BE = dyn_cast<MCBinaryExpr>(Expr)) {
-      if (!isEvaluated(BE->getLHS()))
-        return false;
-      return isEvaluated(BE->getRHS());
-    }
+  case MCExpr::Binary: {
+    const MCBinaryExpr *BE = cast<MCBinaryExpr>(Expr);
+    if (!isEvaluated(BE->getLHS()))
+      return false;
+    return isEvaluated(BE->getRHS());
+  }
   case MCExpr::Unary:
     return isEvaluated(cast<MCUnaryExpr>(Expr)->getSubExpr());
   case MCExpr::Target:
