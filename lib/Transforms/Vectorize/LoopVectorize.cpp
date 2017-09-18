@@ -963,14 +963,6 @@ public:
     return InterleaveGroupMap.count(Instr);
   }
 
-  /// \brief Return the maximum interleave factor of all interleaved groups.
-  unsigned getMaxInterleaveFactor() const {
-    unsigned MaxFactor = 1;
-    for (auto &Entry : InterleaveGroupMap)
-      MaxFactor = std::max(MaxFactor, Entry.second->getFactor());
-    return MaxFactor;
-  }
-
   /// \brief Get the interleave group that \p Instr belongs to.
   ///
   /// \returns nullptr if doesn't have such group.
@@ -1553,11 +1545,6 @@ public:
     return InterleaveInfo.isInterleaved(Instr);
   }
 
-  /// \brief Return the maximum interleave factor of all interleaved groups.
-  unsigned getMaxInterleaveFactor() const {
-    return InterleaveInfo.getMaxInterleaveFactor();
-  }
-
   /// \brief Get the interleaved access group that \p Instr belongs to.
   const InterleaveGroup *getInterleavedAccessGroup(Instruction *Instr) {
     return InterleaveInfo.getInterleaveGroup(Instr);
@@ -1570,6 +1557,10 @@ public:
   }
 
   unsigned getMaxSafeDepDistBytes() { return LAI->getMaxSafeDepDistBytes(); }
+
+  uint64_t getMaxSafeRegisterWidth() const {
+	  return LAI->getDepChecker().getMaxSafeRegisterWidth();
+  }
 
   bool hasStride(Value *V) { return LAI->hasStride(V); }
 
@@ -4966,12 +4957,15 @@ bool LoopVectorizationLegality::canVectorize() {
   // Store the result and return it at the end instead of exiting early, in case
   // allowExtraAnalysis is used to report multiple reasons for not vectorizing.
   bool Result = true;
+  
+  bool DoExtraAnalysis = ORE->allowExtraAnalysis(DEBUG_TYPE);
+  if (DoExtraAnalysis)
   // We must have a loop in canonical form. Loops with indirectbr in them cannot
   // be canonicalized.
   if (!TheLoop->getLoopPreheader()) {
     ORE->emit(createMissedAnalysis("CFGNotUnderstood")
               << "loop control flow is not understood by vectorizer");
-    if (ORE->allowExtraAnalysis())
+  if (DoExtraAnalysis)
       Result = false;
     else
       return false;
@@ -4984,7 +4978,7 @@ bool LoopVectorizationLegality::canVectorize() {
   if (!TheLoop->empty()) {
     ORE->emit(createMissedAnalysis("NotInnermostLoop")
               << "loop is not the innermost loop");
-    if (ORE->allowExtraAnalysis())
+    if (DoExtraAnalysis)
       Result = false;
     else
       return false;
@@ -4994,7 +4988,7 @@ bool LoopVectorizationLegality::canVectorize() {
   if (TheLoop->getNumBackEdges() != 1) {
     ORE->emit(createMissedAnalysis("CFGNotUnderstood")
               << "loop control flow is not understood by vectorizer");
-    if (ORE->allowExtraAnalysis())
+    if (DoExtraAnalysis)
       Result = false;
     else
       return false;
@@ -5004,7 +4998,7 @@ bool LoopVectorizationLegality::canVectorize() {
   if (!TheLoop->getExitingBlock()) {
     ORE->emit(createMissedAnalysis("CFGNotUnderstood")
               << "loop control flow is not understood by vectorizer");
-    if (ORE->allowExtraAnalysis())
+    if (DoExtraAnalysis)
       Result = false;
     else
       return false;
@@ -5016,7 +5010,7 @@ bool LoopVectorizationLegality::canVectorize() {
   if (TheLoop->getExitingBlock() != TheLoop->getLoopLatch()) {
     ORE->emit(createMissedAnalysis("CFGNotUnderstood")
               << "loop control flow is not understood by vectorizer");
-    if (ORE->allowExtraAnalysis())
+    if (DoExtraAnalysis)
       Result = false;
     else
       return false;
@@ -5030,7 +5024,7 @@ bool LoopVectorizationLegality::canVectorize() {
   unsigned NumBlocks = TheLoop->getNumBlocks();
   if (NumBlocks != 1 && !canVectorizeWithIfConvert()) {
     DEBUG(dbgs() << "LV: Can't if-convert the loop.\n");
-    if (ORE->allowExtraAnalysis())
+    if (DoExtraAnalysis)
       Result = false;
     else
       return false;
@@ -5039,7 +5033,7 @@ bool LoopVectorizationLegality::canVectorize() {
   // Check if we can vectorize the instructions and CFG in this loop.
   if (!canVectorizeInstrs()) {
     DEBUG(dbgs() << "LV: Can't vectorize the instructions or CFG\n");
-    if (ORE->allowExtraAnalysis())
+    if (DoExtraAnalysis)
       Result = false;
     else
       return false;
@@ -5048,7 +5042,7 @@ bool LoopVectorizationLegality::canVectorize() {
   // Go over each instruction and look at memory deps.
   if (!canVectorizeMemory()) {
     DEBUG(dbgs() << "LV: Can't vectorize due to memory conflicts\n");
-    if (ORE->allowExtraAnalysis())
+    if (DoExtraAnalysis)
       Result = false;
     else
       return false;
@@ -5079,7 +5073,7 @@ bool LoopVectorizationLegality::canVectorize() {
               << "Too many SCEV assumptions need to be made and checked "
               << "at runtime");
     DEBUG(dbgs() << "LV: Too many SCEV checks needed.\n");
-    if (ORE->allowExtraAnalysis())
+    if (DoExtraAnalysis)
       Result = false;
     else
       return false;
@@ -6077,9 +6071,11 @@ void InterleavedAccessInfo::analyzeInterleaving(
 
   // Remove interleaved store groups with gaps.
   for (InterleaveGroup *Group : StoreGroups)
-    if (Group->getNumMembers() != Group->getFactor())
+    if (Group->getNumMembers() != Group->getFactor()) {
+      DEBUG(dbgs() << "LV: Invalidate candidate interleaved store group due "
+                      "to gaps.\n");
       releaseGroup(Group);
-
+    }
   // Remove interleaved groups with gaps (currently only loads) whose memory
   // accesses may wrap around. We have to revisit the getPtrStride analysis,
   // this time with ShouldCheckWrap=true, since collectConstStrideAccesses does
@@ -6132,6 +6128,8 @@ void InterleavedAccessInfo::analyzeInterleaving(
       // to look for a member at index factor - 1, since every group must have
       // a member at index zero.
       if (Group->isReverse()) {
+        DEBUG(dbgs() << "LV: Invalidate candidate interleaved group due to "
+                        "a reverse access with gaps.\n");
         releaseGroup(Group);
         continue;
       }
@@ -6215,25 +6213,20 @@ LoopVectorizationCostModel::computeFeasibleMaxVF(bool OptForSize,
   unsigned SmallestType, WidestType;
   std::tie(SmallestType, WidestType) = getSmallestAndWidestTypes();
   unsigned WidestRegister = TTI.getRegisterBitWidth(true);
-  unsigned MaxSafeDepDist = -1U;
 
-  // Get the maximum safe dependence distance in bits computed by LAA. If the
-  // loop contains any interleaved accesses, we divide the dependence distance
-  // by the maximum interleave factor of all interleaved groups. Note that
-  // although the division ensures correctness, this is a fairly conservative
-  // computation because the maximum distance computed by LAA may not involve
-  // any of the interleaved accesses.
-  if (Legal->getMaxSafeDepDistBytes() != -1U)
-    MaxSafeDepDist =
-        Legal->getMaxSafeDepDistBytes() * 8 / Legal->getMaxInterleaveFactor();
+  // Get the maximum safe dependence distance in bits computed by LAA.
+  // It is computed by MaxVF * sizeOf(type) * 8, where type is taken from
+  // the memory accesses that is most restrictive (involved in the smallest
+  // dependence distance).
+  unsigned MaxSafeRegisterWidth = Legal->getMaxSafeRegisterWidth();
 
-  WidestRegister =
-      ((WidestRegister < MaxSafeDepDist) ? WidestRegister : MaxSafeDepDist);
+  WidestRegister = std::min(WidestRegister, MaxSafeRegisterWidth);
+
   unsigned MaxVectorSize = WidestRegister / WidestType;
 
   DEBUG(dbgs() << "LV: The Smallest and Widest types: " << SmallestType << " / "
                << WidestType << " bits.\n");
-  DEBUG(dbgs() << "LV: The Widest register is: " << WidestRegister
+  DEBUG(dbgs() << "LV: The Widest register safe to use is: " << WidestRegister
                << " bits.\n");
 
   assert(MaxVectorSize <= 64 && "Did not expect to pack so many elements"
@@ -6241,6 +6234,7 @@ LoopVectorizationCostModel::computeFeasibleMaxVF(bool OptForSize,
   if (MaxVectorSize == 0) {
     DEBUG(dbgs() << "LV: The target has no vector registers.\n");
     MaxVectorSize = 1;
+    return MaxVectorSize;
   } else if (ConstTripCount && ConstTripCount < MaxVectorSize &&
              isPowerOf2_32(ConstTripCount)) {
     // We need to clamp the VF to be the ConstTripCount. There is no point in
@@ -6253,10 +6247,11 @@ LoopVectorizationCostModel::computeFeasibleMaxVF(bool OptForSize,
 
   unsigned MaxVF = MaxVectorSize;
   if (MaximizeBandwidth && !OptForSize) {
-    // Collect all viable vectorization factors.
+    // Collect all viable vectorization factors larger than the default MaxVF
+    // (i.e. MaxVectorSize).
     SmallVector<unsigned, 8> VFs;
     unsigned NewMaxVectorSize = WidestRegister / SmallestType;
-    for (unsigned VS = MaxVectorSize; VS <= NewMaxVectorSize; VS *= 2)
+    for (unsigned VS = MaxVectorSize * 2; VS <= NewMaxVectorSize; VS *= 2)
       VFs.push_back(VS);
 
     // For each VF calculate its register usage.

@@ -920,37 +920,6 @@ function(canonicalize_tool_name name output)
   set(${output} "${nameUPPER}" PARENT_SCOPE)
 endfunction(canonicalize_tool_name)
 
-macro(find_llvm_enabled_projects base_dir)
-  set(specific_project_list "${ARGN}")
-  if("${specific_project_list}" STREQUAL "")
-    file(GLOB entries "${base_dir}/*")
-    set(list_of_project_dirs "")
-    foreach(entry ${entries})
-      if(IS_DIRECTORY ${entry} AND EXISTS ${entry}/CMakeLists.txt)
-        get_filename_component(filename "${entry}" NAME)
-        list(APPEND specific_project_list "${filename}")
-      endif()
-    endforeach(entry)
-  endif()
-
-  foreach(proj ${specific_project_list})
-    canonicalize_tool_name(${proj} projUPPER)
-
-    if (${LLVM_PROJECT_${projUPPER}_ENABLED})
-      if (EXISTS "${base_dir}/${proj}")
-        message(WARNING "Project ${projUPPER} in ${base_dir}/${proj} previously found in ${LLVM_PROJECT_${projUPPER}_SOURCE_DIR}")
-      endif()
-      continue()
-    elseif(EXISTS "${LLVM_EXTERNAL_${projUPPER}_SOURCE_DIR}")
-      set(LLVM_PROJECT_${projUPPER}_ENABLED ON)
-      set(LLVM_PROJECT_${projUPPER}_SOURCE_DIR "${LLVM_EXTERNAL_${projUPPER}_SOURCE_DIR}")
-    elseif(EXISTS "${base_dir}/${proj}")
-      set(LLVM_PROJECT_${projUPPER}_ENABLED ON)
-      set(LLVM_PROJECT_${projUPPER}_SOURCE_DIR "${base_dir}/${proj}")
-    endif()
-  endforeach()
-endmacro()
-
 # Custom add_subdirectory wrapper
 # Takes in a project name (i.e. LLVM), the subdirectory name, and an optional
 # path if it differs from the name.
@@ -1204,7 +1173,65 @@ function(configure_lit_site_cfg input output)
     set(TARGET_TRIPLE "\"+config.target_triple+\"")
   endif()
 
+  string(CONCAT LIT_SITE_CFG_IN_FOOTER
+     "import lit.llvm\n"
+     "lit.llvm.initialize(lit_config, config)\n")
+
   configure_file(${input} ${output} @ONLY)
+  get_filename_component(INPUT_DIR ${input} DIRECTORY)
+  if (EXISTS "${INPUT_DIR}/lit.cfg")
+    set(PYTHON_STATEMENT "map_config('${INPUT_DIR}/lit.cfg', '${output}')")
+    get_property(LLVM_LIT_CONFIG_MAP GLOBAL PROPERTY LLVM_LIT_CONFIG_MAP)
+    set(LLVM_LIT_CONFIG_MAP "${LLVM_LIT_CONFIG_MAP}\n${PYTHON_STATEMENT}")
+    set_property(GLOBAL PROPERTY LLVM_LIT_CONFIG_MAP ${LLVM_LIT_CONFIG_MAP})
+  endif()
+endfunction()
+
+function(get_llvm_lit_path base_dir file_name)
+  cmake_parse_arguments(ARG "ALLOW_EXTERNAL" "" "" ${ARGN})
+
+  if (ARG_ALLOW_EXTERNAL)
+    set (LLVM_EXTERNAL_LIT "" CACHE STRING "Command used to spawn lit")
+    if (NOT "${LLVM_EXTERNAL_LIT}" STREQUAL "")
+      if (EXISTS ${LLVM_EXTERNAL_LIT})
+        get_filename_component(LIT_FILE_NAME ${LLVM_EXTERNAL_LIT} NAME)
+        get_filename_component(LIT_BASE_DIR ${LLVM_EXTERNAL_LIT} DIRECTORY)
+        set(${file_name} ${LIT_FILE_NAME} PARENT_SCOPE)
+        set(${base_dir} ${LIT_BASE_DIR} PARENT_SCOPE)
+        return()
+      else()
+        message(WARN "LLVM_EXTERNAL_LIT set to ${LLVM_EXTERNAL_LIT}, but the path does not exist.")
+      endif()
+    endif()
+  endif()
+
+  set(lit_file_name "llvm-lit")
+  if (WIN32 AND NOT CYGWIN)
+    # llvm-lit needs suffix.py for multiprocess to find a main module.
+    set(lit_file_name "${lit_file_name}.py")
+  endif ()
+  set(${file_name} ${lit_file_name} PARENT_SCOPE)
+
+  get_property(LLVM_LIT_BASE_DIR GLOBAL PROPERTY LLVM_LIT_BASE_DIR)
+  if (NOT "${LLVM_LIT_BASE_DIR}" STREQUAL "")
+    set(${base_dir} ${LLVM_LIT_BASE_DIR} PARENT_SCOPE)
+  endif()
+
+  # Allow individual projects to provide an override
+  if (NOT "${LLVM_LIT_OUTPUT_DIR}" STREQUAL "")
+    set(LLVM_LIT_BASE_DIR ${LLVM_LIT_OUTPUT_DIR})
+  elseif(NOT "${LLVM_RUNTIME_OUTPUT_INTDIR}" STREQUAL "")
+    set(LLVM_LIT_BASE_DIR ${LLVM_RUNTIME_OUTPUT_INTDIR})
+  else()
+    message(WARNING "Could not find suitable output location for llvm-lit."
+                    "Using default ${CMAKE_CURRENT_BINARY_DIR}/llvm-lit")
+    set(LLVM_LIT_BASE_DIR ${CMAKE_CURRENT_BINARY_DIR}/llvm-lit)
+  endif()
+
+  # Cache this so we don't have to do it again and have subsequent calls
+  # potentially disagree on the value.
+  set_property(GLOBAL PROPERTY LLVM_LIT_BASE_DIR ${LLVM_LIT_BASE_DIR})
+  set(${base_dir} ${LLVM_LIT_BASE_DIR} PARENT_SCOPE)
 endfunction()
 
 # A raw function to create a lit target. This is used to implement the testuite
@@ -1216,12 +1243,16 @@ function(add_lit_target target comment)
   if (NOT CMAKE_CFG_INTDIR STREQUAL ".")
     list(APPEND LIT_ARGS --param build_mode=${CMAKE_CFG_INTDIR})
   endif ()
-  if (EXISTS ${LLVM_MAIN_SRC_DIR}/utils/lit/lit.py)
-    set (LIT_COMMAND "${PYTHON_EXECUTABLE};${LLVM_MAIN_SRC_DIR}/utils/lit/lit.py"
-         CACHE STRING "Command used to spawn llvm-lit")
-  else()
-    find_program(LIT_COMMAND NAMES llvm-lit lit.py lit)
-  endif ()
+
+  # Get the path to the lit to *run* tests with.  This can be overriden by
+  # the user by specifying -DLLVM_EXTERNAL_LIT=<path-to-lit.py>
+  get_llvm_lit_path(
+    lit_base_dir
+    lit_file_name
+    ALLOW_EXTERNAL
+    )
+
+  set(LIT_COMMAND "${PYTHON_EXECUTABLE};${lit_base_dir}/${lit_file_name}")
   list(APPEND LIT_COMMAND ${LIT_ARGS})
   foreach(param ${ARG_PARAMS})
     list(APPEND LIT_COMMAND --param ${param})

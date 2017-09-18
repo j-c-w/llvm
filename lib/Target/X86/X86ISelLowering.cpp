@@ -4246,7 +4246,6 @@ static bool isTargetShuffle(unsigned Opcode) {
   case X86ISD::VSHLDQ:
   case X86ISD::VSRLDQ:
   case X86ISD::MOVLHPS:
-  case X86ISD::MOVLHPD:
   case X86ISD::MOVHLPS:
   case X86ISD::MOVLPS:
   case X86ISD::MOVLPD:
@@ -5024,8 +5023,8 @@ static SDValue extractSubVector(SDValue Vec, unsigned IdxVal, SelectionDAG &DAG,
 
   // If the input is a buildvector just emit a smaller one.
   if (Vec.getOpcode() == ISD::BUILD_VECTOR)
-    return DAG.getBuildVector(
-        ResultVT, dl, makeArrayRef(Vec->op_begin() + IdxVal, ElemsPerChunk));
+    return DAG.getBuildVector(ResultVT, dl,
+                              Vec->ops().slice(IdxVal, ElemsPerChunk));
 
   SDValue VecIdx = DAG.getIntPtrConstant(IdxVal, dl);
   return DAG.getNode(ISD::EXTRACT_SUBVECTOR, dl, ResultVT, Vec, VecIdx);
@@ -5714,7 +5713,6 @@ static bool getTargetShuffleMask(SDNode *N, MVT VT, bool AllowSentinelZero,
     DecodeMOVDDUPMask(VT, Mask);
     IsUnary = true;
     break;
-  case X86ISD::MOVLHPD:
   case X86ISD::MOVLPD:
   case X86ISD::MOVLPS:
     // Not yet implemented
@@ -7016,6 +7014,18 @@ X86TargetLowering::LowerBUILD_VECTORvXi1(SDValue Op, SelectionDAG &DAG) const {
     return DAG.getTargetConstant(1, dl, VT);
 
   if (ISD::isBuildVectorOfConstantSDNodes(Op.getNode())) {
+    if (VT == MVT::v64i1 && !Subtarget.is64Bit()) {
+      // Split the pieces.
+      SDValue Lower =
+          DAG.getBuildVector(MVT::v32i1, dl, Op.getNode()->ops().slice(0, 32));
+      SDValue Upper =
+          DAG.getBuildVector(MVT::v32i1, dl, Op.getNode()->ops().slice(32, 32));
+      // We have to manually lower both halves so getNode doesn't try to
+      // reassemble the build_vector.
+      Lower = LowerBUILD_VECTORvXi1(Lower, DAG);
+      Upper = LowerBUILD_VECTORvXi1(Upper, DAG);
+      return DAG.getNode(ISD::CONCAT_VECTORS, dl, MVT::v64i1, Lower, Upper);
+    }
     SDValue Imm = ConvertI1VectorToInteger(Op, DAG);
     if (Imm.getValueSizeInBits() == VT.getSizeInBits())
       return DAG.getBitcast(VT, Imm);
@@ -7814,15 +7824,13 @@ X86TargetLowering::LowerBUILD_VECTOR(SDValue Op, SelectionDAG &DAG) const {
   // For AVX-length vectors, build the individual 128-bit pieces and use
   // shuffles to put them in place.
   if (VT.is256BitVector() || VT.is512BitVector()) {
-    SmallVector<SDValue, 64> Ops(Op->op_begin(), Op->op_begin() + NumElems);
-
     EVT HVT = EVT::getVectorVT(*DAG.getContext(), ExtVT, NumElems/2);
 
     // Build both the lower and upper subvector.
     SDValue Lower =
-        DAG.getBuildVector(HVT, dl, makeArrayRef(&Ops[0], NumElems / 2));
+        DAG.getBuildVector(HVT, dl, Op->ops().slice(0, NumElems / 2));
     SDValue Upper = DAG.getBuildVector(
-        HVT, dl, makeArrayRef(&Ops[NumElems / 2], NumElems / 2));
+        HVT, dl, Op->ops().slice(NumElems / 2, NumElems /2));
 
     // Recreate the wider vector with the lower and upper part.
     if (VT.is256BitVector())
@@ -10715,6 +10723,15 @@ static SDValue lowerV4F32VectorShuffle(const SDLoc &DL, ArrayRef<int> Mask,
                          getV4X86ShuffleImm8ForMask(Mask, DL, DAG));
     }
 
+    // Use MOVLHPS/MOVHLPS to simulate unary shuffles. These are only valid
+    // in SSE1 because otherwise they are widened to v2f64 and never get here.
+    if (!Subtarget.hasSSE2()) {
+      if (isShuffleEquivalent(V1, V2, Mask, {0, 1, 0, 1}))
+        return DAG.getNode(X86ISD::MOVLHPS, DL, MVT::v4f32, V1, V1);
+      if (isShuffleEquivalent(V1, V2, Mask, {2, 3, 2, 3}))
+        return DAG.getNode(X86ISD::MOVHLPS, DL, MVT::v4f32, V1, V1);
+    }
+
     // Otherwise, use a straight shuffle of a single input vector. We pass the
     // input vector to both operands to simulate this with a SHUFPS.
     return DAG.getNode(X86ISD::SHUFP, DL, MVT::v4f32, V1, V1,
@@ -10747,11 +10764,14 @@ static SDValue lowerV4F32VectorShuffle(const SDLoc &DL, ArrayRef<int> Mask,
         return BlendPerm;
   }
 
-  // Use low/high mov instructions.
-  if (isShuffleEquivalent(V1, V2, Mask, {0, 1, 4, 5}))
-    return DAG.getNode(X86ISD::MOVLHPS, DL, MVT::v4f32, V1, V2);
-  if (isShuffleEquivalent(V1, V2, Mask, {2, 3, 6, 7}))
-    return DAG.getNode(X86ISD::MOVHLPS, DL, MVT::v4f32, V2, V1);
+  // Use low/high mov instructions. These are only valid in SSE1 because
+  // otherwise they are widened to v2f64 and never get here.
+  if (!Subtarget.hasSSE2()) {
+    if (isShuffleEquivalent(V1, V2, Mask, {0, 1, 4, 5}))
+      return DAG.getNode(X86ISD::MOVLHPS, DL, MVT::v4f32, V1, V2);
+    if (isShuffleEquivalent(V1, V2, Mask, {2, 3, 6, 7}))
+      return DAG.getNode(X86ISD::MOVHLPS, DL, MVT::v4f32, V2, V1);
+  }
 
   // Use dedicated unpack instructions for masks that match their pattern.
   if (SDValue V =
@@ -12141,6 +12161,10 @@ static SDValue lowerV2X128VectorShuffle(const SDLoc &DL, MVT VT, SDValue V1,
                                         const APInt &Zeroable,
                                         const X86Subtarget &Subtarget,
                                         SelectionDAG &DAG) {
+  // With AVX2, use VPERMQ/VPERMPD for unary shuffles to allow memory folding.
+  if (Subtarget.hasAVX2() && V2.isUndef())
+    return SDValue();
+
   SmallVector<int, 4> WidenedMask;
   if (!canWidenShuffleElements(Mask, WidenedMask))
     return SDValue();
@@ -12164,9 +12188,6 @@ static SDValue lowerV2X128VectorShuffle(const SDLoc &DL, MVT VT, SDValue V1,
     // subvector.
     bool OnlyUsesV1 = isShuffleEquivalent(V1, V2, Mask, {0, 1, 0, 1});
     if (OnlyUsesV1 || isShuffleEquivalent(V1, V2, Mask, {0, 1, 4, 5})) {
-      // With AVX2, use VPERMQ/VPERMPD to allow memory folding.
-      if (Subtarget.hasAVX2() && V2.isUndef())
-        return SDValue();
 
       // With AVX1, use vperm2f128 (below) to allow load folding. Otherwise,
       // this will likely become vinsertf128 which can't fold a 256-bit memop.
@@ -24607,7 +24628,6 @@ const char *X86TargetLowering::getTargetNodeName(unsigned Opcode) const {
   case X86ISD::SHUFP:              return "X86ISD::SHUFP";
   case X86ISD::SHUF128:            return "X86ISD::SHUF128";
   case X86ISD::MOVLHPS:            return "X86ISD::MOVLHPS";
-  case X86ISD::MOVLHPD:            return "X86ISD::MOVLHPD";
   case X86ISD::MOVHLPS:            return "X86ISD::MOVHLPS";
   case X86ISD::MOVLPS:             return "X86ISD::MOVLPS";
   case X86ISD::MOVLPD:             return "X86ISD::MOVLPD";
@@ -27153,13 +27173,18 @@ static bool matchUnaryVectorShuffle(MVT MaskVT, ArrayRef<int> Mask,
       }
       if (Match) {
         unsigned SrcSize = std::max(128u, NumDstElts * MaskEltSize);
-        SrcVT = MVT::getVectorVT(MaskVT.getScalarType(), SrcSize / MaskEltSize);
-        if (SrcVT != MaskVT)
+        MVT ScalarTy = MaskVT.isInteger() ? MaskVT.getScalarType() :
+                                            MVT::getIntegerVT(MaskEltSize);
+        SrcVT = MVT::getVectorVT(ScalarTy, SrcSize / MaskEltSize);
+
+        if (SrcVT.getSizeInBits() != MaskVT.getSizeInBits()) {
           V1 = extractSubVector(V1, 0, DAG, DL, SrcSize);
+          Shuffle = unsigned(X86ISD::VZEXT);
+        } else
+          Shuffle = unsigned(ISD::ZERO_EXTEND_VECTOR_INREG);
+
         DstVT = MVT::getIntegerVT(Scale * MaskEltSize);
         DstVT = MVT::getVectorVT(DstVT, NumDstElts);
-        Shuffle = SrcVT != MaskVT ? unsigned(X86ISD::VZEXT)
-                                  : unsigned(ISD::ZERO_EXTEND_VECTOR_INREG);
         return true;
       }
     }
@@ -35786,9 +35811,9 @@ static SDValue combineExtractSubvector(SDNode *N, SelectionDAG &DAG,
   }
 
   if (InVec.getOpcode() == ISD::BUILD_VECTOR)
-    return DAG.getBuildVector(OpVT, SDLoc(N),
-                              makeArrayRef(InVec.getNode()->op_begin() + IdxVal,
-                                           OpVT.getVectorNumElements()));
+    return DAG.getBuildVector(
+        OpVT, SDLoc(N),
+        InVec.getNode()->ops().slice(IdxVal, OpVT.getVectorNumElements()));
 
   return SDValue();
 }
