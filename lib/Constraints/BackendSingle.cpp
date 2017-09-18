@@ -2,17 +2,17 @@
 
 BackendSingle::BackendSingle(std::vector<SolverAtom::Value> h) : hits(std::move(h)), hit_start(hits.begin()) { }
 
-SkipResult BackendSingle::skip_invalid(SolverAtom::Value& c) 
+SkipResult BackendSingle::skip_invalid(SolverAtom::Value& c) const
 {
-    for(; hit_start != hits.end(); hit_start++)
+    for(auto ptr = hit_start; ptr != hits.end(); ptr++)
     {
-        if(*hit_start > c)
+        if(*ptr > c)
         {
-            c = *hit_start;
+            c = *ptr;
             return SkipResult::CHANGEPASS;
         }
 
-        if(*hit_start == c)
+        if(*ptr == c)
             return SkipResult::PASS;
     }
 

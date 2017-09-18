@@ -5,7 +5,9 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
 #include <unordered_map>
+#include <iostream>
 #include <sstream>
+#include <regex>
 
 class Expression
 {
@@ -192,7 +194,7 @@ Expression get_c_expr(llvm::Value* value, const std::unordered_map<llvm::Value*,
     {
         return int_cast->getValue().toString(10, true);
     }
-    else if(auto* float_cast = llvm::dyn_cast<llvm::ConstantFP>(value))
+    if(auto* float_cast = llvm::dyn_cast<llvm::ConstantFP>(value))
     {
         std::stringstream sstr;
         sstr<<float_cast->getValueAPF().convertToDouble();
@@ -474,5 +476,144 @@ std::string print_c_operator(llvm::Function& function)
 
 std::string print_pretty_c_operator(llvm::Function& function)
 {
-    return print_c_operator(function);
+    std::string input = print_c_operator(function);
+
+    std::regex decl_regex("  (int|double|float|long) ([a-zA-Z0-9_]+);");
+
+    std::vector<std::pair<std::string,std::string>> declarations;
+
+    for(auto it = std::sregex_iterator(input.begin(), input.end(), decl_regex); it != std::sregex_iterator(); ++it)
+    {
+        declarations.emplace_back((*it)[1], (*it)[2]);
+    }
+
+    for(const auto& declaration : declarations)
+    {
+        std::regex decldef_regex("  "+declaration.first+" "+declaration.second+";\n((?:  [^\n]*;\n)*)  "+declaration.second+" =");
+
+        input = std::regex_replace(input, decldef_regex, "$1  "+declaration.first+" "+declaration.second+" =");
+    }
+
+    std::regex var_regex("  (int|double|float|long) ([a-zA-Z0-9_]+) ");
+
+    std::vector<std::pair<std::string,std::string>> variables;
+
+    for(auto it = std::sregex_iterator(input.begin(), input.end(), var_regex); it != std::sregex_iterator(); ++it)
+    {
+        variables.emplace_back((*it)[1], (*it)[2]);
+    }
+
+    std::regex label_regex("([a-zA-Z0-9_]+):\n");
+
+    std::vector<std::string> labels_present;
+
+    for(auto it = std::sregex_iterator(input.begin(), input.end(), label_regex); it != std::sregex_iterator(); ++it)
+    {
+        labels_present.emplace_back((*it)[1]);
+    }
+
+    for(const auto& label : labels_present)
+    {
+        std::regex trivialgoto_regex("  goto "+label+";\n"+label);
+
+        input = std::regex_replace(input, trivialgoto_regex, label);
+    }
+
+    for(const auto& label : labels_present)
+    {
+        std::regex trivialgoto_regex(" goto "+label+";([^\n]*)\n"+label);
+
+        input = std::regex_replace(input, trivialgoto_regex, ";$1\n"+label);
+    }
+
+    std::regex trivialelse_regex(" else;");
+
+    input = std::regex_replace(input, trivialelse_regex, "");
+
+    std::regex goto_regex("goto ([a-zA-Z0-9_]+);");
+
+    std::vector<std::string> labels_targeted;
+
+    for(auto it = std::sregex_iterator(input.begin(), input.end(), goto_regex); it != std::sregex_iterator(); ++it)
+    {
+        labels_targeted.emplace_back((*it)[1]);
+    }
+
+    for(const auto& label : labels_present)
+    {
+        if(std::find(labels_targeted.begin(), labels_targeted.end(), label) == labels_targeted.end())
+        {
+            std::regex triviallabel_regex(label+":\n");
+
+            input = std::regex_replace(input, triviallabel_regex, "");
+        }
+    }
+
+    std::regex plusminus_regex("\\+-");
+
+    input = std::regex_replace(input, plusminus_regex, "-");
+
+    std::regex minusminus_regex("\\+-");
+
+    input = std::regex_replace(input, minusminus_regex, "+");
+
+    for(const auto& label : labels_present)
+    {
+        std::regex ifblock_regex("if\\(([^\n]*)\\) goto "+label+";\n((?:  [^\n]*;\n)*)"+label);
+
+        input = std::regex_replace(input, ifblock_regex, "if($1); else {\n$2  }\n"+label);
+    }
+
+    for(const auto& label : labels_present)
+    {
+        std::regex ifblock_regex("; else goto "+label+";\n((?:  [^\n]*;\n)*)"+label);
+
+        input = std::regex_replace(input, ifblock_regex, "{\n$1  }\n"+label);
+    }
+
+    labels_targeted.clear();
+
+    for(auto it = std::sregex_iterator(input.begin(), input.end(), goto_regex); it != std::sregex_iterator(); ++it)
+    {
+        labels_targeted.emplace_back((*it)[1]);
+    }
+
+    for(const auto& label : labels_present)
+    {
+        if(std::find(labels_targeted.begin(), labels_targeted.end(), label) == labels_targeted.end())
+        {
+            std::regex triviallabel_regex(label+":\n");
+
+            input = std::regex_replace(input, triviallabel_regex, "");
+        }
+    }
+
+    std::regex redundcast_regex("\\[\\(long\\)\\(int\\)");
+
+    input = std::regex_replace(input, redundcast_regex, "[(int)");
+
+    std::regex emptyreturn_regex("  return ;\n\\}");
+
+    input = std::regex_replace(input, emptyreturn_regex, "}");
+
+    std::regex intrinsic_regex("llvm.(fabs).f64");
+
+    input = std::regex_replace(input, intrinsic_regex, "$1");
+
+    std::regex onlyelse_regex("if\\(([^\n]*)\\); else");
+
+    input = std::regex_replace(input, onlyelse_regex, "if(!($1))");
+
+    std::vector<std::pair<std::string,std::string>> operator_pairs{{"<", ">="}, {">", "<="}, {"==", "!="},
+                                                                   {">=", "<"}, {"<=", ">"}, {"!=", "=="}};
+
+    for(const auto& pair : operator_pairs)
+    {
+        std::regex simplify_regex("\\!\\(([a-zA-Z0-9_]+)"+pair.first+"([a-zA-Z0-9_]+)\\)");
+
+        input = std::regex_replace(input, simplify_regex, "$1"+pair.second+"$2");
+    }
+
+
+    return input;
 }

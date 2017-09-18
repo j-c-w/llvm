@@ -5,7 +5,7 @@ BackendAnd::BackendAnd(std::vector<std::unique_ptr<SolverAtom>> c)
     constraints_tail(std::make_move_iterator(c.begin() + 1),
                      std::make_move_iterator(c.end())) { }
 
-SkipResult BackendAnd::skip_invalid(SolverAtom::Value& c)
+SkipResult BackendAnd::skip_invalid(SolverAtom::Value& c) const
 {
     SkipResult result = constraints_head->skip_invalid(c);
 

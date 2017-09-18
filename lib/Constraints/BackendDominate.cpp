@@ -13,7 +13,7 @@ BackendDominate<reverse,allow_unstrict>::BackendDominate(std::array<unsigned,3> 
 
 template<bool reverse,bool allow_unstrict>
 template<unsigned idx1>
-SkipResult BackendDominate<reverse,allow_unstrict>::skip_invalid(unsigned idx2, SolverAtom::Value& c)
+SkipResult BackendDominate<reverse,allow_unstrict>::skip_invalid(unsigned idx2, SolverAtom::Value& c) const
 {
     if(c >= graph_forw.size() && c != UINT_MAX-1)
     {
@@ -88,18 +88,18 @@ SkipResult BackendDominate<reverse,allow_unstrict>::skip_invalid(unsigned idx2, 
 }
 
 template      class BackendDominate<false,false>;
-template SkipResult BackendDominate<false,false>::skip_invalid<0>(unsigned,SolverAtom::Value&);
-template SkipResult BackendDominate<false,false>::skip_invalid<1>(unsigned,SolverAtom::Value&);
-template SkipResult BackendDominate<false,false>::skip_invalid<2>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<false,false>::skip_invalid<0>(unsigned,SolverAtom::Value&) const;
+template SkipResult BackendDominate<false,false>::skip_invalid<1>(unsigned,SolverAtom::Value&) const;
+template SkipResult BackendDominate<false,false>::skip_invalid<2>(unsigned,SolverAtom::Value&) const;
 template      class BackendDominate<false,true>;
-template SkipResult BackendDominate<false,true>::skip_invalid<0>(unsigned,SolverAtom::Value&);
-template SkipResult BackendDominate<false,true>::skip_invalid<1>(unsigned,SolverAtom::Value&);
-template SkipResult BackendDominate<false,true>::skip_invalid<2>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<false,true>::skip_invalid<0>(unsigned,SolverAtom::Value&) const;
+template SkipResult BackendDominate<false,true>::skip_invalid<1>(unsigned,SolverAtom::Value&) const;
+template SkipResult BackendDominate<false,true>::skip_invalid<2>(unsigned,SolverAtom::Value&) const;
 template      class BackendDominate<true,false>;
-template SkipResult BackendDominate<true,false>::skip_invalid<0>(unsigned,SolverAtom::Value&);
-template SkipResult BackendDominate<true,false>::skip_invalid<1>(unsigned,SolverAtom::Value&);
-template SkipResult BackendDominate<true,false>::skip_invalid<2>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<true,false>::skip_invalid<0>(unsigned,SolverAtom::Value&) const;
+template SkipResult BackendDominate<true,false>::skip_invalid<1>(unsigned,SolverAtom::Value&) const;
+template SkipResult BackendDominate<true,false>::skip_invalid<2>(unsigned,SolverAtom::Value&) const;
 template      class BackendDominate<true,true>;
-template SkipResult BackendDominate<true,true>::skip_invalid<0>(unsigned,SolverAtom::Value&);
-template SkipResult BackendDominate<true,true>::skip_invalid<1>(unsigned,SolverAtom::Value&);
-template SkipResult BackendDominate<true,true>::skip_invalid<2>(unsigned,SolverAtom::Value&);
+template SkipResult BackendDominate<true,true>::skip_invalid<0>(unsigned,SolverAtom::Value&) const;
+template SkipResult BackendDominate<true,true>::skip_invalid<1>(unsigned,SolverAtom::Value&) const;
+template SkipResult BackendDominate<true,true>::skip_invalid<2>(unsigned,SolverAtom::Value&) const;

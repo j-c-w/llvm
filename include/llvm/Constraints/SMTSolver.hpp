@@ -26,7 +26,7 @@ public:
 
     virtual ~SolverAtom() { }
 
-    virtual SkipResult skip_invalid(Value& c) = 0;
+    virtual SkipResult skip_invalid(Value& c) const = 0;
 
     virtual void begin() = 0;
     virtual void fixate(Value c) = 0;

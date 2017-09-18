@@ -7,7 +7,7 @@ BackendCollect::BackendCollect(std::array<unsigned,2>, std::vector<std::unique_p
 { }
 
 template<unsigned idx1>
-SkipResult BackendCollect::skip_invalid(unsigned idx2, SolverAtom::Value &c)
+SkipResult BackendCollect::skip_invalid(unsigned idx2, SolverAtom::Value &c) const
 {
     if(idx1 == 0)
     {
@@ -99,8 +99,8 @@ void BackendCollect::resume(unsigned idx2)
     }
 }
 
-template SkipResult BackendCollect::skip_invalid<0>(unsigned,SolverAtom::Value&);
-template SkipResult BackendCollect::skip_invalid<1>(unsigned,SolverAtom::Value&);
+template SkipResult BackendCollect::skip_invalid<0>(unsigned,SolverAtom::Value&) const;
+template SkipResult BackendCollect::skip_invalid<1>(unsigned,SolverAtom::Value&) const;
 template       void BackendCollect::begin<0>(unsigned);
 template       void BackendCollect::begin<1>(unsigned);
 template       void BackendCollect::fixate<0>(unsigned,SolverAtom::Value);

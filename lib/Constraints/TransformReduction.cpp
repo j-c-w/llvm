@@ -25,7 +25,7 @@ void transform_reduction_operator(Function& function, std::vector<std::map<std::
     for(const auto& solution : scalars)
     {
         auto find_old_value      = solution.find("old_value");
-        auto find_updated_scalar = solution.find("update_expr.output");
+        auto find_updated_scalar = solution.find("kernel.output");
 
         if(find_old_value      != solution.end() && find_old_value->second      != nullptr &&
            find_updated_scalar != solution.end() && find_updated_scalar->second != nullptr)
@@ -39,7 +39,7 @@ void transform_reduction_operator(Function& function, std::vector<std::map<std::
     for(const auto& solution : histos)
     {
         auto find_store_instr    = solution.find("store_instr");
-        auto find_histobin_instr = solution.find("index_expr.output");
+        auto find_histobin_instr = solution.find("indexkernel.output");
         auto find_load_instr     = solution.find("old_value");
 
         if(find_store_instr    != solution.end() && find_store_instr->second    != nullptr &&
@@ -67,7 +67,7 @@ void transform_reduction_operator(Function& function, std::vector<std::map<std::
         for(unsigned j = 0; j < 30; j++)
         {
             std::stringstream sstr;
-            sstr<<"update_expr.input["<<j<<"]";
+            sstr<<"kernel.input["<<j<<"]";
 
             auto find_input_j = solution.find(sstr.str());
 
@@ -87,7 +87,7 @@ void transform_reduction_operator(Function& function, std::vector<std::map<std::
         for(unsigned j = 0; j < 30; j++)
         {
             std::stringstream sstr;
-            sstr<<"update_expr.input["<<j<<"]";
+            sstr<<"kernel.input["<<j<<"]";
 
             auto find_input_j = solution.find(sstr.str());
 
@@ -103,7 +103,7 @@ void transform_reduction_operator(Function& function, std::vector<std::map<std::
         for(unsigned j = 0; j < 30; j++)
         {
             std::stringstream sstr;
-            sstr<<"index_expr.input["<<j<<"]";
+            sstr<<"indexkernel.input["<<j<<"]";
 
             auto find_input_j = solution.find(sstr.str());
 

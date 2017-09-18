@@ -6,7 +6,7 @@
 BackendOr::BackendOr(std::array<unsigned,1>, std::vector<std::vector<std::unique_ptr<SolverAtom>>> c)
           : constraints(std::move(c)), disabled_since(constraints.empty()?0:constraints.front().size(), 0) { }
 
-SkipResult BackendOr::skip_invalid(unsigned idx2, SolverAtom::Value& c)
+SkipResult BackendOr::skip_invalid(unsigned idx2, SolverAtom::Value& c) const
 {
     SkipResult result = SkipResult::FAIL;
     SolverAtom::Value min = std::numeric_limits<SolverAtom::Value>::max();

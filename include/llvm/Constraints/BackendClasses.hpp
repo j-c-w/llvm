@@ -15,7 +15,7 @@ class BackendAnd : public SolverAtom
 public:
     BackendAnd(std::vector<std::unique_ptr<SolverAtom>> c);
 
-    SkipResult skip_invalid(SolverAtom::Value& c) final;
+    SkipResult skip_invalid(SolverAtom::Value& c) const final;
 
     void begin() final;
     void fixate(SolverAtom::Value c) final;
@@ -31,7 +31,7 @@ class BackendOr
 public:
     BackendOr(std::array<unsigned,1>, std::vector<std::vector<std::unique_ptr<SolverAtom>>> c);
 
-    SkipResult skip_invalid(unsigned idx, SolverAtom::Value& c);
+    SkipResult skip_invalid(unsigned idx, SolverAtom::Value& c) const;
 
     void begin (unsigned idx);
     void fixate(unsigned idx, SolverAtom::Value c);
@@ -48,7 +48,7 @@ public:
     BackendCollect(std::array<unsigned,2> size, std::vector<std::unique_ptr<SolverAtom>> nloc,
                                                 std::vector<std::unique_ptr<SolverAtom>> loc);
 
-    template<unsigned idx1> SkipResult skip_invalid(unsigned idx2, SolverAtom::Value &c);
+    template<unsigned idx1> SkipResult skip_invalid(unsigned idx2, SolverAtom::Value &c) const;
 
     template<unsigned idx1> void begin (unsigned idx2);
     template<unsigned idx1> void fixate(unsigned idx2, SolverAtom::Value c);
@@ -67,15 +67,27 @@ class BackendSingle : public SolverAtom
 public:
     BackendSingle(std::vector<SolverAtom::Value> hits);
 
-    SkipResult skip_invalid(SolverAtom::Value& c) final;
+    SkipResult skip_invalid(SolverAtom::Value& c) const final;
 
-    void begin ()                    final { hit_start = hits.begin(); }
-    void fixate(SolverAtom::Value c) final { }
-    void resume()                    final { }
+    void begin() final { hit_start = hits.begin(); }
+
+    void fixate(SolverAtom::Value c) final
+    {
+        for(auto ptr = hit_start; ptr != hits.end(); ptr++)
+        {
+            if(*ptr >= c)
+            {
+                hit_start = ptr;
+                return;
+            }
+        }
+    }
+
+    void resume() final { }
 
 private:
-    std::vector<SolverAtom::Value>                          hits;
-    typename std::vector<SolverAtom::Value>::const_iterator hit_start;
+    std::vector<SolverAtom::Value>                 hits;
+    std::vector<SolverAtom::Value>::const_iterator hit_start;
 };
 
 class BackendEdge
@@ -84,17 +96,33 @@ public:
     using Graph = std::vector<std::vector<unsigned>>;
     BackendEdge(const Graph& gf, const Graph& gb);
 
-    template<unsigned idx> SkipResult skip_invalid(unsigned& c);
+    template<unsigned idx> SkipResult skip_invalid(unsigned& c) const;
 
-    template<unsigned idx> void begin ()           { if(amount_completed == 1) dst_ptr = &src_ptr->front(); }
-    template<unsigned idx> void fixate(unsigned c) { if(++amount_completed == 1) src_ptr = &std::get<idx>(graphs).get()[c]; }
-    template<unsigned idx> void resume()           { amount_completed--; }
+    template<unsigned idx> void begin() { if(amount_completed == 1) dst_ptr = src_ptr->begin(); }
+
+    template<unsigned idx> void fixate(unsigned c)
+    {
+        if(++amount_completed == 1) src_ptr = std::get<idx>(graphs).get().begin() + c;
+        else
+        {
+            for(auto ptr = dst_ptr; ptr != src_ptr->end(); ptr++)
+            {
+                if(*ptr >= c)
+                {
+                    dst_ptr = ptr;
+                    return;
+                }
+            }
+        }
+    }
+
+    template<unsigned idx> void resume() { amount_completed--; }
 
 private:
     std::array<std::reference_wrapper<const Graph>,2> graphs;
     unsigned                                          amount_completed;
-    const std::vector<unsigned>*                      src_ptr;
-    const unsigned*                                   dst_ptr;
+    Graph::const_iterator                             src_ptr;
+    std::vector<unsigned>::const_iterator             dst_ptr;
 };
 
 template<bool lt, bool eq, bool gt>
@@ -103,10 +131,10 @@ class BackendOrdering
 public:
     BackendOrdering();
 
-    template<unsigned idx> SkipResult skip_invalid(SolverAtom::Value& c);
+    template<unsigned idx> SkipResult skip_invalid(SolverAtom::Value& c) const;
 
     template<unsigned idx> void begin ()                    { }
-    template<unsigned idx> void fixate(SolverAtom::Value c) { amount_completed++; }
+    template<unsigned idx> void fixate(SolverAtom::Value c) { if(amount_completed++ == 0) other_value = c; }
     template<unsigned idx> void resume()                    { amount_completed--; }
 
 private:
@@ -119,7 +147,7 @@ class BackendIncomingValue
 public:
     BackendIncomingValue(const FunctionWrap& w);
 
-    template<unsigned idx> SkipResult skip_invalid(unsigned& c);
+    template<unsigned idx> SkipResult skip_invalid(unsigned& c) const;
 
     template<unsigned idx> void begin () { }
     template<unsigned idx> void fixate(unsigned c);
@@ -136,7 +164,7 @@ class BackendDominate
 public:
     BackendDominate(std::array<unsigned,3> size, const std::vector<std::vector<unsigned>>& graph_forw);
 
-    template<unsigned idx1> SkipResult skip_invalid(unsigned idx2, unsigned& c);
+    template<unsigned idx1> SkipResult skip_invalid(unsigned idx2, unsigned& c) const;
 
     template<unsigned idx1> void begin (unsigned) { }
 
@@ -162,7 +190,7 @@ public:
     }
     
 private:
-    GraphEngine                         graph_engine;
+    mutable GraphEngine                 graph_engine;
     std::vector<std::vector<unsigned>>  graph_forw;
     std::array<unsigned,3>              used_values;
     std::array<unsigned,3>              remaining_values;

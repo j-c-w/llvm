@@ -5,13 +5,10 @@ BackendOrdering<lt,eq,gt>::BackendOrdering() : amount_completed(0) { }
 
 template<bool lt, bool eq, bool gt>
 template<unsigned idx>
-SkipResult BackendOrdering<lt,eq,gt>::skip_invalid(SolverAtom::Value& c)
+SkipResult BackendOrdering<lt,eq,gt>::skip_invalid(SolverAtom::Value& c) const
 {
     if(!amount_completed)
-    {
-        other_value = c;
         return SkipResult::PASS;
-    }
 
     if(c <= other_value)
     {
@@ -44,26 +41,26 @@ SkipResult BackendOrdering<lt,eq,gt>::skip_invalid(SolverAtom::Value& c)
 }
 
 template      class BackendOrdering<false,false,false>;
-template SkipResult BackendOrdering<false,false,false>::skip_invalid<0>(SolverAtom::Value&);
-template SkipResult BackendOrdering<false,false,false>::skip_invalid<1>(SolverAtom::Value&);
+template SkipResult BackendOrdering<false,false,false>::skip_invalid<0>(SolverAtom::Value&) const;
+template SkipResult BackendOrdering<false,false,false>::skip_invalid<1>(SolverAtom::Value&) const;
 template      class BackendOrdering<false,false,true>;
-template SkipResult BackendOrdering<false,false,true>::skip_invalid<0>(SolverAtom::Value&);
-template SkipResult BackendOrdering<false,false,true>::skip_invalid<1>(SolverAtom::Value&);
+template SkipResult BackendOrdering<false,false,true>::skip_invalid<0>(SolverAtom::Value&) const;
+template SkipResult BackendOrdering<false,false,true>::skip_invalid<1>(SolverAtom::Value&) const;
 template      class BackendOrdering<false,true,false>;
-template SkipResult BackendOrdering<false,true,false>::skip_invalid<0>(SolverAtom::Value&);
-template SkipResult BackendOrdering<false,true,false>::skip_invalid<1>(SolverAtom::Value&);
+template SkipResult BackendOrdering<false,true,false>::skip_invalid<0>(SolverAtom::Value&) const;
+template SkipResult BackendOrdering<false,true,false>::skip_invalid<1>(SolverAtom::Value&) const;
 template      class BackendOrdering<false,true,true>;
-template SkipResult BackendOrdering<false,true,true>::skip_invalid<0>(SolverAtom::Value&);
-template SkipResult BackendOrdering<false,true,true>::skip_invalid<1>(SolverAtom::Value&);
+template SkipResult BackendOrdering<false,true,true>::skip_invalid<0>(SolverAtom::Value&) const;
+template SkipResult BackendOrdering<false,true,true>::skip_invalid<1>(SolverAtom::Value&) const;
 template      class BackendOrdering<true,false,false>;
-template SkipResult BackendOrdering<true,false,false>::skip_invalid<0>(SolverAtom::Value&);
-template SkipResult BackendOrdering<true,false,false>::skip_invalid<1>(SolverAtom::Value&);
+template SkipResult BackendOrdering<true,false,false>::skip_invalid<0>(SolverAtom::Value&) const;
+template SkipResult BackendOrdering<true,false,false>::skip_invalid<1>(SolverAtom::Value&) const;
 template      class BackendOrdering<true,false,true>;
-template SkipResult BackendOrdering<true,false,true>::skip_invalid<0>(SolverAtom::Value&);
-template SkipResult BackendOrdering<true,false,true>::skip_invalid<1>(SolverAtom::Value&);
+template SkipResult BackendOrdering<true,false,true>::skip_invalid<0>(SolverAtom::Value&) const;
+template SkipResult BackendOrdering<true,false,true>::skip_invalid<1>(SolverAtom::Value&) const;
 template      class BackendOrdering<true,true,false>;
-template SkipResult BackendOrdering<true,true,false>::skip_invalid<0>(SolverAtom::Value&);
-template SkipResult BackendOrdering<true,true,false>::skip_invalid<1>(SolverAtom::Value&);
+template SkipResult BackendOrdering<true,true,false>::skip_invalid<0>(SolverAtom::Value&) const;
+template SkipResult BackendOrdering<true,true,false>::skip_invalid<1>(SolverAtom::Value&) const;
 template      class BackendOrdering<true,true,true>;
-template SkipResult BackendOrdering<true,true,true>::skip_invalid<0>(SolverAtom::Value&);
-template SkipResult BackendOrdering<true,true,true>::skip_invalid<1>(SolverAtom::Value&);
+template SkipResult BackendOrdering<true,true,true>::skip_invalid<0>(SolverAtom::Value&) const;
+template SkipResult BackendOrdering<true,true,true>::skip_invalid<1>(SolverAtom::Value&) const;

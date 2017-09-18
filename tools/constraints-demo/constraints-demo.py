@@ -243,10 +243,10 @@ def generate_reduction(solutions):
                 part4 += ",in"+str(baseptr_idx)
 
             try:
-                access_idx = accessess.index(read["access_pointer"])
+                access_idx = accessess.index(read["address"])
             except ValueError:
                 access_idx = len(accessess)
-                accessess.append(read["access_pointer"])
+                accessess.append(read["address"])
 
                 access_pattern = "i"
                 if "addend" in read["index_add"][0]:

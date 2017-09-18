@@ -5,7 +5,7 @@ BackendIncomingValue::BackendIncomingValue(const FunctionWrap& w)
                     : wrap(w), values(nullptr,nullptr,nullptr) { }
 
 template<unsigned idx>
-SkipResult BackendIncomingValue::skip_invalid(unsigned& c)
+SkipResult BackendIncomingValue::skip_invalid(unsigned& c) const
 {
     if(auto value = c < wrap.size() ? wrap[c] : nullptr)
     {
@@ -57,6 +57,6 @@ void BackendIncomingValue::fixate<2>(unsigned c)
     std::get<2>(values) = llvm::dyn_cast<llvm::PHINode>(wrap[c]);
 }
 
-template SkipResult BackendIncomingValue::skip_invalid<0>(unsigned&);
-template SkipResult BackendIncomingValue::skip_invalid<1>(unsigned&);
-template SkipResult BackendIncomingValue::skip_invalid<2>(unsigned&);
+template SkipResult BackendIncomingValue::skip_invalid<0>(unsigned&) const;
+template SkipResult BackendIncomingValue::skip_invalid<1>(unsigned&) const;
+template SkipResult BackendIncomingValue::skip_invalid<2>(unsigned&) const;
