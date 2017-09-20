@@ -1,6 +1,6 @@
 #ifndef _BACKEND_SELECTOR_HPP_
 #define _BACKEND_SELECTOR_HPP_
-#include "llvm/Constraints/SMTSolver.hpp"
+#include "llvm/Constraints/Solver.hpp"
 #include <memory>
 
 template<typename Backend, unsigned idx>

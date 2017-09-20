@@ -1,5 +1,5 @@
 #include "llvm/Constraints/Solution.hpp"
-#include "llvm/Constraints/SMTSolver.hpp"
+#include "llvm/Constraints/Solver.hpp"
 #include "llvm/Constraints/Constraint.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
 #include "llvm/Support/raw_ostream.h"
@@ -10,7 +10,7 @@
 #include <map>
 
 std::vector<Solution> Solution::Find(const Constraint& constraint, llvm::Function& function,
-                                                 unsigned max_solutions)
+                                     unsigned max_solutions)
 {
     FunctionWrap wrap(function);
     std::vector<std::unique_ptr<SolverAtom>> specials;

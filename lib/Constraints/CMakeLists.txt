@@ -1,6 +1,6 @@
 add_llvm_library(LLVMConstraints
 
-  SMTSolver.cpp
+  Solver.cpp
   Solution.cpp
   FunctionWrap.cpp
 

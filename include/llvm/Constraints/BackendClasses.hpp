@@ -1,7 +1,7 @@
 #ifndef _BACKEND_CLASSES_HPP_
 #define _BACKEND_CLASSES_HPP_
 #include "llvm/IR/Instructions.h"
-#include "llvm/Constraints/SMTSolver.hpp"
+#include "llvm/Constraints/Solver.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
 #include "llvm/Constraints/GraphEngine.hpp"
 #include <vector>
