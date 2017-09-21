@@ -213,4 +213,79 @@ private:
     unsigned number_origins;
 };
 
+using BackendUnused = BackendConstantValue<UINT_MAX-1>;
+
+using BackendIntegerType = BackendLLVMType<&llvm::Type::isIntegerTy>;
+using BackendFloatType   = BackendLLVMType<&llvm::Type::isFloatTy>;
+using BackendPointerType = BackendLLVMType<&llvm::Type::isPointerTy>;
+
+using BackendPHIInst    = BackendOpcode<llvm::Instruction::PHI>;
+using BackendStoreInst  = BackendOpcode<llvm::Instruction::Store>;
+using BackendLoadInst   = BackendOpcode<llvm::Instruction::Load>;
+using BackendReturnInst = BackendOpcode<llvm::Instruction::Ret>;
+using BackendBranchInst = BackendOpcode<llvm::Instruction::Br>;
+using BackendAddInst    = BackendOpcode<llvm::Instruction::Add>;
+using BackendSubInst    = BackendOpcode<llvm::Instruction::Sub>;
+using BackendMulInst    = BackendOpcode<llvm::Instruction::Mul>;
+using BackendFAddInst   = BackendOpcode<llvm::Instruction::FAdd>;
+using BackendFSubInst   = BackendOpcode<llvm::Instruction::FSub>;
+using BackendFMulInst   = BackendOpcode<llvm::Instruction::FMul>;
+using BackendFDivInst   = BackendOpcode<llvm::Instruction::FDiv>;
+using BackendBitOrInst  = BackendOpcode<llvm::Instruction::Or>;
+using BackendLShiftInst = BackendOpcode<llvm::Instruction::Shl>;
+using BackendSelectInst = BackendOpcode<llvm::Instruction::Select>;
+using BackendSExtInst   = BackendOpcode<llvm::Instruction::SExt>;
+using BackendZExtInst   = BackendOpcode<llvm::Instruction::ZExt>;
+using BackendGEPInst    = BackendOpcode<llvm::Instruction::GetElementPtr>;
+using BackendICmpInst   = BackendOpcode<llvm::Instruction::ICmp>;
+
+using BackendSame     = BackendOrderWrap<false,true,false>;
+using BackendDistinct = BackendOrderWrap<true,false,true>;
+using BackendOrder    = BackendOrderWrap<true,false,false>;
+
+using BackendDFGEdge  = BackendLLVMEdge<&FunctionWrap::dfg, &FunctionWrap::rdfg>;
+using BackendCFGEdge  = BackendLLVMEdge<&FunctionWrap::cfg, &FunctionWrap::rcfg>;
+using BackendCDGEdge  = BackendLLVMEdge<&FunctionWrap::cdg, &FunctionWrap::rcdg>;
+using BackendPDGEdge  = BackendLLVMEdge<&FunctionWrap::pdg, &FunctionWrap::rpdg>;
+
+using BackendFirstOperand  = BackendLLVMOperand<0>;
+using BackendSecondOperand = BackendLLVMOperand<1>;
+using BackendThirdOperand  = BackendLLVMOperand<2>;
+using BackendFourthOperand = BackendLLVMOperand<3>;
+
+using BackendDFGDominate       = BackendLLVMDominate<false, true,  0, &FunctionWrap:: dfg>;
+using BackendDFGPostdom        = BackendLLVMDominate<false, true,  1, &FunctionWrap::rdfg>;
+using BackendDFGDominateStrict = BackendLLVMDominate<false, false, 0, &FunctionWrap:: dfg>;
+using BackendDFGPostdomStrict  = BackendLLVMDominate<false, false, 1, &FunctionWrap::rdfg>;
+
+using BackendCFGDominate       = BackendLLVMDominate<false, true,  2, &FunctionWrap:: cfg>;
+using BackendCFGPostdom        = BackendLLVMDominate<false, true,  3, &FunctionWrap::rcfg>;
+using BackendCFGDominateStrict = BackendLLVMDominate<false, false, 2, &FunctionWrap:: cfg>;
+using BackendCFGPostdomStrict  = BackendLLVMDominate<false, false, 3, &FunctionWrap::rcfg>;
+
+using BackendPDGDominate       = BackendLLVMDominate<false, true,  4, &FunctionWrap:: pdg>;
+using BackendPDGPostdom        = BackendLLVMDominate<false, true,  5, &FunctionWrap::rpdg>;
+using BackendPDGDominateStrict = BackendLLVMDominate<false, false, 4, &FunctionWrap:: pdg>;
+using BackendPDGPostdomStrict  = BackendLLVMDominate<false, false, 5, &FunctionWrap::rpdg>;
+
+using BackendDFGNotDominate       = BackendLLVMDominate<true, true,  0, &FunctionWrap:: dfg>;
+using BackendDFGNotPostdom        = BackendLLVMDominate<true, true,  1, &FunctionWrap::rdfg>;
+using BackendDFGNotDominateStrict = BackendLLVMDominate<true, false, 0, &FunctionWrap:: dfg>;
+using BackendDFGNotPostdomStrict  = BackendLLVMDominate<true, false, 1, &FunctionWrap::rdfg>;
+
+using BackendCFGNotDominate       = BackendLLVMDominate<true, true,  2, &FunctionWrap:: cfg>;
+using BackendCFGNotPostdom        = BackendLLVMDominate<true, true,  3, &FunctionWrap::rcfg>;
+using BackendCFGNotDominateStrict = BackendLLVMDominate<true, false, 2, &FunctionWrap:: cfg>;
+using BackendCFGNotPostdomStrict  = BackendLLVMDominate<true, false, 3, &FunctionWrap::rcfg>;
+
+using BackendPDGNotDominate       = BackendLLVMDominate<true, true,  4, &FunctionWrap:: pdg>;
+using BackendPDGNotPostdom        = BackendLLVMDominate<true, true,  5, &FunctionWrap::rpdg>;
+using BackendPDGNotDominateStrict = BackendLLVMDominate<true, false, 4, &FunctionWrap:: pdg>;
+using BackendPDGNotPostdomStrict  = BackendLLVMDominate<true, false, 5, &FunctionWrap::rpdg>;
+
+using BackendCFGBlocked = BackendLLVMDominate<false, false, UINT_MAX, &FunctionWrap::cfg>;
+using BackendDFGBlocked = BackendLLVMDominate<false, false, UINT_MAX, &FunctionWrap::dfg>;
+using BackendPDGBlocked = BackendLLVMDominate<false, false, UINT_MAX, &FunctionWrap::pdg>;
+
+
 #endif

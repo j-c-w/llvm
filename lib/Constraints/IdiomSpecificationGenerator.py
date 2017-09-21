@@ -489,74 +489,6 @@ def chunk_strings(stringlist, length):
 def slot_list_string(syntax):
     return "std::vector<std::string>{\n"+indent_code("  ", chunk_strings(generate_cpp_slotlist(syntax), 80)+"}")
 
-temp_counter = 0
-def generate_cpp_constraint(syntax):
-    global temp_counter
-    if syntax[0] in ["conjunction", "disjunction"]:
-#        branch_codes = [generate_cpp_constraint(branch) for branch in syntax[1:]]
-#        code_blocks  = [part for code in branch_codes for part in code.split("\n\n")[:-1]]
-#        branch_exprs = (code.split("\n\n")[-1] for code in branch_codes)
-#        classname    = "Constraint"+{"con":"And", "dis":"Or"}[syntax[0][:3]]
-
-#        new_block = ["vector<Constraint*> temp"+str(temp_counter)+";"]
-#        for expr in branch_exprs:
-#            new_block.append("temp"+str(temp_counter)+".push_back("+expr+");")
-
-#        code_blocks.append("\n".join(new_block))
-
-#        expr_result  = "new "+classname+"(move(temp"+str(temp_counter)+"))"
-
-#        temp_counter = temp_counter + 1
-#        return "\n\n".join(code_blocks + [expr_result])
-
-        branch_codes = [generate_cpp_constraint(branch) for branch in syntax[1:]]
-        code_blocks  = [part for code in branch_codes for part in code.split("\n\n")[:-1]]
-        branch_exprs = (code.split("\n\n")[-1] for code in branch_codes)
-        classname    = "Constraint"+{"con":"And", "dis":"Or"}[syntax[0][:3]]
-        expr_result  = "new "+classname+"({\n"+indent_code("  ", ",\n".join(branch_exprs)+"})")
-        return "\n\n".join(code_blocks + [expr_result])
-    elif syntax[0] == "collect":
-        nested_code  = generate_cpp_constraint(syntax[3])
-        code_blocks  = [part for part in nested_code.split("\n\n")[:-1]]
-        nested_expr  = nested_code.split("\n\n")[-1]
-        classname    = "ConstraintCollect"
-        expr_result  = "new "+classname+"("+str(syntax[2])+", \""+syntax[1]+"\",\n"+indent_code("  ", nested_expr+")")
-        return "\n\n".join(code_blocks + [expr_result])
-    elif syntax[0] == "atomic":
-        return "new "+syntax[1][0]+"("+", ".join([single_slot_string(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]])+")"
-    elif syntax[0] == "GeneralizedDominance":
-#        result = "array<vector<string>,3> temp"+str(temp_counter)+";\n"
-
-#        for i,slotlist in enumerate(syntax[1:2]+syntax[3:1:-1]):
-#            for label in generate_cpp_slotlist(slotlist):
-#                result += "temp"+str(temp_counter)+"["+str(i)+"].emplace_back(\""+label+"\");\n"
-
-#        result = result+"\n"+"new ConstraintPDGDominate(move(temp"+str(temp_counter)+"[0]), move(temp"+str(temp_counter)+"[1]), move(temp"+str(temp_counter)+"[2]))"
-
-#        temp_counter += 1
-
-#        return result;
-
-        return "new ConstraintPDGDominate({\n"+indent_code("  ",",\n".join([slot_list_string(s) for s in syntax[1:2]+syntax[3:1:-1]])+"})")
-    else:
-        raise Exception("Error, \"" + syntax[0] + "\" is not allowed in code generator.")
-
-def generate_cpp_specification(syntax, specs):
-    constr = partial_evaluator(syntax[2], evaluate_remove_for_with, specs)
-    constr = partial_evaluator(constr,    evaluate_remove_rename_rebase)
-    constr = partial_evaluator(constr,    evaluate_remove_trivials)
-    constr = partial_evaluator(constr,    evaluate_flatten_connectives)
-
-    code = generate_cpp_constraint(constr)
-    classname  = code[4:].split("({\n")[0]
-    restofcode = "({\n".join(code[4:].split("({\n")[1:])
-    
-
-    return ("std::vector<Solution> Detect"+syntax[1]+"(llvm::Function& function, unsigned max_solutions)\n{\n"
-           +"    static const "+classname+" constraint({\n"
-           +indent_code("        ", restofcode)+";\n\n"
-           +"    return Solution::Find(constraint, function, max_solutions);\n}")
-
 def collect_atomics(syntax, counter):
     if syntax[0] == "atomic":
         slots  = []
@@ -564,22 +496,28 @@ def collect_atomics(syntax, counter):
 
         if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
             for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = "std::move(std::get<"+str(i+1)+">(atomic"+str(counter[0])+"))[0]"
+                result[slot] = "llvm::make_unique<MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i+1)+">>(atomic"+str(counter[0])+", 0)"
                 slots.append(slot)
-            atomics_list = "auto atomic"+str(counter[0])+" = Backend"+syntax[1][0][10:]+"::Create(std::array<unsigned,3>{{0,1,1}}, wrap);\n"
+            atomics_list = "auto atomic"+str(counter[0])+" = std::make_shared<Backend"+syntax[1][0][10:]+">(std::array<unsigned,3>{{0,1,1}}, wrap);\n"
             counter[0]  += 1
         elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
             for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = "std::move(std::get<"+str(i)+">(atomic"+str(counter[0])+"))[0]"
+                result[slot] = "llvm::make_unique<MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i)+">>(atomic"+str(counter[0])+", 0)"
                 slots.append(slot)
-            atomics_list = "auto atomic"+str(counter[0])+" = Backend"+syntax[1][0][10:]+"::Create(std::array<unsigned,3>{{1,1,1}}, wrap);\n"
+            atomics_list = "auto atomic"+str(counter[0])+" = std::make_shared<Backend"+syntax[1][0][10:]+">(std::array<unsigned,3>{{1,1,1}}, wrap);\n"
             counter[0]  += 1
+        elif len(syntax[1]) == 2:
+            slot = generate_cpp_slot(syntax[1][1])
+            result[slot] = "llvm::make_unique<Backend"+syntax[1][0][10:]+">(wrap)"
+            slots.append(slot)
+            atomics_list = ""
         else:
             for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = "std::move(std::get<"+str(i)+">(atomic"+str(counter[0])+"))"
+                result[slot] = "llvm::make_unique<ScalarSelector<Backend"+syntax[1][0][10:]+","+str(i)+">>(atomic"+str(counter[0])+")"
                 slots.append(slot)
-            atomics_list = "auto atomic"+str(counter[0])+" = Backend"+syntax[1][0][10:]+"::Create(wrap);\n"
+            atomics_list = "auto atomic"+str(counter[0])+" = std::make_shared<Backend"+syntax[1][0][10:]+">(wrap);\n"
             counter[0]  += 1
+
         return slots,result,atomics_list
 
     elif syntax[0] == "GeneralizedDominance":
@@ -590,9 +528,10 @@ def collect_atomics(syntax, counter):
 
         for j,slotlist in enumerate(slotlists):
             for i,slot in enumerate(slotlist):
-                result[slot] = "std::move(std::get<"+str(j)+">(atomic"+str(counter[0])+"))["+str(i)+"]"
+                result[slot] = "llvm::make_unique<MultiVectorSelector<BackendPDGDominate,"+str(j)+">>(atomic"+str(counter[0])+", "+str(i)+")"
+                slots.append(slot)
 
-        atomics_list  = "auto atomic"+str(counter[0])+" = BackendPDGDominate::Create(std::array<unsigned,3>{{"+", ".join(str(len(slotlist)) for slotlist in slotlists)+"}}, wrap);\n"
+        atomics_list  = "auto atomic"+str(counter[0])+" = std::make_shared<BackendPDGDominate>(std::array<unsigned,3>{{"+", ".join(str(len(slotlist)) for slotlist in slotlists)+"}}, wrap);\n"
         counter[0]   += 1
         return slots,result,atomics_list
 
@@ -610,13 +549,15 @@ def collect_atomics(syntax, counter):
             atomics_list += part_atomics
 
         for slot in slots:
-            atomics_list += "std::vector<std::unique_ptr<SolverAtom>> vec"+str(counter[0])+";\n"
-            for value in result[slot]:
-                atomics_list += "vec"+str(counter[0])+".emplace_back("+value+");\n"
+            if len(result[slot]) == 1:
+                result[slot] = result[slot][0]
+            else:
+                atomics_list += "std::vector<std::unique_ptr<SolverAtom>> vec"+str(counter[0])+";\n"
+                for value in result[slot]:
+                    atomics_list += "vec"+str(counter[0])+".emplace_back("+value+");\n"
 
-            result[slot]  = "std::move(std::get<0>(atomic"+str(counter[0])+"))"
-            atomics_list += "auto atomic"+str(counter[0])+" = BackendAnd::Create(std::move(vec"+str(counter[0])+"));\n"
-            counter[0]   += 1
+                result[slot] = "llvm::make_unique<BackendAnd>(std::move(vec"+str(counter[0])+"))"
+                counter[0]   += 1
 
         return slots,result,atomics_list
 
@@ -637,12 +578,12 @@ def collect_atomics(syntax, counter):
 
         for i,slot in enumerate(slots):
             for value in result[slot]:
-                atomics_list += "vec"+str(counter[0])+"["+str(i)+"].emplace_back("+value+");\n"
+                atomics_list += "vec"+str(counter[0])+"["+str(i)+"].emplace_back("+value+"); //"+slot+"\n"
 
-        atomics_list += "auto atomic"+str(counter[0])+" = BackendOr::Create(std::array<unsigned,1>{"+str(len(slots))+"}, std::move(vec"+str(counter[0])+"));\n"
+        atomics_list += "auto atomic"+str(counter[0])+" = std::make_shared<BackendOr>(std::array<unsigned,1>{"+str(len(slots))+"}, std::move(vec"+str(counter[0])+"));\n"
 
         for i,slot in enumerate(slots):
-            result[slot] = "std::move(std::get<0>(atomic"+str(counter[0])+"))["+str(i)+"]"
+            result[slot] = "llvm::make_unique<VectorSelector<BackendOr>>(atomic"+str(counter[0])+", "+str(i)+")"
 
         counter[0] += 1
 
@@ -654,34 +595,33 @@ def collect_atomics(syntax, counter):
         result       = {}
         atomics_list = ""
 
-        part_slots, part_result, part_atomics = collect_atomics(syntax[3], counter)
+        part_slots, part_result, atomics_list = collect_atomics(syntax[3], counter)
 
-        local_slots  = [i for i,slot in enumerate(part_slots) if "["+syntax[1]+"]"     in slot]
-        global_slots = [i for i,slot in enumerate(part_slots) if "["+syntax[1]+"]" not in slot]
-
-        for i in global_slots:
-            result[part_slots[i]] = []
+        local_slots_idx  = [i for i,slot in enumerate(part_slots) if "["+syntax[1]+"]"     in slot]
+        global_slots_idx = [i for i,slot in enumerate(part_slots) if "["+syntax[1]+"]" not in slot]
 
         for i in range(syntax[2]):
-            for i in global_slots:
-                result[part_slots[i]] += [part_result[part_slots[i]]]
+            local_slots += [part_slots[idx].replace("["+syntax[1]+"]", "["+str(i)+"]") for idx in local_slots_idx]
 
-            for i in local_slots:
-                result[part_slots[i]] = part_result[part_slots[i]] 
+        global_slots = [part_slots[i] for i in global_slots_idx]
 
-            atomics_list += part_atomics
+        atomics_list += "std::vector<std::unique_ptr<SolverAtom>> globals"+str(counter[0])+";\n"
+        for idx in global_slots_idx:
+            atomics_list += "globals"+str(counter[0])+".emplace_back("+part_result[part_slots[idx]]+"); //"+part_slots[idx]+"\n"
 
-        local_slots  = [part_slots[i] for i in  local_slots]
-        global_slots = [part_slots[i] for i in global_slots]
+        atomics_list += "std::vector<std::unique_ptr<SolverAtom>> locals"+str(counter[0])+";\n"
+        for idx in local_slots_idx:
+            atomics_list += "locals"+str(counter[0])+".emplace_back("+part_result[part_slots[idx]]+"); //"+part_slots[idx]+"\n"
 
-        for slot in global_slots:
-            atomics_list += "std::vector<std::unique_ptr<SolverAtom>> vec"+str(counter[0])+";\n"
-            for value in result[slot]:
-                atomics_list += "vec"+str(counter[0])+".emplace_back("+value+");\n"
+        atomics_list += "auto atomic"+str(counter[0])+" = std::make_shared<BackendCollect>(std::array<unsigned,2>{{"+str(len(global_slots))+", "+str(len(local_slots))+"}}, std::move(globals"+str(counter[0])+"), std::move(locals"+str(counter[0])+"));\n"
 
-            result[slot]  = "std::move(std::get<0>(atomic"+str(counter[0])+"))"
-            atomics_list += "auto atomic"+str(counter[0])+" = BackendAnd::Create(std::move(vec"+str(counter[0])+"));\n"
-            counter[0]   += 1
+        for i,slot in enumerate(global_slots):
+            result[slot] = "llvm::make_unique<MultiVectorSelector<BackendCollect,0>>(atomic"+str(counter[0])+", "+str(i)+")"
+        
+        for i,slot in enumerate(local_slots):
+            result[slot] = "llvm::make_unique<MultiVectorSelector<BackendCollect,1>>(atomic"+str(counter[0])+", "+str(i)+")"
+
+        counter[0] += 1
 
         return global_slots+local_slots, result, atomics_list
 
@@ -695,34 +635,24 @@ def generate_fast_cpp_specification(syntax, specs):
     constr = partial_evaluator(constr,    evaluate_flatten_connectives)
 
     slots, result, atomics_list = collect_atomics(constr, [0])
-
-    for slot in slots:
-        atomics_list += "result.emplace_back("+result[slot]+");\n"
-    atomics_list += "return result;"
-
-    classdef = ("class Constraint"+syntax[1]+" : public Constraint\n{\n"
-               +"public:\n"
-               +"    std::vector<std::string> get_labels(std::vector<std::string> = {}) const override;\n"
-               +"    std::vector<std::unique_ptr<SolverAtom>> get_specials(FunctionWrap& wrap,\n"
-               +"                                                   std::vector<std::unique_ptr<SolverAtom>> = {}) const override;\n"
-               +"};\n")
-
-    print(syntax[1],":",len(atomics_list.split("\n")))
-
-    return ("std::vector<std::string> Constraint"+syntax[1]+"::get_labels(std::vector<std::string>) const\n{\n"
-           +indent_code("    return {", chunk_strings(slots, 100))+"};\n}\n\n"
-           +"std::vector<std::unique_ptr<SolverAtom>> Constraint"+syntax[1]+"::get_specials(FunctionWrap& wrap,\n"
-           +"                                                                        std::vector<std::unique_ptr<SolverAtom>> result) const\n{\n"
-           +"    "+atomics_list.replace("\n", "\n    ")+"\n}\n")
+    
+    return ("std::vector<Solution> Detect"+syntax[1]+"(llvm::Function& function, unsigned max_solutions)\n{\n"
+           +"    struct : public Constraint { using Constraint::Constraint;\n"
+           +"        void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final {\n"
+           +indent_code("            ", atomics_list.rstrip())+"\n\n"
+           +"".join(["            use_vector.emplace_back("+result[slot]+"); //"+slot+"\n" for slot in slots])
+           +"        }\n"
+           +indent_code("    } constraint {", chunk_strings(slots, 100))+"};\n\n"
+           +"    return Solution::Find(constraint, function, max_solutions);\n}")
 
 def generate_cpp_code(syntax_list):
-    includes  = ["IdiomSpecifications","ConstraintSpecializations", "Solution"]
+    includes  = ["IdiomSpecifications","BackendSpecializations", "BackendSelectors", "Solution"]
     specs     = {spec[1] : spec[2] for spec in syntax_list}
-    whitelist = ["Distributive", "HoistSelect", "Reduction", "AXPYn", "StencilPlus",
-                 "GEMM", "GEMV", "AXPY", "DOT", "SPMV", "Histo", "Stencil"]
+    whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY", "DOT", "SPMV", "Reduction", "Histo", "Stencil", "StencilPlus"]
 
     return ("\n".join("#include \"llvm/Constraints/"+s+".hpp\"" for s in includes) + "\n\n"
-           +"\n\n".join(generate_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] in whitelist))
+           +"#pragma GCC optimize (\"O1\")\n\n"
+           +"\n\n".join(generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] in whitelist))
 
 def print_syntax_tree(syntax, indent=0):
     if type(syntax) is str or type(syntax) is int:
@@ -738,39 +668,3 @@ def print_syntax_tree(syntax, indent=0):
 import sys
 
 print(generate_cpp_code(parse(sys.stdin.read(), grammar)))
-
-#class Temp : public Constraint
-#{
-#public:
-#    std::vector<Label> get_labels(std::vector<Label> use_vector) const override
-#    {
-#        use_vector.emplace_back("select");
-#        use_vector.emplace_back("input1");
-#        use_vector.emplace_back("base");
-#        use_vector.emplace_back("input2");
-#        return use_vector;
-#    }
-
-#    std::vector<std::unique_ptr<SolverAtom>> get_specials(FunctionWrap& wrap,
-#                                                   std::vector<std::unique_ptr<SolverAtom>> use_vector) const override
-#    {
-#        auto constr1 = ConstraintSelectInst("select").get_typed_specials(wrap);
-#        auto constr2 = ConstraintSecondOperand("input1", "select").get_typed_specials(wrap);
-#        auto constr3 = ConstraintFirstOperand("base", "input1").get_typed_specials(wrap);
-#        auto constr4 = ConstraintThirdOperand("input2", "select").get_typed_specials(wrap);
-#        auto constr5 = ConstraintFirstOperand("base", "input2").get_typed_specials(wrap);
-#        auto constr6 = ConstraintGEPInst("input1").get_typed_specials(wrap);
-#        auto constr7 = ConstraintGEPInst("input2").get_typed_specials(wrap);
-
-#        auto select = make_backend_direct_and(std::get<0>(constr1), std::get<1>(constr2), std::get<1>(constr4));
-#        auto input1 = make_backend_direct_and(std::get<0>(constr2), std::get<1>(constr3), std::get<0>(constr6));
-#        auto base   = make_backend_direct_and(std::get<0>(constr3), std::get<0>(constr5));
-#        auto input2 = make_backend_direct_and(std::get<0>(constr4), std::get<1>(constr5), std::get<0>(constr7));
-
-#        use_vector.emplace_back(llvm::make_unique<decltype(select)>(select));
-#        use_vector.emplace_back(llvm::make_unique<decltype(input1)>(input1));
-#        use_vector.emplace_back(llvm::make_unique<decltype(base)>(base));
-#        use_vector.emplace_back(llvm::make_unique<decltype(input2)>(input2));
-#        return use_vector;
-#    }
-#};

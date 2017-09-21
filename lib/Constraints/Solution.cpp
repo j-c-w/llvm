@@ -1,6 +1,5 @@
 #include "llvm/Constraints/Solution.hpp"
 #include "llvm/Constraints/Solver.hpp"
-#include "llvm/Constraints/Constraint.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/Function.h"

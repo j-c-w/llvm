@@ -13,10 +13,6 @@ add_llvm_library(LLVMConstraints
   BackendOrdering.cpp
   BackendIncomingValue.cpp
 
-  ConstraintOr.cpp
-  ConstraintAnd.cpp
-  ConstraintCollect.cpp
-
   ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
 
   CustomPassFlatten.cpp
