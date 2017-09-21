@@ -7,8 +7,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <iostream>
-#include "llvm/Support/raw_os_ostream.h"
 
 using namespace llvm;
 
