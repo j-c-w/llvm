@@ -27,7 +27,8 @@ class LLVMConfig(object):
             path = self.lit_config.getToolsPath(config.lit_tools_dir,
                                            config.environment['PATH'],
                                            ['cmp.exe', 'grep.exe', 'sed.exe'])
-            self.with_environment('PATH', path, append_path=True)
+            if path is not None:
+                self.with_environment('PATH', path, append_path=True)
             self.use_lit_shell = True
 
         # Choose between lit's internal shell pipeline runner and a real shell.  If
@@ -106,7 +107,10 @@ class LLVMConfig(object):
             current_paths = self.config.environment.get(variable, "")
             current_paths = current_paths.split(os.path.pathsep)
             paths = [norm(p) for p in current_paths]
-            for p in paths_to_add:
+            # If we are passed a list [a b c], then iterating this list forwards
+            # and adding each to the beginning would result in b c a.  So we
+            # need to iterate in reverse to end up with the original ordering.
+            for p in reversed(paths_to_add):
                 # Move it to the front if it already exists, otherwise insert it at the
                 # beginning.
                 p = norm(p)
