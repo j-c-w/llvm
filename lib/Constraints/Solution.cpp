@@ -8,13 +8,20 @@
 #include <string>
 #include <map>
 
-std::vector<Solution> Solution::Find(const Constraint& constraint, llvm::Function& function,
-                                     unsigned max_solutions)
+std::vector<Solution> Solution::Find(std::vector<std::pair<std::string,std::unique_ptr<SolverAtom>>> constraint,
+                                     llvm::Function& function, unsigned max_solutions)
 {
+    std::vector<std::string>                 labels(constraint.size());
+    std::vector<std::unique_ptr<SolverAtom>> atoms (constraint.size());
+
+    std::transform(constraint.begin(), constraint.end(), labels.begin(),
+                   [](std::pair<std::string,std::unique_ptr<SolverAtom>>& v) { return std::move(v.first); });
+
+    std::transform(constraint.begin(), constraint.end(), atoms.begin(),
+                   [](std::pair<std::string,std::unique_ptr<SolverAtom>>& v) { return std::move(v.second); });
+
     FunctionWrap wrap(function);
-    std::vector<std::unique_ptr<SolverAtom>> specials;
-    constraint.get_specials(wrap, specials);
-    Solver solver(std::move(specials));
+    Solver solver(std::move(atoms));
 
     std::vector<Solution> result;
     while(result.size() < max_solutions)
@@ -30,7 +37,7 @@ std::vector<Solution> Solution::Find(const Constraint& constraint, llvm::Functio
         std::transform(solution.begin(), solution.end(), std::back_inserter(llvm_solution),
                        [&](unsigned v) { return v < wrap.size() ? wrap[v] : nullptr; });
 
-        result.push_back(Solution(constraint, llvm_solution));
+        result.push_back(Solution(labels, llvm_solution));
     }
 
     return result;

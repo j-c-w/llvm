@@ -15,17 +15,6 @@ class Function;
 class Value;
 }
 
-// Constraints essentially only exist to generate instances of the above shown SolverAtom class and to map these
-// instances to string labels.
-class Constraint : public std::vector<std::string>
-{
-public:
-    using std::vector<std::string>::vector;
-    virtual ~Constraint() { };
-
-    virtual void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const = 0;
-};
-
 class Solution
 {
 public:
@@ -43,8 +32,8 @@ public:
     Solution prune() const;
     std::string print_json(llvm::ModuleSlotTracker&) const;
 
-    static std::vector<Solution> Find(const Constraint& constraint, llvm::Function& function,
-                                      unsigned max_solutions = UINT_MAX);
+    static std::vector<Solution> Find(std::vector<std::pair<std::string,std::unique_ptr<SolverAtom>>> atoms,
+                                      llvm::Function& function, unsigned max_solutions = UINT_MAX);
 
 private:
     Solution() : single_value(nullptr) {}

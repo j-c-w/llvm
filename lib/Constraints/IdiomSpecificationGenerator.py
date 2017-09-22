@@ -635,20 +635,20 @@ def generate_fast_cpp_specification(syntax, specs):
     constr = partial_evaluator(constr,    evaluate_flatten_connectives)
 
     slots, result, atomics_list = collect_atomics(constr, [0])
-    
+
     return ("std::vector<Solution> Detect"+syntax[1]+"(llvm::Function& function, unsigned max_solutions)\n{\n"
-           +"    struct : public Constraint { using Constraint::Constraint;\n"
-           +"        void get_specials(const FunctionWrap& wrap, std::vector<std::unique_ptr<SolverAtom>>& use_vector) const final {\n"
-           +indent_code("            ", atomics_list.rstrip())+"\n\n"
-           +"".join(["            use_vector.emplace_back("+result[slot]+"); //"+slot+"\n" for slot in slots])
-           +"        }\n"
-           +indent_code("    } constraint {", chunk_strings(slots, 100))+"};\n\n"
-           +"    return Solution::Find(constraint, function, max_solutions);\n}")
+           +"    FunctionWrap wrap(function);\n\n"
+           +indent_code("    ", atomics_list.rstrip())+"\n\n"
+           +"    std::vector<std::pair<std::string,std::unique_ptr<SolverAtom>>> constraint;\n\n"
+           +"".join(["    constraint.emplace_back(\""+slot+"\", "+result[slot]+");\n" for slot in slots])+"\n"
+
+           +"    return Solution::Find(std::move(constraint), function, max_solutions);\n}")
 
 def generate_cpp_code(syntax_list):
     includes  = ["IdiomSpecifications","BackendSpecializations", "BackendSelectors", "Solution"]
     specs     = {spec[1] : spec[2] for spec in syntax_list}
-    whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY", "DOT", "SPMV", "Reduction", "Histo", "Stencil", "StencilPlus"]
+    whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY", "DOT", "SPMV",
+                 "Reduction", "Histo", "Stencil", "StencilPlus"]
 
     return ("\n".join("#include \"llvm/Constraints/"+s+".hpp\"" for s in includes) + "\n\n"
            +"#pragma GCC optimize (\"O1\")\n\n"
