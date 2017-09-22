@@ -1,5 +1,4 @@
 #include "llvm/Constraints/CustomPasses.hpp"
-#include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/InstrTypes.h"
@@ -17,12 +16,9 @@ public:
 
     bool runOnModule(llvm::Module& module) override
     {
-        std::string string_value;
-        llvm::raw_string_ostream out_stream(string_value);
+        std::hash<llvm::BasicBlock*> hash_function;
 
-        std::hash<std::string> hash_function;
-
-        std::vector<std::pair<decltype(hash_function("")),llvm::GlobalVariable*>> globals;
+        std::vector<std::pair<decltype(hash_function(nullptr)),llvm::GlobalVariable*>> globals;
 
         // First collect all blocks
         for(llvm::Function& function : module.getFunctionList())
@@ -42,11 +38,7 @@ public:
                                           "", insert_before),
                                     new_global, insert_before);
 
-                function.printAsOperand(out_stream);
-                block.print(out_stream);
-
-                globals.emplace_back(hash_function(string_value), new_global);
-                string_value.clear();
+                globals.emplace_back(hash_function(&block), new_global);
             }
         }
 

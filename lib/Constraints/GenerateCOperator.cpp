@@ -1,6 +1,5 @@
 #include "llvm/Constraints/Transforms.hpp"
 #include "llvm/Constraints/CustomPasses.hpp"
-#include "llvm/Support/raw_os_ostream.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
@@ -209,12 +208,7 @@ Expression get_c_expr(llvm::Value* value, const std::unordered_map<llvm::Value*,
         }
         else
         {
-            std::stringstream str_str;
-            llvm::raw_os_ostream out_stream(str_str);
-            out_stream<<*value;
-            out_stream.flush();
-            str_str.flush();
-            return Expression::Atomic("/*"+str_str.str()+"*/");
+            return Expression::Atomic("/* missing closure */");
         }
     }
 }
@@ -412,12 +406,7 @@ std::string print_c_operator(llvm::Function& function)
                     }
                     else
                     {
-                        std::stringstream str_str;
-                        llvm::raw_os_ostream out_stream(str_str);
-                        out_stream<<inst;
-                        out_stream.flush();
-                        str_str.flush();
-                        new_expr = Expression::Atomic("/*"+str_str.str()+"  */");
+                        new_expr = Expression::Atomic("/* missing closure */");
                     }
 
                     unsigned relevant_uses = 0;

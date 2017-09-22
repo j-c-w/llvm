@@ -651,7 +651,6 @@ def generate_cpp_code(syntax_list):
                  "Reduction", "Histo", "Stencil", "StencilPlus"]
 
     return ("\n".join("#include \"llvm/Constraints/"+s+".hpp\"" for s in includes) + "\n\n"
-           +"#pragma GCC optimize (\"O1\")\n\n"
            +"\n\n".join(generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] in whitelist))
 
 def print_syntax_tree(syntax, indent=0):
