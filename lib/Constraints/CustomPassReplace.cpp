@@ -54,16 +54,11 @@ public:
     static char ID;
 
     ResearchReplacer() : ModulePass(ID),
-                         constraint_specs{{"histo",   DetectHisto},
-                                          {"scalar",  DetectReduction},
-                                          {"GEMM",    DetectGEMM},
-                                          {"GEMV",    DetectGEMV},
-                                          {"AXPY",    DetectAXPY},
-                                          {"AXPYn",   DetectAXPYn},
-                                          {"DOT",     DetectDOT},
-                                          {"SPMV",    DetectSPMV},
-                                          {"stencil", DetectStencil},
-                                          {"stenpls", DetectStencilPlus}} { }
+                         constraint_specs{{"histo",   DetectHisto},   {"scalar",  DetectReduction},
+                                          {"GEMM",    DetectGEMM},    {"GEMV",    DetectGEMV},
+                                          {"AXPY",    DetectAXPY},    {"AXPYn",   DetectAXPYn},
+                                          {"DOT",     DetectDOT},     {"SPMV",    DetectSPMV},
+                                          {"stencil", DetectStencil}, {"stenpls", DetectStencilPlus}} { }
 
     bool runOnModule(Module& module) override;
 

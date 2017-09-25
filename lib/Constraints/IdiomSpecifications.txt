@@ -450,6 +450,26 @@ Constraint Reduction
        and {body.begin} as {inner} at {kernel})
 End
 
+# // This language should be a bit like PHP for generating domain specific code
+# // This particular one generates C code that could also be used in OpenCL as a kernel function
+# Generate Reduction
+# ( [CType {old_value} as {arg1}] reduction()
+# {
+#    //do stuff
+# }
+#
+# Generate CType 
+# 
+#
+#
+#
+#
+# // This language is simple and made for modifying LLVM IR
+# Transform GEMM
+# ( insert [call cblas_dgemm {alpha} {beta} ...]
+#   remove {output.store}
+# )
+
 Constraint GEMM
 ( inherits ForNest(N=3) and
   inherits MatrixStore
@@ -628,7 +648,6 @@ Constraint Histo
        and {begin} as {outer}
        and {body.begin} as {inner} at {indexkernel})
 End
-
 
 Constraint StencilPlus
 ( inherits ForNest(N=3) and
