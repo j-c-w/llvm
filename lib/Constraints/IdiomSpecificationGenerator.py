@@ -552,7 +552,7 @@ def collect_atomics(syntax, counter):
             if len(result[slot]) == 1:
                 result[slot] = result[slot][0]
             else:
-                result[slot] = ("BackendDirectAnd<"+",".join(a for a,b in result[slot])+">", ", ".join("{"+b+"}" for a,b in result[slot]))
+                result[slot] = ("BackendAnd<"+",".join(a for a,b in result[slot])+">", ", ".join("{"+b+"}" for a,b in result[slot]))
 
         return slots,result,atomics_list
 

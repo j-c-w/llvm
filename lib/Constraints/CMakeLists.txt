@@ -5,7 +5,6 @@ add_llvm_library(LLVMConstraints
   FunctionWrap.cpp
 
   BackendOr.cpp
-  BackendAnd.cpp
   BackendEdge.cpp
   BackendSingle.cpp
   BackendCollect.cpp

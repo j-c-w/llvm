@@ -3,13 +3,13 @@
 #include "BackendSelectors.hpp"
 
 template<typename ... SolverAtomN>
-class BackendDirectAnd;
+class BackendAnd;
 
 template<typename SolverAtom1, typename SolverAtom2>
-class BackendDirectAnd<SolverAtom1,SolverAtom2> : public SolverAtom
+class BackendAnd<SolverAtom1,SolverAtom2> : public SolverAtom
 {
 public:
-    BackendDirectAnd(SolverAtom1 s1, SolverAtom2 s2);
+    BackendAnd(SolverAtom1 s1, SolverAtom2 s2);
 
     SkipResult skip_invalid(SolverAtom::Value& c) const final;
 
@@ -23,11 +23,11 @@ private:
 };
 
 template<typename SolverAtom1, typename SolverAtom2>
-BackendDirectAnd<SolverAtom1,SolverAtom2>::BackendDirectAnd(SolverAtom1 s1, SolverAtom2 s2)
+BackendAnd<SolverAtom1,SolverAtom2>::BackendAnd(SolverAtom1 s1, SolverAtom2 s2)
                                          : constraint_head(std::move(s1)), constraint_tail(std::move(s2)) { }
 
 template<typename SolverAtom1, typename SolverAtom2>
-SkipResult BackendDirectAnd<SolverAtom1,SolverAtom2>::skip_invalid(SolverAtom::Value& c) const
+SkipResult BackendAnd<SolverAtom1,SolverAtom2>::skip_invalid(SolverAtom::Value& c) const
 {
     SkipResult first_result = constraint_head.skip_invalid(c);
 
@@ -49,41 +49,34 @@ SkipResult BackendDirectAnd<SolverAtom1,SolverAtom2>::skip_invalid(SolverAtom::V
 }
 
 template<typename SolverAtom1, typename SolverAtom2>
-void BackendDirectAnd<SolverAtom1,SolverAtom2>::begin()
+void BackendAnd<SolverAtom1,SolverAtom2>::begin()
 {
     constraint_head.begin();
     constraint_tail.begin();
 }
 
 template<typename SolverAtom1, typename SolverAtom2>
-void BackendDirectAnd<SolverAtom1,SolverAtom2>::fixate(SolverAtom::Value c)
+void BackendAnd<SolverAtom1,SolverAtom2>::fixate(SolverAtom::Value c)
 {
     constraint_head.fixate(c);
     constraint_tail.fixate(c);
 }
 
 template<typename SolverAtom1, typename SolverAtom2>
-void BackendDirectAnd<SolverAtom1,SolverAtom2>::resume()
+void BackendAnd<SolverAtom1,SolverAtom2>::resume()
 {
     constraint_head.resume();
     constraint_tail.resume();
 }
 
 template<typename SolverAtom1, typename SolverAtom2, typename SolverAtom3, typename ... SolverAtomN>
-class BackendDirectAnd<SolverAtom1,SolverAtom2,SolverAtom3,SolverAtomN...>
-    : public BackendDirectAnd<SolverAtom1,BackendDirectAnd<SolverAtom2,SolverAtom3,SolverAtomN...>>
+class BackendAnd<SolverAtom1,SolverAtom2,SolverAtom3,SolverAtomN...>
+    : public BackendAnd<SolverAtom1,BackendAnd<SolverAtom2,SolverAtom3,SolverAtomN...>>
 {
 public:
-    BackendDirectAnd(SolverAtom1 s1, SolverAtom2 s2, SolverAtom3 s3, SolverAtomN ... sn)
-     : BackendDirectAnd<SolverAtom1,BackendDirectAnd<SolverAtom2,SolverAtom3,SolverAtomN...>>
-       (s1, BackendDirectAnd<SolverAtom2,SolverAtom3,SolverAtomN...>(s2, s3, sn...)) { }
-
+    BackendAnd(SolverAtom1 s1, SolverAtom2 s2, SolverAtom3 s3, SolverAtomN ... sn)
+     : BackendAnd<SolverAtom1,BackendAnd<SolverAtom2,SolverAtom3,SolverAtomN...>>
+       (s1, BackendAnd<SolverAtom2,SolverAtom3,SolverAtomN...>(s2, s3, sn...)) { }
 };
-
-template<typename ... SolverAtomN>
-BackendDirectAnd<SolverAtomN...> make_backend_direct_and(SolverAtomN ... specials)
-{
-    return std::make_shared<BackendDirectAnd<SolverAtomN...>>(specials ...);
-}
 
 #endif
