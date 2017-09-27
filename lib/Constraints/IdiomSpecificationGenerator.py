@@ -496,24 +496,24 @@ def collect_atomics(syntax, counter):
 
         if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
             for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = "llvm::make_unique<MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i+1)+">>(atomic"+str(counter[0])+", 0)"
+                result[slot] = ("MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i+1)+">", "atomic"+str(counter[0])+", 0")
                 slots.append(slot)
             atomics_list = "auto atomic"+str(counter[0])+" = std::make_shared<Backend"+syntax[1][0][10:]+">(std::array<unsigned,3>{{0,1,1}}, wrap);\n"
             counter[0]  += 1
         elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
             for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = "llvm::make_unique<MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i)+">>(atomic"+str(counter[0])+", 0)"
+                result[slot] = ("MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i)+">", "atomic"+str(counter[0])+", 0")
                 slots.append(slot)
             atomics_list = "auto atomic"+str(counter[0])+" = std::make_shared<Backend"+syntax[1][0][10:]+">(std::array<unsigned,3>{{1,1,1}}, wrap);\n"
             counter[0]  += 1
         elif len(syntax[1]) == 2:
             slot = generate_cpp_slot(syntax[1][1])
-            result[slot] = "llvm::make_unique<Backend"+syntax[1][0][10:]+">(wrap)"
+            result[slot] = ("Backend"+syntax[1][0][10:], "wrap")
             slots.append(slot)
             atomics_list = ""
         else:
             for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = "llvm::make_unique<ScalarSelector<Backend"+syntax[1][0][10:]+","+str(i)+">>(atomic"+str(counter[0])+")"
+                result[slot] = ("ScalarSelector<Backend"+syntax[1][0][10:]+","+str(i)+">", "atomic"+str(counter[0]))
                 slots.append(slot)
             atomics_list = "auto atomic"+str(counter[0])+" = std::make_shared<Backend"+syntax[1][0][10:]+">(wrap);\n"
             counter[0]  += 1
@@ -528,7 +528,7 @@ def collect_atomics(syntax, counter):
 
         for j,slotlist in enumerate(slotlists):
             for i,slot in enumerate(slotlist):
-                result[slot] = "llvm::make_unique<MultiVectorSelector<BackendPDGDominate,"+str(j)+">>(atomic"+str(counter[0])+", "+str(i)+")"
+                result[slot] = ("MultiVectorSelector<BackendPDGDominate,"+str(j)+">", "atomic"+str(counter[0])+", "+str(i))
                 slots.append(slot)
 
         atomics_list  = "auto atomic"+str(counter[0])+" = std::make_shared<BackendPDGDominate>(std::array<unsigned,3>{{"+", ".join(str(len(slotlist)) for slotlist in slotlists)+"}}, wrap);\n"
@@ -549,15 +549,21 @@ def collect_atomics(syntax, counter):
             atomics_list += part_atomics
 
         for slot in slots:
-            if len(result[slot]) == 1:
-                result[slot] = result[slot][0]
-            else:
-                atomics_list += "std::vector<std::unique_ptr<SolverAtom>> vec"+str(counter[0])+";\n"
-                for value in result[slot]:
-                    atomics_list += "vec"+str(counter[0])+".emplace_back("+value+");\n"
+            resultlist = result[slot]
+            result[slot] = resultlist[0]
 
-                result[slot] = "llvm::make_unique<BackendAnd>(std::move(vec"+str(counter[0])+"))"
-                counter[0]   += 1
+            for nextres in resultlist[1:]:
+                result[slot] = ("BackendDirectAnd<"+result[slot][0]+","+nextres[0]+">", result[slot][0]+"("+result[slot][1]+"), "+nextres[0]+"("+nextres[1]+")")
+
+#            if len(result[slot]) == 1:
+#                result[slot] = result[slot][0]
+#            else:
+#                atomics_list += "std::vector<std::unique_ptr<SolverAtom>> vec"+str(counter[0])+";\n"
+#                for restype, resparams in result[slot]:
+#                    atomics_list += "vec"+str(counter[0])+".emplace_back(llvm::make_unique<"+restype+">("+resparams+"));\n"#
+
+#                result[slot] = ("BackendAnd", "std::move(vec"+str(counter[0])+")")
+#                counter[0]   += 1
 
         return slots,result,atomics_list
 
@@ -577,13 +583,13 @@ def collect_atomics(syntax, counter):
         atomics_list += "std::vector<std::vector<std::unique_ptr<SolverAtom>>> vec"+str(counter[0])+"("+str(len(slots))+");\n"
 
         for i,slot in enumerate(slots):
-            for value in result[slot]:
-                atomics_list += "vec"+str(counter[0])+"["+str(i)+"].emplace_back("+value+"); //"+slot+"\n"
+            for restype, resparams in result[slot]:
+                atomics_list += "vec"+str(counter[0])+"["+str(i)+"].emplace_back(llvm::make_unique<"+restype+">("+resparams+")); //"+slot+"\n"
 
         atomics_list += "auto atomic"+str(counter[0])+" = std::make_shared<BackendOr>(std::array<unsigned,1>{"+str(len(slots))+"}, std::move(vec"+str(counter[0])+"));\n"
 
         for i,slot in enumerate(slots):
-            result[slot] = "llvm::make_unique<VectorSelector<BackendOr>>(atomic"+str(counter[0])+", "+str(i)+")"
+            result[slot] = ("VectorSelector<BackendOr>", "atomic"+str(counter[0])+", "+str(i))
 
         counter[0] += 1
 
@@ -607,19 +613,19 @@ def collect_atomics(syntax, counter):
 
         atomics_list += "std::vector<std::unique_ptr<SolverAtom>> globals"+str(counter[0])+";\n"
         for idx in global_slots_idx:
-            atomics_list += "globals"+str(counter[0])+".emplace_back("+part_result[part_slots[idx]]+"); //"+part_slots[idx]+"\n"
+            atomics_list += "globals"+str(counter[0])+".emplace_back(llvm::make_unique<"+part_result[part_slots[idx]][0]+">("+part_result[part_slots[idx]][1]+")); //"+part_slots[idx]+"\n"
 
         atomics_list += "std::vector<std::unique_ptr<SolverAtom>> locals"+str(counter[0])+";\n"
         for idx in local_slots_idx:
-            atomics_list += "locals"+str(counter[0])+".emplace_back("+part_result[part_slots[idx]]+"); //"+part_slots[idx]+"\n"
+            atomics_list += "locals"+str(counter[0])+".emplace_back(llvm::make_unique<"+part_result[part_slots[idx]][0]+">("+part_result[part_slots[idx]][1]+")); //"+part_slots[idx]+"\n"
 
         atomics_list += "auto atomic"+str(counter[0])+" = std::make_shared<BackendCollect>(std::array<unsigned,2>{{"+str(len(global_slots))+", "+str(len(local_slots))+"}}, std::move(globals"+str(counter[0])+"), std::move(locals"+str(counter[0])+"));\n"
 
         for i,slot in enumerate(global_slots):
-            result[slot] = "llvm::make_unique<MultiVectorSelector<BackendCollect,0>>(atomic"+str(counter[0])+", "+str(i)+")"
+            result[slot] = ("MultiVectorSelector<BackendCollect,0>", "atomic"+str(counter[0])+", "+str(i))
         
         for i,slot in enumerate(local_slots):
-            result[slot] = "llvm::make_unique<MultiVectorSelector<BackendCollect,1>>(atomic"+str(counter[0])+", "+str(i)+")"
+            result[slot] = ("MultiVectorSelector<BackendCollect,1>", "atomic"+str(counter[0])+", "+str(i))
 
         counter[0] += 1
 
@@ -640,12 +646,12 @@ def generate_fast_cpp_specification(syntax, specs):
            +"    FunctionWrap wrap(function);\n\n"
            +indent_code("    ", atomics_list.rstrip())+"\n\n"
            +"    std::vector<std::pair<std::string,std::unique_ptr<SolverAtom>>> constraint;\n\n"
-           +"".join(["    constraint.emplace_back(\""+slot+"\", "+result[slot]+");\n" for slot in slots])+"\n"
+           +"".join(["    constraint.emplace_back(\""+slot+"\", std::unique_ptr<SolverAtom>(new "+result[slot][0]+"("+result[slot][1]+")));\n" for slot in slots])+"\n"
 
            +"    return Solution::Find(std::move(constraint), function, max_solutions);\n}")
 
 def generate_cpp_code(syntax_list):
-    includes  = ["IdiomSpecifications","BackendSpecializations", "BackendSelectors", "Solution"]
+    includes  = ["IdiomSpecifications","BackendSpecializations", "BackendDirectClasses", "BackendSelectors", "Solution"]
     specs     = {spec[1] : spec[2] for spec in syntax_list}
     whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY", "DOT", "SPMV",
                  "Reduction", "Histo", "Stencil", "StencilPlus"]
