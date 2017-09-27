@@ -76,8 +76,7 @@ class BackendDirectAnd<SolverAtom1,SolverAtom2,SolverAtom3,SolverAtomN...>
 public:
     BackendDirectAnd(SolverAtom1 s1, SolverAtom2 s2, SolverAtom3 s3, SolverAtomN ... sn)
      : BackendDirectAnd<SolverAtom1,BackendDirectAnd<SolverAtom2,SolverAtom3,SolverAtomN...>>
-       (s1, BackendDirectAnd<SolverAtom2,SolverAtom3,SolverAtomN...>
-             (std::make_shared<BackendDirectAnd<SolverAtom2,SolverAtom3,SolverAtomN...>>(s2, s3, sn...))) { }
+       (s1, BackendDirectAnd<SolverAtom2,SolverAtom3,SolverAtomN...>(s2, s3, sn...)) { }
 
 };
 
