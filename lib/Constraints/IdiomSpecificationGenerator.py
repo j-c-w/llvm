@@ -575,7 +575,7 @@ def collect_atomics(syntax, counter):
             for restype, resparams in result[slot]:
                 atomics_list += "vec"+str(counter[0])+"["+str(i)+"].emplace_back(unique_ptr<SolverAtom>(new "+restype+"("+resparams+"))); //"+slot+"\n"
 
-        atomics_list += "auto atomic"+str(counter[0])+" = make_shared<BackendOr>(array<unsigned,1>{"+str(len(slots))+"}, move(vec"+str(counter[0])+"));\n"
+        atomics_list += "auto atomic"+str(counter[0])+" = make_shared<BackendOr>(array<unsigned,1>{{"+str(len(slots))+"}}, move(vec"+str(counter[0])+"));\n"
 
         for i,slot in enumerate(slots):
             result[slot] = ("VectorSelector<BackendOr>", "atomic"+str(counter[0])+", "+str(i))
