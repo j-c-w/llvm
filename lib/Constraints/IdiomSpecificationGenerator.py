@@ -267,8 +267,7 @@ def partial_evaluator(syntax, handler, *extras):
     handler_result = handler(syntax, *extras)
     if handler_result:
         return handler_result
-    else:
-        return tuple(partial_evaluator(s, handler, *extras) if type(s) is tuple else s for s in syntax)
+    return tuple(partial_evaluator(s, handler, *extras) if type(s) is tuple else s for s in syntax)
 
 def rebase(prefix, suffix):
     if not prefix:
@@ -279,8 +278,7 @@ def rebase(prefix, suffix):
         return (suffix[0], rebase(prefix, suffix[1]), suffix[2])
     elif suffix[0] == "slotbase":
         return ("slotmember", prefix, suffix[1])
-    else:
-        raise Exception("Error, \"" + suffix[0] + "\" is not allowed in suffix.")
+    raise Exception("Error, \"" + suffix[0] + "\" is not allowed in suffix.")
 
 def evaluate_remove_rename_rebase(syntax, renames={}, prefix=None):
     if syntax[0] in ["rebase", "rename"]:
@@ -334,12 +332,8 @@ def evaluate_remove_for_with(syntax, specs, vardict={}, collectvars=[]):
                 new_vardict[syntax[2]] = i
                 branches.append(partial_evaluator(syntax[1], evaluate_remove_for_with, specs, new_vardict, collectvars))
 
-            if syntax[0] == "forall":
-                return ("conjunction",)+tuple(branches)
-            else:
-                return ("disjunction",)+tuple(branches)
-        else:
-            raise Exception("Free variables remain in for loop range start.")
+            return ("conjunction" if syntax[0] == "forall" else "disjunction",)+tuple(branches)
+        raise Exception("Free variables remain in for loop range start.")
 
     elif syntax[0] == "forone":
         rangevalue = partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, collectvars)
@@ -349,8 +343,7 @@ def evaluate_remove_for_with(syntax, specs, vardict={}, collectvars=[]):
             new_vardict = dict(vardict)
             new_vardict[syntax[2]] = rangevalue[1]
             return partial_evaluator(syntax[1], evaluate_remove_for_with, specs, new_vardict, collectvars)
-        else:
-            raise Exception("Free variables remain in for assignment.")
+        raise Exception("Free variables remain in for assignment.")
 
     elif syntax[0] == "if":
         leftvalue  = partial_evaluator(syntax[1], evaluate_remove_for_with, specs, vardict, collectvars)
@@ -361,8 +354,7 @@ def evaluate_remove_for_with(syntax, specs, vardict={}, collectvars=[]):
                 return partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, collectvars)
             else:
                 return partial_evaluator(syntax[4], evaluate_remove_for_with, specs,vardict, collectvars)
-        else:
-            raise Exception("Free variables remain in conditional.")
+        raise Exception("Free variables remain in conditional.")
 
     elif syntax[0] == "default":
         defaultvalue = partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, collectvars)
@@ -373,8 +365,7 @@ def evaluate_remove_for_with(syntax, specs, vardict={}, collectvars=[]):
             new_vardict = dict(vardict)
             new_vardict[syntax[2]] = defaultvalue[1]
             return partial_evaluator(syntax[1], evaluate_remove_for_with, specs, new_vardict, collectvars)
-        else:
-            raise Exception("Free variables remain in default value.")
+        raise Exception("Free variables remain in default value.")
 
     elif syntax[0] == "collect":
         new_collectvars = collectvars[:] + [syntax[1]]
@@ -385,14 +376,12 @@ def evaluate_remove_for_with(syntax, specs, vardict={}, collectvars=[]):
             return ("baseconst", vardict[syntax[1]])
         elif syntax[1] in collectvars:
             return syntax
-        else:
-            raise Exception("Free variable \""+syntax[1]+"\" remain in static calculation.")
+        raise Exception("Free variable \""+syntax[1]+"\" remain in static calculation.")
 
     elif syntax[0] in ["addvar", "subvar"]:
         if syntax[2] in vardict:
             return evaluate_remove_for_with((syntax[0][:3]+"const", syntax[1], vardict[syntax[2]]), specs, vardict)
-        else:
-            raise Exception("Free variables remain in static calculation of "+syntax[0]+".")
+        raise Exception("Free variables remain in static calculation of "+syntax[0]+".")
 
     elif syntax[0] in ["addconst", "subconst"]:
         leftvalue = evaluate_remove_for_with(syntax[1], specs, vardict)
@@ -447,8 +436,7 @@ def generate_cpp_type(syntax):
         return {"conjunction":"ConstraintAnd", "disjunction":"ConstraintOr"}[syntax[0]]
     elif syntax[0] == "atom":
         return syntax[1][0]
-    else:
-        raise Exception("Error, \"" + syntax[0] + "\" is not allowed in type generator.")
+    raise Exception("Error, \"" + syntax[0] + "\" is not allowed in type generator.")
 
 def generate_cpp_slot(syntax):
     if syntax[0] == "slotbase":
@@ -457,8 +445,7 @@ def generate_cpp_slot(syntax):
         return generate_cpp_slot(syntax[1]) + "." + syntax[2]
     elif syntax[0] == "slotindex" and syntax[2][0] in ["baseconst", "basevar"]:
         return generate_cpp_slot(syntax[1]) + "[" + str(syntax[2][1]) + "]"
-    else:
-        raise Exception("Error, \"" + syntax[0] + "\" is not allowed in single slot.")
+    raise Exception("Error, \"" + syntax[0] + "\" is not allowed in single slot.")
 
 def generate_cpp_slotlist(syntax):
     if syntax[0] == "slotbase":
@@ -471,46 +458,40 @@ def generate_cpp_slotlist(syntax):
         return tuple(prefix+"["+str(i)+"]" for prefix in generate_cpp_slotlist(syntax[1]) for i in range(syntax[2][1], syntax[3][1]))
     elif syntax[0] == "slottuple":
         return sum((generate_cpp_slotlist(s) for s in syntax[1:]), ())
-    else:
-        raise Exception("Error, \"" + syntax[0] + "\" is not allowed in slot list.")
+    raise Exception("Error, \"" + syntax[0] + "\" is not allowed in slot list.")
 
 def code_generation_core(syntax, counter):
     if syntax[0] == "atom":
-        slots  = []
-        result = {}
+        if len(syntax[1]) > 2:
+            if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
+                code = "auto atom{} = make_shared<Backend{}>(array<unsigned,3>{{{{0,1,1}}}}, wrap);\n".format(counter[0], syntax[1][0][10:])
+            elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
+                code = "auto atom{} = make_shared<Backend{}>(array<unsigned,3>{{{{1,1,1}}}}, wrap);\n".format(counter[0], syntax[1][0][10:])
+            else:
+                code = "auto atom{} = make_shared<Backend{}>(wrap);\n".format(counter[0], syntax[1][0][10:])
+            counter[0] += 1
+        else:
+            code = ""
+
+        slots = [generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
 
         if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
-            for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = ("MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i+1)+">", "atom"+str(counter[0])+", 0")
-                slots.append(slot)
-            code = "auto atom"+str(counter[0])+" = make_shared<Backend"+syntax[1][0][10:]+">(array<unsigned,3>{{0,1,1}}, wrap);\n"
-            counter[0]  += 1
+            result = {slot:("MultiVectorSelector<Backend{},{}>".format(syntax[1][0][10:], i+1), "atom{}, 0".format(counter[0]-1)) for i,slot in enumerate(slots)}
         elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
-            for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = ("MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i)+">", "atom"+str(counter[0])+", 0")
-                slots.append(slot)
-            code = "auto atom"+str(counter[0])+" = make_shared<Backend"+syntax[1][0][10:]+">(array<unsigned,3>{{1,1,1}}, wrap);\n"
-            counter[0]  += 1
+            result = {slot:("MultiVectorSelector<Backend{},{}>".format(syntax[1][0][10:], i), "atom{}, 0".format(counter[0]-1)) for i,slot in enumerate(slots)}
         elif len(syntax[1]) == 2:
-            slot = generate_cpp_slot(syntax[1][1])
-            result[slot] = ("Backend"+syntax[1][0][10:], "wrap")
-            slots.append(slot)
-            code = ""
+            result = {slot:("Backend{}".format(syntax[1][0][10:]), "wrap") for i,slot in enumerate(slots)}
         else:
-            for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = ("ScalarSelector<Backend"+syntax[1][0][10:]+","+str(i)+">", "atom"+str(counter[0]))
-                slots.append(slot)
-            code = "auto atom"+str(counter[0])+" = make_shared<Backend"+syntax[1][0][10:]+">(wrap);\n"
-            counter[0]  += 1
+            result = {slot:("ScalarSelector<Backend{},{}>".format(syntax[1][0][10:], i), "atom{}".format(counter[0]-1)) for i,slot in enumerate(slots)}
 
         return slots,result,code
 
     elif syntax[0] == "GeneralizedDominance":
         slotlists   = [generate_cpp_slotlist(s) for s in syntax[1:2]+syntax[3:1:-1]]
-        code        = "auto atom"+str(counter[0])+" = make_shared<BackendPDGDominate>(array<unsigned,3>{{"+", ".join(str(len(slotlist)) for slotlist in slotlists)+"}}, wrap);\n"
+        code        = "auto atom{} = make_shared<BackendPDGDominate>(array<unsigned,3>{{{{{},{},{}}}}}, wrap);\n".format(counter[0], len(slotlists[0]), len(slotlists[1]), len(slotlists[2]))
         slots       = [slot for slotlist in slotlists for slot in slotlist]
         slots       = [slot for n,slot in enumerate(slots) if slot not in slots[:n]]
-        result      = {slot:("MultiVectorSelector<BackendPDGDominate,"+str(j)+">", "atom"+str(counter[0])+", "+str(i))
+        result      = {slot:("MultiVectorSelector<BackendPDGDominate,{}>".format(j), "atom{}, {}".format(counter[0], i))
                        for j,slotlist in enumerate(slotlists) for i,slot in enumerate(slotlist)}
         counter[0] += 1
         return slots,result,code
@@ -530,10 +511,10 @@ def code_generation_core(syntax, counter):
         if syntax[0] == "disjunction":
             choices        = max([0]+[len(result[slot]) for slot in slots])
             templateparams = ",".join("tuple<"+",".join(a for a,b in result[slot])+">" for slot in slots)
-            classname      = "BackendOr<"+str(choices)+","+templateparams+">"
+            classname      = "BackendOr<{},{}>".format(choices, templateparams)
             constructargs  = ", ".join("tuple<"+",".join(a[0] for a in result[slot])+">{"+", ".join(a[0]+"{"+a[1]+"}" for a in result[slot])+"}" for slot in slots)
-            code          += "auto atom"+str(counter[0])+" = make_shared<"+classname+">("+constructargs+");\n"
-            result         = {slot:("ScalarSelector<"+classname+","+str(n)+">", "atom"+str(counter[0])) for n,slot in enumerate(slots)}
+            code          += "auto atom{} = make_shared<{}>({});\n".format(counter[0], classname, constructargs)
+            result         = {slot:("ScalarSelector<{},{}>".format(classname, n), "atom{}".format(counter[0])) for n,slot in enumerate(slots)}
             counter[0]    += 1
 
         return slots,result,code
@@ -547,23 +528,22 @@ def code_generation_core(syntax, counter):
         local_parts  = [part_result[part_slots[idx]] for idx in local_slots_idx]
         global_parts = [part_result[part_slots[idx]] for idx in global_slots_idx]
 
-        code += ("vector<unique_ptr<SolverAtom>> globals"+str(counter[0])+";\n"
-                +"".join("globals"+str(counter[0])+".emplace_back(unique_ptr<SolverAtom>(new "+part[0]+"("+part[1]+")));\n" for part in global_parts)
-                +"vector<unique_ptr<SolverAtom>> locals"+str(counter[0])+";\n"
-                +"".join("locals"+str(counter[0])+".emplace_back(unique_ptr<SolverAtom>(new "+part[0]+"("+part[1]+")));\n" for part in local_parts)
-                +"auto atom"+str(counter[0])+" = make_shared<BackendCollect>(array<unsigned,2>{{"+str(len(global_parts))+", "+str(len(local_parts))+"}}, move(globals"+str(counter[0])+"), move(locals"+str(counter[0])+"));\n")
+        code += "\n".join(["vector<unique_ptr<SolverAtom>> globals{};".format(counter[0])]
+                         +["globals{}.emplace_back(unique_ptr<SolverAtom>(new {}({})));".format(counter[0], part[0], part[1]) for part in global_parts]
+                         +["vector<unique_ptr<SolverAtom>> locals{};".format(counter[0])]
+                         +["locals{}.emplace_back(unique_ptr<SolverAtom>(new {}({})));".format(counter[0], part[0], part[1]) for part in local_parts]
+                         +["auto atom{} = make_shared<BackendCollect>(array<unsigned,2>{{{{{},{}}}}}, move(globals{}), move(locals{}));".format(counter[0], len(global_parts), len(local_parts), counter[0], counter[0])])+"\n"
 
         local_slots  = [part_slots[idx].replace("["+syntax[1]+"]", "["+str(n)+"]") for n in range(syntax[2]) for idx in local_slots_idx]
         global_slots = [part_slots[idx] for idx in global_slots_idx]
 
-        result      = {slot:("MultiVectorSelector<BackendCollect,0>", "atom"+str(counter[0])+", "+str(i)) for i,slot in enumerate(global_slots)}
-        result.update({slot:("MultiVectorSelector<BackendCollect,1>", "atom"+str(counter[0])+", "+str(i)) for i,slot in enumerate(local_slots)})
+        result      = {slot:("MultiVectorSelector<BackendCollect,0>", "atom{}, {}".format(counter[0], i)) for i,slot in enumerate(global_slots)}
+        result.update({slot:("MultiVectorSelector<BackendCollect,1>", "atom{}, {}".format(counter[0], i)) for i,slot in enumerate(local_slots)})
         counter[0] += 1
 
         return global_slots+local_slots, result, code
 
-    else:
-        raise Exception("Error, \"" + syntax[0] + "\" is not allowed in atoms collection.")
+    raise Exception("Error, \"" + syntax[0] + "\" is not allowed in atoms collection.")
 
 def generate_fast_cpp_specification(syntax, specs):
     constr = partial_evaluator(syntax[2], evaluate_remove_for_with, specs)
@@ -575,11 +555,11 @@ def generate_fast_cpp_specification(syntax, specs):
 
     slots, result, code = code_generation_core(constr, [0])
 
-    return ("vector<Solution> Detect"+syntax[1]+"(llvm::Function& function, unsigned max_solutions)\n{\n"
+    return ("vector<Solution> Detect{}(llvm::Function& function, unsigned max_solutions)\n{{\n".format(syntax[1])
            +"    FunctionWrap wrap(function);\n\n"
            +indent_code("    ", code.rstrip())+"\n\n"
            +"    vector<pair<string,unique_ptr<SolverAtom>>> constraint;\n\n"
-           +"".join(["    constraint.emplace_back(\""+slot+"\", unique_ptr<SolverAtom>(new "+result[slot][0]+"("+result[slot][1]+")));\n" for slot in slots])+"\n"
+           +"".join(["    constraint.emplace_back(\"{}\", unique_ptr<SolverAtom>(new {}({})));\n".format(slot, result[slot][0], result[slot][1]) for slot in slots])+"\n"
 
            +"    return Solution::Find(move(constraint), function, max_solutions);\n}")
 
@@ -589,7 +569,7 @@ def generate_cpp_code(syntax_list):
     whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY", "DOT", "SPMV",
                  "Reduction", "Histo", "Stencil", "StencilPlus"]
 
-    return ("\n".join("#include \"llvm/Constraints/"+s+".hpp\"" for s in includes) + "\n\n"
+    return ("\n".join("#include \"llvm/Constraints/{}.hpp\"".format(s) for s in includes) + "\n\n"
            +"using namespace std;\n\n"
            +"#pragma GCC optimize (\"O0\")\n"
            +"#pragma clang optimize off\n\n"
