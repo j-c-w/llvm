@@ -5,7 +5,7 @@ grammar = """
 
 specification ::= Constraint <s> <constraint> End
 
-constraint ::= <grouping> | <collect> | <rename> | <rebase> | <atomic> | <GeneralizedDominance> | '(' <constraint> ')'
+constraint ::= <grouping> | <collect> | <rename> | <rebase> | <atom> | <GeneralizedDominance> | '(' <constraint> ')'
 
 grouping    ::= <conjunction> | <disjunction> | <inheritance> | <forall> | <forsome> | <forone> | <if> | <default>
 inheritance ::= <rawinherit> | <arginherit>
@@ -38,7 +38,7 @@ addconst    ::= <calculation> + <n>
 subvar      ::= <calculation> - <s>
 subconst    ::= <calculation> - <n>
 
-atomic ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintPointerType> \
+atom ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintPointerType> \
          | <ConstraintIntZero> | <ConstraintFloatZero> \
          | <ConstraintUnused>       | <ConstraintNotNumericConstant> | <ConstraintConstant> \
          | <ConstraintPreexecution> | <ConstraintArgument>           | <ConstraintInstruction> \
@@ -440,7 +440,7 @@ def indent_code(prefix, code):
 def generate_cpp_type(syntax):
     if syntax[0] in ["conjunction", "disjunction"]:
         return {"conjunction":"ConstraintAnd", "disjunction":"ConstraintOr"}[syntax[0]]
-    elif syntax[0] == "atomic":
+    elif syntax[0] == "atom":
         return syntax[1][0]
     else:
         raise Exception("Error, \"" + syntax[0] + "\" is not allowed in type generator.")
@@ -489,36 +489,36 @@ def chunk_strings(stringlist, length):
 def slot_list_string(syntax):
     return "vector<string>{\n"+indent_code("  ", chunk_strings(generate_cpp_slotlist(syntax), 80)+"}")
 
-def collect_atomics(syntax, counter):
-    if syntax[0] == "atomic":
+def collect_atoms(syntax, counter):
+    if syntax[0] == "atom":
         slots  = []
         result = {}
 
         if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
             for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = ("MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i+1)+">", "atomic"+str(counter[0])+", 0")
+                result[slot] = ("MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i+1)+">", "atom"+str(counter[0])+", 0")
                 slots.append(slot)
-            atomics_list = "auto atomic"+str(counter[0])+" = make_shared<Backend"+syntax[1][0][10:]+">(array<unsigned,3>{{0,1,1}}, wrap);\n"
+            atoms_list = "auto atom"+str(counter[0])+" = make_shared<Backend"+syntax[1][0][10:]+">(array<unsigned,3>{{0,1,1}}, wrap);\n"
             counter[0]  += 1
         elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
             for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = ("MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i)+">", "atomic"+str(counter[0])+", 0")
+                result[slot] = ("MultiVectorSelector<Backend"+syntax[1][0][10:]+","+str(i)+">", "atom"+str(counter[0])+", 0")
                 slots.append(slot)
-            atomics_list = "auto atomic"+str(counter[0])+" = make_shared<Backend"+syntax[1][0][10:]+">(array<unsigned,3>{{1,1,1}}, wrap);\n"
+            atoms_list = "auto atom"+str(counter[0])+" = make_shared<Backend"+syntax[1][0][10:]+">(array<unsigned,3>{{1,1,1}}, wrap);\n"
             counter[0]  += 1
         elif len(syntax[1]) == 2:
             slot = generate_cpp_slot(syntax[1][1])
             result[slot] = ("Backend"+syntax[1][0][10:], "wrap")
             slots.append(slot)
-            atomics_list = ""
+            atoms_list = ""
         else:
             for i,slot in enumerate(generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]):
-                result[slot] = ("ScalarSelector<Backend"+syntax[1][0][10:]+","+str(i)+">", "atomic"+str(counter[0]))
+                result[slot] = ("ScalarSelector<Backend"+syntax[1][0][10:]+","+str(i)+">", "atom"+str(counter[0]))
                 slots.append(slot)
-            atomics_list = "auto atomic"+str(counter[0])+" = make_shared<Backend"+syntax[1][0][10:]+">(wrap);\n"
+            atoms_list = "auto atom"+str(counter[0])+" = make_shared<Backend"+syntax[1][0][10:]+">(wrap);\n"
             counter[0]  += 1
 
-        return slots,result,atomics_list
+        return slots,result,atoms_list
 
     elif syntax[0] == "GeneralizedDominance":
         slots  = []
@@ -528,25 +528,25 @@ def collect_atomics(syntax, counter):
 
         for j,slotlist in enumerate(slotlists):
             for i,slot in enumerate(slotlist):
-                result[slot] = ("MultiVectorSelector<BackendPDGDominate,"+str(j)+">", "atomic"+str(counter[0])+", "+str(i))
+                result[slot] = ("MultiVectorSelector<BackendPDGDominate,"+str(j)+">", "atom"+str(counter[0])+", "+str(i))
                 slots.append(slot)
 
-        atomics_list  = "auto atomic"+str(counter[0])+" = make_shared<BackendPDGDominate>(array<unsigned,3>{{"+", ".join(str(len(slotlist)) for slotlist in slotlists)+"}}, wrap);\n"
+        atoms_list  = "auto atom"+str(counter[0])+" = make_shared<BackendPDGDominate>(array<unsigned,3>{{"+", ".join(str(len(slotlist)) for slotlist in slotlists)+"}}, wrap);\n"
         counter[0]   += 1
-        return slots,result,atomics_list
+        return slots,result,atoms_list
 
     elif syntax[0] == "conjunction":
         slots        = []
         result       = {}
-        atomics_list = ""
-        for part_slots, part_result, part_atomics in [collect_atomics(s, counter) for s in syntax[1:]]:
+        atoms_list = ""
+        for part_slots, part_result, part_atoms in [collect_atoms(s, counter) for s in syntax[1:]]:
             for slot in part_slots:
                 if slot in result:
                     result[slot] += [part_result[slot]]
                 else:
                     result[slot] = [part_result[slot]]
                     slots.append(slot)
-            atomics_list += part_atomics
+            atoms_list += part_atoms
 
         for slot in slots:
             if len(result[slot]) == 1:
@@ -554,43 +554,38 @@ def collect_atomics(syntax, counter):
             else:
                 result[slot] = ("BackendAnd<"+",".join(a for a,b in result[slot])+">", ", ".join("{"+b+"}" for a,b in result[slot]))
 
-        return slots,result,atomics_list
+        return slots,result,atoms_list
 
     elif syntax[0] == "disjunction":
         slots        = []
         result       = {}
-        atomics_list = ""
-        for part_slots, part_result, part_atomics in [collect_atomics(s, counter) for s in syntax[1:]]:
+        atoms_list = ""
+        for part_slots, part_result, part_atoms in [collect_atoms(s, counter) for s in syntax[1:]]:
             for slot in part_slots:
                 if slot in result:
                     result[slot] += [part_result[slot]]
                 else:
                     result[slot] = [part_result[slot]]
                     slots.append(slot)
-            atomics_list += part_atomics
+            atoms_list += part_atoms
 
-        atomics_list += "vector<vector<unique_ptr<SolverAtom>>> vec"+str(counter[0])+"("+str(len(slots))+");\n"
-
-        for i,slot in enumerate(slots):
-            for restype, resparams in result[slot]:
-                atomics_list += "vec"+str(counter[0])+"["+str(i)+"].emplace_back(unique_ptr<SolverAtom>(new "+restype+"("+resparams+"))); //"+slot+"\n"
-
-        atomics_list += "auto atomic"+str(counter[0])+" = make_shared<BackendOr>(array<unsigned,1>{{"+str(len(slots))+"}}, move(vec"+str(counter[0])+"));\n"
-
-        for i,slot in enumerate(slots):
-            result[slot] = ("VectorSelector<BackendOr>", "atomic"+str(counter[0])+", "+str(i))
+        choices = max([0]+[len(result[slot]) for slot in slots])
+        classname = "BackendOr<"+str(choices)+","+",".join("tuple<"+",".join(a[0] for a in result[slot])+">" for slot in slots)+">"
+        atoms_list += "auto atom"+str(counter[0])+" = make_shared<"+classname+">("+", ".join("tuple<"+",".join(a[0] for a in result[slot])+">{"+", ".join(a[0]+"{"+a[1]+"}" for a in result[slot])+"}" for slot in slots)+");\n"
+        for i in range(len(slots)):
+            result[slots[i]] = ("ScalarSelector<"+classname+","+str(i)+">", "atom"+str(counter[0]))
 
         counter[0] += 1
 
-        return slots,result,atomics_list
+        return slots,result,atoms_list
 
     elif syntax[0] == "collect":
         global_slots = []
         local_slots  = []
         result       = {}
-        atomics_list = ""
+        atoms_list = ""
 
-        part_slots, part_result, atomics_list = collect_atomics(syntax[3], counter)
+        part_slots, part_result, atoms_list = collect_atoms(syntax[3], counter)
 
         local_slots_idx  = [i for i,slot in enumerate(part_slots) if "["+syntax[1]+"]"     in slot]
         global_slots_idx = [i for i,slot in enumerate(part_slots) if "["+syntax[1]+"]" not in slot]
@@ -600,28 +595,28 @@ def collect_atomics(syntax, counter):
 
         global_slots = [part_slots[i] for i in global_slots_idx]
 
-        atomics_list += "vector<unique_ptr<SolverAtom>> globals"+str(counter[0])+";\n"
+        atoms_list += "vector<unique_ptr<SolverAtom>> globals"+str(counter[0])+";\n"
         for idx in global_slots_idx:
-            atomics_list += "globals"+str(counter[0])+".emplace_back(unique_ptr<SolverAtom>(new "+part_result[part_slots[idx]][0]+"("+part_result[part_slots[idx]][1]+"))); //"+part_slots[idx]+"\n"
+            atoms_list += "globals"+str(counter[0])+".emplace_back(unique_ptr<SolverAtom>(new "+part_result[part_slots[idx]][0]+"("+part_result[part_slots[idx]][1]+"))); //"+part_slots[idx]+"\n"
 
-        atomics_list += "vector<unique_ptr<SolverAtom>> locals"+str(counter[0])+";\n"
+        atoms_list += "vector<unique_ptr<SolverAtom>> locals"+str(counter[0])+";\n"
         for idx in local_slots_idx:
-            atomics_list += "locals"+str(counter[0])+".emplace_back(unique_ptr<SolverAtom>(new "+part_result[part_slots[idx]][0]+"("+part_result[part_slots[idx]][1]+"))); //"+part_slots[idx]+"\n"
+            atoms_list += "locals"+str(counter[0])+".emplace_back(unique_ptr<SolverAtom>(new "+part_result[part_slots[idx]][0]+"("+part_result[part_slots[idx]][1]+"))); //"+part_slots[idx]+"\n"
 
-        atomics_list += "auto atomic"+str(counter[0])+" = make_shared<BackendCollect>(array<unsigned,2>{{"+str(len(global_slots))+", "+str(len(local_slots))+"}}, move(globals"+str(counter[0])+"), move(locals"+str(counter[0])+"));\n"
+        atoms_list += "auto atom"+str(counter[0])+" = make_shared<BackendCollect>(array<unsigned,2>{{"+str(len(global_slots))+", "+str(len(local_slots))+"}}, move(globals"+str(counter[0])+"), move(locals"+str(counter[0])+"));\n"
 
         for i,slot in enumerate(global_slots):
-            result[slot] = ("MultiVectorSelector<BackendCollect,0>", "atomic"+str(counter[0])+", "+str(i))
+            result[slot] = ("MultiVectorSelector<BackendCollect,0>", "atom"+str(counter[0])+", "+str(i))
         
         for i,slot in enumerate(local_slots):
-            result[slot] = ("MultiVectorSelector<BackendCollect,1>", "atomic"+str(counter[0])+", "+str(i))
+            result[slot] = ("MultiVectorSelector<BackendCollect,1>", "atom"+str(counter[0])+", "+str(i))
 
         counter[0] += 1
 
-        return global_slots+local_slots, result, atomics_list
+        return global_slots+local_slots, result, atoms_list
 
     else:
-        raise Exception("Error, \"" + syntax[0] + "\" is not allowed in atomics collection.")
+        raise Exception("Error, \"" + syntax[0] + "\" is not allowed in atoms collection.")
 
 def generate_fast_cpp_specification(syntax, specs):
     constr = partial_evaluator(syntax[2], evaluate_remove_for_with, specs)
@@ -629,11 +624,11 @@ def generate_fast_cpp_specification(syntax, specs):
     constr = partial_evaluator(constr,    evaluate_remove_trivials)
     constr = partial_evaluator(constr,    evaluate_flatten_connectives)
 
-    slots, result, atomics_list = collect_atomics(constr, [0])
+    slots, result, atoms_list = collect_atoms(constr, [0])
 
     return ("vector<Solution> Detect"+syntax[1]+"(llvm::Function& function, unsigned max_solutions)\n{\n"
            +"    FunctionWrap wrap(function);\n\n"
-           +indent_code("    ", atomics_list.rstrip())+"\n\n"
+           +indent_code("    ", atoms_list.rstrip())+"\n\n"
            +"    vector<pair<string,unique_ptr<SolverAtom>>> constraint;\n\n"
            +"".join(["    constraint.emplace_back(\""+slot+"\", unique_ptr<SolverAtom>(new "+result[slot][0]+"("+result[slot][1]+")));\n" for slot in slots])+"\n"
 

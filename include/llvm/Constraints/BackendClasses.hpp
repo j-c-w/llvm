@@ -10,22 +10,6 @@
 /* This class implements he logical dicjunction in the constraint description system.
    The constructor takes an arbitrary amount of constraints and the resulting constraints enforces that all of them are
    satisfied at once. */
-class BackendOr
-{
-public:
-    BackendOr(std::array<unsigned,1>, std::vector<std::vector<std::unique_ptr<SolverAtom>>> c);
-
-    SkipResult skip_invalid(unsigned idx, SolverAtom::Value& c) const;
-
-    void begin (unsigned idx);
-    void fixate(unsigned idx, SolverAtom::Value c);
-    void resume(unsigned idx);
-
-private:
-    std::vector<std::vector<std::unique_ptr<SolverAtom>>> constraints;
-    std::vector<unsigned>                                 disabled_since;
-};
-
 class BackendCollect
 {
 public:
