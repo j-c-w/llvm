@@ -18,7 +18,7 @@ define i32 @test_x86_tbm_bextri_u32_subreg(i32 %a) nounwind {
 ; CHECK-LABEL: test_x86_tbm_bextri_u32_subreg:
 ; CHECK:       # BB#0:
 ; CHECK-NEXT:    movl %edi, %eax
-; CHECK-NEXT:    movzbl %ah, %eax
+; CHECK-NEXT:    movzbl %ah, %eax # NOREX
 ; CHECK-NEXT:    retq
   %t0 = lshr i32 %a, 8
   %t1 = and i32 %t0, 255
@@ -53,7 +53,7 @@ define i32 @test_x86_tbm_bextri_u32_z2(i32 %a, i32 %b, i32 %c) nounwind {
 ; CHECK-LABEL: test_x86_tbm_bextri_u32_z2:
 ; CHECK:       # BB#0:
 ; CHECK-NEXT:    shrl $4, %edi
-; CHECK-NEXT:    testw $4095, %di # imm = 0xFFF
+; CHECK-NEXT:    testl $4095, %edi # imm = 0xFFF
 ; CHECK-NEXT:    cmovnel %edx, %esi
 ; CHECK-NEXT:    movl %esi, %eax
 ; CHECK-NEXT:    retq
@@ -79,7 +79,7 @@ define i64 @test_x86_tbm_bextri_u64_subreg(i64 %a) nounwind {
 ; CHECK-LABEL: test_x86_tbm_bextri_u64_subreg:
 ; CHECK:       # BB#0:
 ; CHECK-NEXT:    movq %rdi, %rax
-; CHECK-NEXT:    movzbl %ah, %eax
+; CHECK-NEXT:    movzbl %ah, %eax # NOREX
 ; CHECK-NEXT:    retq
   %t0 = lshr i64 %a, 8
   %t1 = and i64 %t0, 255
@@ -114,7 +114,7 @@ define i64 @test_x86_tbm_bextri_u64_z2(i64 %a, i64 %b, i64 %c) nounwind {
 ; CHECK-LABEL: test_x86_tbm_bextri_u64_z2:
 ; CHECK:       # BB#0:
 ; CHECK-NEXT:    shrl $4, %edi
-; CHECK-NEXT:    testw $4095, %di # imm = 0xFFF
+; CHECK-NEXT:    testl $4095, %edi # imm = 0xFFF
 ; CHECK-NEXT:    cmovneq %rdx, %rsi
 ; CHECK-NEXT:    movq %rsi, %rax
 ; CHECK-NEXT:    retq

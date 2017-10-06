@@ -188,6 +188,8 @@ public:
   }
 
   bool isLoweredToCall(const Function *F) {
+    assert(F && "A concrete function must be provided to this routine.");
+
     // FIXME: These should almost certainly not be handled here, and instead
     // handled with the help of TLI or the target itself. This was largely
     // ported from existing analysis heuristics here so that such refactorings
@@ -674,7 +676,9 @@ public:
       BaseGV = dyn_cast<GlobalValue>(Ptr->stripPointerCasts());
     }
     bool HasBaseReg = (BaseGV == nullptr);
-    int64_t BaseOffset = 0;
+
+    auto PtrSizeBits = DL.getPointerTypeSizeInBits(Ptr->getType());
+    APInt BaseOffset(PtrSizeBits, 0);
     int64_t Scale = 0;
 
     auto GTI = gep_type_begin(PointeeType, Operands);
@@ -700,9 +704,10 @@ public:
         BaseOffset += DL.getStructLayout(STy)->getElementOffset(Field);
       } else {
         int64_t ElementSize = DL.getTypeAllocSize(GTI.getIndexedType());
-        if (ConstIdx)
-          BaseOffset += ConstIdx->getSExtValue() * ElementSize;
-        else {
+        if (ConstIdx) {
+          BaseOffset +=
+              ConstIdx->getValue().sextOrTrunc(PtrSizeBits) * ElementSize;
+        } else {
           // Needs scale register.
           if (Scale != 0)
             // No addressing mode takes two scale registers.
@@ -715,10 +720,43 @@ public:
     // Assumes the address space is 0 when Ptr is nullptr.
     unsigned AS =
         (Ptr == nullptr ? 0 : Ptr->getType()->getPointerAddressSpace());
+
     if (static_cast<T *>(this)->isLegalAddressingMode(
-            TargetType, const_cast<GlobalValue *>(BaseGV), BaseOffset,
-            HasBaseReg, Scale, AS))
+            TargetType, const_cast<GlobalValue *>(BaseGV),
+            BaseOffset.sextOrTrunc(64).getSExtValue(), HasBaseReg, Scale, AS))
       return TTI::TCC_Free;
+    return TTI::TCC_Basic;
+  }
+
+  int getGEPCost(const GEPOperator *GEP, ArrayRef<const Value *> Operands) {
+    if (!isa<Instruction>(GEP))
+      return TTI::TCC_Basic;
+
+    Type *PointeeType = GEP->getSourceElementType();
+    const Value *Ptr = GEP->getPointerOperand();
+
+    if (getGEPCost(PointeeType, Ptr, Operands) == TTI::TCC_Free) {
+      // Should check if the GEP is actually used in load / store instructions.
+      // For simplicity, we check only direct users of the GEP.
+      //
+      // FIXME: GEPs could also be folded away as a part of addressing mode in
+      // load/store instructions together with other instructions (e.g., other
+      // GEPs). Handling all such cases must be expensive to be performed
+      // in this function, so we stay conservative for now.
+      for (const User *U : GEP->users()) {
+        const Operator *UOP = cast<Operator>(U);
+        const Value *PointerOperand = nullptr;
+        if (auto *LI = dyn_cast<LoadInst>(UOP))
+          PointerOperand = LI->getPointerOperand();
+        else if (auto *SI = dyn_cast<StoreInst>(UOP))
+          PointerOperand = SI->getPointerOperand();
+
+        if ((!PointerOperand || PointerOperand != GEP) &&
+            !GEP->hasAllZeroIndices())
+          return TTI::TCC_Basic;
+      }
+      return TTI::TCC_Free;
+    }
     return TTI::TCC_Basic;
   }
 
@@ -745,11 +783,9 @@ public:
       if (A->isStaticAlloca())
         return TTI::TCC_Free;
 
-    if (const GEPOperator *GEP = dyn_cast<GEPOperator>(U)) {
-      return static_cast<T *>(this)->getGEPCost(GEP->getSourceElementType(),
-                                                GEP->getPointerOperand(),
+    if (const GEPOperator *GEP = dyn_cast<GEPOperator>(U))
+      return static_cast<T *>(this)->getGEPCost(GEP,
                                                 Operands.drop_front());
-    }
 
     if (auto CS = ImmutableCallSite(U)) {
       const Function *F = CS.getCalledFunction();
@@ -794,7 +830,7 @@ public:
     // A real function call is much slower.
     if (auto *CI = dyn_cast<CallInst>(I)) {
       const Function *F = CI->getCalledFunction();
-      if (static_cast<T *>(this)->isLoweredToCall(F))
+      if (!F || static_cast<T *>(this)->isLoweredToCall(F))
         return 40;
       // Some intrinsics return a value and a flag, we use the value type
       // to decide its latency.

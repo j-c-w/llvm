@@ -1618,20 +1618,23 @@ def MOV64mr : RI<0x89, MRMDestMem, (outs), (ins i64mem:$dst, GR64:$src),
 // Versions of MOV8rr, MOV8mr, and MOV8rm that use i8mem_NOREX and GR8_NOREX so
 // that they can be used for copying and storing h registers, which can't be
 // encoded when a REX prefix is present.
-let isPseudo = 1 in {
+let isCodeGenOnly = 1 in {
 let hasSideEffects = 0 in
-def MOV8rr_NOREX : I<0, Pseudo,
+def MOV8rr_NOREX : I<0x88, MRMDestReg,
                      (outs GR8_NOREX:$dst), (ins GR8_NOREX:$src),
-                     "", [], IIC_MOV>, Sched<[WriteMove]>;
+                     "mov{b}\t{$src, $dst|$dst, $src}  # NOREX", [], IIC_MOV>,
+                   Sched<[WriteMove]>;
 let mayStore = 1, hasSideEffects = 0 in
-def MOV8mr_NOREX : I<0, Pseudo,
+def MOV8mr_NOREX : I<0x88, MRMDestMem,
                      (outs), (ins i8mem_NOREX:$dst, GR8_NOREX:$src),
-                     "", [], IIC_MOV_MEM>, Sched<[WriteStore]>;
+                     "mov{b}\t{$src, $dst|$dst, $src}  # NOREX", [],
+                     IIC_MOV_MEM>, Sched<[WriteStore]>;
 let mayLoad = 1, hasSideEffects = 0,
     canFoldAsLoad = 1, isReMaterializable = 1 in
-def MOV8rm_NOREX : I<0, Pseudo,
+def MOV8rm_NOREX : I<0x8A, MRMSrcMem,
                      (outs GR8_NOREX:$dst), (ins i8mem_NOREX:$src),
-                     "", [], IIC_MOV_MEM>, Sched<[WriteLoad]>;
+                     "mov{b}\t{$src, $dst|$dst, $src}  # NOREX", [],
+                     IIC_MOV_MEM>, Sched<[WriteLoad]>;
 }
 
 
@@ -3233,14 +3236,14 @@ defm : ShiftRotateByOneAlias<"ror", "ROR">;
 FIXME */
 
 // test: We accept "testX <reg>, <mem>" and "testX <mem>, <reg>" as synonyms.
-def : InstAlias<"test{b}\t{$val, $mem|$mem, $val}",
-                (TEST8rm  GR8 :$val, i8mem :$mem), 0>;
-def : InstAlias<"test{w}\t{$val, $mem|$mem, $val}",
-                (TEST16rm GR16:$val, i16mem:$mem), 0>;
-def : InstAlias<"test{l}\t{$val, $mem|$mem, $val}",
-                (TEST32rm GR32:$val, i32mem:$mem), 0>;
-def : InstAlias<"test{q}\t{$val, $mem|$mem, $val}",
-                (TEST64rm GR64:$val, i64mem:$mem), 0>;
+def : InstAlias<"test{b}\t{$mem, $val|$val, $mem}",
+                (TEST8mr  i8mem :$mem, GR8 :$val), 0>;
+def : InstAlias<"test{w}\t{$mem, $val|$val, $mem}",
+                (TEST16mr i16mem:$mem, GR16:$val), 0>;
+def : InstAlias<"test{l}\t{$mem, $val|$val, $mem}",
+                (TEST32mr i32mem:$mem, GR32:$val), 0>;
+def : InstAlias<"test{q}\t{$mem, $val|$val, $mem}",
+                (TEST64mr i64mem:$mem, GR64:$val), 0>;
 
 // xchg: We accept "xchgX <reg>, <mem>" and "xchgX <mem>, <reg>" as synonyms.
 def : InstAlias<"xchg{b}\t{$mem, $val|$val, $mem}",
