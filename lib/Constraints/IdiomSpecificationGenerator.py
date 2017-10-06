@@ -420,7 +420,8 @@ def evaluate_flatten_connectives(syntax):
 
 def optimize_delay_aliases(syntax, slotlist):
     if syntax[0] == "conjunction":
-        aliases = [s for s in syntax[1:] if s[0] == "atom" and s[1][0] == "ConstraintSame"]
+        aliases = [s[1][1:] for s in syntax[1:] if s[0] == "atom" and s[1][0] == "ConstraintSame"]
+        aliases = [(generate_cpp_slot(a),generate_cpp_slot(b)) for a,b in aliases]
         sys.stderr.write(str(aliases)+"\n")
 
 def indent_code(prefix, code):
@@ -512,7 +513,7 @@ def code_generation_core(syntax, counter):
             choices        = max([0]+[len(result[slot]) for slot in slots])
             templateparams = ",".join("tuple<"+",".join(a for a,b in result[slot])+">" for slot in slots)
             classname      = "BackendOr<{},{}>".format(choices, templateparams)
-            constructargs  = ", ".join("tuple<"+",".join(a[0] for a in result[slot])+">{"+", ".join(a[0]+"{"+a[1]+"}" for a in result[slot])+"}" for slot in slots)
+            constructargs  = ", ".join("tuple<"+",".join(a[0] for a in result[slot])+">{"+", ".join("{"+a[1]+"}" for a in result[slot])+"}" for slot in slots)
             code          += "auto atom{} = make_shared<{}>({});\n".format(counter[0], classname, constructargs)
             result         = {slot:("ScalarSelector<{},{}>".format(classname, n), "atom{}".format(counter[0])) for n,slot in enumerate(slots)}
             counter[0]    += 1
@@ -550,30 +551,30 @@ def generate_fast_cpp_specification(syntax, specs):
     constr = partial_evaluator(constr,    evaluate_remove_rename_rebase)
     constr = partial_evaluator(constr,    evaluate_remove_trivials)
     constr = partial_evaluator(constr,    evaluate_flatten_connectives)
-
-#    constr = partial_evaluator(constr, optimize_delay_aliases, generate_cpp_slotlist(constr))
+#   constr = partial_evaluator(constr, optimize_delay_aliases, generate_cpp_slotlist(constr))
 
     slots, result, code = code_generation_core(constr, [0])
 
-    return ("vector<Solution> Detect{}(llvm::Function& function, unsigned max_solutions)\n{{\n".format(syntax[1])
-           +"    FunctionWrap wrap(function);\n\n"
-           +indent_code("    ", code.rstrip())+"\n\n"
-           +"    vector<pair<string,unique_ptr<SolverAtom>>> constraint;\n\n"
-           +"".join(["    constraint.emplace_back(\"{}\", unique_ptr<SolverAtom>(new {}({})));\n".format(slot, result[slot][0], result[slot][1]) for slot in slots])+"\n"
-
-           +"    return Solution::Find(move(constraint), function, max_solutions);\n}")
+    return "\n".join(["vector<Solution> Detect{}(llvm::Function& function, unsigned max_solutions)".format(syntax[1])]
+                    +["{"]
+                    +["    FunctionWrap wrap(function);"]
+                    +[indent_code("    ", code.rstrip())]
+                    +["    vector<pair<string,unique_ptr<SolverAtom>>> constraint;"]
+                    +["    constraint.emplace_back(\"{}\", unique_ptr<SolverAtom>(new {}({})));".format(slot, result[slot][0], result[slot][1]) for slot in slots]
+                    +["    return Solution::Find(move(constraint), function, max_solutions);"]
+                    +["}"])
 
 def generate_cpp_code(syntax_list):
     includes  = ["IdiomSpecifications","BackendSpecializations", "BackendDirectClasses", "BackendSelectors", "Solution"]
     specs     = {spec[1] : spec[2] for spec in syntax_list}
-    whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY", "DOT", "SPMV",
-                 "Reduction", "Histo", "Stencil", "StencilPlus"]
+    whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY",
+                 "DOT", "SPMV", "Reduction", "Histo", "Stencil", "StencilPlus"]
 
-    return ("\n".join("#include \"llvm/Constraints/{}.hpp\"".format(s) for s in includes) + "\n\n"
-           +"using namespace std;\n\n"
-           +"#pragma GCC optimize (\"O0\")\n"
-           +"#pragma clang optimize off\n\n"
-           +"\n\n".join(generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] in whitelist))
+    return "\n".join(["#include \"llvm/Constraints/{}.hpp\"".format(s) for s in includes]
+                    +["using namespace std;"]
+                    +["#pragma GCC optimize (\"O0\")"]
+                    +["#pragma clang optimize off"]
+                    +[generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] in whitelist])
 
 def print_syntax_tree(syntax, indent=0):
     if type(syntax) is str or type(syntax) is int:
