@@ -19,23 +19,6 @@ private:
     std::shared_ptr<Backend> base;
 };
 
-template<typename Backend>
-class VectorSelector : public SolverAtom
-{
-public:
-    VectorSelector(std::shared_ptr<Backend> b, unsigned i) : base(b), idx(i) { }
-
-    SkipResult skip_invalid(SolverAtom::Value &c) const final { return base->template skip_invalid(idx, c); }
-
-    void begin()                     final { base->begin(idx); }
-    void fixate(SolverAtom::Value c) final { base->fixate(idx, c); }
-    void resume()                    final { base->resume(idx); }
-
-private:
-    std::shared_ptr<Backend> base;
-    unsigned                 idx;
-};
-
 template<typename Backend, unsigned idx1>
 class MultiVectorSelector : public SolverAtom
 {

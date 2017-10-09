@@ -79,13 +79,6 @@ public:
        (s1, BackendAnd<SolverAtom2,SolverAtom3,SolverAtomN...>(s2, s3, sn...)) { }
 };
 
-
-
-
-
-
-
-
 namespace {
 template<unsigned,typename>
 class HelperClass;
@@ -249,4 +242,266 @@ void BackendOr<N, std::tuple<SolverAtom1...>,SolverAtomN...>::resume()
     HelperClass<0,std::tuple<SolverAtom1...>>::resume(disabled_since(), constraints);
 }
 
+/*
+template<unsigned globals,unsigned locals>
+class BackendCollectDirect
+{
+public:
+    BackendCollectDirect(std::array<unsigned,2> size, std::vector<std::unique_ptr<SolverAtom>> nloc,
+                                                      std::vector<std::unique_ptr<SolverAtom>> loc);
+
+    template<unsigned idx1> SkipResult skip_invalid(unsigned idx2, SolverAtom::Value &c) const;
+
+    template<unsigned idx1> void begin (unsigned idx2);
+    template<unsigned idx1> void fixate(unsigned idx2, SolverAtom::Value c);
+    template<unsigned idx1> void resume(unsigned idx2);
+
+private:
+    std::vector<std::unique_ptr<SolverAtom>> nonlocals;
+    std::vector<std::unique_ptr<SolverAtom>> locals;
+    unsigned                                 filled_nonlocals;
+    std::vector<unsigned>                    filled_locals;
+    std::vector<SolverAtom::Value>           solutions;
+};
+
+template<unsigned globals,unsigned locals>
+BackendCollectDirect<globals,locals>::BackendCollectDirect(std::array<unsigned,2>,
+                                                           std::vector<std::unique_ptr<SolverAtom>> nloc,
+                                                           std::vector<std::unique_ptr<SolverAtom>> loc)
+               : nonlocals(std::move(nloc)), locals(std::move(loc)),
+                 filled_nonlocals(0), filled_locals(locals.size(), 0)
+{ }
+
+template<unsigned globals,unsigned locals>
+template<unsigned idx1>
+SkipResult BackendCollectDirect<globals,locals>::skip_invalid(unsigned idx2, SolverAtom::Value &c) const
+{
+    if(idx1 == 0)
+    {
+        return nonlocals[idx2]->skip_invalid(c);
+    }
+    else if(idx1 == 1)
+    {
+        unsigned flat_solution_idx = filled_locals[idx2%locals.size()] * locals.size() + (idx2%locals.size());
+
+        if(flat_solution_idx < solutions.size())
+        {
+            if(c == solutions[flat_solution_idx])
+            {
+                return SkipResult::PASS;
+            }
+            else if(c < solutions[flat_solution_idx])
+            {
+                c = solutions[flat_solution_idx];
+                return SkipResult::CHANGEPASS;
+            }
+            else return SkipResult::FAIL;
+        }
+        else if(c == UINT_MAX - 1)
+        {
+            return SkipResult::PASS;
+        }
+        else if(c < UINT_MAX - 1)
+        {
+            c = UINT_MAX - 1;
+            return SkipResult::CHANGEPASS;
+        }
+        else return SkipResult::FAIL;
+    }
+}
+
+template<unsigned globals,unsigned locals>
+template<unsigned idx1>
+void BackendCollectDirect<globals,locals>::begin(unsigned idx2)
+{
+    if(idx1 == 0)
+    {
+        nonlocals[idx2]->begin();
+    }
+}
+
+template<unsigned globals,unsigned locals>
+template<unsigned idx1>
+void BackendCollectDirect<globals,locals>::fixate(unsigned idx2, SolverAtom::Value c)
+{
+    if(idx1 == 0)
+    {
+        nonlocals[idx2]->fixate(c);
+
+        if(++filled_nonlocals == nonlocals.size())
+        {
+            Solver solver(std::move(locals));
+
+            while(true)
+            {
+                auto solution = solver.next_solution();
+
+                if(solution.empty()) break;
+
+                solutions.insert(solutions.end(), solution.begin(), solution.end());
+            }
+
+            locals = solver.swap_specials();
+        }
+    }
+    else if(idx1 == 1)
+    {
+        filled_locals[idx2%locals.size()]++;
+    }
+}
+
+template<unsigned globals,unsigned locals>
+template<unsigned idx1>
+void BackendCollectDirect<globals,locals>::resume(unsigned idx2)
+{
+    if(idx1 == 0)
+    {
+        if(filled_nonlocals-- == nonlocals.size())
+        {
+            solutions.clear();
+        }
+
+        nonlocals[idx2]->resume();
+    }
+    else if(idx1 == 1)
+    {
+        filled_locals[idx2%locals.size()]--;
+    }
+}
+*/
+
+/* PROBLEM: THE AMOUNT OF ORIGINS IS UNKNOWN AT THIS POINT.
+template<unsigned size1,unsigned size2,unsigned size3,bool reverse,bool allow_unstrict>
+class BackendDominateDirect
+{
+public:
+    BackendDominateDirect(const std::vector<std::vector<unsigned>>& graph_forw);
+
+    template<unsigned idx1> SkipResult skip_invalid(unsigned& c) const;
+
+    template<unsigned idx1> void begin() { }
+
+    template<unsigned idx> void fixate(unsigned c)
+    {
+        constexpr unsigned idx1   = (idx < size1) ? 0 : (idx < size1+size2) ? 1 : 2;
+        constexpr unsigned offset = (idx1 == 0) ? 0 : (idx1 == 1) ? size1 : size2;
+
+        if(c != UINT_MAX-1)
+        {
+            std::get<idx>(value_masks) = true;
+            filled_values[offset+used_values[idx1]++] = c;
+        }
+
+        remaining_values[idx1]--;
+    }
+    template<unsigned idx> void resume()
+    {
+        constexpr unsigned idx1   = (idx < size1) ? 0 : (idx < size1+size2) ? 1 : 2;
+        constexpr unsigned offset = (idx1 == 0) ? 0 : (idx1 == 1) ? size1 : size2;
+
+        if(std::get<idx>(value_masks))
+        {
+            std::get<idx>(value_masks) = false;
+            used_values[idx1]--;
+        }
+
+        remaining_values[idx1]++;
+    }
+    
+private:
+    mutable GraphEngine                    graph_engine;
+    std::vector<std::vector<unsigned>>     graph_forw;
+    std::array<unsigned,3>                 used_values;
+    std::array<unsigned,3>                 remaining_values;
+    std::array<unsigned,size1+size2+size3> filled_values;
+    std::array<bool,size1+size2+size3>     value_masks;
+};
+
+
+template<unsigned size1,unsigned size2,unsigned size3,bool reverse,bool allow_unstrict>
+BackendDominateDirect<size1,size2,size3,reverse,allow_unstrict>
+                     ::BackendDominateDirect(const std::vector<std::vector<unsigned>>& gf)
+                     : graph_engine(gf.size()), graph_forw(gf), used_values{{0,0,0}},
+                       remaining_values{{size1,size2,size3}},
+                       filled_values{},
+                       value_masks{} { }
+
+template<unsigned size1,unsigned size2,unsigned size3,bool reverse,bool allow_unstrict>
+template<unsigned idx>
+SkipResult BackendDominateDirect<size1,size2,size3,reverse,allow_unstrict>::skip_invalid(SolverAtom::Value& c) const
+{
+    constexpr unsigned idx1 = (idx < size1) ? 0 : (idx < size1+size2) ? 1 : 2;
+
+    if(c >= graph_forw.size() && c != UINT_MAX-1)
+    {
+        if(c < UINT_MAX-1)
+        {
+            c = UINT_MAX-1;
+            return SkipResult::CHANGE;
+        }
+        else return SkipResult::FAIL;
+    }
+    else 
+    {
+        if(remaining_values[(idx1+1)%3] + remaining_values[(idx1+2)%3] > 0 || (idx1 != 1 && remaining_values[idx1] > 1))
+        {
+            return SkipResult::PASS;
+        }
+        else
+        {
+            bool domination_holds = false;
+
+            graph_engine.initialize();
+
+            if(allow_unstrict)
+            {
+                graph_engine.set_destinations(filled_values.begin()+size1+size2, filled_values.begin()+size1+size2 + used_values[2]);
+
+                if(c != UINT_MAX-1 && idx1 == 2) graph_engine.set_destinations(&c, &c+1);
+
+                graph_engine.set_dominators(filled_values.begin()+size1, filled_values.begin()+size1 + used_values[1]);
+
+                if(c != UINT_MAX-1 && idx1 == 1)  graph_engine.set_dominators(&c, &c+1);
+            }
+            else
+            {
+                graph_engine.set_dominators(filled_values.begin()+size1, filled_values.begin()+size1 + used_values[1]);
+
+                if(c != UINT_MAX-1 && idx1 == 1) graph_engine.set_dominators(&c, &c+1);
+
+                graph_engine.set_destinations(filled_values.begin()+size1+size2, filled_values.begin()+size1+size2 + used_values[2]);
+
+                if(c != UINT_MAX-1 && idx1 == 2) graph_engine.set_destinations(&c, &c+1);
+            }
+
+
+            if(graph_engine.set_origins(filled_values.begin(), filled_values.begin() + used_values[0]) &&
+               (c == UINT_MAX-1 || idx1 != 0 || graph_engine.set_origins(&c, &c+1)))
+            {
+                domination_holds = graph_engine.fill(graph_forw);
+            }
+
+            if(remaining_values[1] == (idx1==1) && ((domination_holds && reverse) || (!domination_holds && !reverse)))
+            {
+                if(c >= UINT_MAX-1)
+                {
+                    return SkipResult::FAIL;
+                }
+                else if(c + 1 < graph_forw.size())
+                {
+                    c = c + 1;
+                    return SkipResult::CHANGE;
+                }
+                else
+                {
+                   c = UINT_MAX-1;
+                   return SkipResult::CHANGE;
+                }
+            }
+
+            return SkipResult::PASS;
+        }
+    }
+}
+*/
 #endif

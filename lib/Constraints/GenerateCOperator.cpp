@@ -602,6 +602,5 @@ std::string print_pretty_c_operator(llvm::Function& function)
         input = std::regex_replace(input, simplify_regex, "$1"+pair.second+"$2");
     }
 
-
     return input;
 }
