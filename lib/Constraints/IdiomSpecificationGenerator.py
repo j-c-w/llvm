@@ -38,32 +38,32 @@ addconst    ::= <calculation> + <n>
 subvar      ::= <calculation> - <s>
 subconst    ::= <calculation> - <n>
 
-atom ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintPointerType> \
-         | <ConstraintIntZero> | <ConstraintFloatZero> \
-         | <ConstraintUnused>       | <ConstraintNotNumericConstant> | <ConstraintConstant> \
-         | <ConstraintPreexecution> | <ConstraintArgument>           | <ConstraintInstruction> \
-         | <ConstraintStoreInst>  | <ConstraintLoadInst>   | <ConstraintReturnInst> | <ConstraintBranchInst> \
-         | <ConstraintAddInst>    | <ConstraintSubInst>    | <ConstraintMulInst>    | <ConstraintFAddInst>   \
-         | <ConstraintFSubInst>   | <ConstraintFMulInst>   | <ConstraintFDivInst>   | <ConstraintBitOrInst>  \
-         | <ConstraintLShiftInst> | <ConstraintSelectInst> | <ConstraintSExtInst>   | <ConstraintZExtInst>   \
-         | <ConstraintGEPInst>    | <ConstraintICmpInst> \
-         | <ConstraintSame> | <ConstraintDistinct> \
-         | <ConstraintDFGEdge> | <ConstraintCFGEdge> | <ConstraintCDGEdge> | <ConstraintPDGEdge> \
-         | <ConstraintFirstOperand> | <ConstraintSecondOperand> \
-         | <ConstraintThirdOperand> | <ConstraintFourthOperand> \
-         | <ConstraintDFGDominate>          | <ConstraintDFGPostdom>          \
-         | <ConstraintDFGDominateStrict>    | <ConstraintDFGPostdomStrict>    \
-         | <ConstraintCFGDominate>          | <ConstraintCFGPostdom>          \
-         | <ConstraintCFGDominateStrict>    | <ConstraintCFGPostdomStrict>    \
-         | <ConstraintPDGDominate>          | <ConstraintPDGPostdom>          \
-         | <ConstraintPDGDominateStrict>    | <ConstraintPDGPostdomStrict>    \
-         | <ConstraintDFGNotDominate>       | <ConstraintDFGNotPostdom>       \
-         | <ConstraintDFGNotDominateStrict> | <ConstraintDFGNotPostdomStrict> \
-         | <ConstraintCFGNotDominate>       | <ConstraintCFGNotPostdom>       \
-         | <ConstraintCFGNotDominateStrict> | <ConstraintCFGNotPostdomStrict> \
-         | <ConstraintPDGNotDominate>       | <ConstraintPDGNotPostdom>       \
-         | <ConstraintPDGNotDominateStrict> | <ConstraintPDGNotPostdomStrict> \
-         | <ConstraintIncomingValue> \
+atom ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintPointerType>
+         | <ConstraintIntZero> | <ConstraintFloatZero>
+         | <ConstraintUnused>       | <ConstraintNotNumericConstant> | <ConstraintConstant>
+         | <ConstraintPreexecution> | <ConstraintArgument>           | <ConstraintInstruction>
+         | <ConstraintStoreInst>  | <ConstraintLoadInst>   | <ConstraintReturnInst> | <ConstraintBranchInst>
+         | <ConstraintAddInst>    | <ConstraintSubInst>    | <ConstraintMulInst>    | <ConstraintFAddInst>
+         | <ConstraintFSubInst>   | <ConstraintFMulInst>   | <ConstraintFDivInst>   | <ConstraintBitOrInst>
+         | <ConstraintLShiftInst> | <ConstraintSelectInst> | <ConstraintSExtInst>   | <ConstraintZExtInst>
+         | <ConstraintGEPInst>    | <ConstraintICmpInst>
+         | <ConstraintSame> | <ConstraintDistinct>
+         | <ConstraintDFGEdge> | <ConstraintCFGEdge> | <ConstraintCDGEdge> | <ConstraintPDGEdge>
+         | <ConstraintFirstOperand> | <ConstraintSecondOperand>
+         | <ConstraintThirdOperand> | <ConstraintFourthOperand>
+         | <ConstraintDFGDominate>          | <ConstraintDFGPostdom>
+         | <ConstraintDFGDominateStrict>    | <ConstraintDFGPostdomStrict>
+         | <ConstraintCFGDominate>          | <ConstraintCFGPostdom>
+         | <ConstraintCFGDominateStrict>    | <ConstraintCFGPostdomStrict>
+         | <ConstraintPDGDominate>          | <ConstraintPDGPostdom>
+         | <ConstraintPDGDominateStrict>    | <ConstraintPDGPostdomStrict>
+         | <ConstraintDFGNotDominate>       | <ConstraintDFGNotPostdom>
+         | <ConstraintDFGNotDominateStrict> | <ConstraintDFGNotPostdomStrict>
+         | <ConstraintCFGNotDominate>       | <ConstraintCFGNotPostdom>
+         | <ConstraintCFGNotDominateStrict> | <ConstraintCFGNotPostdomStrict>
+         | <ConstraintPDGNotDominate>       | <ConstraintPDGNotPostdom>
+         | <ConstraintPDGNotDominateStrict> | <ConstraintPDGNotPostdomStrict>
+         | <ConstraintIncomingValue>
          | <ConstraintDFGBlocked> | <ConstraintCFGBlocked> | <ConstraintPDGBlocked>
 
 ConstraintIntegerType ::= <slot> is an integer
@@ -180,72 +180,51 @@ def list_possibles(stack, grammar, lookahead_rules):
 
     return possibles + [stack] if not_dead_end else possibles
 
-def strip_invisibles(syntax_list):
-    return_syntax_list = ()
+def postprocess(syntax):
+    invisibles = ["#", "conjunctionprefix", "constraint", "disjunctionprefix", "renameprefix", "slot", "openslot",
+                  "slottupleprefix", "calculation", "arginheritprefix", "rawinherit", "arginherit", "grouping"]
 
-    for syntax in syntax_list:
-        if type(syntax) == tuple:
-            if syntax[0] in ["#", "conjunctionprefix", "constraint", "disjunctionprefix", "renameprefix", "slot", 
-                             "openslot", "slottupleprefix", "calculation", "arginheritprefix", "rawinherit",
-                             "arginherit", "openslot2", "grouping"]:
-                return_syntax_list = return_syntax_list + strip_invisibles(syntax[1:])
-            else:
-                return_syntax_list = return_syntax_list + (syntax[:1] + strip_invisibles(syntax[1:]),)
-        else:
-            return_syntax_list = return_syntax_list + (syntax,)
-    return return_syntax_list
+    if type(syntax) == tuple:
+        result = tuple(s for a in map(postprocess, syntax) for s in a)
+        return result[1:] if result[0] in invisibles else (result,)
+    else:
+        return (syntax,)
+
+def split_list(lst, delimeter):
+    return [list(value) for flag, value in itertools.groupby(lst, (lambda x: x == delimeter)) if flag == False]
+
+def iterate_to_fixpoint(function, start, *extra):
+    start, result = None, start
+    while result != start:
+        start, result = result, function(result, *extra)
+    return result
+
+def collect_aliases(aliases, grammar):
+    return aliases | {"<{}>".format(name) for name,rule in grammar if any(branch[0] in aliases for branch in rule)}
 
 def parse(code, grammartext):
-    grammar = []
+    grammar = split_list(grammartext.split()+[""], "::=")
+    grammar = [(a[-1], b[:-1]) for a,b in zip(grammar[:-1], grammar[1:])]
 
-    for name,rule in ((s.strip() for s in line.split("::=")) for line in grammartext.split('\n') if line):
-        if "{ " in rule and " }" in rule:
-            prefix = rule.split("{ ")[0]
-            core   = rule.split("{ ")[1].split(" }")[0]
-            suffix = rule.split(" }")[1]
-            rule   = "<"+name+"prefix> "+suffix
+    for i,(name,rule) in enumerate(grammar[::1]):
+        if "{" in rule and "}" in rule:
+            prefix     = rule[:rule.index("{")]
+            core       = rule[rule.index("{")+1:rule.index("}")]
+            suffix     = rule[rule.index("}")+1:]
+            grammar[i] = (name, ["<{}prefix>".format(name)] + suffix)
 
-            grammar.append((name+"prefix", prefix+" | <"+name+"prefix> "+core))
+            grammar.append(("{}prefix".format(name), prefix + ["|", "<{}prefix>".format(name)] + core))
 
-        grammar.append((name, rule))
+    grammar = [(name, [[t.strip("'") for t in value] for value in split_list(rule, "|")]) for name, rule in grammar]
+    aliases = {name:iterate_to_fixpoint(collect_aliases, {"<{}>".format(name)}, grammar) for name,rules in grammar}
 
-    grammar = [(name, rule.replace("'", "").split(" | ")) for name,rule in grammar]
-    grammar = [(name, [[token for token in branch.split(' ') if token] for branch in rule]) for name,rule in grammar]
-
-    lookahead_rules = {}
-
-    for name,rule in grammar:
-
-        old_aliases = []
-        new_aliases = [name]
-        while new_aliases:
-            old_aliases = old_aliases + new_aliases
-            new_aliases = []
-            for othername, otherrule in grammar:
-                if othername not in new_aliases and othername not in old_aliases:
-                    for branch in otherrule:
-                        if branch[0][0] + branch[0][-1] == "<>" and branch[0][1:-1] in old_aliases:
-                            new_aliases.append(othername)
-
-        if "#" in old_aliases:
-            lookahead_rules[name] = []
-        else:
-            predecessors = []
-
-            for othername, otherrule in grammar:
-                for branch in otherrule:
-                    for i,tokenrule in enumerate(branch[1:]):
-                        if tokenrule[0]+tokenrule[-1] == "<>" and tokenrule[1:-1] in old_aliases:
-                            predecessors.append(branch[i])
-
-            if "<s>" in predecessors or "<n>" in predecessors:
-                predecessors = []
-
-            lookahead_rules[name] = predecessors
+    lookahead_rules = {name:set() for name,rule in grammar}
+    for name,_ in grammar:
+        precursors = [branch[i] for _,rule in grammar for branch in rule for i,b in enumerate(branch[1:]) if b in aliases[name]]
+        lookahead_rules[name] = set() if "<s>" in precursors or "<n>" in precursors else set(precursors)
 
     code = " ".join(line.split("#")[0] for line in code.split("\n"))
-    code = "".join(" "+c+" " if c in "(){}[]=.+-," else c for c in code)
-    code = code.replace(".  .", "..")
+    code = "".join(" "+c+" " if c in "(){}[]=.+-," else c for c in code).replace(".  .", "..")
 
     possibles = [[]]
 
@@ -261,7 +240,7 @@ def parse(code, grammartext):
     possibles = [pos for pos in possibles if all(type(s) == tuple and s[0] == "#" for s in pos)]
 
     if len(possibles) == 1:
-        return strip_invisibles(possibles[0])
+        return tuple(s for a in map(postprocess, possibles[0]) for s in a)
 
 def partial_evaluator(syntax, handler, *extras):
     handler_result = handler(syntax, *extras)
@@ -286,7 +265,7 @@ def evaluate_remove_rename_rebase(syntax, renames={}, prefix=None):
         newprefix  = None       if syntax[0] == "rename" else syntax[-1]
         renamevars = syntax[2:] if syntax[0] == "rename" else syntax[1][2:] if syntax[1][0] == "rename" else []
         newrenames = dict(zip(renamevars[1::2], renamevars[0::2]))
-        
+
         return partial_evaluator(partial_evaluator(child, evaluate_remove_rename_rebase, newrenames, newprefix),
                                                           evaluate_remove_rename_rebase, renames, prefix)
 
@@ -588,5 +567,6 @@ def print_syntax_tree(syntax, indent=0):
             print_syntax_tree(s, indent+1)
 
 import sys
+import itertools
 
 print(generate_cpp_code(parse(sys.stdin.read(), grammar)))
