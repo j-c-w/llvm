@@ -44,22 +44,27 @@ bool ResearchPreprocessor::runOnModule(Module& module)
 
             for(const auto& spec : constraint_specs)
             {
-                while(true)
+                auto solutions = std::get<1>(spec)(function, UINT_MAX);
+
+                if(!solutions.empty())
                 {
-                    auto solutions = std::get<1>(spec)(function, 1);
-
-                    if(solutions.empty()) break;
-
                     if(!found_something)
                     {
                         ofs<<"BEGIN FUNCTION PREPROCESSING "<<(std::string)function.getName()<<"\n";
                         found_something = true;
                     }
 
-                    ofs<<"BEGIN "<<std::get<0>(spec)<<"\n"<<solutions[0].prune().print_json(slot_tracker)<<"\n"
-                         <<"END "<<std::get<0>(spec)<<"\n";
+                    // This is NOT safe!
+                    // Solutions might overlap and then this is entirely unsafe, resulting in invalid pointers!
+                    // Need to fix this.
+                    for(auto& solution : solutions)
+                    {
+                        ofs<<"BEGIN "<<std::get<0>(spec)<<"\n"
+                           <<solution.prune().print_json(slot_tracker)<<"\n"
+                           <<"END "<<std::get<0>(spec)<<"\n";
 
-                    (*std::get<2>(spec))(function, solutions[0]);
+                        (*std::get<2>(spec))(function, solution);
+                    }
                 }
             }
 
