@@ -397,11 +397,25 @@ def evaluate_flatten_connectives(syntax):
                 result = result + (child,)
         return result
 
+def replace_variables(syntax, replaces):
+    if syntax[0] in ["slotbase", "slotmember", "slotindex"]:
+        return replaces[syntax] if syntax in replaces else syntax
+
 def optimize_delay_aliases(syntax, slotlist):
     if syntax[0] == "conjunction":
-        aliases = [s[1][1:] for s in syntax[1:] if s[0] == "atom" and s[1][0] == "ConstraintSame"]
-        aliases = [(generate_cpp_slot(a),generate_cpp_slot(b)) for a,b in aliases]
-        sys.stderr.write(str(aliases)+"\n")
+        replaces = {}
+        for a,b in (s[1][1:] for s in syntax[1:] if s[0] == "atom" and s[1][0] == "ConstraintSame"):
+            aflat, bflat = generate_cpp_slot(a), generate_cpp_slot(b)
+            if aflat in slotlist and bflat in slotlist:
+                if slotlist.index(aflat) < slotlist.index(bflat):
+                    replaces[b] = a
+                if slotlist.index(bflat) < slotlist.index(aflat):
+                    replaces[a] = b
+
+        return syntax[:1] + tuple(s if s[0] == "atom" and s[1][0] == "ConstraintSame" else
+                                  partial_evaluator(
+                                  partial_evaluator(s, replace_variables,      replaces),
+                                                       optimize_delay_aliases, slotlist) for s in syntax[1:])
 
 def indent_code(prefix, code):
     current_indent = 0
@@ -530,9 +544,12 @@ def generate_fast_cpp_specification(syntax, specs):
     constr = partial_evaluator(constr,    evaluate_remove_rename_rebase)
     constr = partial_evaluator(constr,    evaluate_remove_trivials)
     constr = partial_evaluator(constr,    evaluate_flatten_connectives)
-#   constr = partial_evaluator(constr, optimize_delay_aliases, generate_cpp_slotlist(constr))
 
     slots, result, code = code_generation_core(constr, [0])
+
+    constr = partial_evaluator(constr, optimize_delay_aliases, slots)
+
+    slots2, result, code = code_generation_core(constr, [0])
 
     return "\n".join(["vector<Solution> Detect{}(llvm::Function& function, unsigned max_solutions)".format(syntax[1])]
                     +["{"]

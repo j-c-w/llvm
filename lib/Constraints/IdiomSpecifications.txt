@@ -32,7 +32,7 @@ Constraint SumChain
       {results[i]} is the same as {factors[i]} and
       {results[i+1]} is unused)) for all i=0..N and
   {factors[N]} is unused)
-for N=8 if not otherwise specified
+for N=4 if not otherwise specified
 End
 
 Constraint MulChain
@@ -51,7 +51,7 @@ Constraint MulChain
       {results[i]} is the same as {factors[i]} and
       {results[i+1]} is unused)) for all i=0..N and
   {factors[N]} is unused)
-for N=8 if not otherwise specified
+for N=4 if not otherwise specified
 End
 
 Constraint Distributive
@@ -432,22 +432,22 @@ End
 
 Constraint Reduction
 ( inherits For and
+  inherits InductionVar
+       with {old_value}     as {old_ind}
+        and {kernel.output} as {new_ind} and
+  {old_value} is not the same as {iterator} and
   collect i 32
   ( inherits VectorRead
         with {iterator} as {idx}
          and {read_value[i]} as {value}
          and {begin}    as {begin} at {read[i]}) and
-  inherits InductionVar
-       with {old_value}     as {old_ind}
-        and {kernel.output} as {new_ind} and
-  {old_value} is not the same as {iterator} and
+  inherits KernelFunction
+      with {begin}      as {outer}
+       and {body.begin} as {inner} at {kernel} and
   inherits Concat(N1=31,N2=1)
       with {read_value}   as {in1}
        and {old_value}    as {in2}
-       and {kernel.input} as {out} and
-  inherits KernelFunction
-      with {begin}      as {outer}
-       and {body.begin} as {inner} at {kernel})
+       and {kernel.input} as {out})
 End
 
 # // This language should be a bit like PHP for generating domain specific code
@@ -636,17 +636,17 @@ Constraint Histo
         with {read_value[i]} as {value}
          and {iterator} as {idx}
          and {begin} as {begin} at {read[i]}) and
-  inherits Concat(N1=31,N2=1)
-      with {read_value}   as {in1}
-       and {old_value}    as {in2}
-       and {kernel.input} as {out} and
   inherits KernelFunction
       with {begin} as {outer}
        and {body.begin} as {inner} at {kernel} and
   inherits KernelFunction
       with {read_value} as {input}
        and {begin} as {outer}
-       and {body.begin} as {inner} at {indexkernel})
+       and {body.begin} as {inner} at {indexkernel} and
+  inherits Concat(N1=31,N2=1)
+      with {read_value}   as {in1}
+       and {old_value}    as {in2}
+       and {kernel.input} as {out})
 End
 
 Constraint StencilPlus
