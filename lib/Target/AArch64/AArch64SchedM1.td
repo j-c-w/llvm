@@ -24,6 +24,8 @@ def ExynosM1Model : SchedMachineModel {
   let LoadLatency           =  4; // Optimistic load cases.
   let MispredictPenalty     = 14; // Minimum branch misprediction penalty.
   let CompleteModel         =  1; // Use the default model otherwise.
+
+  list<Predicate> UnsupportedFeatures = [HasSVE];
 }
 
 //===----------------------------------------------------------------------===//
@@ -97,6 +99,7 @@ def M1WriteLC : SchedWriteRes<[M1UnitA,
 def M1WriteLD : SchedWriteRes<[M1UnitA,
                                M1UnitL,
                                M1UnitL]> { let Latency = 5; }
+def M1WriteLH : SchedWriteRes<[]>        { let Latency = 5; }
 def M1WriteLX : SchedWriteVariant<[SchedVar<M1ShiftLeftFastPred, [M1WriteL5]>,
                                    SchedVar<NoSchedPred,         [M1WriteA1,
                                                                   M1WriteL5]>]>;
@@ -112,9 +115,6 @@ def M1WriteSB : SchedWriteRes<[M1UnitS,
                                M1UnitFST,
                                M1UnitA]>   { let Latency = 2; }
 def M1WriteSC : SchedWriteRes<[M1UnitS,
-                               M1UnitFST,
-                               M1UnitA]>   { let Latency = 1; }
-def M1WriteSD : SchedWriteRes<[M1UnitS,
                                M1UnitFST,
                                M1UnitS,
                                M1UnitFST,
@@ -164,7 +164,7 @@ def : SchedAlias<ReadAdrBase, M1ReadAdrBase>;
 
 // Load instructions.
 def : WriteRes<WriteLD,    [M1UnitL]>   { let Latency = 4; }
-def : WriteRes<WriteLDHi,  [M1UnitALU]> { let Latency = 4; }
+def : WriteRes<WriteLDHi,  []>          { let Latency = 4; }
 def : SchedAlias<WriteLDIdx, M1WriteLX>;
 
 // Store instructions.
@@ -186,7 +186,7 @@ def : WriteRes<WriteFImm,  [M1UnitNALU]> { let Latency = 1; }
 def : WriteRes<WriteFCopy, [M1UnitS]>    { let Latency = 4; }
 
 // FP load instructions.
-def : WriteRes<WriteVLD, [M1UnitL]> { let Latency = 5; }
+def : WriteRes<WriteVLD,   [M1UnitL]> { let Latency = 5; }
 
 // FP store instructions.
 def : WriteRes<WriteVST, [M1UnitS,
@@ -440,15 +440,15 @@ def : InstRW<[M1WriteLX,
 def : InstRW<[M1WriteLC,
               ReadAdrBase], (instregex "^LDRQro[WX]")>;
 def : InstRW<[WriteVLD,
-              WriteLDHi],   (instregex "^LDN?P[DS]i")>;
+              M1WriteLH],  (instregex "^LDN?P[DS]i")>;
 def : InstRW<[M1WriteLB,
-              WriteLDHi],   (instregex "^LDN?PQi")>;
+              M1WriteLH],  (instregex "^LDN?PQi")>;
 def : InstRW<[M1WriteLC,
-              WriteLDHi,
+              M1WriteLH,
               WriteAdr,
               ReadAdrBase], (instregex "^LDP[DS](post|pre)")>;
 def : InstRW<[M1WriteLD,
-              WriteLDHi,
+              M1WriteLH,
               WriteAdr,
               ReadAdrBase], (instregex "^LDPQ(post|pre)")>;
 
@@ -463,10 +463,10 @@ def : InstRW<[M1WriteSY,
 def : InstRW<[M1WriteSB,
               ReadAdrBase], (instregex "^STRQro[WX]")>;
 def : InstRW<[WriteVST],    (instregex "^STN?P[DSQ]i")>;
-def : InstRW<[M1WriteSC,
+def : InstRW<[WriteVST,
               WriteAdr,
               ReadAdrBase], (instregex "^STP[DS](post|pre)")>;
-def : InstRW<[M1WriteSD,
+def : InstRW<[M1WriteSC,
               WriteAdr,
               ReadAdrBase], (instregex "^STPQ(post|pre)")>;
 

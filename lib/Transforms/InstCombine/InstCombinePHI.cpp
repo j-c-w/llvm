@@ -184,7 +184,8 @@ Instruction *InstCombiner::FoldIntegerTypedPHI(PHINode &PN) {
       continue;
     MatchingPtrPHI = PtrPHI;
     for (unsigned i = 0; i != PtrPHI->getNumIncomingValues(); ++i) {
-      if (AvailablePtrVals[i] != PtrPHI->getIncomingValue(i)) {
+      if (AvailablePtrVals[i] !=
+          PtrPHI->getIncomingValueForBlock(PN.getIncomingBlock(i))) {
         MatchingPtrPHI = nullptr;
         break;
       }
@@ -250,8 +251,8 @@ Instruction *InstCombiner::FoldIntegerTypedPHI(PHINode &PN) {
     // %v.cast = load float *, float ** %v.ptrp, align 8
     Instruction *&CI = Casts[IncomingVal];
     if (!CI) {
-      CI = CastInst::CreateBitOrPointerCast(
-          IncomingVal, IntToPtr->getType(), IncomingVal->getName() + ".ptr");
+      CI = CastInst::CreateBitOrPointerCast(IncomingVal, IntToPtr->getType(),
+                                            IncomingVal->getName() + ".ptr");
       if (auto *IncomingI = dyn_cast<Instruction>(IncomingVal)) {
         BasicBlock::iterator InsertPos(IncomingI);
         InsertPos++;
