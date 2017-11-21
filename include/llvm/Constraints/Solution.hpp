@@ -1,5 +1,6 @@
 #ifndef _SOLUTION_HPP_
 #define _SOLUTION_HPP_
+#include <unordered_map>
 #include <climits>
 #include <memory>
 #include <vector>
@@ -39,9 +40,12 @@ private:
     Solution() : single_value(nullptr) {}
     Solution(std::vector<std::string> labels, std::vector<llvm::Value*> values);
 
-    llvm::Value*                   single_value;
-    std::vector<Solution>          vector_value;
-    std::map<std::string,Solution> map_value;
+    void set_precomputed_strings(std::shared_ptr<std::unordered_map<llvm::Value*,std::string>>);
+
+    llvm::Value*                                                  single_value;
+    std::vector<Solution>                                         vector_value;
+    std::map<std::string,Solution>                                map_value;
+    std::shared_ptr<std::unordered_map<llvm::Value*,std::string>> instr_strings;
 };
 
 #endif

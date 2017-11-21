@@ -43,6 +43,7 @@ std::vector<std::unique_ptr<SolverAtom>> Solver::swap_specials(std::vector<std::
 
 std::vector<SolverAtom::Value> Solver::next_solution(unsigned max_steps)
 {
+    max_iterations = UINT_MAX;
     if(iterator == UINT_MAX)
         return {};
 

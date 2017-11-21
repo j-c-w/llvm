@@ -10,14 +10,19 @@ add_llvm_library(LLVMConstraints
   BackendDominate.cpp
   BackendOrdering.cpp
   BackendIncomingValue.cpp
+  BackendSpecializations.cpp
 
   ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
 
-  CustomPassFlatten.cpp
+  CustomPassMergePointercalcs.cpp
+  CustomPassFlattenPointercalcs.cpp
+  CustomPassSplitPointercalcs.cpp
   CustomPassReplace.cpp
   CustomPassRemovePHI.cpp
   CustomPassPreprocess.cpp
   CustomPassAnnotateBlocks.cpp
+  CustomPassFixOrToAdd.cpp
+  CustomPassFixShlToMul.cpp
 
   TransformReduction.cpp
   TransformDistributive.cpp

@@ -3,7 +3,7 @@ if M+1=N then
   {input[M]} is the same as {output[M]}
 else
   ( {input[M]} is the same as {output[n]} and
-    inherits Permute(N=N,M=M+1) with {output[M]} as {output[n]}
+    include Permute(N=N,M=M+1) with {output[M]} as {output[n]}
                                  and {output[n]} as {output[M]}) for some n=M..N
 endif
 for M=0 if not otherwise specified
@@ -19,8 +19,9 @@ End
 Constraint SumChain
 ( {value} is an integer and
   {value} is the same as {results[0]} and
-  ( ( {results[i]} is add instruction and
-      inherits ArgumentsPermuted with {results[i]}   as {dst}
+  ( ( ( {results[i]} is add instruction or
+        {results[i]} is bitor instruction) and
+      include ArgumentsPermuted with {results[i]}   as {dst}
                                   and {results[i+1]} as {src1}
                                   and {factors[i]}   as {src2} and
       {last_factor} is an integer) or
@@ -32,14 +33,15 @@ Constraint SumChain
       {results[i]} is the same as {factors[i]} and
       {results[i+1]} is unused)) for all i=0..N and
   {factors[N]} is unused)
-for N=4 if not otherwise specified
+for N=8 if not otherwise specified
 End
 
 Constraint MulChain
 ( {value} is an integer and
   {value} is the same as {results[0]} and
-  ( ( {results[i]} is mul instruction and
-      inherits ArgumentsPermuted with {results[i]}   as {dst}
+  ( ( ( {results[i]} is mul instruction or
+        {results[i]} is bitand instruction) and
+      include ArgumentsPermuted with {results[i]}   as {dst}
                                   and {results[i+1]} as {src1}
                                   and {factors[i]}   as {src2} and
       {last_factor} is an integer) or
@@ -51,20 +53,21 @@ Constraint MulChain
       {results[i]} is the same as {factors[i]} and
       {results[i+1]} is unused)) for all i=0..N and
   {factors[N]} is unused)
-for N=4 if not otherwise specified
+for N=8 if not otherwise specified
 End
 
 Constraint Distributive
-( {value} is add instruction and
+( ( {value} is add instruction or
+    {value} is bitor instruction) and
   {sum1.value} is first argument of {value} and
   {sum2.value} is second argument of {value} and
-  inherits SumChain at {sum1} and
+  include SumChain at {sum1} and
   {product1.value} is the same as {sum1.last_factor} and
-  inherits MulChain at {product1} and
+  include MulChain at {product1} and
   {product1.last_factor} is the same as {product2.last_factor} and
-  inherits SumChain at {sum2} and
+  include SumChain at {sum2} and
   {product2.value} is the same as {sum2.last_factor} and
-  inherits MulChain at {product2})
+  include MulChain at {product2})
 End
 
 Constraint HoistSelect
@@ -104,7 +107,7 @@ Constraint InSESE
 End
 
 Constraint MaxOnceInSESE
-( inherits InSESE and
+( include InSESE and
   {value} has control flow to {value_after} and
   all control flow from {value_after} to {value} passes through {successor} and
   all control flow from {value_after} to {value} passes through {precursor})
@@ -119,10 +122,10 @@ Constraint ExtendedInt
 End
 
 Constraint Loop
-( inherits SESE and
+( include SESE and
   {body.precursor} is the same as {end} and
   {body.successor} is the same as {begin} and
-  inherits SESE at {body} and
+  include SESE at {body} and
   {body.begin} is not the same as {successor})
 End
 
@@ -132,12 +135,12 @@ Constraint Addition
   ( ( {value} is add instruction or
       {value} is bitor instruction or
       {value} is fadd instruction) and
-    inherits ArgumentsPermuted with {value}  as {dst}
+    include ArgumentsPermuted with {value}  as {dst}
                                 and {input}  as {src1}
                                 and {addend} as {src2}) or
   ( ( {value} is sub instruction or
       {value} is fsub instruction) and
-    inherits ArgumentsPermuted with {value}  as {dst}
+    include ArgumentsPermuted with {value}  as {dst}
                                 and {input}  as {src1}
                                 and {addend} as {src2}))
 End
@@ -148,11 +151,11 @@ Constraint Multiplication
   ( ( {value} is mul instruction or
       {value} is lshift instruction or
       {value} is fmul instruction) and
-    inherits ArgumentsPermuted with {value}      as {dst}
+    include ArgumentsPermuted with {value}      as {dst}
                                 and {input}      as {src1}
                                 and {multiplier} as {src2}) or
   ( {value} is fdiv instruction and
-    inherits ArgumentsPermuted with {value} as {dst}
+    include ArgumentsPermuted with {value} as {dst}
                                 and {input} as {src1}
                                 and {multiplier} as {src2}))
 End
@@ -160,7 +163,7 @@ End
 Constraint ArrayAccess
 ( {address} is gep instruction and
   {base_pointer} is first argument of {address} and
-  inherits LocalConst with {base_pointer} as {value}
+  include LocalConst with {base_pointer} as {value}
                             and {begin}       as {begin} and
   {output_index} is second argument of {address})
 End
@@ -168,13 +171,13 @@ End
 Constraint ArrayRead
 ( {value} is load instruction and
   {address} is first argument of {value} and
-  inherits ArrayAccess)
+  include ArrayAccess)
 End
 
 Constraint ArrayStore
 ( {store} is store instruction and
   {address} is second argument of {store} and
-  inherits ArrayAccess)
+  include ArrayAccess)
 End
 
 Constraint InductionVar
@@ -182,8 +185,8 @@ Constraint InductionVar
 End
 
 Constraint For
-( inherits Loop and
-  inherits InductionVar with {iterator}  as {old_ind}
+( include Loop and
+  include InductionVar with {iterator}  as {old_ind}
                          and {increment} as {new_ind} and
   {iterator} has data flow to {comparison} and
   {comparison} is icmp instruction and
@@ -192,13 +195,13 @@ Constraint For
   {increment} is add instruction and
   {iterator} has data flow to {increment} and
   {iter_end} has data flow to {comparison} and
-  inherits LocalConst with {iter_end} as {value}
+  include LocalConst with {iter_end} as {value}
                             and {begin}    as {begin} and
   {iter_begin} has data flow to {iterator} and
-  inherits LocalConst with {iter_begin} as {value}
+  include LocalConst with {iter_begin} as {value}
                             and {begin}      as {begin} and
   {iter_step} has data flow to {increment} and
-  inherits LocalConst with {iter_step} as {value}
+  include LocalConst with {iter_step} as {value}
                             and {begin}     as {begin})
 End
 
@@ -213,7 +216,7 @@ Constraint SamePostfixSESE
 End
 
 Constraint SameSESE
-( inherits SamePrefixSESE and inherits SamePostfixSESE)
+( include SamePrefixSESE and include SamePostfixSESE)
 End
 
 Constraint ConnectSESE
@@ -222,40 +225,44 @@ Constraint ConnectSESE
 End
 
 Constraint PotentialSESE
-( inherits SESE or
+( include SESE or
+  ( {begin} is the same as {end} and
+    {precursor} has control flow to {begin} and
+    {end} has control flow to {successor}) or
   ( {precursor} is the same as {end} and
     {begin}     is the same as {successor}))
 End
 
 Constraint ForNest
-( inherits For with {iterator[0]} as {iterator} at {loop[0]} and
-  inherits SameSESE with {loop[0].body} as {other} and
-  ( inherits For with {iterator[i+1]} as {iterator} at {loop[i+1]} and
+( include For with {iterator[0]} as {iterator} at {loop[0]} and
+  include SameSESE with {loop[0]} as {other} and
+  ( include For with {iterator[i+1]} as {iterator} at {loop[i+1]} and
     {iterator[i+1]} is the same as {loop[i+1].iterator} and
-    inherits SamePrefixSESE with {loop[i+1].pre_sese} as {other} at {loop[i].body} and
-    inherits ConnectSESE with {loop[i+1].pre_sese} as {first} and {loop[i+1]} as {second} and
-    inherits PotentialSESE at {loop[i+1].pre_sese} and
-    inherits ConnectSESE with {loop[i+1]} as {first} and {loop[i+1].post_sese} as {second} and
-    inherits SamePostfixSESE with {loop[i+1].post_sese} as {other} at {loop[i].body} and
-    inherits PotentialSESE at {loop[i+1].post_sese} and
-    inherits LocalConst with {loop[i+1].iter_begin} as {value} and
-    inherits LocalConst with {loop[i+1].iter_step} as {value} and
-    inherits LocalConst with {loop[i+1].iter_end} as {value}) for all i=0..N-1 and
-  inherits SameSESE with {loop[N-1].body} as {other} at {body})
+    include SamePrefixSESE with {loop[i+1].pre_sese} as {other} at {loop[i].body} and
+    include ConnectSESE with {loop[i+1].pre_sese} as {first} and {loop[i+1]} as {second} and
+    include PotentialSESE at {loop[i+1].pre_sese} and
+    include ConnectSESE with {loop[i+1]} as {first} and {loop[i+1].post_sese} as {second} and
+    include SamePostfixSESE with {loop[i+1].post_sese} as {other} at {loop[i].body} and
+    include PotentialSESE at {loop[i+1].post_sese} and
+    include LocalConst with {loop[i+1].iter_begin} as {value} and
+    include LocalConst with {loop[i+1].iter_step} as {value} and
+    include LocalConst with {loop[i+1].iter_end} as {value}
+) for all i=0..N-1 and
+  include SameSESE with {loop[N-1].body} as {other} at {body})
 End
 
 Constraint AffineAccess
-( inherits ArrayAccess and
-  inherits ExtendedInt with {offset_add.value} as {input}
+( include ArrayAccess and
+  include ExtendedInt with {offset_add.value} as {input}
                         and {output_index}     as {output} and
-  inherits Addition at {offset_add} and
-  inherits LocalConst with {offset_add.addend} as {value} and
+  include Addition at {offset_add} and
+  include LocalConst with {offset_add.addend} as {value} and
   ( {stride_mul[N-i-1].value} is the same as {index_add[N-i].input} and
-    inherits Multiplication at {stride_mul[N-i-1]} and
-    inherits LocalConst with {stride_mul[N-i-1].multiplier} as {value} and
+    include Multiplication at {stride_mul[N-i-1]} and
+    include LocalConst with {stride_mul[N-i-1].multiplier} as {value} and
     {index_add[N-i-1].value} is the same as {stride_mul[N-i-1].input} and
-    inherits Addition at {index_add[N-i-1]} and
-    inherits ExtendedInt with {input_index[N-i-1]} as {input}
+    include Addition at {index_add[N-i-1]} and
+    include ExtendedInt with {input_index[N-i-1]} as {input}
                           and {add_input[N-i-1]} as {output} and
     ( ( {add_input[N-i-1]} is not the same as {input_index[N-i]} and
         {input_index[N-i-1]} is an integer) or
@@ -268,15 +275,15 @@ Constraint AffineAccess
                                             and {index_add[2].addend} as {add_input[2]}
                                             and {index_add[3].addend} as {add_input[3]} and
   {base_index} is the same as {index_add[0].addend} and
-  inherits LocalConst with {base_index} as {value})
+  include LocalConst with {base_index} as {value})
 End
 
 Constraint StencilAccess
-( inherits AffineAccess with {begin} as {begin} at {read} and
+( include AffineAccess with {begin} as {begin} at {read} and
   {read.base_pointer} is the same as {base_pointer} and
   {read.address} is the same as {address} and
   ( {read.input_index[i]} is the same as {index[i].value} and
-    inherits Addition at {index[i]} and
+    include Addition at {index[i]} and
     ( {index[i].addend} is a constant or
       {index[i].addend} is unused) and
     {index[i].input} is the same as {input_index[i]}) for all i=0..N)
@@ -285,27 +292,27 @@ End
 Constraint PermMultidRead
 ( {value} is load instruction and
   {address} is first argument of {value} and
-  inherits AffineAccess and
-  inherits Permute with {input_index} as {output})
+  include AffineAccess and
+  include Permute with {input_index} as {output})
 End
 
 Constraint PermMultidStore
 ( {store} is store instruction and
   {address} is second argument of {store} and
-  inherits AffineAccess and
-  inherits Permute with {input_index} as {output})
+  include AffineAccess and
+  include Permute with {input_index} as {output})
 End
 
 Constraint StencilRead
 ( {value} is load instruction and
   {address} is first argument of {value} and
-  inherits StencilAccess and
+  include StencilAccess and
   {input_index[i]} is the same as {input[i]} for all i=0..N)
 End
 
 Constraint KernelFunction
 ( collect i 4 {origin[i]} has control flow to {inner} and
-  collect i 24 ( inherits LocalConst with {outer} as {begin} at {constants[i]} and
+  collect i 24 ( include LocalConst with {outer} as {begin} at {constants[i]} and
                  {constants[i].value} is not a numeric constant and
                  {constants[i].value} has data flow to {constants[i].use} and
                  {inner} control flow dominates {constants[i].use}) and
@@ -318,133 +325,133 @@ Constraint KernelFunction
 End
 
 Constraint GeneralDotProduct
-( inherits For and
-  inherits InductionVar and
+( include For and
+  include InductionVar and
   {new_ind} is fadd instruction and
-  inherits ArgumentsPermuted with {new_ind}  as {dst}
+  include ArgumentsPermuted with {new_ind}  as {dst}
                               and {old_ind}  as {src1}
                               and {dotvalue} as {src2} and
   {dotvalue} is fmul instruction and
-  inherits ArgumentsPermuted with {dotvalue} as {dst} and
+  include ArgumentsPermuted with {dotvalue} as {dst} and
   {initial} reaches phi node {old_ind} from {precursor})
 End
 
 Constraint MatrixStore
-  inherits PermMultidStore(N=2) with {col} as {input[0]} and {row} as {input[1]}
+  include PermMultidStore(N=2) with {col} as {input[0]} and {row} as {input[1]}
 End
 
 Constraint MatrixRead
-  inherits PermMultidRead(N=2) with {col} as {input[0]} and {row} as {input[1]}
+  include PermMultidRead(N=2) with {col} as {input[0]} and {row} as {input[1]}
 End
 
 Constraint VectorStore
-  inherits PermMultidStore(N=1) with {idx} as {input[0]}
+  include PermMultidStore(N=1) with {idx} as {input[0]}
 End
 
 Constraint VectorRead
-  inherits PermMultidRead(N=1) with {idx} as {input[0]}
+  include PermMultidRead(N=1) with {idx} as {input[0]}
 End
 
 Constraint AXPY
-( inherits For and
-  inherits VectorRead  with {iterator} as {idx} and {begin} as {begin} at {src} and
-  inherits VectorStore with {iterator} as {idx} and {begin} as {begin} at {dst} and
+( include For and
+  include VectorRead  with {iterator} as {idx} and {begin} as {begin} at {src} and
+  include VectorStore with {iterator} as {idx} and {begin} as {begin} at {dst} and
   {src.base_pointer} is not the same as {dst.base_pointer} and
   {sum.input} is load instruction and
   {dst.address} is first argument of {sum.input} and
   {sum.value} is first argument of {dst.store} and
-  inherits Addition at {sum} and
-  inherits Multiplication with {src.value}  as {input}
+  include Addition at {sum} and
+  include Multiplication with {src.value}  as {input}
                            and {sum.addend} as {value}
                            and {alpha}      as {multiplier} at {mul} and
-  inherits LocalConst with {alpha} as {value})
+  include LocalConst with {alpha} as {value})
 End
 
 Constraint AXPYn
-( inherits ForNest(N=N) and
+( include ForNest(N=N) and
   {src.input[i]} is the same as {iterator[i]} for all i=0..N and
-  inherits PermMultidRead(N=N) with {begin} as {begin} at {src} and
+  include PermMultidRead(N=N) with {begin} as {begin} at {src} and
   {dst.input[i]} is the same as {iterator[i]} for all i=0..N and
-  inherits PermMultidStore(N=N) with  {begin} as {begin} at {dst} and
+  include PermMultidStore(N=N) with  {begin} as {begin} at {dst} and
   {src.base_pointer} is not the same as {dst.base_pointer} and
   {sum.input} is load instruction and
   {dst.address} is first argument of {sum.input} and
   {sum.value} is first argument of {dst.store} and
-  inherits Addition at {sum} and
-  inherits Multiplication with {src.value}  as {input}
+  include Addition at {sum} and
+  include Multiplication with {src.value}  as {input}
                            and {sum.addend} as {value}
                            and {alpha}      as {multiplier} at {mul} and
-  inherits LocalConst with {alpha} as {value}) for N=4 if not otherwise specified
+  include LocalConst with {alpha} as {value}) for N=4 if not otherwise specified
 End
 
 Constraint DotProductLoop
-( inherits GeneralDotProduct with {src1} as {src1}
+( include GeneralDotProduct with {src1} as {src1}
                               and {src2} as {src2} at {loop} and
   ( ( {loop.initial} is load instruction and
       {update_address} has data flow to {loop.initial}) or
     ( {loop.initial} is floating point zero and
       {update_address} is gep instruction)) and
   {final_value} is first argument of {output.store} and
-  inherits Addition with {scaled_reduc} as {input}
+  include Addition with {scaled_reduc} as {input}
                      and {final_value}  as {value}
                      and {scaled_prev}  as {addend} and
-  inherits Multiplication with {loop.old_ind} as {input}
+  include Multiplication with {loop.old_ind} as {input}
                            and {scaled_reduc}    as {value}
                            and {alpha}           as {multiplier} and
-  inherits LocalConst with {alpha} as {value} and
-  inherits Multiplication with {prev}        as {input}
+  include LocalConst with {alpha} as {value} and
+  include Multiplication with {prev}        as {input}
                            and {scaled_prev} as {value}
                            and {beta}        as {multiplier} and
   ( ( {prev} is unused and
       {update_address} is gep instruction) or
     ( {prev} is load instruction and
       {update_address} is first argument of {prev})) and
-  inherits LocalConst with {beta} as {value})
+  include LocalConst with {beta} as {value})
 End
 
 Constraint DOT
-( inherits For and
-  inherits VectorRead
+( include For and
+  include VectorRead
       with {iterator} as {idx}
        and {begin} as {begin} at {src1} and
-  inherits VectorRead
+  include VectorRead
       with {iterator} as {idx}
        and {begin} as {begin} at {src2} and
   {src1.base_pointer} is not the same as {src2.base_pointer} and
-  inherits GeneralDotProduct
+  include GeneralDotProduct
       with {src1.value} as {src1}
        and {src2.value} as {src2})
 End
 
 Constraint ReadRange
 ( {begin_idx.offset_add.addend} is unused and
-  inherits VectorRead with {idx} as {idx}
+  include VectorRead with {idx} as {idx}
                        and {begin} as {begin} at {begin_idx} and
   {begin_idx.base_index} is the same as {end_idx.base_index} and
   {begin_idx.base_pointer} is the same as {end_idx.base_pointer} and
-  inherits VectorRead with {idx} as {idx}
+  include VectorRead with {idx} as {idx}
                        and {begin} as {begin} at {end_idx} and
-  inherits ExtendedInt with {begin_idx.value}  as {input}
+  include ExtendedInt with {begin_idx.value}  as {input}
                         and {range_begin} as {output} and
-  inherits ExtendedInt with {end_idx.value}    as {input}
+  include ExtendedInt with {end_idx.value}    as {input}
                         and {range_end}   as {output})
 End
 
 Constraint Reduction
-( inherits For and
-  inherits InductionVar
+( include For and
+  include InductionVar
        with {old_value}     as {old_ind}
         and {kernel.output} as {new_ind} and
   {old_value} is not the same as {iterator} and
   collect i 32
-  ( inherits VectorRead
+  ( include VectorRead
         with {iterator} as {idx}
          and {read_value[i]} as {value}
          and {begin}    as {begin} at {read[i]}) and
-  inherits KernelFunction
+  include KernelFunction
       with {begin}      as {outer}
        and {body.begin} as {inner} at {kernel} and
-  inherits Concat(N1=31,N2=1)
+  include Concat(N1=31,N2=1)
       with {read_value}   as {in1}
        and {old_value}    as {in2}
        and {kernel.input} as {out})
@@ -471,20 +478,20 @@ End
 # )
 
 Constraint GEMM
-( inherits ForNest(N=3) and
-  inherits MatrixStore
+( include ForNest(N=3) and
+  include MatrixStore
       with {iterator[0]} as {col}
        and {iterator[1]} as {row}
        and {begin} as {begin} at {output} and
-  inherits MatrixRead
+  include MatrixRead
       with {iterator[0]} as {col}
        and {iterator[2]} as {row}
        and {begin} as {begin} at {input1} and
-  inherits MatrixRead
+  include MatrixRead
       with {iterator[1]} as {col}
        and {iterator[2]} as {row}
        and {begin} as {begin} at {input2} and
-  inherits DotProductLoop
+  include DotProductLoop
       with {loop[2]}        as {loop}
        and {input1.value}   as {src1}
        and {input2.value}   as {src2}
@@ -492,25 +499,25 @@ Constraint GEMM
 End
 
 Constraint SPMV
-( inherits For and
-  inherits VectorStore
+( include For and
+  include VectorStore
       with {iterator} as {idx}
        and {begin} as {begin} at {output} and
-  inherits ReadRange
+  include ReadRange
       with {iterator} as {idx} 
        and {inner.iter_begin} as {range_begin} 
        and {inner.iter_end}   as {range_end} and
-  inherits For at {inner} and
-  inherits VectorRead
+  include For at {inner} and
+  include VectorRead
       with {inner.iterator} as {idx}
        and {begin} as {begin} at {idx_read} and
-  inherits VectorRead
+  include VectorRead
       with {idx_read.value} as {idx}
        and {begin} as {begin} at {indir_read} and
-  inherits VectorRead
+  include VectorRead
       with {inner.iterator} as {idx}
        and {begin} as {begin} at {seq_read} and
-  inherits DotProductLoop
+  include DotProductLoop
       with {inner}            as {loop}
        and {indir_read.value} as {src1}
        and {seq_read.value}   as {src2}
@@ -518,18 +525,18 @@ Constraint SPMV
 End
 
 Constraint GEMV
-( inherits ForNest(N=2) and
-  inherits VectorStore
+( include ForNest(N=2) and
+  include VectorStore
       with {iterator[0]} as {idx}
        and {begin} as {begin} at {output} and
-  inherits MatrixRead
+  include MatrixRead
       with {iterator[0]} as {col}
        and {iterator[1]} as {row}
        and {begin} as {begin} at {input1} and
-  inherits VectorRead
+  include VectorRead
       with {iterator[1]} as {idx}
        and {begin} as {begin} at {input2} and
-  inherits DotProductLoop
+  include DotProductLoop
       with {loop[1]}        as {loop}
        and {input1.value}   as {src1}
        and {input2.value}   as {src2}
@@ -537,17 +544,17 @@ Constraint GEMV
 End
 
 Constraint Stencil
-( inherits ForNest and
-  inherits PermMultidStore
+( include ForNest and
+  include PermMultidStore
       with {iterator} as {input} 
        and {begin} as {begin} at {write} and
   collect i 32 
-  ( inherits StencilRead
+  ( include StencilRead
         with {write.input_index} as {input}
          and {kernel.input[i]} as {value}
          and {begin} as {begin}  at {reads[i]}) and
   {kernel.output} is first argument of {write.store} and
-  inherits KernelFunction
+  include KernelFunction
       with {begin}      as {outer}
        and {body.begin} as {inner} at {kernel})
 for N=3 if not otherwise specified
@@ -575,7 +582,7 @@ End
 
 Constraint ConditionalReadModifyWrite
 ( {store_instr} is store instruction and
-  inherits MaxOnceInSESE
+  include MaxOnceInSESE
       with {store_instr} as {value}
        and {store_instr_after} as {value_after} at {body} and
   {address} is second argument of {store_instr} and
@@ -586,14 +593,14 @@ Constraint ConditionalReadModifyWrite
 End
 
 Constraint ExtendHisto
-( inherits For and
-  inherits ConditionalReadModifyWrite
+( include For and
+  include ConditionalReadModifyWrite
       with {indexkernel.output} as {address}
        and {kernel.output} as {value} and
   {reduction_array} is first argument of {indexkernel.output} and
 
   collect i 30
-  ( inherits VectorRead
+  ( include VectorRead
         with {read_value[i]} as {value}
          and {iterator} as {idx}
          and {begin} as {begin} at {read[i]} and
@@ -603,88 +610,218 @@ Constraint ExtendHisto
 
   # This is a hack for tpacf :(
   collect i 2
-  ( inherits ArrayRead
+  ( include ArrayRead
         with {closure_read[i]} as {value}
          and {begin} as {begin} at {closure[i]} and
     {closure[i].base_pointer} is not the same as {read[0].base_pointer} and
     {closure[i].base_pointer} is not the same as {reduction_array}) and
 
-  inherits Concat(N1=29,N2=2,N3=1)
+  include Concat(N1=29,N2=2,N3=1)
       with {read_value}   as {in1}
        and {closure_read} as {in2}
        and {old_value}    as {in3}
        and {kernel.input} as {out} and
-  inherits KernelFunction
+  include KernelFunction
       with {begin} as {outer}
        and {body.begin} as {inner} at {kernel} and
-  inherits Concat(N1=30,N2=2)
+  include Concat(N1=30,N2=2)
       with {read_value}   as {in1}
        and {closure_read} as {in2}
        and {indexkernel.input} as {out} and
-  inherits KernelFunction
+  include KernelFunction
       with {begin} as {outer}
        and {body.begin} as {inner} at {indexkernel})
 End
 
 Constraint Histo
-( inherits For and
-  inherits ConditionalReadModifyWrite
+( include For and
+  include ConditionalReadModifyWrite
       with {indexkernel.output} as {address}
        and {kernel.output} as {value} and
   collect i 32
-  ( inherits VectorRead
+  ( include VectorRead
         with {read_value[i]} as {value}
          and {iterator} as {idx}
          and {begin} as {begin} at {read[i]}) and
-  inherits KernelFunction
+  include KernelFunction
       with {begin} as {outer}
        and {body.begin} as {inner} at {kernel} and
-  inherits KernelFunction
+  include KernelFunction
       with {read_value} as {input}
        and {begin} as {outer}
        and {body.begin} as {inner} at {indexkernel} and
-  inherits Concat(N1=31,N2=1)
+  include Concat(N1=31,N2=1)
       with {read_value}   as {in1}
        and {old_value}    as {in2}
        and {kernel.input} as {out})
 End
 
+Constraint AffineCalculation
+if N=0 then
+( ( {value} is unused and
+    {input[j]} is an integer for all j=0..M) or
+  ( {value} is preexecution and 
+    {input[j]} is an integer for all j=0..M) or
+  ( {value} is the same as {input[i]} and
+    {input[j]} is an integer for all j=0..M) for some i=0..M)
+else
+( ( ( ( ( {value} is unused and
+          {input[j]} is an integer for all j=0..M) or
+        ( {value} is preexecution and
+          {input[j]} is an integer for all j=0..M) or
+        ( ( {value} is the same as {input[i]} and
+            {input[j]} is an integer for all j=0..M) for some i=0..M and
+          {input[j]} is an integer for all j=0..M)) and
+        {l.value} is unused and
+        {r.value} is unused) or
+    ( {value} is add instruction and
+      {l.value} is first argument of {value} and
+      {r.value} is second argument of {value} and
+      {input[j]} is an integer for all j=0..M) or
+    ( {value} is mul instruction and
+      ( ( {l.value} is first argument of {value} and
+          {r.value} is second argument of {value}) or
+        ( {l.value} is second argument of {value} and
+          {r.value} is first argument of {value})) and
+      {l.value} is preexecution and
+      {input[j]} is an integer for all j=0..M)) and
+  include AffineCalculation(M=M,N=N-1) with {input} as {input} at {l} and
+  include AffineCalculation(M=M,N=N-1) with {input} as {input} at {r})
+endif
+for N=6 if not otherwise specified
+End
+
+
+Constraint SCoP
+( include ForNest(N=N) and
+  collect k 8
+  ( {access[k]} is gep instruction ) and
+  collect k 8
+  ( {access[k]} is gep instruction and
+    {index[k].value} is second argument of {access[k]} and
+    include AffineCalculation(M=N) with {iterator} as {input} at {index[k]}))
+End
+
+Constraint Experiment
+(  {addition} is add instruction and
+   {left} is first argument of {addition} and
+   {right} is second argument of {addition})
+End
+
+#Constraint Experiment
+#  include SCoP(N=2)
+#End
+
+#Constraint Experiment
+#( include LewisStuff)
+#End
+
+Constraint LewisStuff
+( include VectorMulChain(N=8) and
+  collect k 8
+  ( ( {scalarvec[k]} is the same as {factors[i]} and
+      ( {factors[j]} is a vector or
+        {factors[j]} is unused) for all j=0..8) for some i=0..8 and
+    include ScalarVector with {scalarvec[k]} as {value} at {vectorize[k]}) and
+  collect k 8
+  ( ( {factor_scalar[k]} is the same as {vectorize[i].input} and
+      ( {vectorize[j].input} is a float or
+        {vectorize[j].input} is unused) for all j=0..8) for some i=0..8) and
+  collect k 8
+  ( ( {factor_nonscalar[k]} is the same as {factors[i]} and
+      ( {factors[j]} is a vector or
+        {factors[j]} is unused) for all j=0..8) for some i=0..8 and
+    {factor_nonscalar[k]} is not the same as {scalarvec[j]} for all j=0..8))
+End
+
+Constraint ScalarVector
+( {value} is shufflevector instruction and
+  {temp} is first argument of {value} and
+  {temp} is insertelement instruction and
+  {input} is second argument of {temp})
+End
+
+Constraint VectorMulChain
+( {value} is a vector and
+  {value} is the same as {results[0]} and
+
+  {results[0]} is fmul instruction and
+  include ArgumentsPermuted with {results[0]} as {dst}
+                             and {results[1]} as {src1}
+                             and {factors[0]} as {src2} and
+
+  ( ( {results[i]} is fmul instruction and
+      include ArgumentsPermuted with {results[i]}   as {dst}
+                                 and {results[i+1]} as {src1}
+                                 and {factors[i]}   as {src2} and
+      {last_factor} is a vector and
+      {last_prod} is fmul instruction and
+      {results[i-1]} is a vector) or
+    ( ( ( {results[i]} is a vector and
+          {last_factor} is the same as {factors[i]} and
+          {last_prod} is the same as {results[i-1]} and
+          {results[i]} is second argument of {last_prod}) or
+        ( {results[i]} is unused and
+          {factors[i]} is unused and
+          {last_factor} is a vector and
+          {last_prod} is a vector and
+          {results[i-1]} is a vector) or
+        ( {results[i]} is unused and
+          {factors[i]} is unused and
+          {last_factor} is a vector and
+          {last_prod} is a vector and
+          {results[i-1]} is unused)) and
+      {results[i]} is the same as {factors[i]} and
+      {results[i+1]} is unused)) for all i=1..N and
+  {factors[N]} is unused and
+
+  collect i 1 ({value} has data flow to {previous[i]} and
+               {previous[i]} is fmul instruction) and
+  collect i 1 ({previous[i]} is unused) and
+
+  collect i 1 ({successor[i]} has data flow to {last_prod} and
+               {successor[i]} is fmul instruction) and
+  collect i 1 ({successor[i]} is unused))
+for N=8 if not otherwise specified
+End
+
+
 Constraint StencilPlus
-( inherits ForNest(N=3) and
-  inherits PermMultidStore(N=1) with {loop[N-1].iterator} as {input[0]}
+( include ForNest(N=3) and
+  include PermMultidStore(N=1) with {loop[N-1].iterator} as {input[0]}
                                  and {begin} as {begin}   at {temp_write} and
 
   {compute_expr.output} is first argument of {temp_write.store} and
 
-  collect i 32 inherits StencilRead with {iterator[0]}  as {input[0]}
-                                     and {iterator[1]}  as {input[1]}
-                                     and {iterator[2]}  as {input[2]}
-                                     and {begin} as {begin} at {reads[i]} and
+  collect i 32 include StencilRead with {iterator[0]}  as {input[0]}
+                                    and {iterator[1]}  as {input[1]}
+                                    and {iterator[2]}  as {input[2]}
+                                    and {begin} as {begin} at {reads[i]} and
   {reads[0].value} is load instruction and
 
   {compute_expr.input[i]} is the same as {reads[i].value} for all i=0..32 and
-  inherits KernelFunction with {begin} as {outer}
+  include KernelFunction with {begin} as {outer}
                          and {body.begin} as {inner} at {compute_expr} and
 
 
-  inherits SamePostfixSESE with {stencil_loop} as {other} at {loop[1].body}  and
-  inherits For at {stencil_loop} and
+  include SamePostfixSESE with {stencil_loop} as {other} at {loop[1].body}  and
+  include For at {stencil_loop} and
   {loop[2].successor} control flow dominates {stencil_loop.begin} and
   {stencil_loop.begin} control flow post dominates {loop[2].successor} and
 
-  inherits PermMultidStore(N=N) with {iterator[0]} as {input[0]}
-                                 and {iterator[1]} as {input[1]}
-                                 and {stencil_loop.iterator} as {input[2]}
-                                 and {begin} as {begin} at {stencil_write} and
+  include PermMultidStore(N=N) with {iterator[0]} as {input[0]}
+                                and {iterator[1]} as {input[1]}
+                                and {stencil_loop.iterator} as {input[2]}
+                                and {begin} as {begin} at {stencil_write} and
 
   {stencil_expr.output} is first argument of {stencil_write.store}  and
 
-  collect i 32 inherits StencilRead with {iterator[0]}  as {input[0]}
-                                     and {iterator[1]}  as {input[1]}
-                                     and {stencil_loop.iterator}  as {input[2]}
-                                     and {begin} as {begin} at {stencil_reads[i]} and
+  collect i 32 include StencilRead with {iterator[0]}  as {input[0]}
+                                    and {iterator[1]}  as {input[1]}
+                                    and {stencil_loop.iterator}  as {input[2]}
+                                    and {begin} as {begin} at {stencil_reads[i]} and
 
-  collect i 32 ( inherits StencilRead(N=1) with {stencil_loop.iterator}  as {input[0]}
+  collect i 32 ( include StencilRead(N=1) with {stencil_loop.iterator}  as {input[0]}
                                             and {begin} as {begin} at {temp_reads[i]} and
                  {temp_reads[i].base_pointer} is the same as {temp_write.base_pointer}) and
 
@@ -692,7 +829,7 @@ Constraint StencilPlus
   {stencil_expr.input[i]} is the same as {stencil_reads[i].value} for all i=0..32 and
   {stencil_expr.input[i+32]} is the same as {temp_reads[i].value} for all i=0..32
 # and
-#  inherits KernelFunction with {begin} as {outer}
+#  include KernelFunction with {begin} as {outer}
 #                         and {body.begin} as {inner} at {stencil_expr}
 )
 for N=3 if not otherwise specified

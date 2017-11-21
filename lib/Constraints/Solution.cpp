@@ -2,7 +2,10 @@
 #include "llvm/Constraints/Solver.hpp"
 #include "llvm/Constraints/FunctionWrap.hpp"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/FormattedStream.h"
+#include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Function.h"
+#include <iostream>
 #include <algorithm>
 #include <sstream>
 #include <string>
@@ -11,6 +14,8 @@
 std::vector<Solution> Solution::Find(std::vector<std::pair<std::string,std::unique_ptr<SolverAtom>>> constraint,
                                      llvm::Function& function, unsigned max_solutions)
 {
+    auto instr_strings = std::make_shared<std::unordered_map<llvm::Value*,std::string>>();
+
     std::vector<std::string>                 labels(constraint.size());
     std::vector<std::unique_ptr<SolverAtom>> atoms (constraint.size());
 
@@ -40,7 +45,23 @@ std::vector<Solution> Solution::Find(std::vector<std::pair<std::string,std::uniq
         result.push_back(Solution(labels, llvm_solution));
     }
 
+    for(auto& res : result)
+    {
+        res.set_precomputed_strings(instr_strings);
+    }
+
     return result;
+}
+
+void Solution::set_precomputed_strings(std::shared_ptr<std::unordered_map<llvm::Value*,std::string>> strings)
+{
+    for(auto& value : vector_value)
+        value.set_precomputed_strings(strings);
+
+    for(auto& value : map_value)
+        value.second.set_precomputed_strings(strings);
+
+    instr_strings = std::move(strings);
 }
 
 Solution::Solution(std::vector<std::string> labels, std::vector<llvm::Value*> values)
@@ -322,22 +343,30 @@ std::string Solution::print_json(llvm::ModuleSlotTracker& slot_tracker) const
 
     if(single_value)
     {
+        auto find_it = instr_strings->find(single_value);
+
         std::string string_value;
 
         llvm::raw_string_ostream out_stream(string_value);
 
-        if(llvm::Function* func_value = llvm::dyn_cast<llvm::Function>(single_value))
+        if(find_it != instr_strings->end())
+        {
+            out_stream<<find_it->second;
+        }
+        else if(llvm::Function* func_value = llvm::dyn_cast<llvm::Function>(single_value))
         {
             func_value->printAsOperand(out_stream, true, slot_tracker);
+            instr_strings->insert({func_value, string_value});
         }
         else if(llvm::Instruction* instr_value = llvm::dyn_cast<llvm::Instruction>(single_value))
         {
             instr_value->print(out_stream, slot_tracker);
+            instr_strings->insert({instr_value, string_value});
         }
         else
         {
-            out_stream<<"  ";
             single_value->print(out_stream, slot_tracker);
+            instr_strings->insert({single_value, string_value});
         }
 
         std::string escaped_string;

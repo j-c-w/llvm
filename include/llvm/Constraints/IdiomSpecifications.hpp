@@ -1,5 +1,6 @@
 #ifndef _CONSTRAINTCOMPOSED_HPP_
 #define _CONSTRAINTCOMPOSED_HPP_
+#include "llvm/Support/Timer.h"
 #include "llvm/Constraints/Solution.hpp"
 #include <climits>
 #include <string>
@@ -23,5 +24,6 @@ std::vector<Solution> DetectReduction   (llvm::Function& function, unsigned max_
 std::vector<Solution> DetectHisto       (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 std::vector<Solution> DetectStencil     (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 std::vector<Solution> DetectStencilPlus (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectExperiment  (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 
 #endif

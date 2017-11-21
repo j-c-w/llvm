@@ -6,10 +6,16 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 #include <algorithm>
+#include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <map>
+
+extern llvm::Timer solver_timer1;
+extern llvm::Timer solver_timer2;
+extern llvm::Timer solver_timer3;
+extern llvm::Timer solver_timer8;
 
 using namespace llvm;
 
@@ -68,6 +74,19 @@ private:
 
 bool ResearchReplacer::runOnModule(Module& module)
 {
+    solver_timer1 = llvm::Timer();
+    solver_timer2 = llvm::Timer();
+    solver_timer3 = llvm::Timer();
+    llvm::Timer solver_timer4;
+    llvm::Timer solver_timer5;
+    llvm::Timer solver_timer6;
+    llvm::Timer solver_timer7;
+    solver_timer8 = llvm::Timer();
+
+    for(unsigned i = 0; i < 1; i++)
+    {
+    solver_timer7.startTimer();
+
     ModuleSlotTracker slot_tracker(&module);
 
     std::ofstream ofs("replace-report.txt");
@@ -79,27 +98,48 @@ bool ResearchReplacer::runOnModule(Module& module)
             std::vector<std::pair<std::string,std::vector<Solution>>> raw_solutions;
 
             for(const auto& spec : constraint_specs)
-                raw_solutions.push_back({spec.first, spec.second(function,10)});
+                raw_solutions.push_back({spec.first, spec.second(function,3)});
+
+            solver_timer5.startTimer();
 
             auto clustered_solutions = cluster_solutions(std::move(raw_solutions));
 
-            if(clustered_solutions.empty()) continue;
+            solver_timer5.stopTimer();
+
+//            for(auto solution : DetectExperiment(function, 20))
+//            {
+//                ofs<<"BEGIN experiment in "<<(std::string)function.getName()<<"\n"
+//                   <<solution.prune().print_json(slot_tracker)<<"\n"
+//                   <<"END experiment\n";
+//            }
+
+            if(clustered_solutions.empty())
+            {
+                ofs<<"SKIP FUNCTION TRANSFORMATION "<<(std::string)function.getName()<<"\n";
+                continue;
+            }
 
             ofs<<"BEGIN FUNCTION TRANSFORMATION "<<(std::string)function.getName()<<"\n";
 
             for(unsigned i = 0; i < clustered_solutions.size(); i++)
             {
                 ofs<<"BEGIN LOOP\n";
+      //          ofs<<clustered_solutions[i].begin->getParent()
 
+                solver_timer4.startTimer();
                 for(const auto& spec : constraint_specs)
                 {
-                    for(auto solution : clustered_solutions[i].solutions[spec.first])
+                    for(auto& solution : clustered_solutions[i].solutions[spec.first])
                     {
-                        ofs<<"BEGIN "<<spec.first<<"\n"<<solution.prune().print_json(slot_tracker)<<"\n"
-                             <<"END "<<spec.first<<"\n";
+                        ofs<<"BEGIN "<<spec.first<<"\n"
+                           <<solution.prune().print_json(slot_tracker)<<"\n"
+                           <<"END "<<spec.first<<"\n";
                     }
                 }
+                solver_timer4.stopTimer();
 
+
+                solver_timer6.startTimer();
                 if(clustered_solutions[i].solutions["histo"].size() > 0 ||
                    clustered_solutions[i].solutions["scalar"].size() > 0)
                 {
@@ -125,15 +165,30 @@ bool ResearchReplacer::runOnModule(Module& module)
                     ofs<<print_pretty_c_operator(*function);
                     delete function;
                 }
+                solver_timer6.stopTimer();
 
                 ofs<<"END LOOP\n";
             }
 
+
             ofs<<"END FUNCTION TRANSFORMATION\n";
+
         }
     }
 
-    ofs.close();
+    solver_timer7.stopTimer();
+    }
+
+    double total_time = solver_timer7.getTotalTime().getUserTime();
+
+    std::cout<<"Done with module, timer1 is "<<100*solver_timer1.getTotalTime().getUserTime()/total_time<<"%\n";
+    std::cout<<"Done with module, timer2 is "<<100*solver_timer2.getTotalTime().getUserTime()/total_time<<"%\n";
+    std::cout<<"Done with module, timer3 is "<<100*solver_timer3.getTotalTime().getUserTime()/total_time<<"%\n";
+    std::cout<<"Done with module, timer4 is "<<100*solver_timer4.getTotalTime().getUserTime()/total_time<<"%\n";
+    std::cout<<"Done with module, timer5 is "<<100*solver_timer5.getTotalTime().getUserTime()/total_time<<"%\n";
+    std::cout<<"Done with module, timer6 is "<<100*solver_timer6.getTotalTime().getUserTime()/total_time<<"%\n";
+    std::cout<<"Done with module, timer8 is "<<100*solver_timer8.getTotalTime().getUserTime()/total_time<<"%\n";
+
     return false;
 }
 

@@ -5,11 +5,12 @@ grammar = """
 
 specification ::= Constraint <s> <constraint> End
 
-constraint ::= <grouping> | <collect> | <rename> | <rebase> | <atom> | <GeneralizedDominance> | '(' <constraint> ')'
+constraint ::= <grouping> | <collect> | <rename> | <rebase> | <atom>
+             | <GeneralizedDominance> | <GeneralizedSame> | '(' <constraint> ')'
 
 grouping    ::= <conjunction> | <disjunction> | <inheritance> | <forall> | <forsome> | <forone> | <if> | <default>
 inheritance ::= <rawinherit> | <arginherit>
-rawinherit  ::= inherits <s>
+rawinherit  ::= include <s>
 arginherit  ::= <rawinherit> '(' <s> = <calculation> { , <s> = <calculation> } ')'
 conjunction ::= '(' <constraint> and <constraint> { and <constraint> } ')'
 disjunction ::= '(' <constraint> or <constraint> { or <constraint> } ')'
@@ -38,15 +39,17 @@ addconst    ::= <calculation> + <n>
 subvar      ::= <calculation> - <s>
 subconst    ::= <calculation> - <n>
 
-atom ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintPointerType>
+atom ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintVectorType> | <ConstraintPointerType>
          | <ConstraintIntZero> | <ConstraintFloatZero>
          | <ConstraintUnused>       | <ConstraintNotNumericConstant> | <ConstraintConstant>
          | <ConstraintPreexecution> | <ConstraintArgument>           | <ConstraintInstruction>
          | <ConstraintStoreInst>  | <ConstraintLoadInst>   | <ConstraintReturnInst> | <ConstraintBranchInst>
          | <ConstraintAddInst>    | <ConstraintSubInst>    | <ConstraintMulInst>    | <ConstraintFAddInst>
          | <ConstraintFSubInst>   | <ConstraintFMulInst>   | <ConstraintFDivInst>   | <ConstraintBitOrInst>
+         | <ConstraintBitAndInst>
          | <ConstraintLShiftInst> | <ConstraintSelectInst> | <ConstraintSExtInst>   | <ConstraintZExtInst>
-         | <ConstraintGEPInst>    | <ConstraintICmpInst>
+         | <ConstraintGEPInst>    | <ConstraintICmpInst>   | <ConstraintCallInst>
+         | <ConstraintShufflevectorInst> | <ConstraintInsertelementInst>
          | <ConstraintSame> | <ConstraintDistinct>
          | <ConstraintDFGEdge> | <ConstraintCFGEdge> | <ConstraintCDGEdge> | <ConstraintPDGEdge>
          | <ConstraintFirstOperand> | <ConstraintSecondOperand>
@@ -68,6 +71,7 @@ atom ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintPointerTyp
 
 ConstraintIntegerType ::= <slot> is an integer
 ConstraintFloatType   ::= <slot> is a float
+ConstraintVectorType  ::= <slot> is a vector
 ConstraintPointerType ::= <slot> is a pointer
 
 ConstraintIntZero   ::= <slot> is integer zero
@@ -92,12 +96,16 @@ ConstraintFSubInst   ::= <slot> is fsub instruction
 ConstraintFMulInst   ::= <slot> is fmul instruction
 ConstraintFDivInst   ::= <slot> is fdiv instruction
 ConstraintBitOrInst  ::= <slot> is bitor instruction
+ConstraintBitAndInst ::= <slot> is bitand instruction
 ConstraintLShiftInst ::= <slot> is lshift instruction
 ConstraintSelectInst ::= <slot> is select instruction
 ConstraintSExtInst   ::= <slot> is sext instruction
 ConstraintZExtInst   ::= <slot> is zext instruction
 ConstraintGEPInst    ::= <slot> is gep instruction
 ConstraintICmpInst   ::= <slot> is icmp instruction
+ConstraintCallInst   ::= <slot> is call instruction
+ConstraintShufflevectorInst ::= <slot> is shufflevector instruction
+ConstraintInsertelementInst ::= <slot> is insertelement instruction
 
 ConstraintSame     ::= <slot> is the same as <slot>
 ConstraintDistinct ::= <slot> is not the same as <slot>
@@ -147,6 +155,8 @@ ConstraintIncomingValue ::= <slot> reaches phi node <slot> from <slot>
 ConstraintDFGBlocked ::= all data flow from <slot> to <slot> passes through <slot>
 ConstraintCFGBlocked ::= all control flow from <slot> to <slot> passes through <slot>
 ConstraintPDGBlocked ::= all flow from <slot> to <slot> passes through <slot>
+
+GeneralizedSame  ::= <slot> is the same set as <slot>
 
 GeneralizedDominance ::= all flow from <slot> or any origin to any of <slot> passes through at least one of <slot>
 """
@@ -454,40 +464,68 @@ def generate_cpp_slotlist(syntax):
         return sum((generate_cpp_slotlist(s) for s in syntax[1:]), ())
     raise Exception("Error, \"" + syntax[0] + "\" is not allowed in slot list.")
 
+def getatom(counter, typename):
+    if typename in counter:
+        result = "atom{}_[{}]".format(counter[typename][0], counter[typename][1])
+        counter[typename] = (counter[typename][0], counter[typename][1]+1)
+    else:
+        result = "atom{}_[{}]".format(len(counter), 0)
+        counter[typename] = (len(counter), 1)
+    return result;
+
 def code_generation_core(syntax, counter):
     if syntax[0] == "atom":
-        if len(syntax[1]) > 2:
-            if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
-                code = "auto atom{} = make_shared<Backend{}>(array<unsigned,3>{{{{0,1,1}}}}, wrap);\n".format(counter[0], syntax[1][0][10:])
-            elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
-                code = "auto atom{} = make_shared<Backend{}>(array<unsigned,3>{{{{1,1,1}}}}, wrap);\n".format(counter[0], syntax[1][0][10:])
-            else:
-                code = "auto atom{} = make_shared<Backend{}>(wrap);\n".format(counter[0], syntax[1][0][10:])
-            counter[0] += 1
+        classname = "Backend{}".format(syntax[1][0][10:])
+        if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
+            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
+            code = "{} = {{{{0,1,1}}, wrap}};\n".format(atom)
+        elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
+            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
+            code = "{} = {{{{1,1,1}}, wrap}};\n".format(atom)
+        elif len(syntax[1]) > 2:
+            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
+            code = "{} = {{wrap}};\n".format(atom)
         else:
-            code = ""
+            if classname not in counter:
+                atom = getatom(counter, classname)
+                code = "{} = {{wrap}};\n".format(atom)
+            else:
+                atom = "atom{}_[0]".format(counter[classname][0])
+                code = ""
+#            atom = getatom(counter, "Backend{}".format(syntax[1][0][10:]))
+#            code = "{} = {{wrap}};\n".format(atom)
 
         slots = [generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
 
         if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
-            result = {slot:("MultiVectorSelector<Backend{},{}>".format(syntax[1][0][10:], i+1), "atom{}, 0".format(counter[0]-1)) for i,slot in enumerate(slots)}
+            result = {slot:("MultiVectorSelector<Backend{},{}>".format(syntax[1][0][10:], i+1), "{}, <[0]>".format(atom)) for i,slot in enumerate(slots)}
         elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
-            result = {slot:("MultiVectorSelector<Backend{},{}>".format(syntax[1][0][10:], i), "atom{}, 0".format(counter[0]-1)) for i,slot in enumerate(slots)}
+            result = {slot:("MultiVectorSelector<Backend{},{}>".format(syntax[1][0][10:], i), "{}, <[0]>".format(atom)) for i,slot in enumerate(slots)}
         elif len(syntax[1]) == 2:
-            result = {slot:("Backend{}".format(syntax[1][0][10:]), "wrap") for i,slot in enumerate(slots)}
+            result = {slot:("Backend{}".format(syntax[1][0][10:]), atom) for i,slot in enumerate(slots)}
         else:
-            result = {slot:("ScalarSelector<Backend{},{}>".format(syntax[1][0][10:], i), "atom{}".format(counter[0]-1)) for i,slot in enumerate(slots)}
+            result = {slot:("ScalarSelector<Backend{},{}>".format(syntax[1][0][10:], i), atom) for i,slot in enumerate(slots)}
 
         return slots,result,code
 
     elif syntax[0] == "GeneralizedDominance":
+        atom        = getatom(counter, "my_shared_ptr<BackendPDGDominate>")
         slotlists   = [generate_cpp_slotlist(s) for s in syntax[1:2]+syntax[3:1:-1]]
-        code        = "auto atom{} = make_shared<BackendPDGDominate>(array<unsigned,3>{{{{{},{},{}}}}}, wrap);\n".format(counter[0], len(slotlists[0]), len(slotlists[1]), len(slotlists[2]))
+        code        = "{} = {{{{{},{},{}}}, wrap}};\n".format(atom, len(slotlists[0]), len(slotlists[1]), len(slotlists[2]))
         slots       = [slot for slotlist in slotlists for slot in slotlist]
         slots       = [slot for n,slot in enumerate(slots) if slot not in slots[:n]]
-        result      = {slot:("MultiVectorSelector<BackendPDGDominate,{}>".format(j), "atom{}, {}".format(counter[0], i))
+        result      = {slot:("MultiVectorSelector<BackendPDGDominate,{}>".format(j), "{}, <[{}]>".format(atom, i))
                        for j,slotlist in enumerate(slotlists) for i,slot in enumerate(slotlist)}
-        counter[0] += 1
+        return slots,result,code
+
+    elif syntax[0] == "GeneralizedSame":
+        atom        = getatom(counter, "my_shared_ptr<BackendSameSets>")
+        slotlists   = [generate_cpp_slotlist(s) for s in syntax[1:2]+syntax[3:1:-1]]
+        code        = "{} = {{{{{}}}}};\n".format(atom, len(slotlists[0]))
+        slots       = [slot for slotlist in slotlists for slot in slotlist]
+        slots       = [slot for n,slot in enumerate(slots) if slot not in slots[:n]]
+        result      = {slot:("MultiVectorSelector<BackendSameSets,{}>".format(j), "{}, <[{}]>".format(atom, i))
+                       for j,slotlist in enumerate(slotlists) for i,slot in enumerate(slotlist)}
         return slots,result,code
 
     elif syntax[0] in ["conjunction", "disjunction"]:
@@ -498,22 +536,42 @@ def code_generation_core(syntax, counter):
         result       = {slot:[part[1][slot] for part in part_results if slot in part[1]] for slot in slots}
 
         if syntax[0] == "conjunction":
-            result = {slot:result[slot][0] if len(result[slot]) == 1 else
-                           ("BackendAnd<"+",".join(a for a,b in result[slot])+">", ", ".join("{"+b+"}" for a,b in result[slot]))
-                      for slot in slots}
+            for slot in slots:
+                if len(result[slot]) == 1:
+                    result[slot] = result[slot][0]
+                else:
+                    classname    = indent_code("BackendAnd<", ",\n".join(a for a,b in result[slot])+">")
+                    atom         = getatom(counter, classname)
+                    code        += "{} = {{{}}};\n".format(atom, ", ".join("{"+b+"}" for a,b in result[slot]))
+                    classname    = "remove_reference<decltype({}[0])>::type".format(atom[:atom.index("[")])
+                    result[slot] = (classname, atom)
 
+        """
         if syntax[0] == "disjunction":
             choices        = max([0]+[len(result[slot]) for slot in slots])
-            templateparams = ",".join("tuple<"+",".join(a for a,b in result[slot])+">" for slot in slots)
-            classname      = "BackendOr<{},{}>".format(choices, templateparams)
-            constructargs  = ", ".join("tuple<"+",".join(a[0] for a in result[slot])+">{"+", ".join("{"+a[1]+"}" for a in result[slot])+"}" for slot in slots)
-            code          += "auto atom{} = make_shared<{}>({});\n".format(counter[0], classname, constructargs)
-            result         = {slot:("ScalarSelector<{},{}>".format(classname, n), "atom{}".format(counter[0])) for n,slot in enumerate(slots)}
-            counter[0]    += 1
+            templateparams = ",\n".join("tuple<"+",".join(a for a,b in result[slot])+">" for slot in slots)
+            classname      = indent_code("BackendOr<{},".format(choices), "{}>".format(templateparams))
+            constructargs  = ", ".join("{"+", ".join("{"+b+"}" for a,b in result[slot])+"}" for slot in slots)
+            atom           = getatom(counter, indent_code("my_shared_ptr<", "{}>".format(classname)))
+            code          += "{} = {{{}}};\n".format(atom, constructargs)
+            classname      = "remove_reference<decltype(*{}[0])>::type".format(atom[:atom.index("[")])
+            result         = {slot:("ScalarSelector<{},{}>".format(classname, n), atom) for n,slot in enumerate(slots)}
+"""
+        if syntax[0] == "disjunction":
+            choices        = max([0]+[len(result[slot]) for slot in slots])
+            templateparams = ",\n".join("tuple<"+",".join("IndirSolverAtom" for a,b in result[slot])+">" for slot in slots)
+            classname      = indent_code("BackendOr<{},".format(choices), "{}>".format(templateparams))
+            constructargs  = ", ".join("{"+", ".join(a+"{"+b+"}" for a,b in result[slot])+"}" for slot in slots)
+            atom           = getatom(counter, indent_code("my_shared_ptr<", "{}>".format(classname)))
+            code          += "{} = {{{}}};\n".format(atom, constructargs)
+            classname      = "remove_reference<decltype(*{}[0])>::type".format(atom[:atom.index("[")])
+            result         = {slot:("ScalarSelector<{},{}>".format(classname, n), atom) for n,slot in enumerate(slots)}
 
         return slots,result,code
 
     elif syntax[0] == "collect":
+        atom = getatom(counter, "my_shared_ptr<BackendCollect>")
+
         part_slots, part_result, code = code_generation_core(syntax[3], counter)
 
         local_slots_idx  = [i for i,slot in enumerate(part_slots) if "["+syntax[1]+"]"     in slot]
@@ -522,22 +580,110 @@ def code_generation_core(syntax, counter):
         local_parts  = [part_result[part_slots[idx]] for idx in local_slots_idx]
         global_parts = [part_result[part_slots[idx]] for idx in global_slots_idx]
 
-        code += "\n".join(["vector<unique_ptr<SolverAtom>> globals{};".format(counter[0])]
-                         +["globals{}.emplace_back(unique_ptr<SolverAtom>(new {}({})));".format(counter[0], part[0], part[1]) for part in global_parts]
-                         +["vector<unique_ptr<SolverAtom>> locals{};".format(counter[0])]
-                         +["locals{}.emplace_back(unique_ptr<SolverAtom>(new {}({})));".format(counter[0], part[0], part[1]) for part in local_parts]
-                         +["auto atom{} = make_shared<BackendCollect>(array<unsigned,2>{{{{{},{}}}}}, move(globals{}), move(locals{}));".format(counter[0], len(global_parts), len(local_parts), counter[0], counter[0])])+"\n"
+        mergedatom = atom[4:atom.index("[")] + atom[atom.index("[")+1:atom.index("]")] + "_"
+
+        code += "\n".join(["vector<unique_ptr<SolverAtom>> globals{};".format(mergedatom)]
+                         +["globals{}.emplace_back(unique_ptr<SolverAtom>(new {}({})));".format(mergedatom, part[0], part[1]) for part in global_parts]
+                         +["vector<unique_ptr<SolverAtom>> locals{};".format(mergedatom)]
+                         +["locals{}.emplace_back(unique_ptr<SolverAtom>(new {}({})));".format(mergedatom, part[0], part[1]) for part in local_parts]
+                         +["{} = {{{{{{{},{}}}}}, move(globals{}), move(locals{})}};".format(atom, len(global_parts), len(local_parts), mergedatom, mergedatom)])+"\n"
 
         local_slots  = [part_slots[idx].replace("["+syntax[1]+"]", "["+str(n)+"]") for n in range(syntax[2]) for idx in local_slots_idx]
         global_slots = [part_slots[idx] for idx in global_slots_idx]
 
-        result      = {slot:("MultiVectorSelector<BackendCollect,0>", "atom{}, {}".format(counter[0], i)) for i,slot in enumerate(global_slots)}
-        result.update({slot:("MultiVectorSelector<BackendCollect,1>", "atom{}, {}".format(counter[0], i)) for i,slot in enumerate(local_slots)})
-        counter[0] += 1
+        result      = {slot:("MultiVectorSelector<BackendCollect,0>", "{}, <[{}]>".format(atom, i)) for i,slot in enumerate(global_slots)}
+        result.update({slot:("MultiVectorSelector<BackendCollect,1>", "{}, <[{}]>".format(atom, i)) for i,slot in enumerate(local_slots)})
 
         return global_slots+local_slots, result, code
 
     raise Exception("Error, \"" + syntax[0] + "\" is not allowed in atoms collection.")
+
+def postprocess_copyconstructions(code):
+    atomic_def_lines = [line for line in code.split("\n") if line.startswith("atom")]
+    code_atomic_defs = [(line,line.split("[")[0]+line.split(" = ")[1]) for line in atomic_def_lines]
+    duplication_dict = {}
+
+    for n,line in enumerate(code_atomic_defs):
+        for oldline in code_atomic_defs[:n]:
+            if oldline[1:] == line[1:]:
+                duplication_dict[line[0]] = line[0].split(" = ")[0] + " = " + oldline[0].split(" = ")[0] + ";"
+                break
+
+    return "\n".join([duplication_dict[line] if line in duplication_dict else line for line in code.split("\n")])
+
+def check_differences(first, second, third, fourth):
+    diff1 = [y-x for line1,line2 in zip(first,second) for x,y in zip(line1,line2)]
+    diff2 = [y-x for line1,line2 in zip(third,fourth) for x,y in zip(line1,line2)]
+
+    return all([x==y for x,y in zip(diff1,diff2)])
+
+# This does not actually check that indizes are a linear progression for more than two repetitions!
+def loop_block(block, depth=0):
+    if depth > 4: return block
+    stripindizes = [line[::2] for line in block]
+    onlyindizes  = [[int(n) for n in line[1::2]] for line in block]
+
+    repeatstart  = 0
+    repeatsize   = 1
+    repeatamount = 1
+    codesaved    = 0
+
+    for n in range(len(stripindizes)):
+        for m in range(1,1000):
+            if stripindizes[n:n+m] == stripindizes[n+m:n+2*m]:
+                newrepeatamount = 2
+                for k in range(2,100):
+                    if (stripindizes[n+(k-1)*m:n+k*m] == stripindizes[n+k*m:n+(k+1)*m] and
+                        check_differences(onlyindizes[n+(k-2)*m:n+(k-1)*m], onlyindizes[n+(k-1)*m:n+(k+0)*m],
+                                          onlyindizes[n+(k-1)*m:n+(k+0)*m], onlyindizes[n+(k+0)*m:n+(k+1)*m])):
+                        newrepeatamount += 1
+                    else:
+                        break
+                if (newrepeatamount-1)*m > codesaved:
+                    repeatstart  = n
+                    repeatsize   = m
+                    repeatamount = newrepeatamount
+                    codesaved    = (newrepeatamount-1)*m
+
+    if codesaved:
+        block_before = block[:repeatstart]
+        block_after  = block[repeatstart+repeatamount*repeatsize:]
+
+        modified_block = block[repeatstart:repeatstart+repeatsize]
+
+        for k,line in enumerate(modified_block):
+            for i in range(2,len(line),2):
+                difference = int(block[repeatstart+repeatsize+k][i-1])-int(block[repeatstart+k][i-1])
+                if difference > 1:
+                    line[i] = "+{}*{}{}".format("ijklm"[depth], difference, line[i])
+                elif difference < -1:
+                    line[i] = "-{}*{}{}".format("ijklm"[depth], -difference, line[i])
+                elif difference == 1:
+                    line[i] = "+{}{}".format("ijklm"[depth], line[i])
+                elif difference == -1:
+                    line[i] = "-{}{}".format("ijklm"[depth], line[i])
+
+        return (loop_block(block_before, depth)
+               +[["for(unsigned {0} = 0; {0} < {1}; {0}++) {{".format("ijklm"[depth], repeatamount)]]
+               +[["    "+line[0]]+line[1:] for line in loop_block(modified_block, depth+1)]
+               +[["}"]]
+               +loop_block(block_after, depth))
+
+    return block
+
+def postprocess_add_loops_one_block(block):
+    block = [[part for word in line.split(']') for part in word.split('[')] for line in block]
+    block = [line if len(line) <= 1 else [line[0]+"["]+line[1:-1]+["]"+line[-1]] for line in block]
+    for line in block:
+        if len(line) > 1:
+            line[2:-2:2] = ["]"+e+"[" for e in line[2:-2:2]]
+    block = loop_block(block)
+    return ["".join(line) for line in block]
+
+def postprocess_add_loops(code):
+    grouped = itertools.groupby(code.split('\n'), (lambda x: x.startswith("atom")))
+    grouped = [postprocess_add_loops_one_block(list(b)) if a else list(b) for a,b in grouped]
+    return "\n".join(line for group in grouped for line in group)
 
 def generate_fast_cpp_specification(syntax, specs):
     constr = partial_evaluator(syntax[2], evaluate_remove_for_with, specs)
@@ -545,31 +691,62 @@ def generate_fast_cpp_specification(syntax, specs):
     constr = partial_evaluator(constr,    evaluate_remove_trivials)
     constr = partial_evaluator(constr,    evaluate_flatten_connectives)
 
-    slots, result, code = code_generation_core(constr, [0])
+    atom_counter = {}
+    slots, result, code = code_generation_core(constr, atom_counter)
 
     constr = partial_evaluator(constr, optimize_delay_aliases, slots)
 
-    slots2, result, code = code_generation_core(constr, [0])
+    atom_counter = {}
+    slots2, result, code = code_generation_core(constr, atom_counter)
+
+    code = postprocess_copyconstructions(code)
+    code = postprocess_add_loops(code)
+
+    code = "\n".join(["{} atom{}_[{}];".format(typename, atom_counter[typename][0], atom_counter[typename][1]) for typename in atom_counter]
+                    +["solver_timer2.startTimer();"]
+                    +[code.rstrip()]
+                    +["vector<pair<string,unique_ptr<SolverAtom>>> constraint({});".format(len(slots))]
+                    +["solver_timer2.stopTimer();"]
+                    +["solver_timer8.startTimer();"]
+                    +["constraint[{}] = make_pair(\"{}\", unique_ptr<SolverAtom>(new {}({})));".format(n, slot, result[slot][0], result[slot][1]) for n,slot in enumerate(slots)]
+                    +["solver_timer8.stopTimer();"])
+
+    code = code.replace("<[", "").replace("]>", "")
 
     return "\n".join(["vector<Solution> Detect{}(llvm::Function& function, unsigned max_solutions)".format(syntax[1])]
                     +["{"]
+                    +["    solver_timer1.startTimer();"]
                     +["    FunctionWrap wrap(function);"]
-                    +[indent_code("    ", code.rstrip())]
-                    +["    vector<pair<string,unique_ptr<SolverAtom>>> constraint;"]
-                    +["    constraint.emplace_back(\"{}\", unique_ptr<SolverAtom>(new {}({})));".format(slot, result[slot][0], result[slot][1]) for slot in slots]
-                    +["    return Solution::Find(move(constraint), function, max_solutions);"]
+                    +["    solver_timer1.stopTimer();"]
+                    +[indent_code("    ", code)]
+                    +["    solver_timer3.startTimer();"]
+                    +["    auto result = Solution::Find(move(constraint), function, max_solutions);"]
+                    +["    solver_timer3.stopTimer();"]
+                    +["    return result;"]
                     +["}"])
 
 def generate_cpp_code(syntax_list):
     includes  = ["IdiomSpecifications","BackendSpecializations", "BackendDirectClasses", "BackendSelectors", "Solution"]
     specs     = {spec[1] : spec[2] for spec in syntax_list}
     whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY",
-                 "DOT", "SPMV", "Reduction", "Histo", "Stencil", "StencilPlus"]
+                 "DOT", "SPMV", "Reduction", "Histo", "Stencil", "StencilPlus", "Experiment"]
 
     return "\n".join(["#include \"llvm/Constraints/{}.hpp\"".format(s) for s in includes]
                     +["using namespace std;"]
                     +["#pragma GCC optimize (\"O0\")"]
                     +["#pragma clang optimize off"]
+                    +["llvm::Timer solver_timer1 = llvm::Timer();"]
+                    +["llvm::Timer solver_timer2 = llvm::Timer();"]
+                    +["llvm::Timer solver_timer3 = llvm::Timer();"]
+                    +["llvm::Timer solver_timer8 = llvm::Timer();"]
+                    +["template<typename T>"]
+                    +["class my_shared_ptr : public shared_ptr<T>"]
+                    +["{"]
+                    +["public:"]
+                    +["    my_shared_ptr() = default;"]
+                    +["    my_shared_ptr<T>& operator=(T t) { shared_ptr<T>::operator=(make_shared<T>(move(t))); return *this; }"]
+                    +["    my_shared_ptr<T>& operator=(const my_shared_ptr<T>& t) { return *this = *t; }"]
+                    +["};"]
                     +[generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] in whitelist])
 
 def print_syntax_tree(syntax, indent=0):

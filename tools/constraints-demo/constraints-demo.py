@@ -66,6 +66,8 @@ code_window1.   modify_font(Pango.FontDescription( "Monospace 8"))
 code_window2.   modify_font(Pango.FontDescription( "Monospace 8"))
 code_window3.   modify_font(Pango.FontDescription( "Monospace 8"))
 
+sourcecode.set_show_line_numbers(True)
+
 result_box.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
 
 message_window1.set_xalign(0.0)

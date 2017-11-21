@@ -9,6 +9,7 @@ template<typename SolverAtom1, typename SolverAtom2>
 class BackendAnd<SolverAtom1,SolverAtom2> : public SolverAtom
 {
 public:
+    BackendAnd() = default;
     BackendAnd(SolverAtom1 s1, SolverAtom2 s2);
 
     SkipResult skip_invalid(SolverAtom::Value& c) const final;
@@ -74,6 +75,7 @@ class BackendAnd<SolverAtom1,SolverAtom2,SolverAtom3,SolverAtomN...>
     : public BackendAnd<SolverAtom1,BackendAnd<SolverAtom2,SolverAtom3,SolverAtomN...>>
 {
 public:
+    BackendAnd() = default;
     BackendAnd(SolverAtom1 s1, SolverAtom2 s2, SolverAtom3 s3, SolverAtomN ... sn)
      : BackendAnd<SolverAtom1,BackendAnd<SolverAtom2,SolverAtom3,SolverAtomN...>>
        (s1, BackendAnd<SolverAtom2,SolverAtom3,SolverAtomN...>(s2, s3, sn...)) { }

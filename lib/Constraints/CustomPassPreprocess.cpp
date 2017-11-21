@@ -75,7 +75,6 @@ bool ResearchPreprocessor::runOnModule(Module& module)
         }
     }
 
-    ofs.close();
     return false;
 }
 

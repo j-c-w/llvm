@@ -4,7 +4,23 @@ BackendCollect::BackendCollect(std::array<unsigned,2>, std::vector<std::unique_p
                                                        std::vector<std::unique_ptr<SolverAtom>> loc)
                : nonlocals(std::move(nloc)), locals(std::move(loc)),
                  filled_nonlocals(0), filled_locals(locals.size(), 0)
-{ }
+{
+    if(nonlocals.empty())
+    {
+        Solver solver(std::move(locals));
+
+        while(true)
+        {
+            auto solution = solver.next_solution();
+
+            if(solution.empty()) break;
+
+            solutions.insert(solutions.end(), solution.begin(), solution.end());
+        }
+
+        locals = solver.swap_specials();
+    }
+}
 
 template<unsigned idx1>
 SkipResult BackendCollect::skip_invalid(unsigned idx2, SolverAtom::Value &c) const

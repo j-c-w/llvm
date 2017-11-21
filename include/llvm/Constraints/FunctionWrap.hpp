@@ -25,6 +25,8 @@ public:
     std::vector<std::vector<unsigned>>              rcdg;
     std::vector<std::vector<unsigned>>              pdg;
     std::vector<std::vector<unsigned>>              rpdg;
+
+    static double stopped_time;
 };
 
 #endif

@@ -436,6 +436,9 @@ void PassManagerBuilder::populateModulePassManager(
     // new unnamed globals.
     if (PrepareForThinLTO)
       MPM.add(createNameAnonGlobalPass());
+
+    MPM.add(createResearchPreprocessorPass());
+
     return;
   }
 
@@ -515,13 +518,17 @@ void PassManagerBuilder::populateModulePassManager(
 
   // My custom research stuff.
   if (OptLevel >= 2) {
-      MPM.add(createResearchFlattenPass());
+      MPM.add(createResearchMergePointercalcsPass());
+      MPM.add(createResearchFlattenPointercalcsPass());
+      MPM.add(createResearchSplitPointercalcsPass());
       MPM.add(createResearchPreprocessorPass());
+      MPM.add(createResearchFixOrToAddPass());
+      MPM.add(createResearchFixShlToMulPass());
       MPM.add(createLICMPass());
       MPM.add(createEarlyCSEPass());
-      MPM.add(createLateCFGSimplificationPass());
       MPM.add(createCFGSimplificationPass());
       MPM.add(createResearchReplacerPass());
+      return;
   }
 
   // FIXME: This is a HACK! The inliner pass above implicitly creates a CGSCC

@@ -3,12 +3,14 @@
 #include "llvm/Constraints/BackendClasses.hpp"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/Support/Timer.h"
 #include <vector>
 
 template<unsigned ... constants>
 class BackendConstantValue : public BackendSingle
 {
 public:
+    BackendConstantValue() = default;
     BackendConstantValue(const FunctionWrap& wrap)
       : BackendSingle(std::vector<unsigned>{constants...}) { }
 };
@@ -17,6 +19,7 @@ template<typename Type>
 class BackendLLVMSingle : public BackendSingle
 {
 public:
+    BackendLLVMSingle() = default;
     BackendLLVMSingle(const FunctionWrap& wrap, std::function<bool(Type&)> pred)
       : BackendSingle(compute_hits(wrap, pred)) { }
 
@@ -43,6 +46,7 @@ private:
 class BackendNotNumericConstant : public BackendLLVMSingle<llvm::Value>
 {
 public:
+    BackendNotNumericConstant() = default;
     BackendNotNumericConstant(const FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Value>(wrap, [](llvm::Value& value)
                                               { return !llvm::isa<llvm::ConstantInt>(value) &&
@@ -54,6 +58,7 @@ public:
 class BackendConstant : public BackendLLVMSingle<llvm::Constant>
 {
 public:
+    BackendConstant() = default;
     BackendConstant(const FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Constant>(wrap, nullptr) { }
 };
@@ -62,6 +67,7 @@ public:
 class BackendPreexecution : public BackendLLVMSingle<llvm::Value>
 {
 public:
+    BackendPreexecution() = default;
     BackendPreexecution(const FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Value>(wrap, [](llvm::Value& value)
                                              { return !llvm::isa<llvm::Instruction>(value); }) { }
@@ -70,6 +76,7 @@ public:
 class BackendArgument : public BackendLLVMSingle<llvm::Argument>
 {
 public:
+    BackendArgument() = default;
     BackendArgument(const FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Argument>(wrap, nullptr) { }
 };
@@ -77,6 +84,7 @@ public:
 class BackendInstruction : public BackendLLVMSingle<llvm::Instruction>
 {
 public:
+    BackendInstruction() = default;
     BackendInstruction(const FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Instruction>(wrap, nullptr) { }
 };
@@ -84,6 +92,7 @@ public:
 class BackendFloatZero : public BackendLLVMSingle<llvm::ConstantFP>
 {
 public:
+    BackendFloatZero() = default;
     BackendFloatZero(const FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::ConstantFP>(wrap, [](llvm::ConstantFP& value) { return value.isZero(); }) { }
 };
@@ -92,6 +101,7 @@ template<unsigned op>
 class BackendOpcode : public BackendLLVMSingle<llvm::Instruction>
 {
 public:
+    BackendOpcode() = default;
     BackendOpcode(const FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Instruction>(wrap, [](llvm::Instruction& inst) { return inst.getOpcode() == op; }) { }
 };
@@ -100,6 +110,7 @@ template<bool(llvm::Type::*predicate)() const>
 class BackendLLVMType: public BackendLLVMSingle<llvm::Value>
 {
 public:
+    BackendLLVMType() = default;
     BackendLLVMType(const FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Value>(wrap, [](llvm::Value& value)
                                               { return (value.getType()->*predicate)(); }) { }
@@ -213,31 +224,115 @@ private:
     unsigned number_origins;
 };
 
+extern template class BackendConstantValue<UINT_MAX-1>;
+
+extern template class BackendLLVMType<&llvm::Type::isIntegerTy>;
+extern template class BackendLLVMType<&llvm::Type::isFloatTy>;
+extern template class BackendLLVMType<&llvm::Type::isVectorTy>;
+extern template class BackendLLVMType<&llvm::Type::isPointerTy>;
+
+extern template class BackendOpcode<llvm::Instruction::PHI>;
+extern template class BackendOpcode<llvm::Instruction::Store>;
+extern template class BackendOpcode<llvm::Instruction::Load>;
+extern template class BackendOpcode<llvm::Instruction::Ret>;
+extern template class BackendOpcode<llvm::Instruction::Br>;
+extern template class BackendOpcode<llvm::Instruction::Add>;
+extern template class BackendOpcode<llvm::Instruction::Sub>;
+extern template class BackendOpcode<llvm::Instruction::Mul>;
+extern template class BackendOpcode<llvm::Instruction::FAdd>;
+extern template class BackendOpcode<llvm::Instruction::FSub>;
+extern template class BackendOpcode<llvm::Instruction::FMul>;
+extern template class BackendOpcode<llvm::Instruction::FDiv>;
+extern template class BackendOpcode<llvm::Instruction::Or>;
+extern template class BackendOpcode<llvm::Instruction::And>;
+extern template class BackendOpcode<llvm::Instruction::Shl>;
+extern template class BackendOpcode<llvm::Instruction::Select>;
+extern template class BackendOpcode<llvm::Instruction::SExt>;
+extern template class BackendOpcode<llvm::Instruction::ZExt>;
+extern template class BackendOpcode<llvm::Instruction::GetElementPtr>;
+extern template class BackendOpcode<llvm::Instruction::ICmp>;
+extern template class BackendOpcode<llvm::Instruction::Call>;
+extern template class BackendOpcode<llvm::Instruction::ShuffleVector>;
+extern template class BackendOpcode<llvm::Instruction::InsertElement>;
+
+extern template class BackendOrderWrap<false,true,false>;
+extern template class BackendOrderWrap<true,false,true>;
+extern template class BackendOrderWrap<true,false,false>;
+
+extern template class BackendLLVMEdge<&FunctionWrap::dfg, &FunctionWrap::rdfg>;
+extern template class BackendLLVMEdge<&FunctionWrap::cfg, &FunctionWrap::rcfg>;
+extern template class BackendLLVMEdge<&FunctionWrap::cdg, &FunctionWrap::rcdg>;
+extern template class BackendLLVMEdge<&FunctionWrap::pdg, &FunctionWrap::rpdg>;
+
+extern template class BackendLLVMOperand<0>;
+extern template class BackendLLVMOperand<1>;
+extern template class BackendLLVMOperand<2>;
+extern template class BackendLLVMOperand<3>;
+
+extern template class BackendLLVMDominate<false, true,  0, &FunctionWrap:: dfg>;
+extern template class BackendLLVMDominate<false, true,  1, &FunctionWrap::rdfg>;
+extern template class BackendLLVMDominate<false, false, 0, &FunctionWrap:: dfg>;
+extern template class BackendLLVMDominate<false, false, 1, &FunctionWrap::rdfg>;
+
+extern template class BackendLLVMDominate<false, true,  2, &FunctionWrap:: cfg>;
+extern template class BackendLLVMDominate<false, true,  3, &FunctionWrap::rcfg>;
+extern template class BackendLLVMDominate<false, false, 2, &FunctionWrap:: cfg>;
+extern template class BackendLLVMDominate<false, false, 3, &FunctionWrap::rcfg>;
+
+extern template class BackendLLVMDominate<false, true,  4, &FunctionWrap:: pdg>;
+extern template class BackendLLVMDominate<false, true,  5, &FunctionWrap::rpdg>;
+extern template class BackendLLVMDominate<false, false, 4, &FunctionWrap:: pdg>;
+extern template class BackendLLVMDominate<false, false, 5, &FunctionWrap::rpdg>;
+
+extern template class BackendLLVMDominate<true, true,  0, &FunctionWrap:: dfg>;
+extern template class BackendLLVMDominate<true, true,  1, &FunctionWrap::rdfg>;
+extern template class BackendLLVMDominate<true, false, 0, &FunctionWrap:: dfg>;
+extern template class BackendLLVMDominate<true, false, 1, &FunctionWrap::rdfg>;
+
+extern template class BackendLLVMDominate<true, true,  2, &FunctionWrap:: cfg>;
+extern template class BackendLLVMDominate<true, true,  3, &FunctionWrap::rcfg>;
+extern template class BackendLLVMDominate<true, false, 2, &FunctionWrap:: cfg>;
+extern template class BackendLLVMDominate<true, false, 3, &FunctionWrap::rcfg>;
+
+extern template class BackendLLVMDominate<true, true,  4, &FunctionWrap:: pdg>;
+extern template class BackendLLVMDominate<true, true,  5, &FunctionWrap::rpdg>;
+extern template class BackendLLVMDominate<true, false, 4, &FunctionWrap:: pdg>;
+extern template class BackendLLVMDominate<true, false, 5, &FunctionWrap::rpdg>;
+
+extern template class BackendLLVMDominate<false, false, UINT_MAX, &FunctionWrap::cfg>;
+extern template class BackendLLVMDominate<false, false, UINT_MAX, &FunctionWrap::dfg>;
+extern template class BackendLLVMDominate<false, false, UINT_MAX, &FunctionWrap::pdg>;
+
 using BackendUnused = BackendConstantValue<UINT_MAX-1>;
 
 using BackendIntegerType = BackendLLVMType<&llvm::Type::isIntegerTy>;
 using BackendFloatType   = BackendLLVMType<&llvm::Type::isFloatTy>;
+using BackendVectorType  = BackendLLVMType<&llvm::Type::isVectorTy>;
 using BackendPointerType = BackendLLVMType<&llvm::Type::isPointerTy>;
 
-using BackendPHIInst    = BackendOpcode<llvm::Instruction::PHI>;
-using BackendStoreInst  = BackendOpcode<llvm::Instruction::Store>;
-using BackendLoadInst   = BackendOpcode<llvm::Instruction::Load>;
-using BackendReturnInst = BackendOpcode<llvm::Instruction::Ret>;
-using BackendBranchInst = BackendOpcode<llvm::Instruction::Br>;
-using BackendAddInst    = BackendOpcode<llvm::Instruction::Add>;
-using BackendSubInst    = BackendOpcode<llvm::Instruction::Sub>;
-using BackendMulInst    = BackendOpcode<llvm::Instruction::Mul>;
-using BackendFAddInst   = BackendOpcode<llvm::Instruction::FAdd>;
-using BackendFSubInst   = BackendOpcode<llvm::Instruction::FSub>;
-using BackendFMulInst   = BackendOpcode<llvm::Instruction::FMul>;
-using BackendFDivInst   = BackendOpcode<llvm::Instruction::FDiv>;
-using BackendBitOrInst  = BackendOpcode<llvm::Instruction::Or>;
-using BackendLShiftInst = BackendOpcode<llvm::Instruction::Shl>;
-using BackendSelectInst = BackendOpcode<llvm::Instruction::Select>;
-using BackendSExtInst   = BackendOpcode<llvm::Instruction::SExt>;
-using BackendZExtInst   = BackendOpcode<llvm::Instruction::ZExt>;
-using BackendGEPInst    = BackendOpcode<llvm::Instruction::GetElementPtr>;
-using BackendICmpInst   = BackendOpcode<llvm::Instruction::ICmp>;
+using BackendPHIInst           = BackendOpcode<llvm::Instruction::PHI>;
+using BackendStoreInst         = BackendOpcode<llvm::Instruction::Store>;
+using BackendLoadInst          = BackendOpcode<llvm::Instruction::Load>;
+using BackendReturnInst        = BackendOpcode<llvm::Instruction::Ret>;
+using BackendBranchInst        = BackendOpcode<llvm::Instruction::Br>;
+using BackendAddInst           = BackendOpcode<llvm::Instruction::Add>;
+using BackendSubInst           = BackendOpcode<llvm::Instruction::Sub>;
+using BackendMulInst           = BackendOpcode<llvm::Instruction::Mul>;
+using BackendFAddInst          = BackendOpcode<llvm::Instruction::FAdd>;
+using BackendFSubInst          = BackendOpcode<llvm::Instruction::FSub>;
+using BackendFMulInst          = BackendOpcode<llvm::Instruction::FMul>;
+using BackendFDivInst          = BackendOpcode<llvm::Instruction::FDiv>;
+using BackendBitOrInst         = BackendOpcode<llvm::Instruction::Or>;
+using BackendBitAndInst        = BackendOpcode<llvm::Instruction::And>;
+using BackendLShiftInst        = BackendOpcode<llvm::Instruction::Shl>;
+using BackendSelectInst        = BackendOpcode<llvm::Instruction::Select>;
+using BackendSExtInst          = BackendOpcode<llvm::Instruction::SExt>;
+using BackendZExtInst          = BackendOpcode<llvm::Instruction::ZExt>;
+using BackendGEPInst           = BackendOpcode<llvm::Instruction::GetElementPtr>;
+using BackendICmpInst          = BackendOpcode<llvm::Instruction::ICmp>;
+using BackendCallInst          = BackendOpcode<llvm::Instruction::Call>;
+using BackendShufflevectorInst = BackendOpcode<llvm::Instruction::ShuffleVector>;
+using BackendInsertelementInst = BackendOpcode<llvm::Instruction::InsertElement>;
 
 using BackendSame     = BackendOrderWrap<false,true,false>;
 using BackendDistinct = BackendOrderWrap<true,false,true>;

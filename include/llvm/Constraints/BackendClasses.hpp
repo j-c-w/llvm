@@ -6,6 +6,7 @@
 #include "llvm/Constraints/GraphEngine.hpp"
 #include <vector>
 #include <memory>
+#include <map>
 
 /* This class implements he logical dicjunction in the constraint description system.
    The constructor takes an arbitrary amount of constraints and the resulting constraints enforces that all of them are
@@ -33,6 +34,7 @@ private:
 class BackendSingle : public SolverAtom
 {
 public:
+    BackendSingle() = default;
     BackendSingle(std::vector<SolverAtom::Value> hits);
 
     SkipResult skip_invalid(SolverAtom::Value& c) const final;
@@ -164,6 +166,97 @@ private:
     std::array<unsigned,3>              remaining_values;
     std::array<std::vector<unsigned>,3> filled_values;
     std::array<std::vector<bool>,3>     value_masks;
+};
+
+class BackendSameSets
+{
+public:
+    BackendSameSets(unsigned N) : total_values(N), number_filled{0, 0},
+                                   filled_values{std::vector<unsigned>(N),
+                                                 std::vector<unsigned>(N)} { }
+
+    template<unsigned idx1> SkipResult skip_invalid(unsigned idx2, unsigned& c) const
+    {
+        if(std::get<1-idx1>(number_filled) == total_values)
+        {
+            auto find_it = std::get<1-idx1>(difference).lower_bound(c);
+
+            if(find_it == std::get<1-idx1>(difference).end())
+                return SkipResult::FAIL;
+
+            if(find_it->first == c)
+                return SkipResult::PASS;
+
+            c = find_it->first;
+            return SkipResult::CHANGEPASS;
+        }
+        else return SkipResult::PASS;
+    }
+
+    template<unsigned idx1> void begin(unsigned idx2) { }
+
+    template<unsigned idx1> void fixate(unsigned idx2, unsigned c)
+    {
+        ++std::get<idx1>(number_filled);
+        std::get<idx1>(filled_values)[idx2] = c;
+
+        auto find_it1 = std::get<1-idx1>(difference).find(c);
+
+        if(find_it1 != std::get<1-idx1>(difference).end())
+        {
+            if(--find_it1->second == 0)
+            {
+                std::get<1-idx1>(difference).erase(find_it1);
+            }
+        }
+        else
+        {
+            auto find_it2 = std::get<idx1>(difference).find(c);
+
+            if(find_it2 != std::get<idx1>(difference).end())
+            {
+                ++find_it2->second;
+            }
+            else
+            {
+                std::get<idx1>(difference).insert({c, 1});
+            }
+        }
+    }
+    template<unsigned idx1> void resume(unsigned idx2)
+    {
+        --std::get<idx1>(number_filled);
+        unsigned c = std::get<idx1>(filled_values)[idx2];
+
+        auto find_it1 = std::get<idx1>(difference).find(c);
+
+        if(find_it1 != std::get<idx1>(difference).end())
+        {
+            if(--find_it1->second == 0)
+            {
+                std::get<idx1>(difference).erase(find_it1);
+            }
+        }
+        else
+        {
+            auto find_it2 = std::get<1-idx1>(difference).find(c);
+
+            if(find_it2 != std::get<1-idx1>(difference).end())
+            {
+                ++find_it2->second;
+            }
+            else
+            {
+                std::get<1-idx1>(difference).insert({c, 1});
+            }
+        }
+    }
+
+private:
+    unsigned                                  total_values;
+    std::array<unsigned,2>                    number_filled;
+    std::array<std::vector<unsigned>,2>       filled_values;
+    std::array<std::map<unsigned,unsigned>,2> difference;
 };
 
 #endif

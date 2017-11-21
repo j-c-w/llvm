@@ -162,6 +162,8 @@ std::vector<std::vector<unsigned>> construct_rdfg(std::unordered_map<llvm::Instr
 }
 }
 
+double FunctionWrap::stopped_time = 0.0;
+
 FunctionWrap::FunctionWrap(llvm::Function& llvm_function)
 {
     std::unordered_map<llvm::Instruction*,unsigned> instr_hash;
