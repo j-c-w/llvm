@@ -1,11 +1,31 @@
-
-Constraint Experiment
-(  {addition} is add instruction and
-   {left} is first argument of {addition} and
-   {right} is second argument of {addition})
+Constraint AllowBitcast
+( ( {base} is the same as {first} or
+    ( {first} is bitcast instruction and
+      {base} is first argument of {first})) and
+  ( {base} is the same as {second} or
+    ( {second} is bitcast instruction and
+      {base} is first argument of {second})))
 End
 
+Constraint Experiment
+( {store_old_next} is store instruction and
+  {old_next} is first argument of {store_old_next} and
+  {new_member_pointer1} is second argument of {store_old_next} and
 
+  {store_new_next} is store instruction and
+  {new_next} is first argument of {store_new_next} and
+  {old_member_pointer1} is second argument of {store_new_next} and
+
+  {old_next} is load instruction and
+  {old_member_pointer2} is first argument of {old_next} and
+
+  {new_member_pointer2} is gep instruction and
+  {new_next} is first argument of {new_member_pointer2} and
+
+  include AllowBitcast with {new_member_pointer2} as {first} and {new_member_pointer1} as {second} at {bitcast1} and
+  include AllowBitcast with {old_member_pointer1} as {first} and {old_member_pointer2} as {second} at {bitcast2}
+)
+End
 
 Constraint Permute
 if M+1=N then

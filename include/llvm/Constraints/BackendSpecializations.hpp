@@ -69,6 +69,13 @@ public:
     BackendFloatZero(const FunctionWrap& wrap);
 };
 
+class BackendIntZero : public BackendLLVMSingle<llvm::ConstantInt>
+{
+public:
+    BackendIntZero() = default;
+    BackendIntZero(const FunctionWrap& wrap);
+};
+
 template<unsigned op>
 class BackendOpcode : public BackendLLVMSingle<llvm::Instruction>
 {
@@ -168,6 +175,7 @@ using BackendFMulInst          = BackendOpcode<llvm::Instruction::FMul>;
 using BackendFDivInst          = BackendOpcode<llvm::Instruction::FDiv>;
 using BackendBitOrInst         = BackendOpcode<llvm::Instruction::Or>;
 using BackendBitAndInst        = BackendOpcode<llvm::Instruction::And>;
+using BackendBitcastInst       = BackendOpcode<llvm::Instruction::BitCast>;
 using BackendLShiftInst        = BackendOpcode<llvm::Instruction::Shl>;
 using BackendSelectInst        = BackendOpcode<llvm::Instruction::Select>;
 using BackendSExtInst          = BackendOpcode<llvm::Instruction::SExt>;

@@ -69,6 +69,9 @@ BackendInstruction::BackendInstruction(const FunctionWrap& wrap)
 BackendFloatZero::BackendFloatZero(const FunctionWrap& wrap)
                 : BackendLLVMSingle<llvm::ConstantFP>(wrap, [](llvm::ConstantFP& value) { return value.isZero(); }) { }
 
+BackendIntZero::BackendIntZero(const FunctionWrap& wrap)
+              : BackendLLVMSingle<llvm::ConstantInt>(wrap, [](llvm::ConstantInt& value) { return value.isZero(); }) { }
+
 template<unsigned op>
 BackendOpcode<op>::BackendOpcode(const FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Instruction>(wrap, [](llvm::Instruction& inst) { return inst.getOpcode() == op; }) { }
@@ -194,6 +197,7 @@ template class BackendOpcode<llvm::Instruction::Or>;
 template class BackendOpcode<llvm::Instruction::And>;
 template class BackendOpcode<llvm::Instruction::Shl>;
 template class BackendOpcode<llvm::Instruction::Select>;
+template class BackendOpcode<llvm::Instruction::BitCast>;
 template class BackendOpcode<llvm::Instruction::SExt>;
 template class BackendOpcode<llvm::Instruction::ZExt>;
 template class BackendOpcode<llvm::Instruction::GetElementPtr>;
