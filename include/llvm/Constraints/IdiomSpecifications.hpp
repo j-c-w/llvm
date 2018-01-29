@@ -25,5 +25,6 @@ std::vector<Solution> DetectHisto       (llvm::Function& function, unsigned max_
 std::vector<Solution> DetectStencil     (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 std::vector<Solution> DetectStencilPlus (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 std::vector<Solution> DetectExperiment  (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+std::vector<Solution> DetectSCoP        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 
 #endif

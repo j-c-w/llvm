@@ -141,10 +141,10 @@ std::vector<std::vector<unsigned>> construct_rdfg(std::unordered_map<llvm::Instr
 
     for(auto instruction : instr_hash)
     {
-        for(auto& operand : instruction.first->operands())
+        if(auto call_inst = llvm::dyn_cast<llvm::CallInst>(instruction.first))
         {
-            llvm::Instruction* instr = llvm::dyn_cast<llvm::Instruction>(&operand);
-            auto               it1   = value_hash.find(operand.get());
+            llvm::Instruction* instr = llvm::dyn_cast<llvm::Instruction>(call_inst->getCalledValue());
+            auto               it1   = value_hash.find(call_inst->getCalledValue());
             auto               it2   = instr_hash.find(instr);
 
             if(it1 != value_hash.end())
@@ -154,6 +154,43 @@ std::vector<std::vector<unsigned>> construct_rdfg(std::unordered_map<llvm::Instr
             if(it2 != instr_hash.end())
             {
                 rdfg[value_hash.size() + instruction.second].push_back(value_hash.size() + it2->second);
+            }
+
+            for(auto& operand : instruction.first->operands())
+            {
+                if(operand.get() != call_inst->getCalledValue())
+                {
+                    llvm::Instruction* instr = llvm::dyn_cast<llvm::Instruction>(&operand);
+                    auto               it1   = value_hash.find(operand.get());
+                    auto               it2   = instr_hash.find(instr);
+
+                    if(it1 != value_hash.end())
+                    {
+                        rdfg[value_hash.size() + instruction.second].push_back(it1->second);
+                    }
+                    if(it2 != instr_hash.end())
+                    {
+                        rdfg[value_hash.size() + instruction.second].push_back(value_hash.size() + it2->second);
+                    }
+                }
+            }
+        }
+        else
+        {
+            for(auto& operand : instruction.first->operands())
+            {
+                llvm::Instruction* instr = llvm::dyn_cast<llvm::Instruction>(&operand);
+                auto               it1   = value_hash.find(operand.get());
+                auto               it2   = instr_hash.find(instr);
+
+                if(it1 != value_hash.end())
+                {
+                    rdfg[value_hash.size() + instruction.second].push_back(it1->second);
+                }
+                if(it2 != instr_hash.end())
+                {
+                    rdfg[value_hash.size() + instruction.second].push_back(value_hash.size() + it2->second);
+                }
             }
         }
     }

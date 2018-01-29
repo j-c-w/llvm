@@ -57,14 +57,14 @@ result_inner.pack_start(code_window2,    False, False, 5)
 result_inner.pack_start(message_window3, False, False, 5)
 result_inner.pack_start(code_window3,    False, False, 5)
 
-sourcecode.     modify_font(Pango.FontDescription( "Monospace 8"))
-load_button.    modify_font(Pango.FontDescription(     "Sans 10"))
-flatana_button. modify_font(Pango.FontDescription(     "Sans 10"))
-analyze_button. modify_font(Pango.FontDescription(     "Sans 10"))
-hide_button.    modify_font(Pango.FontDescription(     "Sans 10"))
-code_window1.   modify_font(Pango.FontDescription( "Monospace 8"))
-code_window2.   modify_font(Pango.FontDescription( "Monospace 8"))
-code_window3.   modify_font(Pango.FontDescription( "Monospace 8"))
+sourcecode.     modify_font(Pango.FontDescription( "Monospace 14"))
+load_button.    modify_font(Pango.FontDescription(      "Sans 14"))
+flatana_button. modify_font(Pango.FontDescription(      "Sans 14"))
+analyze_button. modify_font(Pango.FontDescription(      "Sans 14"))
+hide_button.    modify_font(Pango.FontDescription(      "Sans 14"))
+code_window1.   modify_font(Pango.FontDescription( "Monospace 14"))
+code_window2.   modify_font(Pango.FontDescription( "Monospace 14"))
+code_window3.   modify_font(Pango.FontDescription( "Monospace 14"))
 
 sourcecode.set_show_line_numbers(True)
 
@@ -98,7 +98,7 @@ already_running_analysis_lock = threading.Lock()
 
 def run_through_clang_format(code):
 
-    process = subprocess.Popen(["clang-format", "-style={BasedOnStyle: llvm,ColumnLimit: 45}"],
+    process = subprocess.Popen(["clang-format", "-style={BasedOnStyle: llvm,ColumnLimit: 80}"],
                                stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     process.stdin.write(code.encode("utf8"))
     process.stdin.close()
@@ -121,14 +121,14 @@ def map_IR_to_C_line(instruction, llvmir):
 
 def set_output(part1 = "", part2 = "", part3 = "", part4 = "", part5 = "", part6 = "", downscale = 0):
 
-    message_window1.modify_font(Pango.FontDescription("Monospace "+str(10-downscale)))
+    message_window1.modify_font(Pango.FontDescription("Monospace "+str(14-downscale)))
     message_window1.set_text(part1)
     code_window1.get_buffer().set_text(part2)
-    message_window2.modify_font(Pango.FontDescription("Monospace "+str(10-downscale)))
+    message_window2.modify_font(Pango.FontDescription("Monospace "+str(14-downscale)))
     message_window2.set_text(part3)
     code_window2.get_buffer().set_text(part4)
     message_window3.set_text(part5)
-    message_window3.modify_font(Pango.FontDescription("Monospace "+str(10-downscale)))
+    message_window3.modify_font(Pango.FontDescription("Monospace "+str(14-downscale)))
     code_window3.get_buffer().set_text(part6)
 
     if part2: code_window1.show()
@@ -428,6 +428,10 @@ def flatwait_thread(source_code):
     process.stdin.write(source_code.encode("utf8"))
     process.stdin.close()
 
+    
+    print("ok")
+    print(process.stdout.read().decode("utf8"))
+
     llvmir        = [line for line in process.stdout]
     stderr_result = process.stderr.read().decode("utf8")
 
@@ -436,10 +440,10 @@ def flatwait_thread(source_code):
         set_output(stderr_result)
 
     else:
-        stdout_result = open("replace-report.txt").read().decode("utf8")
+        stdout_result = open("replace-report-main(458).txt").read().decode("utf8")
 
         if stdout_result:
-            set_output(stdout_result, "", "", "", "", "", 5)
+            set_output(stdout_result, "", "", "", "", "")
         else:
             set_output("No idioms were identified.")
 

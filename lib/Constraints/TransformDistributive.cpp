@@ -1,4 +1,5 @@
 #include "llvm/Constraints/Transforms.hpp"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Constants.h"
@@ -9,6 +10,12 @@
 #include <vector>
 
 using namespace llvm;
+
+void transform(std::map<std::string,Value*> solution, Function* abs)
+{
+    llvm::ReplaceInstWithInst(llvm::dyn_cast<Instruction>(solution["sqrt_call"]),
+                              llvm::CallInst::Create(abs, {solution["a"]}));
+}
 
 void transform_distributive(Function& function, std::map<std::string,Value*> solution)
 {

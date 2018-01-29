@@ -522,8 +522,8 @@ void PassManagerBuilder::populateModulePassManager(
       MPM.add(createResearchFlattenPointercalcsPass());
       MPM.add(createResearchSplitPointercalcsPass());
       MPM.add(createResearchPreprocessorPass());
-      MPM.add(createResearchFixOrToAddPass());
       MPM.add(createResearchFixShlToMulPass());
+      MPM.add(createResearchFixOrToAddPass());
       MPM.add(createLICMPass());
       MPM.add(createEarlyCSEPass());
       MPM.add(createCFGSimplificationPass());

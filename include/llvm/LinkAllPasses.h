@@ -69,7 +69,6 @@ namespace {
       (void) llvm::createResearchSplitPointercalcsPass();
       (void) llvm::createResearchPreprocessorPass();
       (void) llvm::createResearchReplacerPass();
-      (void) llvm::createAnnotateBlocksPass();
       (void) llvm::createResearchFixOrToAddPass();
       (void) llvm::createResearchFixShlToMulPass();
 

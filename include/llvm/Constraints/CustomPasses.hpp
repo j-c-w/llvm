@@ -17,7 +17,6 @@ FunctionPass*   createResearchFlattenPointercalcsPass();
 FunctionPass*   createResearchSplitPointercalcsPass();
 ModulePass*     createResearchPreprocessorPass();
 ModulePass*     createResearchReplacerPass();
-ModulePass*     createAnnotateBlocksPass();
 BasicBlockPass* createResearchFixOrToAddPass();
 BasicBlockPass* createResearchFixShlToMulPass();
 

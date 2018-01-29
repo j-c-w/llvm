@@ -3,6 +3,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
@@ -21,27 +22,26 @@ public:
 
 bool ResearchFixShlToMul::runOnBasicBlock(BasicBlock& block)
 {
-    std::vector<std::pair<Instruction*,Instruction*>> replacements;
-
+    std::vector<std::pair<BasicBlock::iterator,ConstantInt*>> worklist;
     for(Instruction& instruction : block.getInstList())
     {
-        ConstantInt* const_arg;
+        ConstantInt* constant;
+
         if(instruction.getOpcode() == Instruction::Shl &&
-           (const_arg = dyn_cast<ConstantInt>(instruction.getOperand(1))))
+           (constant = dyn_cast<ConstantInt>(instruction.getOperand(1))))
         {
-            auto new_inst = BinaryOperator::Create(Instruction::Mul, instruction.getOperand(0),
-                                                   ConstantInt::get(const_arg->getType(),
-                                                                    1<<const_arg->getZExtValue()));
-            replacements.emplace_back(&instruction, new_inst);
+            worklist.emplace_back(&instruction, ConstantInt::get(constant->getType(), 1<<constant->getZExtValue()));
         }
     }
 
-    for(auto entry : replacements)
+    for(auto& entry : worklist)
     {
-        ReplaceInstWithInst(entry.first, entry.second);
+        IRBuilder<> builder(&block, entry.first);
+        ReplaceInstWithValue(block.getInstList(), entry.first,
+                             builder.CreateMul(entry.first->getOperand(0), entry.second));
     }
 
-    return false;
+    return !worklist.empty();
 }
 
 char ResearchFixShlToMul::ID = 0;

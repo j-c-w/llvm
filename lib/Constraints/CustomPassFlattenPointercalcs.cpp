@@ -3,6 +3,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
@@ -38,12 +39,15 @@ bool ResearchFlattenPointercalcs::runOnFunction(Function& function)
                 std::vector<Value*> zero_index_vector;
                 zero_index_vector.push_back(zero_index);
 
+                BasicBlock::iterator iter(instruction);
+                IRBuilder<> builder(&block, iter);
+
                 auto* merged_index = gep_instr->getOperand(1);
 
                 while(auto array_type = dyn_cast<ArrayType>(source_element_type))
                 {
-                    if(llvm::dyn_cast<llvm::ConstantInt>(merged_index) == nullptr ||
-                       llvm::dyn_cast<llvm::ConstantInt>(merged_index)->getSExtValue() != 0)
+                    if(dyn_cast<ConstantInt>(merged_index) == nullptr ||
+                       dyn_cast<ConstantInt>(merged_index)->getSExtValue() != 0)
                     {
                         merged_index = BinaryOperator::Create(Instruction::Mul, merged_index,
                                                  ConstantInt::get(merged_index->getType(), 
@@ -54,13 +58,13 @@ bool ResearchFlattenPointercalcs::runOnFunction(Function& function)
                     if(active_index < gep_instr->getNumOperands() &&
                        gep_instr->getOperand(active_index)->getType() == merged_index->getType())
                     {
-                        if(llvm::dyn_cast<llvm::ConstantInt>(merged_index) &&
-                           llvm::dyn_cast<llvm::ConstantInt>(merged_index)->getSExtValue() == 0)
+                        if(dyn_cast<ConstantInt>(merged_index) &&
+                           dyn_cast<ConstantInt>(merged_index)->getSExtValue() == 0)
                         {
                             merged_index = gep_instr->getOperand(active_index);
                         }
-                        else if(llvm::dyn_cast<llvm::ConstantInt>(gep_instr->getOperand(active_index)) == nullptr ||
-                                llvm::dyn_cast<llvm::ConstantInt>(gep_instr->getOperand(active_index))->getSExtValue() != 0)
+                        else if(dyn_cast<ConstantInt>(gep_instr->getOperand(active_index)) == nullptr ||
+                                dyn_cast<ConstantInt>(gep_instr->getOperand(active_index))->getSExtValue() != 0)
                         {
                             merged_index = BinaryOperator::Create(Instruction::Add, merged_index,
                                                                         gep_instr->getOperand(active_index),

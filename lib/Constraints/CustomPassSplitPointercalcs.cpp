@@ -22,7 +22,7 @@ public:
 bool ResearchSplitPointercalcs::runOnFunction(Function& function)
 {
     // Split so that only first index can be dynamic
-    std::map<Instruction*,Value*> replacement_table;
+    std::vector<std::pair<BasicBlock::iterator,Value*>> replacement_table;
 
     for(BasicBlock& block : function.getBasicBlockList())
     {
@@ -58,29 +58,19 @@ bool ResearchSplitPointercalcs::runOnFunction(Function& function)
                         if(auto pointer_type = dyn_cast<PointerType>(last_gep->getType()))
                         {
                             last_gep = GetElementPtrInst::Create(pointer_type->getElementType(),
-                                                                       last_gep, index_groups[i],
-                                                                       "", &instruction);
+                                                                last_gep, index_groups[i], "", &instruction);
                         }
                     }
 
-                    replacement_table[gep_instr] = last_gep;
+                    replacement_table.emplace_back(&instruction, last_gep);
                 }
             }
         }
     }
 
-    for(BasicBlock& block : function.getBasicBlockList())
+    for(auto& entry : replacement_table)
     {
-        for(Instruction& instruction : block.getInstList())
-        {
-            for(unsigned i = 0; i < instruction.getNumOperands(); i++)
-            {
-                auto find_it = replacement_table.find((Instruction*)instruction.getOperand(i));
-
-                if(find_it != replacement_table.end())
-                    instruction.setOperand(i, find_it->second);
-            }
-        }
+        ReplaceInstWithValue(entry.first->getParent()->getInstList(), entry.first, entry.second);
     }
 
     return false;

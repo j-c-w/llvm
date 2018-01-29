@@ -1,165 +1,9 @@
 #!/usr/bin/pypy
 
-grammar = """
-# ::= <specification>
+whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY",
+             "DOT", "SPMV", "Reduction", "Histo", "Stencil", "StencilPlus", "Experiment", "SCoP", "IfBlock", "IfBlock2"]
 
-specification ::= Constraint <s> <constraint> End
-
-constraint ::= <grouping> | <collect> | <rename> | <rebase> | <atom>
-             | <GeneralizedDominance> | <GeneralizedSame> | '(' <constraint> ')'
-
-grouping    ::= <conjunction> | <disjunction> | <inheritance> | <forall> | <forsome> | <forone> | <if> | <default>
-inheritance ::= <rawinherit> | <arginherit>
-rawinherit  ::= include <s>
-arginherit  ::= <rawinherit> '(' <s> = <calculation> { , <s> = <calculation> } ')'
-conjunction ::= '(' <constraint> and <constraint> { and <constraint> } ')'
-disjunction ::= '(' <constraint> or <constraint> { or <constraint> } ')'
-forall      ::= <constraint> for all <s> = <calculation> .. <calculation>
-forsome     ::= <constraint> for some <s> = <calculation> .. <calculation>
-forone      ::= <constraint> for <s> = <calculation>
-default     ::= <constraint> for <s> = <calculation> if not otherwise specified
-if          ::= if <calculation> = <calculation> then <constraint> else <constraint> endif
-collect     ::= collect <s> <n> <constraint>
-rename      ::= <grouping> with <slot> as <slot> { and <slot> as <slot> }
-rebase      ::= <grouping> at <slot> | <rename> at <slot>
-
-slot       ::= '{' <openslot> '}' | <slottuple>
-openslot   ::= <slotbase> | <slotindex> | <slotrange> | <slotmember> | <slottuple>
-slotbase   ::= <s>
-slotindex  ::= <openslot> '[' <calculation> ']'
-slotrange  ::= <openslot> '[' <calculation> .. <calculation> ']'
-slotmember ::= <openslot> . <s>
-slottuple  ::= '{' <openslot> , { <openslot> , } <openslot> '}'
-
-calculation ::= <basevar> | <baseconst> | <addvar> | <addconst> | <subvar> | <subconst>
-basevar     ::= <s>
-baseconst   ::= <n>
-addvar      ::= <calculation> + <s>
-addconst    ::= <calculation> + <n>
-subvar      ::= <calculation> - <s>
-subconst    ::= <calculation> - <n>
-
-atom ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintVectorType> | <ConstraintPointerType>
-         | <ConstraintIntZero> | <ConstraintFloatZero>
-         | <ConstraintUnused>       | <ConstraintNotNumericConstant> | <ConstraintConstant>
-         | <ConstraintPreexecution> | <ConstraintArgument>           | <ConstraintInstruction>
-         | <ConstraintStoreInst>  | <ConstraintLoadInst>   | <ConstraintReturnInst> | <ConstraintBranchInst>
-         | <ConstraintAddInst>    | <ConstraintSubInst>    | <ConstraintMulInst>    | <ConstraintFAddInst>
-         | <ConstraintFSubInst>   | <ConstraintFMulInst>   | <ConstraintFDivInst>   | <ConstraintBitOrInst>
-         | <ConstraintBitAndInst>
-         | <ConstraintLShiftInst> | <ConstraintSelectInst> | <ConstraintSExtInst>   | <ConstraintZExtInst>
-         | <ConstraintGEPInst>    | <ConstraintICmpInst>   | <ConstraintCallInst>
-         | <ConstraintShufflevectorInst> | <ConstraintInsertelementInst>
-         | <ConstraintSame> | <ConstraintDistinct>
-         | <ConstraintDFGEdge> | <ConstraintCFGEdge> | <ConstraintCDGEdge> | <ConstraintPDGEdge>
-         | <ConstraintFirstOperand> | <ConstraintSecondOperand>
-         | <ConstraintThirdOperand> | <ConstraintFourthOperand>
-         | <ConstraintDFGDominate>          | <ConstraintDFGPostdom>
-         | <ConstraintDFGDominateStrict>    | <ConstraintDFGPostdomStrict>
-         | <ConstraintCFGDominate>          | <ConstraintCFGPostdom>
-         | <ConstraintCFGDominateStrict>    | <ConstraintCFGPostdomStrict>
-         | <ConstraintPDGDominate>          | <ConstraintPDGPostdom>
-         | <ConstraintPDGDominateStrict>    | <ConstraintPDGPostdomStrict>
-         | <ConstraintDFGNotDominate>       | <ConstraintDFGNotPostdom>
-         | <ConstraintDFGNotDominateStrict> | <ConstraintDFGNotPostdomStrict>
-         | <ConstraintCFGNotDominate>       | <ConstraintCFGNotPostdom>
-         | <ConstraintCFGNotDominateStrict> | <ConstraintCFGNotPostdomStrict>
-         | <ConstraintPDGNotDominate>       | <ConstraintPDGNotPostdom>
-         | <ConstraintPDGNotDominateStrict> | <ConstraintPDGNotPostdomStrict>
-         | <ConstraintIncomingValue>
-         | <ConstraintDFGBlocked> | <ConstraintCFGBlocked> | <ConstraintPDGBlocked>
-
-ConstraintIntegerType ::= <slot> is an integer
-ConstraintFloatType   ::= <slot> is a float
-ConstraintVectorType  ::= <slot> is a vector
-ConstraintPointerType ::= <slot> is a pointer
-
-ConstraintIntZero   ::= <slot> is integer zero
-ConstraintFloatZero ::= <slot> is floating point zero
-
-ConstraintUnused             ::= <slot> is unused
-ConstraintNotNumericConstant ::= <slot> is not a numeric constant
-ConstraintConstant           ::= <slot> is a constant
-ConstraintPreexecution       ::= <slot> is preexecution
-ConstraintArgument           ::= <slot> is an argument
-ConstraintInstruction        ::= <slot> is an instruction
-
-ConstraintStoreInst  ::= <slot> is store instruction
-ConstraintLoadInst   ::= <slot> is load instruction
-ConstraintReturnInst ::= <slot> is return instruction
-ConstraintBranchInst ::= <slot> is branch instruction
-ConstraintAddInst    ::= <slot> is add instruction
-ConstraintSubInst    ::= <slot> is sub instruction
-ConstraintMulInst    ::= <slot> is mul instruction
-ConstraintFAddInst   ::= <slot> is fadd instruction
-ConstraintFSubInst   ::= <slot> is fsub instruction
-ConstraintFMulInst   ::= <slot> is fmul instruction
-ConstraintFDivInst   ::= <slot> is fdiv instruction
-ConstraintBitOrInst  ::= <slot> is bitor instruction
-ConstraintBitAndInst ::= <slot> is bitand instruction
-ConstraintLShiftInst ::= <slot> is lshift instruction
-ConstraintSelectInst ::= <slot> is select instruction
-ConstraintSExtInst   ::= <slot> is sext instruction
-ConstraintZExtInst   ::= <slot> is zext instruction
-ConstraintGEPInst    ::= <slot> is gep instruction
-ConstraintICmpInst   ::= <slot> is icmp instruction
-ConstraintCallInst   ::= <slot> is call instruction
-ConstraintShufflevectorInst ::= <slot> is shufflevector instruction
-ConstraintInsertelementInst ::= <slot> is insertelement instruction
-
-ConstraintSame     ::= <slot> is the same as <slot>
-ConstraintDistinct ::= <slot> is not the same as <slot>
-
-ConstraintDFGEdge ::= <slot> has data flow to <slot>
-ConstraintCFGEdge ::= <slot> has control flow to <slot>
-ConstraintCDGEdge ::= <slot> has control dominance to <slot>
-ConstraintPDGEdge ::= <slot> has dependence edge to <slot>
-
-ConstraintFirstOperand  ::= <slot> is first argument of <slot>
-ConstraintSecondOperand ::= <slot> is second argument of <slot>
-ConstraintThirdOperand  ::= <slot> is third argument of <slot>
-ConstraintFourthOperand ::= <slot> is fourth argument of <slot>
-
-ConstraintDFGDominate       ::= <slot> data flow dominates <slot>
-ConstraintDFGPostdom        ::= <slot> data flow post dominates <slot>
-ConstraintDFGDominateStrict ::= <slot> strictly data flow dominates <slot>
-ConstraintDFGPostdomStrict  ::= <slot> strictly data flow post dominates <slot>
-
-ConstraintCFGDominate       ::= <slot> control flow dominates <slot>
-ConstraintCFGPostdom        ::= <slot> control flow post dominates <slot>
-ConstraintCFGDominateStrict ::= <slot> strictly control flow dominates <slot>
-ConstraintCFGPostdomStrict  ::= <slot> strictly control flow post dominates <slot>
-
-ConstraintPDGDominate       ::= <slot> dominates <slot>
-ConstraintPDGPostdom        ::= <slot> post dominates <slot>
-ConstraintPDGDominateStrict ::= <slot> strictly dominates <slot>
-ConstraintPDGPostdomStrict  ::= <slot> strictly post dominates <slot>
-
-ConstraintDFGNotDominate       ::= <slot> does not data flow dominate <slot>
-ConstraintDFGNotPostdom        ::= <slot> does not data flow post dominate <slot>
-ConstraintDFGNotDominateStrict ::= <slot> does not strictly data flow dominate <slot>
-ConstraintDFGNotPostdomStrict  ::= <slot> does not strictly data flow post dominate <slot>
-
-ConstraintCFGNotDominate       ::= <slot> does not control flow dominate <slot>
-ConstraintCFGNotPostdom        ::= <slot> does not control flow post dominate <slot>
-ConstraintCFGNotDominateStrict ::= <slot> does not strictly control flow dominate <slot>
-ConstraintCFGNotPostdomStrict  ::= <slot> does not strictly control flow post dominate <slot>
-
-ConstraintPDGNotDominate       ::= <slot> does not dominate <slot>
-ConstraintPDGNotPostdom        ::= <slot> does not post dominate <slot>
-ConstraintPDGNotDominateStrict ::= <slot> does not strictly dominate <slot>
-ConstraintPDGNotPostdomStrict  ::= <slot> does not strictly post dominate <slot>
-
-ConstraintIncomingValue ::= <slot> reaches phi node <slot> from <slot>
-
-ConstraintDFGBlocked ::= all data flow from <slot> to <slot> passes through <slot>
-ConstraintCFGBlocked ::= all control flow from <slot> to <slot> passes through <slot>
-ConstraintPDGBlocked ::= all flow from <slot> to <slot> passes through <slot>
-
-GeneralizedSame  ::= <slot> is the same set as <slot>
-
-GeneralizedDominance ::= all flow from <slot> or any origin to any of <slot> passes through at least one of <slot>
-"""
+grammar = "[('#', ['<specification>']), ('@233', ['Constraint']), ('@234', ['<@233>', '<s>']), ('@235', ['<@234>', '<constraint>']), ('specification', ['<@235>', 'End']), ('constraint', ['<grouping>']), ('constraint', ['<collect>']), ('constraint', ['<rename>']), ('constraint', ['<rebase>']), ('constraint', ['<atom>']), ('constraint', ['<GeneralizedDominance>']), ('constraint', ['<GeneralizedSame>']), ('@236', ['(']), ('@237', ['<@236>', '<constraint>']), ('constraint', ['<@237>', ')']), ('grouping', ['<conjunction>']), ('grouping', ['<disjunction>']), ('grouping', ['<inheritance>']), ('grouping', ['<forall>']), ('grouping', ['<forsome>']), ('grouping', ['<forone>']), ('grouping', ['<if>']), ('grouping', ['<default>']), ('inheritance', ['<rawinherit>']), ('inheritance', ['<arginherit>']), ('@238', ['include']), ('rawinherit', ['<@238>', '<s>']), ('@239', ['<rawinherit>', '(']), ('@240', ['<@239>', '<s>']), ('@241', ['<@240>', '=']), ('@arginheritbase', ['<@241>', '<calculation>']), ('@242', ['<@arginheritbase>', ',']), ('@243', ['<@242>', '<s>']), ('@244', ['<@243>', '=']), ('@arginheritcont', ['<@244>', '<calculation>']), ('@245', ['<@arginheritcont>', ',']), ('@246', ['<@245>', '<s>']), ('@247', ['<@246>', '=']), ('@arginheritcont', ['<@247>', '<calculation>']), ('arginherit', ['<@arginheritcont>', ')']), ('arginherit', ['<@arginheritbase>', ')']), ('@250', ['<@237>', 'and']), ('@conjunctionbase', ['<@250>', '<constraint>']), ('@251', ['<@conjunctionbase>', 'and']), ('@conjunctioncont', ['<@251>', '<constraint>']), ('@252', ['<@conjunctioncont>', 'and']), ('@conjunctioncont', ['<@252>', '<constraint>']), ('conjunction', ['<@conjunctioncont>', ')']), ('conjunction', ['<@conjunctionbase>', ')']), ('@255', ['<@237>', 'or']), ('@disjunctionbase', ['<@255>', '<constraint>']), ('@256', ['<@disjunctionbase>', 'or']), ('@disjunctioncont', ['<@256>', '<constraint>']), ('@257', ['<@disjunctioncont>', 'or']), ('@disjunctioncont', ['<@257>', '<constraint>']), ('disjunction', ['<@disjunctioncont>', ')']), ('disjunction', ['<@disjunctionbase>', ')']), ('@258', ['<constraint>', 'for']), ('@259', ['<@258>', 'all']), ('@260', ['<@259>', '<s>']), ('@261', ['<@260>', '=']), ('@262', ['<@261>', '<calculation>']), ('@263', ['<@262>', '..']), ('forall', ['<@263>', '<calculation>']), ('@265', ['<@258>', 'some']), ('@266', ['<@265>', '<s>']), ('@267', ['<@266>', '=']), ('@268', ['<@267>', '<calculation>']), ('@269', ['<@268>', '..']), ('forsome', ['<@269>', '<calculation>']), ('@271', ['<@258>', '<s>']), ('@272', ['<@271>', '=']), ('forone', ['<@272>', '<calculation>']), ('@276', ['<@272>', '<calculation>']), ('@277', ['<@276>', 'if']), ('@278', ['<@277>', 'not']), ('@279', ['<@278>', 'otherwise']), ('default', ['<@279>', 'specified']), ('@280', ['if']), ('@281', ['<@280>', '<calculation>']), ('@282', ['<@281>', '=']), ('@283', ['<@282>', '<calculation>']), ('@284', ['<@283>', 'then']), ('@285', ['<@284>', '<constraint>']), ('@286', ['<@285>', 'else']), ('@287', ['<@286>', '<constraint>']), ('if', ['<@287>', 'endif']), ('@288', ['collect']), ('@289', ['<@288>', '<s>']), ('@290', ['<@289>', '<n>']), ('collect', ['<@290>', '<constraint>']), ('@291', ['<grouping>', 'with']), ('@292', ['<@291>', '<slot>']), ('@293', ['<@292>', 'as']), ('@renamebase', ['<@293>', '<slot>']), ('@294', ['<@renamebase>', 'and']), ('@295', ['<@294>', '<slot>']), ('@296', ['<@295>', 'as']), ('@renamecont', ['<@296>', '<slot>']), ('@297', ['<@renamecont>', 'and']), ('@298', ['<@297>', '<slot>']), ('@299', ['<@298>', 'as']), ('@renamecont', ['<@299>', '<slot>']), ('rename', ['<@renamecont>']), ('rename', ['<@renamebase>']), ('@300', ['<grouping>', 'at']), ('rebase', ['<@300>', '<slot>']), ('@301', ['<rename>', 'at']), ('rebase', ['<@301>', '<slot>']), ('@302', ['{']), ('@303', ['<@302>', '<openslot>']), ('slot', ['<@303>', '}']), ('slot', ['<slottuple>']), ('openslot', ['<slotbase>']), ('openslot', ['<slotindex>']), ('openslot', ['<slotrange>']), ('openslot', ['<slotmember>']), ('openslot', ['<slottuple>']), ('slotbase', ['<s>']), ('@304', ['<openslot>', '[']), ('@305', ['<@304>', '<calculation>']), ('slotindex', ['<@305>', ']']), ('@308', ['<@305>', '..']), ('@309', ['<@308>', '<calculation>']), ('slotrange', ['<@309>', ']']), ('@310', ['<openslot>', '.']), ('slotmember', ['<@310>', '<s>']), ('@slottuplebase', ['<@303>', ',']), ('@313', ['<@slottuplebase>', '<openslot>']), ('@slottuplecont', ['<@313>', ',']), ('@314', ['<@slottuplecont>', '<openslot>']), ('@slottuplecont', ['<@314>', ',']), ('slottuple', ['<@314>', '}']), ('slottuple', ['<@313>', '}']), ('calculation', ['<basevar>']), ('calculation', ['<baseconst>']), ('calculation', ['<addvar>']), ('calculation', ['<addconst>']), ('calculation', ['<subvar>']), ('calculation', ['<subconst>']), ('basevar', ['<s>']), ('baseconst', ['<n>']), ('@317', ['<calculation>', '+']), ('addvar', ['<@317>', '<s>']), ('addconst', ['<@317>', '<n>']), ('@319', ['<calculation>', '-']), ('subvar', ['<@319>', '<s>']), ('subconst', ['<@319>', '<n>']), ('atom', ['<ConstraintIntegerType>']), ('atom', ['<ConstraintFloatType>']), ('atom', ['<ConstraintVectorType>']), ('atom', ['<ConstraintPointerType>']), ('atom', ['<ConstraintIntZero>']), ('atom', ['<ConstraintFloatZero>']), ('atom', ['<ConstraintUnused>']), ('atom', ['<ConstraintNotNumericConstant>']), ('atom', ['<ConstraintConstant>']), ('atom', ['<ConstraintPreexecution>']), ('atom', ['<ConstraintArgument>']), ('atom', ['<ConstraintInstruction>']), ('atom', ['<ConstraintStoreInst>']), ('atom', ['<ConstraintLoadInst>']), ('atom', ['<ConstraintReturnInst>']), ('atom', ['<ConstraintBranchInst>']), ('atom', ['<ConstraintAddInst>']), ('atom', ['<ConstraintSubInst>']), ('atom', ['<ConstraintMulInst>']), ('atom', ['<ConstraintFAddInst>']), ('atom', ['<ConstraintFSubInst>']), ('atom', ['<ConstraintFMulInst>']), ('atom', ['<ConstraintFDivInst>']), ('atom', ['<ConstraintBitOrInst>']), ('atom', ['<ConstraintBitAndInst>']), ('atom', ['<ConstraintLShiftInst>']), ('atom', ['<ConstraintSelectInst>']), ('atom', ['<ConstraintSExtInst>']), ('atom', ['<ConstraintZExtInst>']), ('atom', ['<ConstraintGEPInst>']), ('atom', ['<ConstraintICmpInst>']), ('atom', ['<ConstraintCallInst>']), ('atom', ['<ConstraintShufflevectorInst>']), ('atom', ['<ConstraintInsertelementInst>']), ('atom', ['<ConstraintSame>']), ('atom', ['<ConstraintDistinct>']), ('atom', ['<ConstraintDFGEdge>']), ('atom', ['<ConstraintCFGEdge>']), ('atom', ['<ConstraintCDGEdge>']), ('atom', ['<ConstraintPDGEdge>']), ('atom', ['<ConstraintFirstOperand>']), ('atom', ['<ConstraintSecondOperand>']), ('atom', ['<ConstraintThirdOperand>']), ('atom', ['<ConstraintFourthOperand>']), ('atom', ['<ConstraintFirstSuccessor>']), ('atom', ['<ConstraintSecondSuccessor>']), ('atom', ['<ConstraintThirdSuccessor>']), ('atom', ['<ConstraintFourthSuccessor>']), ('atom', ['<ConstraintDFGDominate>']), ('atom', ['<ConstraintDFGPostdom>']), ('atom', ['<ConstraintDFGDominateStrict>']), ('atom', ['<ConstraintDFGPostdomStrict>']), ('atom', ['<ConstraintCFGDominate>']), ('atom', ['<ConstraintCFGPostdom>']), ('atom', ['<ConstraintCFGDominateStrict>']), ('atom', ['<ConstraintCFGPostdomStrict>']), ('atom', ['<ConstraintPDGDominate>']), ('atom', ['<ConstraintPDGPostdom>']), ('atom', ['<ConstraintPDGDominateStrict>']), ('atom', ['<ConstraintPDGPostdomStrict>']), ('atom', ['<ConstraintDFGNotDominate>']), ('atom', ['<ConstraintDFGNotPostdom>']), ('atom', ['<ConstraintDFGNotDominateStrict>']), ('atom', ['<ConstraintDFGNotPostdomStrict>']), ('atom', ['<ConstraintCFGNotDominate>']), ('atom', ['<ConstraintCFGNotPostdom>']), ('atom', ['<ConstraintCFGNotDominateStrict>']), ('atom', ['<ConstraintCFGNotPostdomStrict>']), ('atom', ['<ConstraintPDGNotDominate>']), ('atom', ['<ConstraintPDGNotPostdom>']), ('atom', ['<ConstraintPDGNotDominateStrict>']), ('atom', ['<ConstraintPDGNotPostdomStrict>']), ('atom', ['<ConstraintIncomingValue>']), ('atom', ['<ConstraintDFGBlocked>']), ('atom', ['<ConstraintCFGBlocked>']), ('atom', ['<ConstraintPDGBlocked>']), ('atom', ['<ConstraintFunctionAttribute>']), ('@321', ['<slot>', 'is']), ('@322', ['<@321>', 'an']), ('ConstraintIntegerType', ['<@322>', 'integer']), ('@324', ['<@321>', 'a']), ('ConstraintFloatType', ['<@324>', 'float']), ('ConstraintVectorType', ['<@324>', 'vector']), ('ConstraintPointerType', ['<@324>', 'pointer']), ('@330', ['<@321>', 'integer']), ('ConstraintIntZero', ['<@330>', 'zero']), ('@332', ['<@321>', 'floating']), ('@333', ['<@332>', 'point']), ('ConstraintFloatZero', ['<@333>', 'zero']), ('ConstraintUnused', ['<@321>', 'unused']), ('@336', ['<@321>', 'not']), ('@337', ['<@336>', 'a']), ('@338', ['<@337>', 'numeric']), ('ConstraintNotNumericConstant', ['<@338>', 'constant']), ('ConstraintConstant', ['<@324>', 'constant']), ('ConstraintPreexecution', ['<@321>', 'preexecution']), ('ConstraintArgument', ['<@322>', 'argument']), ('ConstraintInstruction', ['<@322>', 'instruction']), ('@347', ['<@321>', 'store']), ('ConstraintStoreInst', ['<@347>', 'instruction']), ('@349', ['<@321>', 'load']), ('ConstraintLoadInst', ['<@349>', 'instruction']), ('@351', ['<@321>', 'return']), ('ConstraintReturnInst', ['<@351>', 'instruction']), ('@353', ['<@321>', 'branch']), ('ConstraintBranchInst', ['<@353>', 'instruction']), ('@355', ['<@321>', 'add']), ('ConstraintAddInst', ['<@355>', 'instruction']), ('@357', ['<@321>', 'sub']), ('ConstraintSubInst', ['<@357>', 'instruction']), ('@359', ['<@321>', 'mul']), ('ConstraintMulInst', ['<@359>', 'instruction']), ('@361', ['<@321>', 'fadd']), ('ConstraintFAddInst', ['<@361>', 'instruction']), ('@363', ['<@321>', 'fsub']), ('ConstraintFSubInst', ['<@363>', 'instruction']), ('@365', ['<@321>', 'fmul']), ('ConstraintFMulInst', ['<@365>', 'instruction']), ('@367', ['<@321>', 'fdiv']), ('ConstraintFDivInst', ['<@367>', 'instruction']), ('@369', ['<@321>', 'bitor']), ('ConstraintBitOrInst', ['<@369>', 'instruction']), ('@371', ['<@321>', 'bitand']), ('ConstraintBitAndInst', ['<@371>', 'instruction']), ('@373', ['<@321>', 'lshift']), ('ConstraintLShiftInst', ['<@373>', 'instruction']), ('@375', ['<@321>', 'select']), ('ConstraintSelectInst', ['<@375>', 'instruction']), ('@377', ['<@321>', 'sext']), ('ConstraintSExtInst', ['<@377>', 'instruction']), ('@379', ['<@321>', 'zext']), ('ConstraintZExtInst', ['<@379>', 'instruction']), ('@381', ['<@321>', 'gep']), ('ConstraintGEPInst', ['<@381>', 'instruction']), ('@383', ['<@321>', 'icmp']), ('ConstraintICmpInst', ['<@383>', 'instruction']), ('@385', ['<@321>', 'call']), ('ConstraintCallInst', ['<@385>', 'instruction']), ('@387', ['<@321>', 'shufflevector']), ('ConstraintShufflevectorInst', ['<@387>', 'instruction']), ('@389', ['<@321>', 'insertelement']), ('ConstraintInsertelementInst', ['<@389>', 'instruction']), ('@391', ['<@321>', 'the']), ('@392', ['<@391>', 'same']), ('@393', ['<@392>', 'as']), ('ConstraintSame', ['<@393>', '<slot>']), ('@396', ['<@336>', 'the']), ('@397', ['<@396>', 'same']), ('@398', ['<@397>', 'as']), ('ConstraintDistinct', ['<@398>', '<slot>']), ('@399', ['<slot>', 'has']), ('@400', ['<@399>', 'data']), ('@401', ['<@400>', 'flow']), ('@402', ['<@401>', 'to']), ('ConstraintDFGEdge', ['<@402>', '<slot>']), ('@404', ['<@399>', 'control']), ('@405', ['<@404>', 'flow']), ('@406', ['<@405>', 'to']), ('ConstraintCFGEdge', ['<@406>', '<slot>']), ('@409', ['<@404>', 'dominance']), ('@410', ['<@409>', 'to']), ('ConstraintCDGEdge', ['<@410>', '<slot>']), ('@412', ['<@399>', 'dependence']), ('@413', ['<@412>', 'edge']), ('@414', ['<@413>', 'to']), ('ConstraintPDGEdge', ['<@414>', '<slot>']), ('@416', ['<@321>', 'first']), ('@417', ['<@416>', 'argument']), ('@418', ['<@417>', 'of']), ('ConstraintFirstOperand', ['<@418>', '<slot>']), ('@420', ['<@321>', 'second']), ('@421', ['<@420>', 'argument']), ('@422', ['<@421>', 'of']), ('ConstraintSecondOperand', ['<@422>', '<slot>']), ('@424', ['<@321>', 'third']), ('@425', ['<@424>', 'argument']), ('@426', ['<@425>', 'of']), ('ConstraintThirdOperand', ['<@426>', '<slot>']), ('@428', ['<@321>', 'fourth']), ('@429', ['<@428>', 'argument']), ('@430', ['<@429>', 'of']), ('ConstraintFourthOperand', ['<@430>', '<slot>']), ('@433', ['<@416>', 'successor']), ('@434', ['<@433>', 'of']), ('ConstraintFirstSuccessor', ['<@434>', '<slot>']), ('@437', ['<@420>', 'successor']), ('@438', ['<@437>', 'of']), ('ConstraintSecondSuccessor', ['<@438>', '<slot>']), ('@441', ['<@424>', 'successor']), ('@442', ['<@441>', 'of']), ('ConstraintThirdSuccessor', ['<@442>', '<slot>']), ('@445', ['<@428>', 'successor']), ('@446', ['<@445>', 'of']), ('ConstraintFourthSuccessor', ['<@446>', '<slot>']), ('@447', ['<slot>', 'data']), ('@448', ['<@447>', 'flow']), ('@449', ['<@448>', 'dominates']), ('ConstraintDFGDominate', ['<@449>', '<slot>']), ('@452', ['<@448>', 'post']), ('@453', ['<@452>', 'dominates']), ('ConstraintDFGPostdom', ['<@453>', '<slot>']), ('@454', ['<slot>', 'strictly']), ('@455', ['<@454>', 'data']), ('@456', ['<@455>', 'flow']), ('@457', ['<@456>', 'dominates']), ('ConstraintDFGDominateStrict', ['<@457>', '<slot>']), ('@461', ['<@456>', 'post']), ('@462', ['<@461>', 'dominates']), ('ConstraintDFGPostdomStrict', ['<@462>', '<slot>']), ('@463', ['<slot>', 'control']), ('@464', ['<@463>', 'flow']), ('@465', ['<@464>', 'dominates']), ('ConstraintCFGDominate', ['<@465>', '<slot>']), ('@468', ['<@464>', 'post']), ('@469', ['<@468>', 'dominates']), ('ConstraintCFGPostdom', ['<@469>', '<slot>']), ('@471', ['<@454>', 'control']), ('@472', ['<@471>', 'flow']), ('@473', ['<@472>', 'dominates']), ('ConstraintCFGDominateStrict', ['<@473>', '<slot>']), ('@477', ['<@472>', 'post']), ('@478', ['<@477>', 'dominates']), ('ConstraintCFGPostdomStrict', ['<@478>', '<slot>']), ('@479', ['<slot>', 'dominates']), ('ConstraintPDGDominate', ['<@479>', '<slot>']), ('@480', ['<slot>', 'post']), ('@481', ['<@480>', 'dominates']), ('ConstraintPDGPostdom', ['<@481>', '<slot>']), ('@483', ['<@454>', 'dominates']), ('ConstraintPDGDominateStrict', ['<@483>', '<slot>']), ('@485', ['<@454>', 'post']), ('@486', ['<@485>', 'dominates']), ('ConstraintPDGPostdomStrict', ['<@486>', '<slot>']), ('@487', ['<slot>', 'does']), ('@488', ['<@487>', 'not']), ('@489', ['<@488>', 'data']), ('@490', ['<@489>', 'flow']), ('@491', ['<@490>', 'dominate']), ('ConstraintDFGNotDominate', ['<@491>', '<slot>']), ('@496', ['<@490>', 'post']), ('@497', ['<@496>', 'dominate']), ('ConstraintDFGNotPostdom', ['<@497>', '<slot>']), ('@500', ['<@488>', 'strictly']), ('@501', ['<@500>', 'data']), ('@502', ['<@501>', 'flow']), ('@503', ['<@502>', 'dominate']), ('ConstraintDFGNotDominateStrict', ['<@503>', '<slot>']), ('@509', ['<@502>', 'post']), ('@510', ['<@509>', 'dominate']), ('ConstraintDFGNotPostdomStrict', ['<@510>', '<slot>']), ('@513', ['<@488>', 'control']), ('@514', ['<@513>', 'flow']), ('@515', ['<@514>', 'dominate']), ('ConstraintCFGNotDominate', ['<@515>', '<slot>']), ('@520', ['<@514>', 'post']), ('@521', ['<@520>', 'dominate']), ('ConstraintCFGNotPostdom', ['<@521>', '<slot>']), ('@525', ['<@500>', 'control']), ('@526', ['<@525>', 'flow']), ('@527', ['<@526>', 'dominate']), ('ConstraintCFGNotDominateStrict', ['<@527>', '<slot>']), ('@533', ['<@526>', 'post']), ('@534', ['<@533>', 'dominate']), ('ConstraintCFGNotPostdomStrict', ['<@534>', '<slot>']), ('@537', ['<@488>', 'dominate']), ('ConstraintPDGNotDominate', ['<@537>', '<slot>']), ('@540', ['<@488>', 'post']), ('@541', ['<@540>', 'dominate']), ('ConstraintPDGNotPostdom', ['<@541>', '<slot>']), ('@545', ['<@500>', 'dominate']), ('ConstraintPDGNotDominateStrict', ['<@545>', '<slot>']), ('@549', ['<@500>', 'post']), ('@550', ['<@549>', 'dominate']), ('ConstraintPDGNotPostdomStrict', ['<@550>', '<slot>']), ('@551', ['<slot>', 'reaches']), ('@552', ['<@551>', 'phi']), ('@553', ['<@552>', 'node']), ('@554', ['<@553>', '<slot>']), ('@555', ['<@554>', 'from']), ('ConstraintIncomingValue', ['<@555>', '<slot>']), ('@556', ['all']), ('@557', ['<@556>', 'data']), ('@558', ['<@557>', 'flow']), ('@559', ['<@558>', 'from']), ('@560', ['<@559>', '<slot>']), ('@561', ['<@560>', 'to']), ('@562', ['<@561>', '<slot>']), ('@563', ['<@562>', 'passes']), ('@564', ['<@563>', 'through']), ('ConstraintDFGBlocked', ['<@564>', '<slot>']), ('@566', ['<@556>', 'control']), ('@567', ['<@566>', 'flow']), ('@568', ['<@567>', 'from']), ('@569', ['<@568>', '<slot>']), ('@570', ['<@569>', 'to']), ('@571', ['<@570>', '<slot>']), ('@572', ['<@571>', 'passes']), ('@573', ['<@572>', 'through']), ('ConstraintCFGBlocked', ['<@573>', '<slot>']), ('@575', ['<@556>', 'flow']), ('@576', ['<@575>', 'from']), ('@577', ['<@576>', '<slot>']), ('@578', ['<@577>', 'to']), ('@579', ['<@578>', '<slot>']), ('@580', ['<@579>', 'passes']), ('@581', ['<@580>', 'through']), ('ConstraintPDGBlocked', ['<@581>', '<slot>']), ('@583', ['<@399>', 'attribute']), ('ConstraintFunctionAttribute', ['<@583>', 'pure']), ('@587', ['<@392>', 'set']), ('@588', ['<@587>', 'as']), ('GeneralizedSame', ['<@588>', '<slot>']), ('@593', ['<@577>', 'or']), ('@594', ['<@593>', 'any']), ('@595', ['<@594>', 'origin']), ('@596', ['<@595>', 'to']), ('@597', ['<@596>', 'any']), ('@598', ['<@597>', 'of']), ('@599', ['<@598>', '<slot>']), ('@600', ['<@599>', 'passes']), ('@601', ['<@600>', 'through']), ('@602', ['<@601>', 'at']), ('@603', ['<@602>', 'least']), ('@604', ['<@603>', 'one']), ('@605', ['<@604>', 'of']), ('GeneralizedDominance', ['<@605>', '<slot>'])]"
 
 def token_match(token, rule):
     if rule.startswith("<") and rule.endswith(">"):
@@ -168,40 +12,36 @@ def token_match(token, rule):
         else:               return type(token) is tuple and token[0] == rule[1:-1]
     else:                   return type(token) is str and token == rule
 
-def full_match(stack, rules, lookahead):
-    if lookahead and (len(stack) < len(rules) + 1 or not any(token_match(stack[-len(rules)-1], l) for l in lookahead)):
-        return False
-    elif len(stack) < len(rules) or not all(token_match(stack[-1-i], rules[-1-i]) for i in range(len(rules))):
-        return False
-    else:
-        return True
-
 def list_possibles(stack, grammar, lookahead_rules):
     possibles    = []
     not_dead_end = all(type(s) == tuple and s[0]=="#" for s in stack)
 
     for name, rule in grammar:
-        for branch in rule:
-            if full_match(stack, branch, lookahead_rules[name]):
-                new_element = (name,)+ tuple(a for a,b in zip(stack[-len(branch):],branch) if b[:1]+b[-1:] == "<>")
-                possibles += list_possibles(stack[:-len(branch)] + [new_element], grammar, lookahead_rules)
-            if not not_dead_end and any(full_match(stack, branch[:part], lookahead_rules[name]) for part in range(1, len(branch))):
+        if len(rule) == 1 and lookahead_rules[name]:
+            if len(stack) >=2 and token_match(stack[-1], rule[0]) and stack[-2][0] in lookahead_rules[name]:
+                new_element = (name,) + ((stack[-1],) if rule[-1][:1]+rule[-1][-1:] == "<>" else tuple())
+                possibles += list_possibles(stack[:-1] + [new_element], grammar, lookahead_rules)
+        elif len(rule) == 1:
+            if token_match(stack[-1], rule[0]):
+                new_element = (name,) + ((stack[-1],) if rule[-1][:1]+rule[-1][-1:] == "<>" else tuple())
+                possibles += list_possibles(stack[:-1] + [new_element], grammar, lookahead_rules)
+        elif len(rule) == 2:
+            if len(stack) >=2 and stack[-2][0] == rule[0][1:-1] and token_match(stack[-1], rule[1]):
+                new_element = (name,stack[-2]) + ((stack[-1],) if rule[-1][:1]+rule[-1][-1:] == "<>" else tuple())
+                possibles += list_possibles(stack[:-2] + [new_element], grammar, lookahead_rules)
+            if not not_dead_end and token_match(stack[-1], rule[0]):
                 not_dead_end = True
 
     return possibles + [stack] if not_dead_end else possibles
 
 def postprocess(syntax):
-    invisibles = ["#", "conjunctionprefix", "constraint", "disjunctionprefix", "renameprefix", "slot", "openslot",
-                  "slottupleprefix", "calculation", "arginheritprefix", "rawinherit", "arginherit", "grouping"]
+    invisibles = ["#", "constraint", "slot", "openslot", "calculation", "rawinherit", "arginherit", "grouping"]
 
     if type(syntax) == tuple:
         result = tuple(s for a in map(postprocess, syntax) for s in a)
-        return result[1:] if result[0] in invisibles else (result,)
+        return result[1:] if result[0] in invisibles or "@" in result[0] else (result,)
     else:
         return (syntax,)
-
-def split_list(lst, delimeter):
-    return [list(value) for flag, value in itertools.groupby(lst, (lambda x: x == delimeter)) if flag == False]
 
 def iterate_to_fixpoint(function, start, *extra):
     start, result = None, start
@@ -210,28 +50,18 @@ def iterate_to_fixpoint(function, start, *extra):
     return result
 
 def collect_aliases(aliases, grammar):
-    return aliases | {"<{}>".format(name) for name,rule in grammar if any(branch[0] in aliases for branch in rule)}
+    return aliases | {"<{}>".format(name) for name,rule in grammar if rule[0] in aliases}
 
 def parse(code, grammartext):
-    grammar = split_list(grammartext.split()+[""], "::=")
-    grammar = [(a[-1], b[:-1]) for a,b in zip(grammar[:-1], grammar[1:])]
+    grammar=eval(grammartext)
 
-    for i,(name,rule) in enumerate(grammar[::1]):
-        if "{" in rule and "}" in rule:
-            prefix     = rule[:rule.index("{")]
-            core       = rule[rule.index("{")+1:rule.index("}")]
-            suffix     = rule[rule.index("}")+1:]
-            grammar[i] = (name, ["<{}prefix>".format(name)] + suffix)
-
-            grammar.append(("{}prefix".format(name), prefix + ["|", "<{}prefix>".format(name)] + core))
-
-    grammar = [(name, [[t.strip("'") for t in value] for value in split_list(rule, "|")]) for name, rule in grammar]
     aliases = {name:iterate_to_fixpoint(collect_aliases, {"<{}>".format(name)}, grammar) for name,rules in grammar}
 
     lookahead_rules = {name:set() for name,rule in grammar}
-    for name,_ in grammar:
-        precursors = [branch[i] for _,rule in grammar for branch in rule for i,b in enumerate(branch[1:]) if b in aliases[name]]
-        lookahead_rules[name] = set() if "<s>" in precursors or "<n>" in precursors else set(precursors)
+    for name,rule in grammar:
+        if rule in [["<s>"], ["<n>"]]:
+            precursors = [rule[i][1:-1] for _,rule in grammar for i,b in enumerate(rule[1:]) if b in aliases[name]]
+            lookahead_rules[name] = lookahead_rules[name]|set(precursors)
 
     code = " ".join(line.split("#")[0] for line in code.split("\n"))
     code = "".join(" "+c+" " if c in "(){}[]=.+-," else c for c in code).replace(".  .", "..")
@@ -407,6 +237,19 @@ def evaluate_flatten_connectives(syntax):
                 result = result + (child,)
         return result
 
+def evaluate_bisect_connectives(syntax):
+    if syntax[0] in ["conjunction", "disjunction"]:
+        if len(syntax[1:]) == 0:
+            return ({"con":"false","dis":"true"}[syntax[0][:3]],)
+        elif len(syntax[1:]) == 1:
+            return partial_evaluator(syntax[1], evaluate_bisect_connectives)
+        elif len(syntax[1:]) == 2:
+            return syntax[:1]+(partial_evaluator(syntax[1], evaluate_bisect_connectives),
+                               partial_evaluator(syntax[2], evaluate_bisect_connectives))
+        else:
+            return syntax[:1]+(partial_evaluator(syntax[1], evaluate_bisect_connectives),
+                               partial_evaluator(syntax[:1]+syntax[2:], evaluate_bisect_connectives))
+
 def replace_variables(syntax, replaces):
     if syntax[0] in ["slotbase", "slotmember", "slotindex"]:
         return replaces[syntax] if syntax in replaces else syntax
@@ -473,6 +316,14 @@ def getatom(counter, typename):
         counter[typename] = (len(counter), 1)
     return result;
 
+def prune_types(slots,result,code,counter):
+    for slot in slots:
+        if result[slot][0].startswith("remove_reference"):
+            atom  = getatom(counter, "IndirSolverAtom")
+            code += "{} = {{{}}};\n".format(atom, result[slot][1])
+            result[slot] = ("IndirSolverAtom", atom)
+    return slots,result,code
+
 def code_generation_core(syntax, counter):
     if syntax[0] == "atom":
         classname = "Backend{}".format(syntax[1][0][10:])
@@ -492,8 +343,6 @@ def code_generation_core(syntax, counter):
             else:
                 atom = "atom{}_[0]".format(counter[classname][0])
                 code = ""
-#            atom = getatom(counter, "Backend{}".format(syntax[1][0][10:]))
-#            code = "{} = {{wrap}};\n".format(atom)
 
         slots = [generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
 
@@ -537,37 +386,37 @@ def code_generation_core(syntax, counter):
 
         if syntax[0] == "conjunction":
             for slot in slots:
-                if len(result[slot]) == 1:
-                    result[slot] = result[slot][0]
-                else:
-                    classname    = indent_code("BackendAnd<", ",\n".join(a for a,b in result[slot])+">")
+                newresult = result[slot][0]
+
+                for a,b in result[slot][1:]:
+                    classname    = indent_code("BackendAnd<", newresult[0]+",\n"+a+">")
                     atom         = getatom(counter, classname)
-                    code        += "{} = {{{}}};\n".format(atom, ", ".join("{"+b+"}" for a,b in result[slot]))
+                    code        += "{} = {{{}}};\n".format(atom, "{"+newresult[1]+"}, {"+b+"}")
                     classname    = "remove_reference<decltype({}[0])>::type".format(atom[:atom.index("[")])
-                    result[slot] = (classname, atom)
+                    newresult    = (classname, atom)
 
-        """
-        if syntax[0] == "disjunction":
-            choices        = max([0]+[len(result[slot]) for slot in slots])
-            templateparams = ",\n".join("tuple<"+",".join(a for a,b in result[slot])+">" for slot in slots)
-            classname      = indent_code("BackendOr<{},".format(choices), "{}>".format(templateparams))
-            constructargs  = ", ".join("{"+", ".join("{"+b+"}" for a,b in result[slot])+"}" for slot in slots)
-            atom           = getatom(counter, indent_code("my_shared_ptr<", "{}>".format(classname)))
-            code          += "{} = {{{}}};\n".format(atom, constructargs)
-            classname      = "remove_reference<decltype(*{}[0])>::type".format(atom[:atom.index("[")])
-            result         = {slot:("ScalarSelector<{},{}>".format(classname, n), atom) for n,slot in enumerate(slots)}
-"""
-        if syntax[0] == "disjunction":
-            choices        = max([0]+[len(result[slot]) for slot in slots])
-            templateparams = ",\n".join("tuple<"+",".join("IndirSolverAtom" for a,b in result[slot])+">" for slot in slots)
-            classname      = indent_code("BackendOr<{},".format(choices), "{}>".format(templateparams))
-            constructargs  = ", ".join("{"+", ".join(a+"{"+b+"}" for a,b in result[slot])+"}" for slot in slots)
-            atom           = getatom(counter, indent_code("my_shared_ptr<", "{}>".format(classname)))
-            code          += "{} = {{{}}};\n".format(atom, constructargs)
-            classname      = "remove_reference<decltype(*{}[0])>::type".format(atom[:atom.index("[")])
-            result         = {slot:("ScalarSelector<{},{}>".format(classname, n), atom) for n,slot in enumerate(slots)}
+                result[slot] = newresult
 
-        return slots,result,code
+        if syntax[0] == "disjunction":
+            choices       = max([0]+[len(result[slot]) for slot in slots])
+            sliced_result = [{slot:result[slot][i] for slot in slots} for i in range(choices)]
+
+            newresult = sliced_result[0]
+
+            for slic in sliced_result[1:]:
+                shared_data  = getatom(counter, "my_shared_ptr<pair<unsigned,unsigned>>")
+                code        += "{} = {{0,0}};\n".format(shared_data);
+
+                for slot in slots:
+                    classname  = indent_code("BackendOr<", newresult[slot][0]+",\n"+slic[slot][0]+">")
+                    atom       = getatom(counter, classname)
+                    code      += "{} = {{{}}};\n".format(atom, "{"+newresult[slot][1]+"}, {"+slic[slot][1]+"}, {"+shared_data+"}")
+                    classname  = "remove_reference<decltype({}[0])>::type".format(atom[:atom.index("[")])
+                    newresult[slot] = (classname, atom)
+
+            result = newresult
+
+        return prune_types(slots,result,code,counter)
 
     elif syntax[0] == "collect":
         atom = getatom(counter, "my_shared_ptr<BackendCollect>")
@@ -594,7 +443,8 @@ def code_generation_core(syntax, counter):
         result      = {slot:("MultiVectorSelector<BackendCollect,0>", "{}, <[{}]>".format(atom, i)) for i,slot in enumerate(global_slots)}
         result.update({slot:("MultiVectorSelector<BackendCollect,1>", "{}, <[{}]>".format(atom, i)) for i,slot in enumerate(local_slots)})
 
-        return global_slots+local_slots, result, code
+        return prune_types(global_slots+local_slots,result,code,counter)
+#        return global_slots+local_slots, result, code
 
     raise Exception("Error, \"" + syntax[0] + "\" is not allowed in atoms collection.")
 
@@ -690,6 +540,8 @@ def generate_fast_cpp_specification(syntax, specs):
     constr = partial_evaluator(constr,    evaluate_remove_rename_rebase)
     constr = partial_evaluator(constr,    evaluate_remove_trivials)
     constr = partial_evaluator(constr,    evaluate_flatten_connectives)
+    constr = partial_evaluator(constr,    evaluate_bisect_connectives)
+    constr = partial_evaluator(constr,    evaluate_remove_trivials)
 
     atom_counter = {}
     slots, result, code = code_generation_core(constr, atom_counter)
@@ -703,42 +555,28 @@ def generate_fast_cpp_specification(syntax, specs):
     code = postprocess_add_loops(code)
 
     code = "\n".join(["{} atom{}_[{}];".format(typename, atom_counter[typename][0], atom_counter[typename][1]) for typename in atom_counter]
-                    +["solver_timer2.startTimer();"]
                     +[code.rstrip()]
                     +["vector<pair<string,unique_ptr<SolverAtom>>> constraint({});".format(len(slots))]
-                    +["solver_timer2.stopTimer();"]
-                    +["solver_timer8.startTimer();"]
-                    +["constraint[{}] = make_pair(\"{}\", unique_ptr<SolverAtom>(new {}({})));".format(n, slot, result[slot][0], result[slot][1]) for n,slot in enumerate(slots)]
-                    +["solver_timer8.stopTimer();"])
+                    +["constraint[{}] = make_pair(\"{}\", unique_ptr<SolverAtom>(new {}({})));".format(n, slot, result[slot][0], result[slot][1]) for n,slot in enumerate(slots)])
 
     code = code.replace("<[", "").replace("]>", "")
 
     return "\n".join(["vector<Solution> Detect{}(llvm::Function& function, unsigned max_solutions)".format(syntax[1])]
                     +["{"]
-                    +["    solver_timer1.startTimer();"]
                     +["    FunctionWrap wrap(function);"]
-                    +["    solver_timer1.stopTimer();"]
                     +[indent_code("    ", code)]
-                    +["    solver_timer3.startTimer();"]
                     +["    auto result = Solution::Find(move(constraint), function, max_solutions);"]
-                    +["    solver_timer3.stopTimer();"]
                     +["    return result;"]
                     +["}"])
 
 def generate_cpp_code(syntax_list):
     includes  = ["IdiomSpecifications","BackendSpecializations", "BackendDirectClasses", "BackendSelectors", "Solution"]
     specs     = {spec[1] : spec[2] for spec in syntax_list}
-    whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY",
-                 "DOT", "SPMV", "Reduction", "Histo", "Stencil", "StencilPlus", "Experiment"]
 
     return "\n".join(["#include \"llvm/Constraints/{}.hpp\"".format(s) for s in includes]
                     +["using namespace std;"]
                     +["#pragma GCC optimize (\"O0\")"]
                     +["#pragma clang optimize off"]
-                    +["llvm::Timer solver_timer1 = llvm::Timer();"]
-                    +["llvm::Timer solver_timer2 = llvm::Timer();"]
-                    +["llvm::Timer solver_timer3 = llvm::Timer();"]
-                    +["llvm::Timer solver_timer8 = llvm::Timer();"]
                     +["template<typename T>"]
                     +["class my_shared_ptr : public shared_ptr<T>"]
                     +["{"]
@@ -762,5 +600,7 @@ def print_syntax_tree(syntax, indent=0):
 
 import sys
 import itertools
+
+sys.setrecursionlimit(10000)
 
 print(generate_cpp_code(parse(sys.stdin.read(), grammar)))

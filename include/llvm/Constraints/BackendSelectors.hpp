@@ -41,6 +41,7 @@ private:
 class IndirSolverAtom : public SolverAtom
 {
 public:
+    IndirSolverAtom() = default;
     template<typename SolverAtomType>
     IndirSolverAtom(SolverAtomType b) : base(new SolverAtomType(std::move(b))) { }
 

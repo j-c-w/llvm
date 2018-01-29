@@ -3,26 +3,50 @@
 #include "llvm/Constraints/Transforms.hpp"
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <map>
 
-extern llvm::Timer solver_timer1;
-extern llvm::Timer solver_timer2;
-extern llvm::Timer solver_timer3;
-extern llvm::Timer solver_timer8;
-
 using namespace llvm;
+
+class ResearchReplacer : public ModulePass
+{
+public:
+    static char ID;
+
+    ResearchReplacer() : ModulePass(ID),
+                         simple_constraint_specs{{"Experiment", DetectExperiment}},
+                         loop_constraint_specs{{"histo",   DetectHisto},   {"scalar",  DetectReduction},
+                                               {"GEMM",    DetectGEMM},    {"GEMV",    DetectGEMV},
+                                               {"AXPY",    DetectAXPY},    {"AXPYn",   DetectAXPYn},
+                                               {"DOT",     DetectDOT},     {"SPMV",    DetectSPMV},
+                                               {"stencil", DetectStencil}, {"stenpls", DetectStencilPlus},
+                                               {"SCoP",    DetectSCoP}} { }
+
+    bool runOnModule(Module& module) override;
+
+private:
+    std::vector<std::pair<std::string,std::vector<Solution>(*)(Function&,unsigned)>> simple_constraint_specs;
+    std::vector<std::pair<std::string,std::vector<Solution>(*)(Function&,unsigned)>> loop_constraint_specs;
+};
 
 struct SolutionCluster
 {
-    Value*                                      begin;
-    Value*                                      successor;
+    Instruction*                                precursor;
+    Instruction*                                begin;
+    Instruction*                                end;
+    Instruction*                                successor;
+    Instruction*                                body_precursor;
+    Instruction*                                body_begin;
+    Instruction*                                body_end;
+    Instruction*                                body_successor;
     std::map<std::string,std::vector<Solution>> solutions;
 };
 
@@ -36,16 +60,34 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string
     {
         for(const auto& solution : input.second)
         {
-            llvm::Value* begin     = solution.get("body", "begin");
-            llvm::Value* successor = solution.get("body", "successor");
+            Value* precursor_value      = (Value*)solution.get("precursor");
+            Value* begin_value          = (Value*)solution.get("begin");
+            Value* end_value            = (Value*)solution.get("end");
+            Value* successor_value      = (Value*)solution.get("successor");
+            Value* body_precursor_value = (Value*)solution.get("body", "precursor");
+            Value* body_begin_value     = (Value*)solution.get("body", "begin");
+            Value* body_end_value       = (Value*)solution.get("body", "end");
+            Value* body_successor_value = (Value*)solution.get("body", "successor");
 
-            if(!begin && !successor) continue;
+            Instruction* precursor      = dyn_cast_or_null<Instruction>(precursor_value);
+            Instruction* begin          = dyn_cast_or_null<Instruction>(begin_value);
+            Instruction* end            = dyn_cast_or_null<Instruction>(end_value);
+            Instruction* successor      = dyn_cast_or_null<Instruction>(successor_value);
+            Instruction* body_precursor = dyn_cast_or_null<Instruction>(body_precursor_value);
+            Instruction* body_begin     = dyn_cast_or_null<Instruction>(body_begin_value);
+            Instruction* body_end       = dyn_cast_or_null<Instruction>(body_end_value);
+            Instruction* body_successor = dyn_cast_or_null<Instruction>(body_successor_value);
+
+            if(!precursor || !begin || !end || !successor ||
+               !body_precursor || !body_begin || !body_end || !body_successor) continue;
 
             auto find_it = std::find_if(result.begin(), result.end(), [=](const SolutionCluster& cluster)
                                         { return cluster.begin == begin && cluster.successor == successor; });
 
             if(find_it == result.end())
-                result.push_back(SolutionCluster{begin, successor, {{input.first, {std::move(solution)}}}});
+                result.push_back(SolutionCluster{precursor, begin, end, successor,
+                                                 body_precursor, body_begin, body_end, body_successor,
+                                                 {{input.first, {std::move(solution)}}}});
             else
                 find_it->solutions[input.first].push_back(std::move(solution));
         }
@@ -54,99 +96,68 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string
     return result;
 }
 
-class ResearchReplacer : public ModulePass
-{
-public:
-    static char ID;
-
-    ResearchReplacer() : ModulePass(ID),
-                         constraint_specs{{"histo",   DetectHisto},   {"scalar",  DetectReduction},
-                                          {"GEMM",    DetectGEMM},    {"GEMV",    DetectGEMV},
-                                          {"AXPY",    DetectAXPY},    {"AXPYn",   DetectAXPYn},
-                                          {"DOT",     DetectDOT},     {"SPMV",    DetectSPMV},
-                                          {"stencil", DetectStencil}, {"stenpls", DetectStencilPlus}} { }
-
-    bool runOnModule(Module& module) override;
-
-private:
-    std::vector<std::pair<std::string,std::vector<Solution>(*)(Function&,unsigned)>> constraint_specs;
-};
 
 bool ResearchReplacer::runOnModule(Module& module)
 {
-    solver_timer1 = llvm::Timer();
-    solver_timer2 = llvm::Timer();
-    solver_timer3 = llvm::Timer();
-    llvm::Timer solver_timer4;
-    llvm::Timer solver_timer5;
-    llvm::Timer solver_timer6;
-    llvm::Timer solver_timer7;
-    solver_timer8 = llvm::Timer();
-
-    for(unsigned i = 0; i < 1; i++)
-    {
-    solver_timer7.startTimer();
-
     ModuleSlotTracker slot_tracker(&module);
 
-    std::ofstream ofs("replace-report.txt");
+    std::stringstream sstr;
+    sstr<<"replace-report-"<<(std::string)module.getName()<<".json";
+    std::ofstream ofs(sstr.str().c_str());
+    ofs<<"{\n  \"filename\": \""<<(std::string)module.getName()<<"\"\n  \"loops\": [";
 
+    char first_hit1 = true;
     for(Function& function : module.getFunctionList())
     {
         if(!function.isDeclaration())
         {
             std::vector<std::pair<std::string,std::vector<Solution>>> raw_solutions;
 
-            for(const auto& spec : constraint_specs)
-                raw_solutions.push_back({spec.first, spec.second(function,3)});
-
-            solver_timer5.startTimer();
+            for(const auto& spec : loop_constraint_specs)
+                raw_solutions.push_back({spec.first, spec.second(function,100)});
 
             auto clustered_solutions = cluster_solutions(std::move(raw_solutions));
 
-            solver_timer5.stopTimer();
-
-//            for(auto solution : DetectExperiment(function, 20))
-//            {
-//                ofs<<"BEGIN experiment in "<<(std::string)function.getName()<<"\n"
-//                   <<solution.prune().print_json(slot_tracker)<<"\n"
-//                   <<"END experiment\n";
-//            }
-
             if(clustered_solutions.empty())
-            {
-                ofs<<"SKIP FUNCTION TRANSFORMATION "<<(std::string)function.getName()<<"\n";
                 continue;
-            }
-
-            ofs<<"BEGIN FUNCTION TRANSFORMATION "<<(std::string)function.getName()<<"\n";
 
             for(unsigned i = 0; i < clustered_solutions.size(); i++)
             {
-                ofs<<"BEGIN LOOP\n";
-      //          ofs<<clustered_solutions[i].begin->getParent()
+                unsigned line_begin = clustered_solutions[i].precursor->getDebugLoc().getLine();
 
-                solver_timer4.startTimer();
-                for(const auto& spec : constraint_specs)
+                ofs<<(first_hit1?"\n":",\n");
+                ofs<<"    {\n      \"function\": \""<<(std::string)function.getName()<<"\",\n";
+                ofs<<"      \"line\": "<<line_begin<<",\n";
+                ofs<<"      \"idioms\": [\n";
+
+                char first_hit2 = true;
+                for(const auto& spec : loop_constraint_specs)
                 {
                     for(auto& solution : clustered_solutions[i].solutions[spec.first])
                     {
-                        ofs<<"BEGIN "<<spec.first<<"\n"
-                           <<solution.prune().print_json(slot_tracker)<<"\n"
-                           <<"END "<<spec.first<<"\n";
+                        ofs<<(first_hit2?"\n":",\n");
+                        ofs<<"    {\n      \"type\": \""<<spec.first<<"\",\n";
+                        ofs<<"      \"solution\":\n        ";
+                        for(char c : solution.prune().print_json(slot_tracker))
+                        {
+                            ofs.put(c);
+                            if(c == '\n') ofs<<"          ";
+                        }
+                        ofs<<"\n    }";
+                        first_hit2 = false;
                     }
                 }
-                solver_timer4.stopTimer();
 
+                ofs<<"]";
 
-                solver_timer6.startTimer();
                 if(clustered_solutions[i].solutions["histo"].size() > 0 ||
                    clustered_solutions[i].solutions["scalar"].size() > 0)
                 {
-                    ofs<<"BEGIN OPERATOR\n";
+                    ofs<<",\n      \"operator\": \"";
                     std::vector<Instruction*> outputs;
 
-                    SESEFunction sese_function(clustered_solutions[i].begin, clustered_solutions[i].successor);
+                    SESEFunction sese_function(clustered_solutions[i].body_begin,
+                                               clustered_solutions[i].body_successor);
 
                     Function* function = sese_function.make_function();
 
@@ -162,32 +173,57 @@ bool ResearchReplacer::runOnModule(Module& module)
 
                     function->setName("op");
                     function->arg_begin()->setName("acc");
-                    ofs<<print_pretty_c_operator(*function);
+                    for(char c : print_pretty_c_operator(*function))
+                    {
+                        if(c=='\n') ofs<<"\\n";
+                        else if(c=='\t') ofs<<"\\t";
+                        else if(c=='\r') ofs<<"\\r";
+                        else if(c=='\"') ofs<<"\\\"";
+                        else if(c=='\'') ofs<<"\\\'";
+                        else ofs<<c;
+                    }
+                    ofs<<"\"";
                     delete function;
                 }
-                solver_timer6.stopTimer();
 
-                ofs<<"END LOOP\n";
+                ofs<<"\n    }";
             }
-
-
-            ofs<<"END FUNCTION TRANSFORMATION\n";
-
         }
     }
 
-    solver_timer7.stopTimer();
+    ofs<<"],\n  \"transformations\": [";
+
+    char first_hit = true;
+    for(Function& function : module.getFunctionList())
+    {
+        if(!function.isDeclaration())
+        {
+            for(const auto& spec : simple_constraint_specs)
+            {
+                auto solutions = spec.second(function, UINT_MAX);
+
+                if(!solutions.empty())
+                {
+                    for(auto& solution : solutions)
+                    {
+                        ofs<<(first_hit?"\n":",\n");
+                        ofs<<"    {\n      \"function\": \""<<(std::string)function.getName()<<"\",\n";
+                        ofs<<"      \"type\": \""<<spec.first<<"\",\n";
+                        ofs<<"      \"solution\":\n        ";
+                        for(char c : solution.prune().print_json(slot_tracker))
+                        {
+                            ofs.put(c);
+                            if(c == '\n') ofs<<"        ";
+                        }
+                        ofs<<"\n    }";
+                        first_hit = false;
+                    }
+                }
+            }
+        }
     }
 
-    double total_time = solver_timer7.getTotalTime().getUserTime();
-
-    std::cout<<"Done with module, timer1 is "<<100*solver_timer1.getTotalTime().getUserTime()/total_time<<"%\n";
-    std::cout<<"Done with module, timer2 is "<<100*solver_timer2.getTotalTime().getUserTime()/total_time<<"%\n";
-    std::cout<<"Done with module, timer3 is "<<100*solver_timer3.getTotalTime().getUserTime()/total_time<<"%\n";
-    std::cout<<"Done with module, timer4 is "<<100*solver_timer4.getTotalTime().getUserTime()/total_time<<"%\n";
-    std::cout<<"Done with module, timer5 is "<<100*solver_timer5.getTotalTime().getUserTime()/total_time<<"%\n";
-    std::cout<<"Done with module, timer6 is "<<100*solver_timer6.getTotalTime().getUserTime()/total_time<<"%\n";
-    std::cout<<"Done with module, timer8 is "<<100*solver_timer8.getTotalTime().getUserTime()/total_time<<"%\n";
+    ofs<<"]\n}\n";
 
     return false;
 }

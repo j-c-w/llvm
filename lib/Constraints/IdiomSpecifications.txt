@@ -1,3 +1,12 @@
+
+Constraint Experiment
+(  {addition} is add instruction and
+   {left} is first argument of {addition} and
+   {right} is second argument of {addition})
+End
+
+
+
 Constraint Permute
 if M+1=N then
   {input[M]} is the same as {output[M]}
@@ -19,8 +28,7 @@ End
 Constraint SumChain
 ( {value} is an integer and
   {value} is the same as {results[0]} and
-  ( ( ( {results[i]} is add instruction or
-        {results[i]} is bitor instruction) and
+  ( ( {results[i]} is add instruction and
       include ArgumentsPermuted with {results[i]}   as {dst}
                                   and {results[i+1]} as {src1}
                                   and {factors[i]}   as {src2} and
@@ -39,8 +47,7 @@ End
 Constraint MulChain
 ( {value} is an integer and
   {value} is the same as {results[0]} and
-  ( ( ( {results[i]} is mul instruction or
-        {results[i]} is bitand instruction) and
+  ( ( {results[i]} is mul instruction and
       include ArgumentsPermuted with {results[i]}   as {dst}
                                   and {results[i+1]} as {src1}
                                   and {factors[i]}   as {src2} and
@@ -57,8 +64,7 @@ for N=8 if not otherwise specified
 End
 
 Constraint Distributive
-( ( {value} is add instruction or
-    {value} is bitor instruction) and
+( {value} is add instruction and
   {sum1.value} is first argument of {value} and
   {sum2.value} is second argument of {value} and
   include SumChain at {sum1} and
@@ -224,14 +230,37 @@ Constraint ConnectSESE
   {first.successor} is the same as {second.begin})
 End
 
+
 Constraint PotentialSESE
-( include SESE or
-  ( {begin} is the same as {end} and
-    {precursor} has control flow to {begin} and
-    {end} has control flow to {successor}) or
-  ( {precursor} is the same as {end} and
-    {begin}     is the same as {successor}))
+( {precursor} is branch instruction and
+  {precursor} has control flow to {begin} and
+  {end} is branch instruction and
+  {end} has control flow to {successor} and
+  ( ( {begin} control flow dominates {end} and
+      {end} control flow post dominates {begin} and
+      all control flow from {begin} to {precursor} passes through {end} and
+      all control flow from {successor} to {end} passes through {begin}) or
+    ( {begin} is the same as {end} and
+      {precursor} has control flow to {begin} and
+      {end} has control flow to {successor}) or
+    ( {precursor} is the same as {end} and
+      {begin} is the same as {successor})))
 End
+
+
+#Constraint PotentialSESE
+#( include SESE or
+#  ( {begin} is the same as {end} and
+#    {precursor} has control flow to {begin} and
+#    {end} has control flow to {successor} and
+#    {precursor} strictly control flow dominates {begin} and
+#    {successor} strictly control flow post dominates {end}) or
+#  ( {precursor} is the same as {end} and
+#    {precursor} has control flow to {begin} and
+#    {end} has control flow to {successor} and
+#    {precursor} strictly control flow dominates {begin} and
+#    {successor} strictly control flow post dominates {end}))
+#End
 
 Constraint ForNest
 ( include For with {iterator[0]} as {iterator} at {loop[0]} and
@@ -691,31 +720,6 @@ endif
 for N=6 if not otherwise specified
 End
 
-
-Constraint SCoP
-( include ForNest(N=N) and
-  collect k 8
-  ( {access[k]} is gep instruction ) and
-  collect k 8
-  ( {access[k]} is gep instruction and
-    {index[k].value} is second argument of {access[k]} and
-    include AffineCalculation(M=N) with {iterator} as {input} at {index[k]}))
-End
-
-Constraint Experiment
-(  {addition} is add instruction and
-   {left} is first argument of {addition} and
-   {right} is second argument of {addition})
-End
-
-#Constraint Experiment
-#  include SCoP(N=2)
-#End
-
-#Constraint Experiment
-#( include LewisStuff)
-#End
-
 Constraint LewisStuff
 ( include VectorMulChain(N=8) and
   collect k 8
@@ -834,3 +838,78 @@ Constraint StencilPlus
 )
 for N=3 if not otherwise specified
 End
+
+
+
+Constraint ConditionalBranch
+( {value} is branch instruction and
+  {target[0]} is first successor of {value} and
+  {target[1]} is second successor of {value})
+End
+
+
+Constraint IfBlock
+( include PotentialSESE with {truebegin} as {begin} and {trueend} as {end} and
+  {truebegin} is first successor of {precursor} and
+  {falsebegin} is second successor of {precursor} and
+  include PotentialSESE with {falsebegin} as {begin} and {falseend} as {end} and
+  {trueend} is not the same as {falseend})
+End
+
+Constraint StructuredControlFlowPart
+( include For and
+  collect i 16 ( include ConditionalBranch at {branch[i]} and
+                {body.begin} control flow dominates {branch[i].value} and
+                {body.end} strictly control flow post dominates {branch[i].value}) and
+  collect i 8
+  ( include For at {loop[i]} and
+    {body.begin} control flow dominates {loop[i].begin} and
+    {body.end} control flow post dominates {loop[i].end}) and
+  collect i 8
+  ( include IfBlock at {conditional[i]} and
+    {body.begin} control flow dominates {conditional[i].precursor} and
+    {body.end} control flow post dominates {conditional[i].successor})  and
+  {loop[0..8].end,conditional[0..8].precursor} is the same set as {branch[0..16].value})
+End
+
+Constraint FunctionCall
+( {callsite} is call instruction and
+  {function} is first argument of {callsite})
+End
+
+Constraint PureFunctionCall
+( {callsite} is call instruction and
+  {function} is first argument of {callsite} and
+  {function} has attribute pure)
+End
+
+Constraint LocalValue
+( {begin} control flow dominates {value} and
+  {end} control flow post dominates {value})
+End
+
+Constraint LocalFunctionCall
+( include FunctionCall and
+  include LocalValue with {callsite} as {value})
+End
+
+Constraint LocalPureFunctionCall
+( include PureFunctionCall and
+  include LocalValue with {callsite} as {value})
+End
+
+Constraint SideEffectFreePart
+( include For and
+  collect i 32 include LocalFunctionCall
+                       with {begin} as {begin}
+                        and {end} as {end} at {call[i]} and
+  collect i 32 include LocalPureFunctionCall
+                       with {begin} as {begin}
+                        and {end} as {end} at {call[i]})
+End
+
+Constraint SCoP
+( include StructuredControlFlowPart and
+  include SideEffectFreePart)
+End
+
