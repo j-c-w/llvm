@@ -1,0 +1,169 @@
+# ::= <specification>
+
+specification ::= Constraint <s> <@constraint> End
+
+@constraint ::= <@grouping> | <collect> | <rename> | <rebase> | <atom>
+             | <GeneralizedDominance> | <GeneralizedSame> | '(' <@constraint> ')'
+
+@grouping   ::= <conjunction> | <disjunction> | <inheritance> | <forall> | <forsome> | <forone> | <if> | <default>
+inheritance ::= <rawinherit> | <arginherit>
+rawinherit  ::= include <s>
+arginherit  ::= <rawinherit> '(' <s> '=' <calculation> { ',' <s> = <calculation> } ')'
+conjunction ::= '(' <@constraint> and <@constraint> { and <@constraint> } ')'
+disjunction ::= '(' <@constraint> or <@constraint> { or <@constraint> } ')'
+forall      ::= <@constraint> for all <s> '=' <calculation> '..' <calculation>
+forsome     ::= <@constraint> for some <s> '=' <calculation> '..' <calculation>
+forone      ::= <@constraint> for <s> '=' <calculation>
+default     ::= <@constraint> for <s> '=' <calculation> if not otherwise specified
+if          ::= if <calculation> '=' <calculation> then <@constraint> else <@constraint> endif
+collect     ::= collect <s> <n> <@constraint>
+rename      ::= <@grouping> with <@slot> as <@slot> { and <@slot> as <@slot> }
+rebase      ::= <@grouping> at <@slot> | <rename> at <@slot>
+
+@slot      ::= '{' <@openslot> '}' | <slottuple>
+@openslot  ::= <slotbase> | <slotindex> | <slotrange> | <slotmember> | <slottuple>
+slotbase   ::= <s>
+slotindex  ::= <@openslot> '[' <calculation> ']'
+slotrange  ::= <@openslot> '[' <calculation> '..' <calculation> ']'
+slotmember ::= <@openslot> '.' <s>
+slottuple  ::= '{' <@openslot> ',' { <@openslot> ',' } <@openslot> '}'
+
+calculation ::= <basevar> | <baseconst> | <addvar> | <addconst> | <subvar> | <subconst>
+basevar     ::= <s>
+baseconst   ::= <n>
+addvar      ::= <calculation> '+' <s>
+addconst    ::= <calculation> '+' <n>
+subvar      ::= <calculation> '-' <s>
+subconst    ::= <calculation> '-' <n>
+
+atom ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintVectorType> | <ConstraintPointerType>
+         | <ConstraintIntZero> | <ConstraintFloatZero>
+         | <ConstraintUnused>       | <ConstraintNotNumericConstant> | <ConstraintConstant>
+         | <ConstraintPreexecution> | <ConstraintArgument>           | <ConstraintInstruction>
+         | <ConstraintStoreInst>  | <ConstraintLoadInst>   | <ConstraintReturnInst> | <ConstraintBranchInst>
+         | <ConstraintAddInst>    | <ConstraintSubInst>    | <ConstraintMulInst>    | <ConstraintFAddInst>
+         | <ConstraintFSubInst>   | <ConstraintFMulInst>   | <ConstraintFDivInst>   | <ConstraintBitOrInst>
+         | <ConstraintBitAndInst> | <ConstraintBitcastInst>
+         | <ConstraintLShiftInst> | <ConstraintSelectInst> | <ConstraintSExtInst>   | <ConstraintZExtInst>
+         | <ConstraintGEPInst>    | <ConstraintICmpInst>   | <ConstraintCallInst>
+         | <ConstraintShufflevectorInst> | <ConstraintInsertelementInst>
+         | <ConstraintSame> | <ConstraintDistinct>
+         | <ConstraintDFGEdge> | <ConstraintCFGEdge> | <ConstraintCDGEdge> | <ConstraintPDGEdge>
+         | <ConstraintFirstOperand> | <ConstraintSecondOperand>
+         | <ConstraintThirdOperand> | <ConstraintFourthOperand>
+         | <ConstraintFirstSuccessor> | <ConstraintSecondSuccessor>
+         | <ConstraintThirdSuccessor> | <ConstraintFourthSuccessor>
+         | <ConstraintDFGDominate>          | <ConstraintDFGPostdom>
+         | <ConstraintDFGDominateStrict>    | <ConstraintDFGPostdomStrict>
+         | <ConstraintCFGDominate>          | <ConstraintCFGPostdom>
+         | <ConstraintCFGDominateStrict>    | <ConstraintCFGPostdomStrict>
+         | <ConstraintPDGDominate>          | <ConstraintPDGPostdom>
+         | <ConstraintPDGDominateStrict>    | <ConstraintPDGPostdomStrict>
+         | <ConstraintDFGNotDominate>       | <ConstraintDFGNotPostdom>
+         | <ConstraintDFGNotDominateStrict> | <ConstraintDFGNotPostdomStrict>
+         | <ConstraintCFGNotDominate>       | <ConstraintCFGNotPostdom>
+         | <ConstraintCFGNotDominateStrict> | <ConstraintCFGNotPostdomStrict>
+         | <ConstraintPDGNotDominate>       | <ConstraintPDGNotPostdom>
+         | <ConstraintPDGNotDominateStrict> | <ConstraintPDGNotPostdomStrict>
+         | <ConstraintIncomingValue>
+         | <ConstraintDFGBlocked> | <ConstraintCFGBlocked> | <ConstraintPDGBlocked>
+         | <ConstraintFunctionAttribute>
+
+ConstraintIntegerType ::= <@slot> is an integer
+ConstraintFloatType   ::= <@slot> is a float
+ConstraintVectorType  ::= <@slot> is a vector
+ConstraintPointerType ::= <@slot> is a pointer
+
+ConstraintIntZero   ::= <@slot> is integer zero
+ConstraintFloatZero ::= <@slot> is floating point zero
+
+ConstraintUnused             ::= <@slot> is unused
+ConstraintNotNumericConstant ::= <@slot> is not a numeric constant
+ConstraintConstant           ::= <@slot> is a constant
+ConstraintPreexecution       ::= <@slot> is preexecution
+ConstraintArgument           ::= <@slot> is an argument
+ConstraintInstruction        ::= <@slot> is an instruction
+
+ConstraintStoreInst         ::= <@slot> is store instruction
+ConstraintLoadInst          ::= <@slot> is load instruction
+ConstraintReturnInst        ::= <@slot> is return instruction
+ConstraintBranchInst        ::= <@slot> is branch instruction
+ConstraintAddInst           ::= <@slot> is add instruction
+ConstraintSubInst           ::= <@slot> is sub instruction
+ConstraintMulInst           ::= <@slot> is mul instruction
+ConstraintFAddInst          ::= <@slot> is fadd instruction
+ConstraintFSubInst          ::= <@slot> is fsub instruction
+ConstraintFMulInst          ::= <@slot> is fmul instruction
+ConstraintFDivInst          ::= <@slot> is fdiv instruction
+ConstraintBitOrInst         ::= <@slot> is bitor instruction
+ConstraintBitAndInst        ::= <@slot> is bitand instruction
+ConstraintLShiftInst        ::= <@slot> is lshift instruction
+ConstraintSelectInst        ::= <@slot> is select instruction
+ConstraintBitcastInst       ::= <@slot> is bitcast instruction
+ConstraintSExtInst          ::= <@slot> is sext instruction
+ConstraintZExtInst          ::= <@slot> is zext instruction
+ConstraintGEPInst           ::= <@slot> is gep instruction
+ConstraintICmpInst          ::= <@slot> is icmp instruction
+ConstraintCallInst          ::= <@slot> is call instruction
+ConstraintShufflevectorInst ::= <@slot> is shufflevector instruction
+ConstraintInsertelementInst ::= <@slot> is insertelement instruction
+
+ConstraintSame     ::= <@slot> is the same as <@slot>
+ConstraintDistinct ::= <@slot> is not the same as <@slot>
+
+ConstraintDFGEdge ::= <@slot> has data flow to <@slot>
+ConstraintCFGEdge ::= <@slot> has control flow to <@slot>
+ConstraintCDGEdge ::= <@slot> has control dominance to <@slot>
+ConstraintPDGEdge ::= <@slot> has dependence edge to <@slot>
+
+ConstraintFirstOperand  ::= <@slot> is first argument of <@slot>
+ConstraintSecondOperand ::= <@slot> is second argument of <@slot>
+ConstraintThirdOperand  ::= <@slot> is third argument of <@slot>
+ConstraintFourthOperand ::= <@slot> is fourth argument of <@slot>
+
+ConstraintFirstSuccessor  ::= <@slot> is first successor of <@slot>
+ConstraintSecondSuccessor ::= <@slot> is second successor of <@slot>
+ConstraintThirdSuccessor  ::= <@slot> is third successor of <@slot>
+ConstraintFourthSuccessor ::= <@slot> is fourth successor of <@slot>
+
+ConstraintDFGDominate       ::= <@slot> data flow dominates <@slot>
+ConstraintDFGPostdom        ::= <@slot> data flow post dominates <@slot>
+ConstraintDFGDominateStrict ::= <@slot> strictly data flow dominates <@slot>
+ConstraintDFGPostdomStrict  ::= <@slot> strictly data flow post dominates <@slot>
+
+ConstraintCFGDominate       ::= <@slot> control flow dominates <@slot>
+ConstraintCFGPostdom        ::= <@slot> control flow post dominates <@slot>
+ConstraintCFGDominateStrict ::= <@slot> strictly control flow dominates <@slot>
+ConstraintCFGPostdomStrict  ::= <@slot> strictly control flow post dominates <@slot>
+
+ConstraintPDGDominate       ::= <@slot> dominates <@slot>
+ConstraintPDGPostdom        ::= <@slot> post dominates <@slot>
+ConstraintPDGDominateStrict ::= <@slot> strictly dominates <@slot>
+ConstraintPDGPostdomStrict  ::= <@slot> strictly post dominates <@slot>
+
+ConstraintDFGNotDominate       ::= <@slot> does not data flow dominate <@slot>
+ConstraintDFGNotPostdom        ::= <@slot> does not data flow post dominate <@slot>
+ConstraintDFGNotDominateStrict ::= <@slot> does not strictly data flow dominate <@slot>
+ConstraintDFGNotPostdomStrict  ::= <@slot> does not strictly data flow post dominate <@slot>
+
+ConstraintCFGNotDominate       ::= <@slot> does not control flow dominate <@slot>
+ConstraintCFGNotPostdom        ::= <@slot> does not control flow post dominate <@slot>
+ConstraintCFGNotDominateStrict ::= <@slot> does not strictly control flow dominate <@slot>
+ConstraintCFGNotPostdomStrict  ::= <@slot> does not strictly control flow post dominate <@slot>
+
+ConstraintPDGNotDominate       ::= <@slot> does not dominate <@slot>
+ConstraintPDGNotPostdom        ::= <@slot> does not post dominate <@slot>
+ConstraintPDGNotDominateStrict ::= <@slot> does not strictly dominate <@slot>
+ConstraintPDGNotPostdomStrict  ::= <@slot> does not strictly post dominate <@slot>
+
+ConstraintIncomingValue ::= <@slot> reaches phi node <@slot> from <@slot>
+
+ConstraintDFGBlocked ::= all data flow from <@slot> to <@slot> passes through <@slot>
+ConstraintCFGBlocked ::= all control flow from <@slot> to <@slot> passes through <@slot>
+ConstraintPDGBlocked ::= all flow from <@slot> to <@slot> passes through <@slot>
+
+ConstraintFunctionAttribute ::= <@slot> has attribute pure
+
+GeneralizedSame  ::= <@slot> is the same set as <@slot>
+
+GeneralizedDominance ::= all flow from <@slot> or any origin to any of <@slot> passes through at least one of <@slot>

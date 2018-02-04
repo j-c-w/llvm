@@ -22,6 +22,8 @@ subdirectories =
  Bitcode
  CodeGen
  Constraints
+ CAnDL
+ CAnDLSupport
  DebugInfo
  Demangle
  ExecutionEngine

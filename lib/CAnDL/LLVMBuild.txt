@@ -1,4 +1,4 @@
-;===- ./lib/Constraints/LLVMBuild.txt --------------------------*- Conf -*--===;
+;===- ./lib/CAnDL/LLVMBuild.txt --------------------------*- Conf -*--===;
 ;
 ;                     The LLVM Compiler Infrastructure
 ;
@@ -17,6 +17,6 @@
 
 [component_0]
 type = Library
-name = Constraints
+name = CAnDL
 parent = Libraries
-required_libraries = CAnDL CAnDLSupport
+required_libraries = CAnDLSupport
