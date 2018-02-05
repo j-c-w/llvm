@@ -1,4 +1,4 @@
-;===- ./tools/opt/LLVMBuild.txt --------------------------------*- Conf -*--===;
+;===- ./lib/Constraints/LLVMBuild.txt --------------------------*- Conf -*--===;
 ;
 ;                     The LLVM Compiler Infrastructure
 ;
@@ -16,19 +16,7 @@
 ;===------------------------------------------------------------------------===;
 
 [component_0]
-type = Tool
-name = opt
-parent = Tools
-required_libraries =
- AsmParser
- BitReader
- BitWriter
- CodeGen
- CAnDLPasses
- IRReader
- IPO
- Instrumentation
- Scalar
- ObjCARC
- Passes
- all-targets
+type = Library
+name = CAnDLPasses
+parent = Libraries
+required_libraries = CAnDLSolver CAnDLParser
