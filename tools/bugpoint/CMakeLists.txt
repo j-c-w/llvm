@@ -3,7 +3,7 @@ set(LLVM_LINK_COMPONENTS
   Analysis
   BitWriter
   CodeGen
-  Constraints
+  CAnDLPasses
   Core
   IPO
   IRReader
