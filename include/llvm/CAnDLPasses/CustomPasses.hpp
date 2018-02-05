@@ -19,6 +19,10 @@ ModulePass*     createResearchPreprocessorPass();
 ModulePass*     createResearchReplacerPass();
 BasicBlockPass* createResearchFixOrToAddPass();
 BasicBlockPass* createResearchFixShlToMulPass();
+BasicBlockPass* createResearchEliminatePointerCasts1Pass();
+BasicBlockPass* createResearchEliminatePointerCasts2Pass();
+BasicBlockPass* createResearchEliminatePointerCasts3Pass();
+BasicBlockPass* createResearchEliminatePointerCasts4Pass();
 
 class ResearchPreprocessorPass : public PassInfoMixin<ResearchPreprocessorPass> {
 public:

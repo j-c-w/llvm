@@ -175,12 +175,25 @@ std::vector<std::vector<unsigned>> construct_rdfg(std::unordered_map<llvm::Instr
                 }
             }
         }
-        else
+        else if(instruction.first->getOpcode() != llvm::Instruction::BitCast &&
+                instruction.first->getOpcode() != llvm::Instruction::ZExt &&
+                instruction.first->getOpcode() != llvm::Instruction::SExt)
         {
             for(auto& operand : instruction.first->operands())
             {
-                llvm::Instruction* instr = llvm::dyn_cast<llvm::Instruction>(&operand);
-                auto               it1   = value_hash.find(operand.get());
+                auto chase = operand.get();
+
+                llvm::Instruction* chase_inst;
+                while((chase_inst = llvm::dyn_cast<llvm::Instruction>(chase)) &&
+                      (chase_inst->getOpcode() == llvm::Instruction::BitCast ||
+                       chase_inst->getOpcode() == llvm::Instruction::ZExt ||
+                       chase_inst->getOpcode() == llvm::Instruction::SExt))
+                {
+                    chase = chase_inst->getOperand(0);
+                }
+
+                llvm::Instruction* instr = llvm::dyn_cast<llvm::Instruction>(chase);
+                auto               it1   = value_hash.find(chase);
                 auto               it2   = instr_hash.find(instr);
 
                 if(it1 != value_hash.end())

@@ -12,19 +12,21 @@ class Value;
 }
 
 // This file containts the constraint specifications that are used for idiom detection.
-std::vector<Solution> DetectDistributive(llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectHoistSelect (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectGEMM        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectGEMV        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectAXPY        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectAXPYn       (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectDOT         (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectSPMV        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectReduction   (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectHisto       (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectStencil     (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectStencilPlus (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectExperiment  (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-std::vector<Solution> DetectSCoP        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+//using IdiomSpecification = std::vector<std::pair<std::string,std::unique_ptr<SolverAtom>>>;
+using IdiomSpecification = std::vector<Solution>;
+IdiomSpecification DetectDistributive(llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectHoistSelect (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectGEMM        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectGEMV        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectAXPY        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectAXPYn       (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectDOT         (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectSPMV        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectReduction   (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectHisto       (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectStencil     (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectStencilPlus (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectExperiment  (llvm::Function& function, unsigned max_solutions = UINT_MAX);
+IdiomSpecification DetectSCoP        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 
 #endif

@@ -25,7 +25,7 @@ public:
     bool runOnModule(Module& module) override;
 
 private:
-    std::vector<std::tuple<std::string,std::vector<Solution>(*)(llvm::Function&,unsigned),
+    std::vector<std::tuple<std::string,IdiomSpecification(*)(llvm::Function&,unsigned),
                                        void(*)(Function&,std::map<std::string,Value*>)>> constraint_specs;
 };
 

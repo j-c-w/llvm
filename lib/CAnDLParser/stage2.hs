@@ -51,6 +51,3 @@ program ="Constraint Permute if M+1=N then   {input[M]} is the same as {output[M
 main = do
     contents <- getContents
     putStrLn $ "("++intercalate ", " (prettyprint $ unbox $ parse (tokenize $ classifyChars contents) [[PNode "#" []]])++")"
-
-
---    print $ tokenize $ classifyChars contents

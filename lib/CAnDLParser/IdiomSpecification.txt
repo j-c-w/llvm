@@ -1,3 +1,19 @@
+Constraint Experiment
+( {store_old_next} is store instruction and
+  {old_next} is first argument of {store_old_next} and
+  {new_member_pointer} is second argument of {store_old_next} and
+
+  {store_new_next} is store instruction and
+  {new_next} is first argument of {store_new_next} and
+  {old_member_pointer} is second argument of {store_new_next} and
+
+  {old_next} is load instruction and
+  {old_member_pointer} is first argument of {old_next} and
+
+  {new_member_pointer} is gep instruction and
+  {new_next} is first argument of {new_member_pointer})
+End
+
 Constraint Permute
 if M+1=N then
   {input[M]} is the same as {output[M]}
@@ -711,11 +727,11 @@ endif
 for N=6 if not otherwise specified
 End
 
-Constraint Experiment
-(  {addition} is add instruction and
-   {left} is first argument of {addition} and
-   {right} is second argument of {addition})
-End
+#Constraint Experiment
+#(  {addition} is add instruction and
+#   {left} is first argument of {addition} and
+#   {right} is second argument of {addition})
+#End
 
 Constraint LewisStuff
 ( include VectorMulChain(N=8) and
@@ -905,8 +921,19 @@ Constraint SideEffectFreePart
                         and {end} as {end} at {call[i]})
 End
 
+Constraint AffineMemoryAccessPart
+( collect i 32
+  ( ( ( {access[i]} is store instruction and
+        {pointer[i]} is second argument of {access[i]}) or
+      ( {access[i]} is load instruction and
+        {pointer[i]} is first argument of {access[i]})) and
+    {pointer[i]} is gep instruction and
+    {index[i]} is second argument of {pointer[i]}))
+End
+
 Constraint SCoP
 ( include StructuredControlFlowPart and
-  include SideEffectFreePart)
+  include SideEffectFreePart and
+  include AffineMemoryAccessPart)
 End
 

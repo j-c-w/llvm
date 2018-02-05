@@ -33,8 +33,8 @@ public:
     bool runOnModule(Module& module) override;
 
 private:
-    std::vector<std::pair<std::string,std::vector<Solution>(*)(Function&,unsigned)>> simple_constraint_specs;
-    std::vector<std::pair<std::string,std::vector<Solution>(*)(Function&,unsigned)>> loop_constraint_specs;
+    std::vector<std::pair<std::string,IdiomSpecification(*)(Function&,unsigned)>> simple_constraint_specs;
+    std::vector<std::pair<std::string,IdiomSpecification(*)(Function&,unsigned)>> loop_constraint_specs;
 };
 
 struct SolutionCluster

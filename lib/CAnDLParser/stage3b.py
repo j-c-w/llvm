@@ -487,39 +487,32 @@ def postprocess_add_loops(code):
     grouped = [postprocess_add_loops_one_block(list(b)) if a else list(b) for a,b in grouped]
     return "\n".join(line for group in grouped for line in group)
 
+
+
+
+def collect_free_template_args(syntax, specs):
+    return []
+
+def get_variables_generator(syntax, specs, ):
+    if(syntax[0] == "atom")
+
+def generate_constraints(syntax, specs):
+    return "IdiomSpecification result;"
+
 def generate_fast_cpp_specification(syntax, specs):
-    constr = partial_evaluator(syntax[2], evaluate_remove_for_with, specs)
-    constr = partial_evaluator(constr,    evaluate_remove_rename_rebase)
-    constr = partial_evaluator(constr,    evaluate_remove_trivials)
-    constr = partial_evaluator(constr,    evaluate_flatten_connectives)
-    constr = partial_evaluator(constr,    evaluate_bisect_connectives)
-    constr = partial_evaluator(constr,    evaluate_remove_trivials)
 
-    atom_counter = {}
-    slots, result, code = code_generation_core(constr, atom_counter)
-
-    constr = partial_evaluator(constr, optimize_delay_aliases, slots)
-
-    atom_counter = {}
-    slots2, result, code = code_generation_core(constr, atom_counter)
-
-    code = postprocess_copyconstructions(code)
-    code = postprocess_add_loops(code)
-
-    code = "\n".join(["{} atom{}_[{}];".format(typename, atom_counter[typename][0], atom_counter[typename][1]) for typename in atom_counter]
-                    +[code.rstrip()]
-                    +["vector<pair<string,unique_ptr<SolverAtom>>> constraint({});".format(len(slots))]
-                    +["constraint[{}] = make_pair(\"{}\", unique_ptr<SolverAtom>(new {}({})));".format(n, slot, result[slot][0], result[slot][1]) for n,slot in enumerate(slots)])
-
-    code = code.replace("<[", "").replace("]>", "")
+    free_variables = collect_free_template_args(syntax[2], specs)
+    code           = generate_constraints(syntax[2], specs)
 
     return "\n".join(["IdiomSpecification Detect{}(llvm::Function& function, unsigned max_solutions)".format(syntax[1])]
                     +["{"]
                     +["    FunctionWrap wrap(function);"]
                     +[indent_code("    ", code)]
-                    +["    auto result = Solution::Find(move(constraint), function, max_solutions);"]
                     +["    return result;"]
                     +["}"])
+
+
+
 
 def generate_cpp_code(syntax_list):
     includes  = ["BackendSpecializations", "BackendDirectClasses", "BackendSelectors"]
@@ -539,7 +532,7 @@ def generate_cpp_code(syntax_list):
                     +["    my_shared_ptr<T>& operator=(T t) { shared_ptr<T>::operator=(make_shared<T>(move(t))); return *this; }"]
                     +["    my_shared_ptr<T>& operator=(const my_shared_ptr<T>& t) { return *this = *t; }"]
                     +["};"]
-                    +[generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] in whitelist])
+                    +[generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list])
 
 def print_syntax_tree(syntax, indent=0):
     if type(syntax) is str or type(syntax) is int:

@@ -523,7 +523,12 @@ void PassManagerBuilder::populateModulePassManager(
       MPM.add(createResearchSplitPointercalcsPass());
       MPM.add(createResearchPreprocessorPass());
       MPM.add(createResearchFixShlToMulPass());
-      MPM.add(createResearchFixOrToAddPass());
+      MPM.add(createResearchFixOrToAddPass());/*
+      MPM.add(createResearchEliminatePointerCasts1Pass());
+      MPM.add(createResearchEliminatePointerCasts2Pass());
+      MPM.add(createResearchEliminatePointerCasts3Pass());
+      MPM.add(createResearchEliminatePointerCasts4Pass());*/
+      MPM.add(createAggressiveDCEPass());
       MPM.add(createLICMPass());
       MPM.add(createEarlyCSEPass());
       MPM.add(createCFGSimplificationPass());
