@@ -3,8 +3,9 @@
 specification ::= Constraint <s> <@constraint> End
 
 @constraint ::= <conjunction> | <disjunction> | <forone> | <rename> | <if> | <default> | <collect>
-              | <atom> | <ConstraintOpcode> | <GeneralizedDominance> | <GeneralizedSame> | '(' <@constraint> ')'
+              | <atom> | <ConstraintOpcode> | <GeneralizedDominance> | <GeneralizedSame> | <@nested>
 
+@nested     ::= '(' <@constraint> ')'
 inheritance ::= include <s> [ '(' <s> '=' <@calculation> { ',' <s> = <@calculation> } ')' ]
 conjunction ::= '(' <@constraint> and <@constraint> { and <@constraint> } ')'
 disjunction ::= '(' <@constraint> or <@constraint> { or <@constraint> } ')'
