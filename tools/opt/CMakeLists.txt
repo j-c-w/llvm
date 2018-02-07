@@ -3,7 +3,6 @@ set(LLVM_LINK_COMPONENTS
   Analysis
   BitWriter
   CodeGen
-  CAnDLPasses
   Core
   Coroutines
   IPO

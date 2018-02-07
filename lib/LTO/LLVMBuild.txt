@@ -24,7 +24,6 @@ required_libraries =
  BitReader
  BitWriter
  CodeGen
- CAnDLPasses
  Core
  IPO
  InstCombine
