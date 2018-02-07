@@ -38,6 +38,8 @@ bool ResearchPreprocessor::runOnModule(Module& module)
     std::ofstream ofs(sstr.str().c_str());
     ofs<<"{\n  \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"transformations\": [";
 
+    std::vector<Value*> removed_instructions;
+
     char first_hit = true;
     for(Function& function : module.getFunctionList())
     {
@@ -49,11 +51,31 @@ bool ResearchPreprocessor::runOnModule(Module& module)
 
                 if(!solutions.empty())
                 {
-                    // This is NOT safe!
-                    // Solutions might overlap and then this is entirely unsafe, resulting in invalid pointers!
-                    // Need to fix this.
                     for(auto& solution : solutions)
                     {
+                        std::map<std::string,llvm::Value*> solution_map = solution;
+
+                        auto find_it = solution_map.find("value");
+                        if(find_it == solution_map.end())
+                            find_it = solution_map.find("select");
+
+
+                        bool do_continue = false;
+                        for(auto& entry: solution_map)
+                        {
+                            auto find_it2 = std::find(removed_instructions.begin(),
+                                                      removed_instructions.end(), entry.second);
+
+                            if(find_it2 != removed_instructions.end())
+                            {
+                                do_continue = true;
+                                break;
+                            }
+                        }
+
+                        if(do_continue)
+                            continue;
+
                         ofs<<(first_hit?"\n":",\n");
                         ofs<<"    {\n      \"function\": \""<<(std::string)function.getName()<<"\",\n";
                         ofs<<"      \"type\": \""<<std::get<0>(spec)<<"\",\n";
@@ -65,8 +87,15 @@ bool ResearchPreprocessor::runOnModule(Module& module)
                         }
                         ofs<<"\n    }";
 
+                        ofs.flush();
+
                         (*std::get<2>(spec))(function, solution);
                         first_hit = false;
+
+                        if(find_it != solution_map.end())
+                        {
+                            removed_instructions.push_back(find_it->second);
+                        }
                     }
                 }
             }

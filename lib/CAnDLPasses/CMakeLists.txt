@@ -9,6 +9,7 @@ add_llvm_library(LLVMCAnDLPasses
   CustomPassFixOrToAdd.cpp
   CustomPassFixShlToMul.cpp
   CustomPassEliminatePointerCasts.cpp
+  CustomPassPointerarithmetic.cpp
 
   TransformReduction.cpp
   TransformDistributive.cpp

@@ -60,7 +60,8 @@ bool ResearchEliminatePointerCasts1::runOnBasicBlock(BasicBlock& block)
 
 char ResearchEliminatePointerCasts1::ID = 0;
 
-static RegisterPass<ResearchEliminatePointerCasts1> X1("research-eliminate-pointer-casts1", "Research eliminate pointer casts 1", false, false);
+static RegisterPass<ResearchEliminatePointerCasts1> X1("research-eliminate-pointer-casts1",
+                                                       "Research eliminate pointer casts 1", false, false);
 
 BasicBlockPass *llvm::createResearchEliminatePointerCasts1Pass() {
   return new ResearchEliminatePointerCasts1();
@@ -114,7 +115,8 @@ bool ResearchEliminatePointerCasts2::runOnBasicBlock(BasicBlock& block)
 
 char ResearchEliminatePointerCasts2::ID = 0;
 
-static RegisterPass<ResearchEliminatePointerCasts2> X2("research-eliminate-pointer-casts2", "Research eliminate pointer casts 2", false, false);
+static RegisterPass<ResearchEliminatePointerCasts2> X2("research-eliminate-pointer-casts2",
+                                                       "Research eliminate pointer casts 2", false, false);
 
 BasicBlockPass *llvm::createResearchEliminatePointerCasts2Pass() {
   return new ResearchEliminatePointerCasts2();
@@ -170,7 +172,7 @@ bool ResearchEliminatePointerCasts3::runOnBasicBlock(BasicBlock& block)
                                  builder.CreateBitCast(
                                      entry.second.first,
                                      entry.first->getType()),
-                                 {entry.second.second}));
+                                 entry.second.second));
     }
 
     return !worklist.empty();
@@ -178,7 +180,8 @@ bool ResearchEliminatePointerCasts3::runOnBasicBlock(BasicBlock& block)
 
 char ResearchEliminatePointerCasts3::ID = 0;
 
-static RegisterPass<ResearchEliminatePointerCasts3> X3("research-eliminate-pointer-casts3", "Research eliminate pointer casts 3", false, false);
+static RegisterPass<ResearchEliminatePointerCasts3> X3("research-eliminate-pointer-casts3",
+                                                       "Research eliminate pointer casts 3", false, false);
 
 BasicBlockPass *llvm::createResearchEliminatePointerCasts3Pass() {
   return new ResearchEliminatePointerCasts3();
@@ -236,7 +239,8 @@ bool ResearchEliminatePointerCasts4::runOnBasicBlock(BasicBlock& block)
 
 char ResearchEliminatePointerCasts4::ID = 0;
 
-static RegisterPass<ResearchEliminatePointerCasts4> X4("research-eliminate-pointer-casts4", "Research eliminate pointer casts 4", false, false);
+static RegisterPass<ResearchEliminatePointerCasts4> X4("research-eliminate-pointer-casts4",
+                                                       "Research eliminate pointer casts 4", false, false);
 
 BasicBlockPass *llvm::createResearchEliminatePointerCasts4Pass() {
   return new ResearchEliminatePointerCasts4();

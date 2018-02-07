@@ -23,6 +23,7 @@ BasicBlockPass* createResearchEliminatePointerCasts1Pass();
 BasicBlockPass* createResearchEliminatePointerCasts2Pass();
 BasicBlockPass* createResearchEliminatePointerCasts3Pass();
 BasicBlockPass* createResearchEliminatePointerCasts4Pass();
+BasicBlockPass* createResearchPointerarithmeticPass();
 
 class ResearchPreprocessorPass : public PassInfoMixin<ResearchPreprocessorPass> {
 public:

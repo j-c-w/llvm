@@ -10,8 +10,9 @@ Constraint Experiment
   {old_next} is load instruction and
   {old_member_pointer} is first argument of {old_next} and
 
-  {new_member_pointer} is gep instruction and
-  {new_next} is first argument of {new_member_pointer})
+  ( ( {new_member_pointer} is gep instruction and
+      {new_next} is first argument of {new_member_pointer}) or
+    {new_next} is the same as {new_member_pointer}))
 End
 
 Constraint Permute
@@ -20,7 +21,7 @@ if M+1=N then
 else
   ( {input[M]} is the same as {output[n]} and
     include Permute(N=N,M=M+1) with {output[M]} as {output[n]}
-                                 and {output[n]} as {output[M]}) for some n=M..N
+                                and {output[n]} as {output[M]}) for some n=M..N
 endif
 for M=0 if not otherwise specified
 End
@@ -237,7 +238,6 @@ Constraint ConnectSESE
   {first.successor} is the same as {second.begin})
 End
 
-
 Constraint PotentialSESE
 ( {precursor} is branch instruction and
   {precursor} has control flow to {begin} and
@@ -253,21 +253,6 @@ Constraint PotentialSESE
     ( {precursor} is the same as {end} and
       {begin} is the same as {successor})))
 End
-
-
-#Constraint PotentialSESE
-#( include SESE or
-#  ( {begin} is the same as {end} and
-#    {precursor} has control flow to {begin} and
-#    {end} has control flow to {successor} and
-#    {precursor} strictly control flow dominates {begin} and
-#    {successor} strictly control flow post dominates {end}) or
-#  ( {precursor} is the same as {end} and
-#    {precursor} has control flow to {begin} and
-#    {end} has control flow to {successor} and
-#    {precursor} strictly control flow dominates {begin} and
-#    {successor} strictly control flow post dominates {end}))
-#End
 
 Constraint ForNest
 ( include For with {iterator[0]} as {iterator} at {loop[0]} and
@@ -492,26 +477,6 @@ Constraint Reduction
        and {old_value}    as {in2}
        and {kernel.input} as {out})
 End
-
-# // This language should be a bit like PHP for generating domain specific code
-# // This particular one generates C code that could also be used in OpenCL as a kernel function
-# Generate Reduction
-# ( [CType {old_value} as {arg1}] reduction()
-# {
-#    //do stuff
-# }
-#
-# Generate CType 
-# 
-#
-#
-#
-#
-# // This language is simple and made for modifying LLVM IR
-# Transform GEMM
-# ( insert [call cblas_dgemm {alpha} {beta} ...]
-#   remove {output.store}
-# )
 
 Constraint GEMM
 ( include ForNest(N=3) and

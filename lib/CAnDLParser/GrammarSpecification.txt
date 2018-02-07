@@ -3,7 +3,8 @@
 specification ::= Constraint <s> <@constraint> End
 
 @constraint ::= <conjunction> | <disjunction> | <forone> | <rename> | <if> | <default> | <collect>
-              | <atom> | <ConstraintOpcode> | <GeneralizedDominance> | <GeneralizedSame> | <@nested>
+              | <atom> | <ConstraintOpcode> | <ConstraintIndirOpcode1> | <ConstraintIndirOpcode2>
+              | <GeneralizedDominance> | <GeneralizedSame> | <@nested>
 
 @nested     ::= '(' <@constraint> ')'
 inheritance ::= include <s> [ '(' <s> '=' <@calculation> { ',' <s> = <@calculation> } ')' ]
@@ -73,6 +74,9 @@ ConstraintConstant           ::= <@slot> is a constant
 ConstraintPreexecution       ::= <@slot> is preexecution
 ConstraintArgument           ::= <@slot> is an argument
 ConstraintInstruction        ::= <@slot> is instruction
+
+ConstraintIndirOpcode1 ::= <@slot> is <@slot> instruction
+ConstraintIndirOpcode2 ::= <@slot> is <s> opcode
 
 ConstraintOpcode ::= <@slot> is <s> instruction
 

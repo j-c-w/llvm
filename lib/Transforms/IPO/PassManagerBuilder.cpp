@@ -518,16 +518,11 @@ void PassManagerBuilder::populateModulePassManager(
 
   // My custom research stuff.
   if (OptLevel >= 2) {
-      MPM.add(createResearchMergePointercalcsPass());
-      MPM.add(createResearchFlattenPointercalcsPass());
-      MPM.add(createResearchSplitPointercalcsPass());
-      MPM.add(createResearchPreprocessorPass());
       MPM.add(createResearchFixShlToMulPass());
-      MPM.add(createResearchFixOrToAddPass());/*
-      MPM.add(createResearchEliminatePointerCasts1Pass());
-      MPM.add(createResearchEliminatePointerCasts2Pass());
-      MPM.add(createResearchEliminatePointerCasts3Pass());
-      MPM.add(createResearchEliminatePointerCasts4Pass());*/
+      MPM.add(createResearchFixOrToAddPass());
+      MPM.add(createResearchMergePointercalcsPass());
+      MPM.add(createResearchPointerarithmeticPass());
+      MPM.add(createResearchPreprocessorPass());
       MPM.add(createAggressiveDCEPass());
       MPM.add(createLICMPass());
       MPM.add(createEarlyCSEPass());
