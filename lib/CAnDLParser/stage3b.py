@@ -1,522 +1,283 @@
 #!/usr/bin/pypy
 
-whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY",
-             "DOT", "SPMV", "Reduction", "Histo", "Stencil", "StencilPlus", "Experiment", "SCoP", "IfBlock", "IfBlock2"]
+import sys
 
-def partial_evaluator(syntax, handler, *extras):
-    handler_result = handler(syntax, *extras)
-    if handler_result:
-        return handler_result
-    return tuple(partial_evaluator(s, handler, *extras) if type(s) is tuple else s for s in syntax)
+#print(sys.stdin.read())
 
-def rebase(prefix, suffix):
-    if not prefix:
-        return suffix
-    elif suffix[0] == "slotrange":
-        return (suffix[0], rebase(prefix, suffix[1]), suffix[2], suffix[3])
-    elif suffix[0] in ["slotmember", "slotindex"]:
-        return (suffix[0], rebase(prefix, suffix[1]), suffix[2])
-    elif suffix[0] == "slotbase":
-        return ("slotmember", prefix, suffix[1])
-    raise Exception("Error, \"" + suffix[0] + "\" is not allowed in suffix.")
+class FreeVariableException(Exception):
+    pass
 
-def evaluate_remove_rename_rebase(syntax, renames={}, prefix=None):
-    if syntax[0] == "rename":
-        child      = syntax[1]
-        newprefix  = None       if len(syntax)%2==0 else syntax[-1]
-        renamevars = syntax[2:] if len(syntax)%2==0 else syntax[2:-1]
-        newrenames = dict(zip(renamevars[1::2], renamevars[0::2]))
+class SlotNameGenerator:
+    def __init__(self, variables={}):
+        self.variables = variables
+        self.hashvalue = hash(tuple(sorted(self.variables.items())))
 
-        return partial_evaluator(partial_evaluator(child, evaluate_remove_rename_rebase, newrenames, newprefix),
-                                                          evaluate_remove_rename_rebase, renames, prefix)
+    def __repr__(self):
+        return repr(tuple(sorted(self.variables.items())))
 
-    elif syntax[0] in ["slotmember", "slotindex"]:
-        if syntax in renames:
-            return renames[syntax]
+    def __eq__(self, other):
+        return self.hashvalue == other.hashvalue
+
+    def inherit(self, syntax):
+        if len(syntax) == 2:
+            return self
         else:
-            return (syntax[0], partial_evaluator(syntax[1], evaluate_remove_rename_rebase, renames, prefix), syntax[2])
+            newvariables = {syntax[i]:self.evaluate_index(syntax[i+1]) for i in range(2,len(syntax)-1,2)}
+            return SlotNameGenerator(newvariables)
 
-    elif syntax[0] == "slotbase":
-        if syntax in renames:
-            return renames[syntax]
+    def default(self, syntax):
+        if syntax[2] in self.variables:
+            return self
         else:
-            return rebase(prefix, syntax)
+            newvariables = self.variables.copy()
+            newvariables[syntax[2]] = self.evaluate_index(syntax[3])
+            return SlotNameGenerator(newvariables) 
 
-def evaluate_remove_for_with(syntax, specs, vardict={}, collectvars=[]):
-    if syntax[0] == "inheritance":
-        new_vardict = {}
-        for i in range(2,len(syntax),2):
-            rangevalue = partial_evaluator(syntax[i+1], evaluate_remove_for_with, specs, vardict, collectvars)
+    def derive(self, name, index):
+        newvariables = self.variables.copy()
+        newvariables[name] = index
+        return SlotNameGenerator(newvariables) 
 
-            if rangevalue[0] == "baseconst":
-                new_vardict[syntax[i]] = rangevalue[1]
+    def __hash__(self):
+        return self.hashvalue
+
+    def evaluate_index(self, syntax):
+        if syntax[0] == "baseconst":
+            return syntax[1]
+        elif syntax[0] == "basevar":
+            if syntax[1] in self.variables:
+                return self.variables[syntax[1]]
             else:
-                raise Exception("Free variables remain in for assignment.")
-
-        if not new_vardict:
-            new_vardict = vardict
-
-        return partial_evaluator(specs[syntax[1]], evaluate_remove_for_with, specs, new_vardict, collectvars)
-
-    elif syntax[0] in ["forall", "forsome"]:
-        rangestart = partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, collectvars)
-        rangestop  = partial_evaluator(syntax[4], evaluate_remove_for_with, specs, vardict, collectvars)
-
-        if rangestart[0] == rangestop[0] == "baseconst":
-
-            branches = []
-
-            for i in range(rangestart[1],rangestop[1]):
-
-                new_vardict = dict(vardict)
-                new_vardict[syntax[2]] = i
-                branches.append(partial_evaluator(syntax[1], evaluate_remove_for_with, specs, new_vardict, collectvars))
-
-            return ("conjunction" if syntax[0] == "forall" else "disjunction",)+tuple(branches)
-        raise Exception("Free variables remain in for loop range start.")
-
-    elif syntax[0] == "forone":
-        rangevalue = partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, collectvars)
-
-        if rangevalue[0] == "baseconst":
-
-            new_vardict = dict(vardict)
-            new_vardict[syntax[2]] = rangevalue[1]
-            return partial_evaluator(syntax[1], evaluate_remove_for_with, specs, new_vardict, collectvars)
-        raise Exception("Free variables remain in for assignment.")
-
-    elif syntax[0] == "if":
-        leftvalue  = partial_evaluator(syntax[1], evaluate_remove_for_with, specs, vardict, collectvars)
-        rightvalue = partial_evaluator(syntax[2], evaluate_remove_for_with, specs, vardict, collectvars)
-
-        if leftvalue[0] == "baseconst" and rightvalue[0] == "baseconst":
-            if leftvalue[1] == rightvalue[1]:
-                return partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, collectvars)
+                raise FreeVariableException("{} not in {}".format(syntax[1], self.variables))
+        elif syntax[0] == "addconst":
+            return self.evaluate_index(syntax[1])+syntax[2]
+        elif syntax[0] == "addvar":
+            if syntax[2] in self.variables:
+                return self.evaluate_index(syntax[1])+self.variables[syntax[2]]
             else:
-                return partial_evaluator(syntax[4], evaluate_remove_for_with, specs,vardict, collectvars)
-        raise Exception("Free variables remain in conditional.")
-
-    elif syntax[0] == "default":
-        defaultvalue = partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, collectvars)
-
-        if syntax[2] in vardict or syntax[2] in collectvars:
-            return partial_evaluator(syntax[1], evaluate_remove_for_with, specs, vardict, collectvars)
-        elif defaultvalue[0] == "baseconst":
-            new_vardict = dict(vardict)
-            new_vardict[syntax[2]] = defaultvalue[1]
-            return partial_evaluator(syntax[1], evaluate_remove_for_with, specs, new_vardict, collectvars)
-        raise Exception("Free variables remain in default value.")
-
-    elif syntax[0] == "collect":
-        new_collectvars = collectvars[:] + [syntax[1]]
-        return syntax[:3] + (partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, new_collectvars),)
-
-    elif syntax[0] == "basevar":
-        if syntax[1] in vardict:
-            return ("baseconst", vardict[syntax[1]])
-        elif syntax[1] in collectvars:
-            return syntax
-        raise Exception("Free variable \""+syntax[1]+"\" remain in static calculation.")
-
-    elif syntax[0] in ["addvar", "subvar"]:
-        if syntax[2] in vardict:
-            return evaluate_remove_for_with((syntax[0][:3]+"const", syntax[1], vardict[syntax[2]]), specs, vardict)
-        raise Exception("Free variables remain in static calculation of "+syntax[0]+".")
-
-    elif syntax[0] in ["addconst", "subconst"]:
-        leftvalue = evaluate_remove_for_with(syntax[1], specs, vardict)
-
-        if leftvalue[0] == "baseconst":
-            return (leftvalue[0], leftvalue[1] + syntax[2] * {"add":+1,"sub":-1}[syntax[0][:-5]])
-        else:
-            raise Exception("Free variables remain in static calculation.")
-
-def evaluate_remove_trivials(syntax):
-    if syntax[0] in ["conjunction", "disjunction"]:
-        is_trivial = False
-        result     = syntax[:1]
-        for s in [partial_evaluator(s, evaluate_remove_trivials) for s in syntax[1:]]:
-            if s[0] == {"con":"false","dis":"true"}[syntax[0][:3]]:
-                is_trivial = True
-            elif s[0] != {"con":"true","dis":"false"}[syntax[0][:3]]:
-                result = result + (s,)
-        if is_trivial:
-            return ({"con":"false","dis":"true"}[syntax[0][:3]],)
-        elif len(result) == 1:
-            return ({"con":"true","dis":"false"}[syntax[0][:3]],)
-        else:
-            return result if len(result) > 2 else result[1]
-
-def evaluate_flatten_connectives(syntax):
-    if syntax[0] in ["conjunction", "disjunction"]:
-        result = syntax[:1]
-
-        for child in (partial_evaluator(s, evaluate_flatten_connectives) for s in syntax[1:]):
-            if child[0] == syntax[0]:
-                result = result + child[1:]
+                raise FreeVariableException("{} not in {}".format(syntax[2], self.variables))
+        elif syntax[0] == "subconst":
+            return self.evaluate_index(syntax[1])-syntax[2]
+        elif syntax[0] == "subvar":
+            if syntax[2] in self.variables:
+                return self.evaluate_index(syntax[1])-self.variables[syntax[2]]
             else:
-                result = result + (child,)
-        return result
+                raise FreeVariableException("{} not in {}".format(syntax[2], self.variables))
+        raise Exception("Error, \"{}\" is not allowed in index calculation.".format(syntax[0]))
 
-def evaluate_bisect_connectives(syntax):
-    if syntax[0] in ["conjunction", "disjunction"]:
-        if len(syntax[1:]) == 0:
-            return ({"con":"false","dis":"true"}[syntax[0][:3]],)
-        elif len(syntax[1:]) == 1:
-            return partial_evaluator(syntax[1], evaluate_bisect_connectives)
-        elif len(syntax[1:]) == 2:
-            return syntax[:1]+(partial_evaluator(syntax[1], evaluate_bisect_connectives),
-                               partial_evaluator(syntax[2], evaluate_bisect_connectives))
+    def evaluate_single(self, syntax):
+        if syntax[0] == "slotbase":
+            return syntax[1]
+        elif syntax[0] == "slotmember":
+            return self.evaluate_single(syntax[1]) + "." + syntax[2]
+        elif syntax[0] == "slotindex":
+            return self.evaluate_single(syntax[1]) + "[{}]".format(self.evaluate_index(syntax[2]))
+        raise Exception("Error, \"{}\" is not allowed in variable name.".format(syntax[0]))
+
+    def evaluate_list(self, syntax):
+        if syntax[0] == "slottuple":
+            return [t for s in syntax[1:] for t in self.evaluate_list(s)]
+        elif syntax[0] == "slotrange":
+            rangestart = self.evaluate_index(syntax[2])
+            rangeend   = self.evaluate_index(syntax[3])
+            return [self.evaluate_single(syntax[1]) + "[{}]".format(i) for i in range(rangestart, rangeend)]
+        elif syntax[0] == "slotbase":
+            return [syntax[1]]
+        elif syntax[0] == "slotmember":
+            return [s + "." + syntax[2] for s in self.evaluate_list(syntax[1])]
+        elif syntax[0] == "slotindex":
+            return [s + "[{}]".format(self.evaluate_index(syntax[2])) for s in self.evaluate_list(syntax[1])]
+        raise Exception("Error, \"{}\" is not allowed in variable name list.".format(syntax[0]))
+
+class SlotCollector:
+    def __init__(self, specs):
+        self.specs = specs
+        self.cache = {}
+
+    def __call__(self, name, slotnamegen=SlotNameGenerator()):
+        hashable = (name,slotnamegen)
+        if hashable in self.cache:
+            return self.cache[hashable]
         else:
-            return syntax[:1]+(partial_evaluator(syntax[1], evaluate_bisect_connectives),
-                               partial_evaluator(syntax[:1]+syntax[2:], evaluate_bisect_connectives))
+            temp = self.evaluate(self.specs[name], slotnamegen)
+            self.cache[hashable] = temp
+            return temp
 
-def replace_variables(syntax, replaces):
-    if syntax[0] in ["slotbase", "slotmember", "slotindex"]:
-        return replaces[syntax] if syntax in replaces else syntax
+    def filter(self, slots):
+        tempset  = set()
+        filtered = []
 
-def optimize_delay_aliases(syntax, slotlist):
-    if syntax[0] == "conjunction":
-        replaces = {}
-        for a,b in (s[1][1:] for s in syntax[1:] if s[0] == "atom" and s[1][0] == "ConstraintSame"):
-            aflat, bflat = generate_cpp_slot(a), generate_cpp_slot(b)
-            if aflat in slotlist and bflat in slotlist:
-                if slotlist.index(aflat) < slotlist.index(bflat):
-                    replaces[b] = a
-                if slotlist.index(bflat) < slotlist.index(aflat):
-                    replaces[a] = b
+        for elem in slots:
+            if elem not in tempset:
+                filtered.append(elem)
+                tempset.add(elem)
 
-        return syntax[:1] + tuple(s if s[0] == "atom" and s[1][0] == "ConstraintSame" else
-                                  partial_evaluator(
-                                  partial_evaluator(s, replace_variables,      replaces),
-                                                       optimize_delay_aliases, slotlist) for s in syntax[1:])
+        return filtered
 
-def indent_code(prefix, code):
-    current_indent = 0
-    while code[:1] == " " and current_indent < len(prefix):
-        code = code[1:]
-        current_indent += 1
-
-    return prefix + code.replace("\n", "\n"+" "*(len(prefix) - current_indent))
-
-def generate_cpp_type(syntax):
-    if syntax[0] in ["conjunction", "disjunction"]:
-        return {"conjunction":"ConstraintAnd", "disjunction":"ConstraintOr"}[syntax[0]]
-    elif syntax[0] == "atom":
-        return syntax[1][0]
-    raise Exception("Error, \"" + syntax[0] + "\" is not allowed in type generator.")
-
-def generate_cpp_slot(syntax):
-    if syntax[0] == "slotbase":
-        return syntax[1]
-    elif syntax[0] == "slotmember":
-        return generate_cpp_slot(syntax[1]) + "." + syntax[2]
-    elif syntax[0] == "slotindex" and syntax[2][0] in ["baseconst", "basevar"]:
-        return generate_cpp_slot(syntax[1]) + "[" + str(syntax[2][1]) + "]"
-    raise Exception("Error, \"" + syntax[0] + "\" is not allowed in single slot.")
-
-def generate_cpp_slotlist(syntax):
-    if syntax[0] == "slotbase":
-        return (syntax[1],)
-    elif syntax[0] == "slotmember":
-        return tuple(prefix+"."+syntax[2] for prefix in generate_cpp_slotlist(syntax[1]))
-    elif syntax[0] == "slotindex" and syntax[2][0] in ["baseconst", "basevar"]:
-        return tuple(prefix+"["+str(syntax[2][1])+"]" for prefix in generate_cpp_slotlist(syntax[1]))
-    elif syntax[0] == "slotrange" and syntax[2][0] == "baseconst" and syntax[3][0] == "baseconst":
-        return tuple(prefix+"["+str(i)+"]" for prefix in generate_cpp_slotlist(syntax[1]) for i in range(syntax[2][1], syntax[3][1]))
-    elif syntax[0] == "slottuple":
-        return sum((generate_cpp_slotlist(s) for s in syntax[1:]), ())
-    raise Exception("Error, \"" + syntax[0] + "\" is not allowed in slot list.")
-
-def getatom(counter, typename):
-    if typename in counter:
-        result = "atom{}_[{}]".format(counter[typename][0], counter[typename][1])
-        counter[typename] = (counter[typename][0], counter[typename][1]+1)
-    else:
-        result = "atom{}_[{}]".format(len(counter), 0)
-        counter[typename] = (len(counter), 1)
-    return result;
-
-def prune_types(slots,result,code,counter):
-    for slot in slots:
-        if result[slot][0].startswith("remove_reference"):
-            atom  = getatom(counter, "IndirSolverAtom")
-            code += "{} = {{{}}};\n".format(atom, result[slot][1])
-            result[slot] = ("IndirSolverAtom", atom)
-    return slots,result,code
-
-def code_generation_core(syntax, counter):
-    if syntax[0] == "atom":
-        classname = "Backend{}".format(syntax[1][0][10:])
-        if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
-            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
-            code = "{} = {{{{0,1,1}}, wrap}};\n".format(atom)
-        elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
-            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
-            code = "{} = {{{{1,1,1}}, wrap}};\n".format(atom)
-        elif len(syntax[1]) > 2:
-            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
-            code = "{} = {{wrap}};\n".format(atom)
-        else:
-            if classname not in counter:
-                atom = getatom(counter, classname)
-                code = "{} = {{wrap}};\n".format(atom)
+    def evaluate(self, syntax, slotnamegen):
+        if syntax[0] == "atom":
+            return [slotnamegen.evaluate_single(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
+        elif syntax[0] == "ConstraintOpcode":
+            return [slotnamegen.evaluate_single(syntax[1])]
+        elif syntax[0] in ["GeneralizedDominance", "GeneralizedSame"]:
+            return [slot for s in syntax[1:2]+syntax[3:1:-1] for slot in slotnamegen.evaluate_list(s)]
+        elif syntax[0] in ["conjunction", "disjunction"]:
+            return self.filter([s for b in syntax[1:]
+                                  for s in self.evaluate(b, slotnamegen)])
+        elif syntax[0] == "collect":
+            return self.filter([s for i in range(syntax[2])
+                                  for s in self.evaluate(syntax[3], slotnamegen.derive(syntax[1], i))])
+        elif syntax[0] in ["forall", "forsome"]:
+            return self.filter([s for i in range(slotnamegen.evaluate_index(syntax[3]), slotnamegen.evaluate_index(syntax[4]))
+                                  for s in self.evaluate(syntax[1], slotnamegen.derive(syntax[2], i))])
+        elif syntax[0] == "if":
+            if slotnamegen.evaluate_index(syntax[1]) == slotnamegen.evaluate_index(syntax[2]):
+                return self.evaluate(syntax[3], slotnamegen)
             else:
-                atom = "atom{}_[0]".format(counter[classname][0])
-                code = ""
+                return self.evaluate(syntax[4], slotnamegen)
+        elif syntax[0] == "default":
+            return self.evaluate(syntax[1], slotnamegen.default(syntax))
+        elif syntax[0] == "rename":
+            if (len(syntax) % 2) == 1:
+                base = slotnamegen.evaluate_single(syntax[-1])+"."
+            else:
+                base = ""
+            slotdict = {slotnamegen.evaluate_single(syntax[i+1]):slotnamegen.evaluate_single(syntax[i]) for i in range(2,len(syntax)-1,2)}
+            return [slotdict[slot] if slot in slotdict else base+slot for slot in self.evaluate(syntax[1], slotnamegen)]
+        elif syntax[0] == "inheritance":
+            return self(syntax[1], slotnamegen.inherit(syntax))
+        raise Exception("Error, \"{}\" is not allowed in constraint.".format(syntax[0]))
 
-        slots = [generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
+class ConstraintGenerator:
+    def __init__(self, specs):
+        self.specs       = specs
+        self.cache       = {}
+        self.slotcollect = SlotCollector(specs)
 
-        if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
-            result = {slot:("MultiVectorSelector<Backend{},{}>".format(syntax[1][0][10:], i+1), "{}, <[0]>".format(atom)) for i,slot in enumerate(slots)}
-        elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
-            result = {slot:("MultiVectorSelector<Backend{},{}>".format(syntax[1][0][10:], i), "{}, <[0]>".format(atom)) for i,slot in enumerate(slots)}
-        elif len(syntax[1]) == 2:
-            result = {slot:("Backend{}".format(syntax[1][0][10:]), atom) for i,slot in enumerate(slots)}
+    def __call__(self, syntax, slotnamegen=SlotNameGenerator()):
+        if syntax[0] == "atom":
+            classname = "Backend{}".format(syntax[1][0][10:])
+            if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
+                code =  "my_shared_ptr<{}> constraint = {{{{0,1,1}}, wrap}};".format(classname)
+            elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
+                code =  "my_shared_ptr<{}> constraint = {{{{1,1,1}}, wrap}};".format(classname)
+            elif len(syntax[1]) > 2:
+                code =  "my_shared_ptr<{}> constraint = {{wrap}};".format(classname)
+            else:
+                code = "{} constraint = {{wrap}};".format(classname)
+
+            if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
+                values = [("MultiVectorSelector<{},{}>".format(classname, i), "constraint, {0}") for i in [1,2]]
+            elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
+                values = [("MultiVectorSelector<{},{}>".format(classname, i), "constraint, {0}") for i in [0,1,2]]
+            elif len(syntax[1]) == 2:
+                values = [(classname, "constraint")]
+            else:
+                values = [("ScalarSelector<{},{}>".format(classname, i), "constraint") for i in range(len(syntax[1])-1)]
+
+            return code,values
+
+        elif syntax[0] == "ConstraintOpcode":
+            opcode = syntax[2][:1].upper()+syntax[2][1:]
+            if opcode[:3] == "Gep": opcode = "GEP"+opcode[3:]
+            if opcode[-2:] == "or": opcode = opcode[:-2]+"Or"
+            if opcode[-3:] == "and": opcode = opcode[:-3]+"And"
+            if opcode[-3:] == "add": opcode = opcode[:-3]+"Add"
+            if opcode[-3:] == "sub": opcode = opcode[:-3]+"Sub"
+            if opcode[-3:] == "mul": opcode = opcode[:-3]+"Mul"
+            if opcode[-3:] == "div": opcode = opcode[:-3]+"Div"
+            if opcode[-3:] == "cmp": opcode = opcode[:-3]+"Cmp"
+            if opcode[-3:] == "ext": opcode = opcode[:-3]+"Ext"
+            if opcode[-4:] == "cast": opcode = opcode[:-4]+"Cast"
+            if opcode[-5:] == "shift": opcode = opcode[:-5]+"Shift"
+            if opcode[-6:] == "vector": opcode = opcode[:-6]+"Vector"
+            if opcode[-7:] == "element": opcode = opcode[:-7]+"Element"
+
+            classname = "Backend{}Inst".format(opcode)
+            code      = "{} constraint = {{wrap}};".format(classname)
+            values    = [(classname, "constraint")]
+            return code,values
+
+
+        elif syntax[0] == "GeneralizedDominance":
+            classname = "BackendPDGDominate"
+            slotlists = [slotnamegen.evaluate_list(s) for s in syntax[1:2]+syntax[3:1:-1]]
+            code      = "my_shared_ptr<{}> constraint = {{{{{},{},{}}}, wrap}};".format(classname,  len(slotlists[0]), len(slotlists[1]), len(slotlists[2]))
+            values    = [("MultiVectorSelector<classname,{}>".format(classname,i), "constraint, {{{}}}".format(j))
+                         for i in [0,1,2] for j in range(len(slotlists[i]))]
+            return code,values
+
+        elif syntax[0] == "GeneralizedSame":
+            classname = "BackendSameSets"
+            slotlists = [slotnamegen.evaluate_list(s) for s in syntax[1:2]+syntax[3:1:-1]] # SLOTLISTS MUST BE SAME LENGTH BUT I DON'T CHECK!!!
+            code      = "my_shared_ptr<{}> constraint = {{{{{}}}, wrap}};".format(classname,  len(slotlists[0]))
+            values    = [("MultiVectorSelector<classname,{}>".format(classname,i), "constraint, {{{}}}".format(j))
+                         for i in [0,1] for j in range(len(slotlists[i]))]
+            return code,values
+
+        elif syntax[0] == "conjunction":
+            globalslots    = self.slotcollect.evaluate(syntax, slotnamegen)
+            globalslotdict = {name:nr for (nr,name) in enumerate(globalslots)}
+            assignments    = [[] for s in globalslots]
+            revassignments = []
+
+            for branch,slotlist in enumerate(syntax[1:]):
+                localrevassignments = []
+                for n,slot in enumerate(self.slotcollect.evaluate(slotlist, slotnamegen)):
+                    localrevassignments.append((globalslotdict[slot], len(assignments[globalslotdict[slot]])))
+                    assignments[globalslotdict[slot]].append((branch,n))
+                revassignments.append(localrevassignments)
+
+            localresults = [self(s) for s in syntax[1:]]
+            localcodes   = [branch[0] for branch in localresults]
+            localtypes   = [[value[0] for value in branch[1]] for branch in localresults]
+            localexpr    = [[value[1] for value in branch[1]] for branch in localresults]
+
+            code = []
+            for i,perslotass in enumerate(assignments):
+                for j,ass in enumerate(perslotass):
+                    code.append("{} temp{}_{};".format(localtypes[ass[0]][ass[1]], i, j))
+
+            for i,branchcode in enumerate(localcodes):
+                code.append("{ "+branchcode.replace("\n", "\n  "))
+
+                for j,expr in enumerate(localexpr[i]):
+                    revass = revassignments[i][j]
+                    code.append("  temp{}_{} = decltype(temp{}_{})({});".format(revass[0], revass[1], revass[0], revass[1], expr))
+
+                code.append("}")
+
+            values = [("<type>", "<expr") for slot in self.slotcollect.evaluate(syntax, slotnamegen)]
+
+            return "\n".join(code),values
         else:
-            result = {slot:("ScalarSelector<Backend{},{}>".format(syntax[1][0][10:], i), atom) for i,slot in enumerate(slots)}
-
-        return slots,result,code
-
-    elif syntax[0] == "ConstraintOpcode":
-        opcode = syntax[2][:1].upper()+syntax[2][1:]
-        if opcode[:3] == "Gep": opcode = "GEP"+opcode[3:]
-        if opcode[-2:] == "or": opcode = opcode[:-2]+"Or"
-        if opcode[-3:] == "and": opcode = opcode[:-3]+"And"
-        if opcode[-3:] == "add": opcode = opcode[:-3]+"Add"
-        if opcode[-3:] == "sub": opcode = opcode[:-3]+"Sub"
-        if opcode[-3:] == "mul": opcode = opcode[:-3]+"Mul"
-        if opcode[-3:] == "div": opcode = opcode[:-3]+"Div"
-        if opcode[-3:] == "cmp": opcode = opcode[:-3]+"Cmp"
-        if opcode[-3:] == "ext": opcode = opcode[:-3]+"Ext"
-        if opcode[-4:] == "cast": opcode = opcode[:-4]+"Cast"
-        if opcode[-5:] == "shift": opcode = opcode[:-5]+"Shift"
-        if opcode[-6:] == "vector": opcode = opcode[:-6]+"Vector"
-        if opcode[-7:] == "element": opcode = opcode[:-7]+"Element"
-
-        classname = "Backend{}Inst".format(opcode)
-
-        if classname not in counter:
-            atom = getatom(counter, classname)
-            code = "{} = {{wrap}};\n".format(atom)
-        else:
-            atom = "atom{}_[0]".format(counter[classname][0])
-            code = ""
-
-        slots = [generate_cpp_slot(s) for s in syntax[1:2]]
-
-        result = {slot:(classname, atom) for i,slot in enumerate(slots)}
-
-        return slots,result,code
-
-    elif syntax[0] == "GeneralizedDominance":
-        atom        = getatom(counter, "my_shared_ptr<BackendPDGDominate>")
-        slotlists   = [generate_cpp_slotlist(s) for s in syntax[1:2]+syntax[3:1:-1]]
-        code        = "{} = {{{{{},{},{}}}, wrap}};\n".format(atom, len(slotlists[0]), len(slotlists[1]), len(slotlists[2]))
-        slots       = [slot for slotlist in slotlists for slot in slotlist]
-        slots       = [slot for n,slot in enumerate(slots) if slot not in slots[:n]]
-        result      = {slot:("MultiVectorSelector<BackendPDGDominate,{}>".format(j), "{}, <[{}]>".format(atom, i))
-                       for j,slotlist in enumerate(slotlists) for i,slot in enumerate(slotlist)}
-        return slots,result,code
-
-    elif syntax[0] == "GeneralizedSame":
-        atom        = getatom(counter, "my_shared_ptr<BackendSameSets>")
-        slotlists   = [generate_cpp_slotlist(s) for s in syntax[1:2]+syntax[3:1:-1]]
-        code        = "{} = {{{{{}}}}};\n".format(atom, len(slotlists[0]))
-        slots       = [slot for slotlist in slotlists for slot in slotlist]
-        slots       = [slot for n,slot in enumerate(slots) if slot not in slots[:n]]
-        result      = {slot:("MultiVectorSelector<BackendSameSets,{}>".format(j), "{}, <[{}]>".format(atom, i))
-                       for j,slotlist in enumerate(slotlists) for i,slot in enumerate(slotlist)}
-        return slots,result,code
-
-    elif syntax[0] in ["conjunction", "disjunction"]:
-        part_results = [code_generation_core(s, counter) for s in syntax[1:]]
-        code         = "".join([part[2] for part in part_results])
-        slots        = [slot for part in part_results for slot in part[0]]
-        slots        = [slot for n,slot in enumerate(slots) if slot not in slots[:n]]
-        result       = {slot:[part[1][slot] for part in part_results if slot in part[1]] for slot in slots}
-
-        if syntax[0] == "conjunction":
-            for slot in slots:
-                newresult = result[slot][0]
-
-                for a,b in result[slot][1:]:
-                    classname    = indent_code("BackendAnd<", newresult[0]+",\n"+a+">")
-                    atom         = getatom(counter, classname)
-                    code        += "{} = {{{}}};\n".format(atom, "{"+newresult[1]+"}, {"+b+"}")
-                    classname    = "remove_reference<decltype({}[0])>::type".format(atom[:atom.index("[")])
-                    newresult    = (classname, atom)
-
-                result[slot] = newresult
-
-        if syntax[0] == "disjunction":
-            choices       = max([0]+[len(result[slot]) for slot in slots])
-            sliced_result = [{slot:result[slot][i] for slot in slots} for i in range(choices)]
-
-            newresult = sliced_result[0]
-
-            for slic in sliced_result[1:]:
-                shared_data  = getatom(counter, "my_shared_ptr<pair<unsigned,unsigned>>")
-                code        += "{} = {{0,0}};\n".format(shared_data);
-
-                for slot in slots:
-                    classname  = indent_code("BackendOr<", newresult[slot][0]+",\n"+slic[slot][0]+">")
-                    atom       = getatom(counter, classname)
-                    code      += "{} = {{{}}};\n".format(atom, "{"+newresult[slot][1]+"}, {"+slic[slot][1]+"}, {"+shared_data+"}")
-                    classname  = "remove_reference<decltype({}[0])>::type".format(atom[:atom.index("[")])
-                    newresult[slot] = (classname, atom)
-
-            result = newresult
-
-        return prune_types(slots,result,code,counter)
-
-    elif syntax[0] == "collect":
-        atom = getatom(counter, "my_shared_ptr<BackendCollect>")
-
-        part_slots, part_result, code = code_generation_core(syntax[3], counter)
-
-        local_slots_idx  = [i for i,slot in enumerate(part_slots) if "["+syntax[1]+"]"     in slot]
-        global_slots_idx = [i for i,slot in enumerate(part_slots) if "["+syntax[1]+"]" not in slot]
-
-        local_parts  = [part_result[part_slots[idx]] for idx in local_slots_idx]
-        global_parts = [part_result[part_slots[idx]] for idx in global_slots_idx]
-
-        mergedatom = atom[4:atom.index("[")] + atom[atom.index("[")+1:atom.index("]")] + "_"
-
-        code += "\n".join(["vector<unique_ptr<SolverAtom>> globals{};".format(mergedatom)]
-                         +["globals{}.emplace_back(unique_ptr<SolverAtom>(new {}({})));".format(mergedatom, part[0], part[1]) for part in global_parts]
-                         +["vector<unique_ptr<SolverAtom>> locals{};".format(mergedatom)]
-                         +["locals{}.emplace_back(unique_ptr<SolverAtom>(new {}({})));".format(mergedatom, part[0], part[1]) for part in local_parts]
-                         +["{} = {{{{{{{},{}}}}}, move(globals{}), move(locals{})}};".format(atom, len(global_parts), len(local_parts), mergedatom, mergedatom)])+"\n"
-
-        local_slots  = [part_slots[idx].replace("["+syntax[1]+"]", "["+str(n)+"]") for n in range(syntax[2]) for idx in local_slots_idx]
-        global_slots = [part_slots[idx] for idx in global_slots_idx]
-
-        result      = {slot:("MultiVectorSelector<BackendCollect,0>", "{}, <[{}]>".format(atom, i)) for i,slot in enumerate(global_slots)}
-        result.update({slot:("MultiVectorSelector<BackendCollect,1>", "{}, <[{}]>".format(atom, i)) for i,slot in enumerate(local_slots)})
-
-        return prune_types(global_slots+local_slots,result,code,counter)
-#        return global_slots+local_slots, result, code
-
-    raise Exception("Error, \"" + syntax[0] + "\" is not allowed in atoms collection.")
-
-def postprocess_copyconstructions(code):
-    atomic_def_lines = [line for line in code.split("\n") if line.startswith("atom")]
-    code_atomic_defs = [(line,line.split("[")[0]+line.split(" = ")[1]) for line in atomic_def_lines]
-    duplication_dict = {}
-
-    for n,line in enumerate(code_atomic_defs):
-        for oldline in code_atomic_defs[:n]:
-            if oldline[1:] == line[1:]:
-                duplication_dict[line[0]] = line[0].split(" = ")[0] + " = " + oldline[0].split(" = ")[0] + ";"
-                break
-
-    return "\n".join([duplication_dict[line] if line in duplication_dict else line for line in code.split("\n")])
-
-def check_differences(first, second, third, fourth):
-    diff1 = [y-x for line1,line2 in zip(first,second) for x,y in zip(line1,line2)]
-    diff2 = [y-x for line1,line2 in zip(third,fourth) for x,y in zip(line1,line2)]
-
-    return all([x==y for x,y in zip(diff1,diff2)])
-
-# This does not actually check that indizes are a linear progression for more than two repetitions!
-def loop_block(block, depth=0):
-    if depth > 4: return block
-    stripindizes = [line[::2] for line in block]
-    onlyindizes  = [[int(n) for n in line[1::2]] for line in block]
-
-    repeatstart  = 0
-    repeatsize   = 1
-    repeatamount = 1
-    codesaved    = 0
-
-    for n in range(len(stripindizes)):
-        for m in range(1,1000):
-            if stripindizes[n:n+m] == stripindizes[n+m:n+2*m]:
-                newrepeatamount = 2
-                for k in range(2,100):
-                    if (stripindizes[n+(k-1)*m:n+k*m] == stripindizes[n+k*m:n+(k+1)*m] and
-                        check_differences(onlyindizes[n+(k-2)*m:n+(k-1)*m], onlyindizes[n+(k-1)*m:n+(k+0)*m],
-                                          onlyindizes[n+(k-1)*m:n+(k+0)*m], onlyindizes[n+(k+0)*m:n+(k+1)*m])):
-                        newrepeatamount += 1
-                    else:
-                        break
-                if (newrepeatamount-1)*m > codesaved:
-                    repeatstart  = n
-                    repeatsize   = m
-                    repeatamount = newrepeatamount
-                    codesaved    = (newrepeatamount-1)*m
-
-    if codesaved:
-        block_before = block[:repeatstart]
-        block_after  = block[repeatstart+repeatamount*repeatsize:]
-
-        modified_block = block[repeatstart:repeatstart+repeatsize]
-
-        for k,line in enumerate(modified_block):
-            for i in range(2,len(line),2):
-                difference = int(block[repeatstart+repeatsize+k][i-1])-int(block[repeatstart+k][i-1])
-                if difference > 1:
-                    line[i] = "+{}*{}{}".format("ijklm"[depth], difference, line[i])
-                elif difference < -1:
-                    line[i] = "-{}*{}{}".format("ijklm"[depth], -difference, line[i])
-                elif difference == 1:
-                    line[i] = "+{}{}".format("ijklm"[depth], line[i])
-                elif difference == -1:
-                    line[i] = "-{}{}".format("ijklm"[depth], line[i])
-
-        return (loop_block(block_before, depth)
-               +[["for(unsigned {0} = 0; {0} < {1}; {0}++) {{".format("ijklm"[depth], repeatamount)]]
-               +[["    "+line[0]]+line[1:] for line in loop_block(modified_block, depth+1)]
-               +[["}"]]
-               +loop_block(block_after, depth))
-
-    return block
-
-def postprocess_add_loops_one_block(block):
-    block = [[part for word in line.split(']') for part in word.split('[')] for line in block]
-    block = [line if len(line) <= 1 else [line[0]+"["]+line[1:-1]+["]"+line[-1]] for line in block]
-    for line in block:
-        if len(line) > 1:
-            line[2:-2:2] = ["]"+e+"[" for e in line[2:-2:2]]
-    block = loop_block(block)
-    return ["".join(line) for line in block]
-
-def postprocess_add_loops(code):
-    grouped = itertools.groupby(code.split('\n'), (lambda x: x.startswith("atom")))
-    grouped = [postprocess_add_loops_one_block(list(b)) if a else list(b) for a,b in grouped]
-    return "\n".join(line for group in grouped for line in group)
+            return "// No codegen yet for {}".format(syntax[0]), [("<type>", "<expr") for slot in self.slotcollect.evaluate(syntax, slotnamegen)]
 
 
+def generate_fast_cpp_specification(syntax, collector, generator):
 
-
-def collect_free_template_args(syntax, specs):
-    return []
-
-def get_variables_generator(syntax, specs, ):
-    if(syntax[0] == "atom")
-
-def generate_constraints(syntax, specs):
-    return "IdiomSpecification result;"
-
-def generate_fast_cpp_specification(syntax, specs):
-
-    free_variables = collect_free_template_args(syntax[2], specs)
-    code           = generate_constraints(syntax[2], specs)
-
-    return "\n".join(["IdiomSpecification Detect{}(llvm::Function& function, unsigned max_solutions)".format(syntax[1])]
-                    +["{"]
-                    +["    FunctionWrap wrap(function);"]
-                    +[indent_code("    ", code)]
-                    +["    return result;"]
-                    +["}"])
-
-
-
+    sys.stderr.write("Generate {}:\n".format(syntax[1]))
+    try:
+        variablecomments = ["    // {}".format(name) for name in collector(syntax[1])]
+        code = "\n".join(["IdiomSpecification Detect{}(llvm::Function& function, unsigned max_solutions)".format(syntax[1])]
+                        +["{"]
+                        +["    FunctionWrap wrap(function);"]
+         #               +["    // {}".format(name) for name in collector(syntax[1])]
+                        +["    "+generator(syntax[2])[0].replace("\n", "\n    ")]
+                        +["    auto result = Solution::Find(move(constraint), function, max_solutions);"]
+                        +["    return result;"]
+                        +["}"])
+        return code
+    except FreeVariableException as exc:
+        sys.stderr.write("    failed with {}\n".format(exc))
+        return "// {} is parameterized: {}".format(syntax[1], exc)
 
 def generate_cpp_code(syntax_list):
     includes  = ["BackendSpecializations", "BackendDirectClasses", "BackendSelectors"]
     specs     = {spec[1] : spec[2] for spec in syntax_list}
+
+    collector = SlotCollector(specs)
+    generator = ConstraintGenerator(specs)
 
     return "\n".join(["#include \"llvm/CAnDLSolver/{}.hpp\"".format(s) for s in includes]
                     +["#include \"llvm/CAnDLParser/Solution.hpp\""]
@@ -532,22 +293,8 @@ def generate_cpp_code(syntax_list):
                     +["    my_shared_ptr<T>& operator=(T t) { shared_ptr<T>::operator=(make_shared<T>(move(t))); return *this; }"]
                     +["    my_shared_ptr<T>& operator=(const my_shared_ptr<T>& t) { return *this = *t; }"]
                     +["};"]
-                    +[generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list])
-
-def print_syntax_tree(syntax, indent=0):
-    if type(syntax) is str or type(syntax) is int:
-        print("| "*indent+str(syntax))
-    elif type(syntax) is tuple and type(syntax[0]) is str:
-        print("| "*indent+str(syntax[0]))
-        for s in syntax[1:]:
-            print_syntax_tree(s, indent+1)
-    elif type(syntax) is tuple:
-        for s in syntax:
-            print_syntax_tree(s, indent+1)
-
-import sys
-import itertools
-
-sys.setrecursionlimit(10000)
+                    +[generate_fast_cpp_specification(syntax, collector, generator) for syntax in syntax_list])
 
 print(generate_cpp_code(eval(sys.stdin.read())))
+
+

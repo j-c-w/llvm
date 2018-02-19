@@ -104,7 +104,7 @@ bool ResearchReplacer::runOnModule(Module& module)
     std::stringstream sstr;
     sstr<<"replace-report-"<<(std::string)module.getName()<<".json";
     std::ofstream ofs(sstr.str().c_str());
-    ofs<<"{\n  \"filename\": \""<<(std::string)module.getName()<<"\"\n  \"loops\": [";
+    ofs<<"{\n  \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"loops\": [";
 
     char first_hit1 = true;
     for(Function& function : module.getFunctionList())
@@ -141,7 +141,7 @@ bool ResearchReplacer::runOnModule(Module& module)
                         for(char c : solution.prune().print_json(slot_tracker))
                         {
                             ofs.put(c);
-                            if(c == '\n') ofs<<"          ";
+                            if(c == '\n') ofs<<"        ";
                         }
                         ofs<<"\n    }";
                         first_hit2 = false;
@@ -187,6 +187,7 @@ bool ResearchReplacer::runOnModule(Module& module)
                 }
 
                 ofs<<"\n    }";
+                first_hit1 = false;
             }
         }
     }

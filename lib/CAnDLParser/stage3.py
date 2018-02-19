@@ -1,5 +1,6 @@
 #!/usr/bin/pypy
 
+
 whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY",
              "DOT", "SPMV", "Reduction", "Histo", "Stencil", "StencilPlus", "Experiment", "SCoP", "IfBlock", "IfBlock2"]
 
@@ -245,6 +246,15 @@ def prune_types(slots,result,code,counter):
             result[slot] = ("IndirSolverAtom", atom)
     return slots,result,code
 
+def unique_list(inlist):
+    tempset  = set()
+    templist = []
+    for elem in inlist:
+        if elem not in tempset:
+            tempset.add(elem)
+            templist.append(elem)
+    return templist
+
 def code_generation_core(syntax, counter):
     if syntax[0] == "atom":
         classname = "Backend{}".format(syntax[1][0][10:])
@@ -313,8 +323,7 @@ def code_generation_core(syntax, counter):
         atom        = getatom(counter, "my_shared_ptr<BackendPDGDominate>")
         slotlists   = [generate_cpp_slotlist(s) for s in syntax[1:2]+syntax[3:1:-1]]
         code        = "{} = {{{{{},{},{}}}, wrap}};\n".format(atom, len(slotlists[0]), len(slotlists[1]), len(slotlists[2]))
-        slots       = [slot for slotlist in slotlists for slot in slotlist]
-        slots       = [slot for n,slot in enumerate(slots) if slot not in slots[:n]]
+        slots       = unique_list([slot for slotlist in slotlists for slot in slotlist])
         result      = {slot:("MultiVectorSelector<BackendPDGDominate,{}>".format(j), "{}, <[{}]>".format(atom, i))
                        for j,slotlist in enumerate(slotlists) for i,slot in enumerate(slotlist)}
         return slots,result,code
@@ -323,8 +332,7 @@ def code_generation_core(syntax, counter):
         atom        = getatom(counter, "my_shared_ptr<BackendSameSets>")
         slotlists   = [generate_cpp_slotlist(s) for s in syntax[1:2]+syntax[3:1:-1]]
         code        = "{} = {{{{{}}}}};\n".format(atom, len(slotlists[0]))
-        slots       = [slot for slotlist in slotlists for slot in slotlist]
-        slots       = [slot for n,slot in enumerate(slots) if slot not in slots[:n]]
+        slots       = unique_list([slot for slotlist in slotlists for slot in slotlist])
         result      = {slot:("MultiVectorSelector<BackendSameSets,{}>".format(j), "{}, <[{}]>".format(atom, i))
                        for j,slotlist in enumerate(slotlists) for i,slot in enumerate(slotlist)}
         return slots,result,code
@@ -332,8 +340,7 @@ def code_generation_core(syntax, counter):
     elif syntax[0] in ["conjunction", "disjunction"]:
         part_results = [code_generation_core(s, counter) for s in syntax[1:]]
         code         = "".join([part[2] for part in part_results])
-        slots        = [slot for part in part_results for slot in part[0]]
-        slots        = [slot for n,slot in enumerate(slots) if slot not in slots[:n]]
+        slots        = unique_list([slot for part in part_results for slot in part[0]])
         result       = {slot:[part[1][slot] for part in part_results if slot in part[1]] for slot in slots}
 
         if syntax[0] == "conjunction":
@@ -396,7 +403,7 @@ def code_generation_core(syntax, counter):
         result.update({slot:("MultiVectorSelector<BackendCollect,1>", "{}, <[{}]>".format(atom, i)) for i,slot in enumerate(local_slots)})
 
         return prune_types(global_slots+local_slots,result,code,counter)
-#        return global_slots+local_slots, result, code
+        return global_slots+local_slots, result, code
 
     raise Exception("Error, \"" + syntax[0] + "\" is not allowed in atoms collection.")
 
@@ -405,39 +412,42 @@ def postprocess_copyconstructions(code):
     code_atomic_defs = [(line,line.split("[")[0]+line.split(" = ")[1]) for line in atomic_def_lines]
     duplication_dict = {}
 
+    dictionary = {}
     for n,line in enumerate(code_atomic_defs):
-        for oldline in code_atomic_defs[:n]:
-            if oldline[1:] == line[1:]:
-                duplication_dict[line[0]] = line[0].split(" = ")[0] + " = " + oldline[0].split(" = ")[0] + ";"
-                break
+        if line[1] in dictionary:
+            duplication_dict[line[0]] = line[0].split(" = ")[0] + " = " + dictionary[line[1]].split(" = ")[0] + ";"
+        else:
+            dictionary[line[1]] = line[0]
 
     return "\n".join([duplication_dict[line] if line in duplication_dict else line for line in code.split("\n")])
 
-def check_differences(first, second, third, fourth):
-    diff1 = [y-x for line1,line2 in zip(first,second) for x,y in zip(line1,line2)]
-    diff2 = [y-x for line1,line2 in zip(third,fourth) for x,y in zip(line1,line2)]
+def check_differences(base, a1, a2, a3, a4, size):
+    diff1 = (y-x for i in range(size) for x,y in zip(base[a1+i],base[a2+i]))
+    diff2 = (y-x for i in range(size) for x,y in zip(base[a3+i],base[a4+i]))
 
-    return all([x==y for x,y in zip(diff1,diff2)])
+    return all([x == y for x,y in zip(diff1,diff2)])
 
-# This does not actually check that indizes are a linear progression for more than two repetitions!
-def loop_block(block, depth=0):
-    if depth > 4: return block
-    stripindizes = [line[::2] for line in block]
-    onlyindizes  = [[int(n) for n in line[1::2]] for line in block]
+def compare_sliced(inlist, a1, a2, size):
+    for i in range(size):
+        if inlist[a1+i] != inlist[a2+i]:
+            return False
+    return True
 
+def calculate_loop_block(stripindizes, onlyindizes):
     repeatstart  = 0
     repeatsize   = 1
     repeatamount = 1
     codesaved    = 0
 
-    for n in range(len(stripindizes)):
-        for m in range(1,1000):
-            if stripindizes[n:n+m] == stripindizes[n+m:n+2*m]:
+    for m in range(1,512):
+        for n in range(len(stripindizes)-2*m+1):
+            if compare_sliced(stripindizes, n, n+m, m):
                 newrepeatamount = 2
-                for k in range(2,100):
-                    if (stripindizes[n+(k-1)*m:n+k*m] == stripindizes[n+k*m:n+(k+1)*m] and
-                        check_differences(onlyindizes[n+(k-2)*m:n+(k-1)*m], onlyindizes[n+(k-1)*m:n+(k+0)*m],
-                                          onlyindizes[n+(k-1)*m:n+(k+0)*m], onlyindizes[n+(k+0)*m:n+(k+1)*m])):
+                for k in range(2,128):
+                    if n+(k+1)*m > len(stripindizes):
+                        break;
+                    if (compare_sliced(stripindizes, n+(k-1)*m, n+k*m, m) and
+                        check_differences(onlyindizes, n+(k-2)*m, n+(k-1)*m, n+(k-1)*m, n+(k+0)*m, m)):
                         newrepeatamount += 1
                     else:
                         break
@@ -446,6 +456,16 @@ def loop_block(block, depth=0):
                     repeatsize   = m
                     repeatamount = newrepeatamount
                     codesaved    = (newrepeatamount-1)*m
+
+    return repeatstart, repeatsize, repeatamount, codesaved
+
+# This does not actually check that indizes are a linear progression for more than two repetitions!
+def loop_block(block, depth=0):
+    if depth > 4: return block
+    stripindizes = [hash(tuple(line[::2])) for line in block]
+    onlyindizes  = [[int(n) for n in line[1::2]] for line in block]
+
+    repeatstart, repeatsize, repeatamount, codesaved = calculate_loop_block(stripindizes, onlyindizes)
 
     if codesaved:
         block_before = block[:repeatstart]

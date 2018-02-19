@@ -44,7 +44,7 @@ private:
 
     llvm::Value*                                                  single_value;
     std::vector<Solution>                                         vector_value;
-    std::map<std::string,Solution>                                map_value;
+    std::vector<std::pair<std::string,Solution>>                  map_value;
     std::shared_ptr<std::unordered_map<llvm::Value*,std::string>> instr_strings;
 };
 

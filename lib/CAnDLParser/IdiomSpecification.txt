@@ -15,6 +15,159 @@ Constraint Experiment
     {new_next} is the same as {new_member_pointer}))
 End
 
+Constraint SCoP
+( include StructuredControlFlowPart and
+  include SideEffectFreePart and
+  include AffineMemoryAccessPart and
+  {affinestart[0]} is the same as {iterator} and
+  ( ( {affinestart[i+1]} is the same as {loop[i].iterator} and
+      {iterator} is an integer and
+      {affinestart[i+1]} is an integer) or
+    ( {affinestart[i+1]} is the same as {iterator} and
+      {loop[i].iterator} is unused)) for all i=0..7 and
+  collect x 24
+  ( include MemoryAccess at {newaccess[x]}) and
+  collect x 24
+  ( include MemoryAccess at {newaccess[x]} and
+    {newaccess[x].index} is the same as {newaffine[x].value} and
+    include AffineCalculation(M=8,N=7) with {affinestart} as {input} at {newaffine[x]}))
+End
+
+Constraint AffineMemoryAccessPart
+( collect i 32
+  ( ( ( {access[i]} is store instruction and
+        {pointer[i]} is second argument of {access[i]}) or
+      ( {access[i]} is load instruction and
+        {pointer[i]} is first argument of {access[i]})) and
+    {pointer[i]} is gep instruction and
+    {index[i]} is second argument of {pointer[i]}))
+End
+
+Constraint MemoryAccess
+( ( ( {access} is store instruction and
+      {pointer} is second argument of {access}) or
+    ( {access} is load instruction and
+      {pointer} is first argument of {access})) and
+    {pointer} is gep instruction and
+    {index} is second argument of {pointer})
+End
+
+Constraint AffineCalculation
+if N=0 then
+( ( {value} is unused and
+    {input[j]} is an integer for all j=0..M) or
+  ( {value} is preexecution and 
+    {input[j]} is an integer for all j=0..M) or
+  ( {value} is the same as {input[i]} and
+    {input[j]} is an integer for all j=0..M) for some i=0..M)
+else
+( ( ( ( ( {value} is unused and
+          {input[j]} is an integer for all j=0..M) or
+        ( {value} is preexecution and
+          {input[j]} is an integer for all j=0..M) or
+        ( {value} is the same as {input[i]} and
+          {input[j]} is an integer for all j=0..M) for some i=0..M) and
+        {l.value} is unused and
+        {r.value} is unused) or
+    ( {value} is add instruction and
+      {l.value} is first argument of {value} and
+      {r.value} is second argument of {value} and
+      {input[j]} is an integer for all j=0..M) or
+    ( {value} is mul instruction and
+      ( ( {l.value} is first argument of {value} and
+          {r.value} is second argument of {value}) or
+        ( {l.value} is second argument of {value} and
+          {r.value} is first argument of {value})) and
+      {l.value} is preexecution and
+      {input[j]} is an integer for all j=0..M)) and
+  include AffineCalculation(M=M,N=N-1) with {input} as {input} at {l} and
+  include AffineCalculation(M=M,N=N-1) with {input} as {input} at {r})
+endif
+for N=6 if not otherwise specified
+End
+
+Constraint ArrayAccess2
+( include Loop at {loop} and
+  include MemoryAccess and
+  ( ( {pointer} is gep instruction and
+      include InSESE with {pointer} as {value}
+                      and {loop.begin} as {begin}
+                      and {loop.end} as {end} and
+      {array} is first argument of {pointer} and
+      {index} is second argument of {pointer}) or
+    ( {pointer} is the same as {array} and
+      {index} is unused)) and
+  include LocalConst with {array} as {value}
+                      and {loop.begin} as {begin})
+End
+
+Constraint SideEffectFreePart
+( include For and
+  collect i 32 include LocalFunctionCall
+                       with {begin} as {begin}
+                        and {end} as {end} at {call[i]} and
+  collect i 32 include LocalPureFunctionCall
+                       with {begin} as {begin}
+                        and {end} as {end} at {call[i]})
+End
+
+Constraint ConditionalBranch
+( {value} is branch instruction and
+  {target[0]} is first successor of {value} and
+  {target[1]} is second successor of {value})
+End
+
+Constraint IfBlock
+( include PotentialSESE with {truebegin} as {begin} and {trueend} as {end} and
+  {truebegin} is first successor of {precursor} and
+  {falsebegin} is second successor of {precursor} and
+  include PotentialSESE with {falsebegin} as {begin} and {falseend} as {end} and
+  {trueend} is not the same as {falseend})
+End
+
+Constraint StructuredControlFlowPart
+( include For and
+  collect i 16 ( include ConditionalBranch at {branch[i]} and
+                {body.begin} control flow dominates {branch[i].value} and
+                {body.end} strictly control flow post dominates {branch[i].value}) and
+  collect i 8
+  ( include For at {loop[i]} and
+    {body.begin} control flow dominates {loop[i].begin} and
+    {body.end} control flow post dominates {loop[i].end}) and
+  collect i 8
+  ( include IfBlock at {conditional[i]} and
+    {body.begin} control flow dominates {conditional[i].precursor} and
+    {body.end} control flow post dominates {conditional[i].successor})  and
+  {loop[0..8].end,conditional[0..8].precursor} is the same set as {branch[0..16].value})
+End
+
+Constraint FunctionCall
+( {callsite} is call instruction and
+  {function} is first argument of {callsite})
+End
+
+Constraint PureFunctionCall
+( {callsite} is call instruction and
+  {function} is first argument of {callsite} and
+  {function} has attribute pure)
+End
+
+Constraint LocalValue
+( {begin} control flow dominates {value} and
+  {end} control flow post dominates {value})
+End
+
+Constraint LocalFunctionCall
+( include FunctionCall and
+  include LocalValue with {callsite} as {value})
+End
+
+Constraint LocalPureFunctionCall
+( include PureFunctionCall and
+  include LocalValue with {callsite} as {value})
+End
+
+
 Constraint Permute
 if M+1=N then
   {input[M]} is the same as {output[M]}
@@ -125,14 +278,6 @@ Constraint MaxOnceInSESE
   {value} has control flow to {value_after} and
   all control flow from {value_after} to {value} passes through {successor} and
   all control flow from {value_after} to {value} passes through {precursor})
-End
-
-Constraint ExtendedInt
-( ( {output} is zext instruction and
-    {input} has data flow to {output}) or
-  ( {output} is sext instruction and
-    {input} has data flow to {output}) or
-  {input} is the same as {output})
 End
 
 Constraint Loop
@@ -274,8 +419,7 @@ End
 
 Constraint AffineAccess
 ( include ArrayAccess and
-  include ExtendedInt with {offset_add.value} as {input}
-                        and {output_index}     as {output} and
+  {offset_add.value} is the same as {output_index} and
   include Addition at {offset_add} and
   include LocalConst with {offset_add.addend} as {value} and
   ( {stride_mul[N-i-1].value} is the same as {index_add[N-i].input} and
@@ -283,8 +427,7 @@ Constraint AffineAccess
     include LocalConst with {stride_mul[N-i-1].multiplier} as {value} and
     {index_add[N-i-1].value} is the same as {stride_mul[N-i-1].input} and
     include Addition at {index_add[N-i-1]} and
-    include ExtendedInt with {input_index[N-i-1]} as {input}
-                          and {add_input[N-i-1]} as {output} and
+    {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
     ( ( {add_input[N-i-1]} is not the same as {input_index[N-i]} and
         {input_index[N-i-1]} is an integer) or
       ( {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
@@ -452,10 +595,8 @@ Constraint ReadRange
   {begin_idx.base_pointer} is the same as {end_idx.base_pointer} and
   include VectorRead with {idx} as {idx}
                        and {begin} as {begin} at {end_idx} and
-  include ExtendedInt with {begin_idx.value}  as {input}
-                        and {range_begin} as {output} and
-  include ExtendedInt with {end_idx.value}    as {input}
-                        and {range_end}   as {output})
+  {begin_idx.value} is the same as {range_begin} and
+  {end_idx.value} is the same as {range_end})
 End
 
 Constraint Reduction
@@ -590,7 +731,7 @@ Constraint ConditionalReadModifyWrite
   {address} is gep instruction and
   {address} is first argument of {old_value} and
   {old_value} is load instruction and
-  {value} is first argument of {store_instr})
+  {new_value} is first argument of {store_instr})
 End
 
 Constraint ExtendHisto
@@ -637,66 +778,26 @@ End
 Constraint Histo
 ( include For and
   include ConditionalReadModifyWrite
-      with {indexkernel.output} as {address}
-       and {kernel.output} as {value} and
+    with {body} as {body} at {update} and
   collect i 32
-  ( include VectorRead
-        with {read_value[i]} as {value}
-         and {iterator} as {idx}
-         and {begin} as {begin} at {read[i]}) and
+  ( include VectorRead at {read[i]} and
+    {read[i].value} is the same as {indexkernel.input[i]} and
+    {read[i].idx} is the same as {iterator} and
+    {read[i].begin} is the same as {begin}) and
   include KernelFunction
       with {begin} as {outer}
        and {body.begin} as {inner} at {kernel} and
+  {kernel.output} is the same as {update.new_value} and
   include KernelFunction
-      with {read_value} as {input}
-       and {begin} as {outer}
+      with {begin} as {outer}
        and {body.begin} as {inner} at {indexkernel} and
+  {indexkernel.output} is the same as {update.address} and
   include Concat(N1=31,N2=1)
-      with {read_value}   as {in1}
-       and {old_value}    as {in2}
-       and {kernel.input} as {out})
+      with {indexkernel.input} as {in1}
+       and {update.old_value}  as {in2}
+       and {kernel.input}      as {out})
 End
 
-Constraint AffineCalculation
-if N=0 then
-( ( {value} is unused and
-    {input[j]} is an integer for all j=0..M) or
-  ( {value} is preexecution and 
-    {input[j]} is an integer for all j=0..M) or
-  ( {value} is the same as {input[i]} and
-    {input[j]} is an integer for all j=0..M) for some i=0..M)
-else
-( ( ( ( ( {value} is unused and
-          {input[j]} is an integer for all j=0..M) or
-        ( {value} is preexecution and
-          {input[j]} is an integer for all j=0..M) or
-        ( ( {value} is the same as {input[i]} and
-            {input[j]} is an integer for all j=0..M) for some i=0..M and
-          {input[j]} is an integer for all j=0..M)) and
-        {l.value} is unused and
-        {r.value} is unused) or
-    ( {value} is add instruction and
-      {l.value} is first argument of {value} and
-      {r.value} is second argument of {value} and
-      {input[j]} is an integer for all j=0..M) or
-    ( {value} is mul instruction and
-      ( ( {l.value} is first argument of {value} and
-          {r.value} is second argument of {value}) or
-        ( {l.value} is second argument of {value} and
-          {r.value} is first argument of {value})) and
-      {l.value} is preexecution and
-      {input[j]} is an integer for all j=0..M)) and
-  include AffineCalculation(M=M,N=N-1) with {input} as {input} at {l} and
-  include AffineCalculation(M=M,N=N-1) with {input} as {input} at {r})
-endif
-for N=6 if not otherwise specified
-End
-
-#Constraint Experiment
-#(  {addition} is add instruction and
-#   {left} is first argument of {addition} and
-#   {right} is second argument of {addition})
-#End
 
 Constraint LewisStuff
 ( include VectorMulChain(N=8) and
@@ -815,90 +916,5 @@ Constraint StencilPlus
 #                         and {body.begin} as {inner} at {stencil_expr}
 )
 for N=3 if not otherwise specified
-End
-
-
-
-Constraint ConditionalBranch
-( {value} is branch instruction and
-  {target[0]} is first successor of {value} and
-  {target[1]} is second successor of {value})
-End
-
-
-Constraint IfBlock
-( include PotentialSESE with {truebegin} as {begin} and {trueend} as {end} and
-  {truebegin} is first successor of {precursor} and
-  {falsebegin} is second successor of {precursor} and
-  include PotentialSESE with {falsebegin} as {begin} and {falseend} as {end} and
-  {trueend} is not the same as {falseend})
-End
-
-Constraint StructuredControlFlowPart
-( include For and
-  collect i 16 ( include ConditionalBranch at {branch[i]} and
-                {body.begin} control flow dominates {branch[i].value} and
-                {body.end} strictly control flow post dominates {branch[i].value}) and
-  collect i 8
-  ( include For at {loop[i]} and
-    {body.begin} control flow dominates {loop[i].begin} and
-    {body.end} control flow post dominates {loop[i].end}) and
-  collect i 8
-  ( include IfBlock at {conditional[i]} and
-    {body.begin} control flow dominates {conditional[i].precursor} and
-    {body.end} control flow post dominates {conditional[i].successor})  and
-  {loop[0..8].end,conditional[0..8].precursor} is the same set as {branch[0..16].value})
-End
-
-Constraint FunctionCall
-( {callsite} is call instruction and
-  {function} is first argument of {callsite})
-End
-
-Constraint PureFunctionCall
-( {callsite} is call instruction and
-  {function} is first argument of {callsite} and
-  {function} has attribute pure)
-End
-
-Constraint LocalValue
-( {begin} control flow dominates {value} and
-  {end} control flow post dominates {value})
-End
-
-Constraint LocalFunctionCall
-( include FunctionCall and
-  include LocalValue with {callsite} as {value})
-End
-
-Constraint LocalPureFunctionCall
-( include PureFunctionCall and
-  include LocalValue with {callsite} as {value})
-End
-
-Constraint SideEffectFreePart
-( include For and
-  collect i 32 include LocalFunctionCall
-                       with {begin} as {begin}
-                        and {end} as {end} at {call[i]} and
-  collect i 32 include LocalPureFunctionCall
-                       with {begin} as {begin}
-                        and {end} as {end} at {call[i]})
-End
-
-Constraint AffineMemoryAccessPart
-( collect i 32
-  ( ( ( {access[i]} is store instruction and
-        {pointer[i]} is second argument of {access[i]}) or
-      ( {access[i]} is load instruction and
-        {pointer[i]} is first argument of {access[i]})) and
-    {pointer[i]} is gep instruction and
-    {index[i]} is second argument of {pointer[i]}))
-End
-
-Constraint SCoP
-( include StructuredControlFlowPart and
-  include SideEffectFreePart and
-  include AffineMemoryAccessPart)
 End
 

@@ -79,8 +79,8 @@ Solution::Solution(std::vector<std::string> labels, std::vector<llvm::Value*> va
         std::vector<llvm::Value*> values;
     };
 
-    std::map<std::string,IdiomPart> map_parts;
-    std::vector<IdiomPart>          vector_parts;
+    std::vector<std::pair<std::string,IdiomPart>> map_parts;
+    std::vector<IdiomPart>                        vector_parts;
 
     for(unsigned i = 0; i < labels.size() && i < values.size(); i++)
     {
@@ -136,18 +136,48 @@ Solution::Solution(std::vector<std::string> labels, std::vector<llvm::Value*> va
 
             if(it == labels[i].end())
             {
-                map_parts[labels[i]].labels.emplace_back();
-                map_parts[labels[i]].values.emplace_back(values[i]);
+                std::string name = labels[i];
+                auto find_it = std::find_if(map_parts.begin(), map_parts.end(),
+                                            [&name](const std::pair<std::string,IdiomPart>& p)
+                                            { return p.first == name; });
+                if(find_it == map_parts.end())
+                {
+                    map_parts.emplace_back(name, IdiomPart());
+                    find_it = map_parts.begin() + map_parts.size() - 1;
+                }
+
+                find_it->second.labels.emplace_back();
+                find_it->second.values.emplace_back(values[i]);
             }
             else if(*it == '[')
             {
-                map_parts[std::string(labels[i].cbegin(), it)].labels.emplace_back(it, labels[i].cend());
-                map_parts[std::string(labels[i].cbegin(), it)].values.emplace_back(values[i]);
+                std::string name(labels[i].cbegin(), it);
+                auto find_it = std::find_if(map_parts.begin(), map_parts.end(),
+                                            [&name](const std::pair<std::string,IdiomPart>& p)
+                                            { return p.first == name; });
+                if(find_it == map_parts.end())
+                {
+                    map_parts.emplace_back(name, IdiomPart());
+                    find_it = map_parts.begin() + map_parts.size() - 1;
+                }
+
+                find_it->second.labels.emplace_back(it, labels[i].cend());
+                find_it->second.values.emplace_back(values[i]);
             }
             else if(*it == '.' && it+1 != labels[i].end() && *(it+1) != '[')
             {
-                map_parts[std::string(labels[i].cbegin(), it)].labels.emplace_back(it+1, labels[i].cend());
-                map_parts[std::string(labels[i].cbegin(), it)].values.emplace_back(values[i]);
+                std::string name(labels[i].cbegin(), it);
+                auto find_it = std::find_if(map_parts.begin(), map_parts.end(),
+                                            [&name](const std::pair<std::string,IdiomPart>& p)
+                                            { return p.first == name; });
+                if(find_it == map_parts.end())
+                {
+                    map_parts.emplace_back(name, IdiomPart());
+                    find_it = map_parts.begin() + map_parts.size() - 1;
+                }
+
+                find_it->second.labels.emplace_back(it+1, labels[i].cend());
+                find_it->second.values.emplace_back(values[i]);
             }
             else return;
         }
@@ -162,7 +192,7 @@ Solution::Solution(std::vector<std::string> labels, std::vector<llvm::Value*> va
     if(vector_parts.empty())
     {
         for(auto& part : map_parts)
-            map_value.emplace(part.first, Solution(part.second.labels, part.second.values));
+            map_value.emplace_back(part.first, Solution(part.second.labels, part.second.values));
     }
 }
 
@@ -173,7 +203,8 @@ Solution::operator llvm::Value*() const
 
 Solution Solution::operator[](std::string str) const
 {
-    auto find_it = map_value.find(str);
+    auto find_it = std::find_if(map_value.begin(), map_value.end(),
+                                [&str](const std::pair<std::string,Solution>& x) { return x.first==str; });
     return find_it != map_value.end() ? find_it->second : Solution();
 }
 
@@ -247,7 +278,7 @@ Solution Solution::prune() const
                !pruned.vector_value.empty() ||
                pruned.single_value)
             {
-                result.map_value.emplace(pair.first, pruned);
+                result.map_value.emplace_back(pair.first, pruned);
             }
         }
 
