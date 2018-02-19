@@ -26,9 +26,13 @@ Constraint SCoP
     ( {affinestart[i+1]} is the same as {iterator} and
       {loop[i].iterator} is unused)) for all i=0..7 and
   collect x 24
-  ( include MemoryAccess at {newaccess[x]}) and
+  ( include MemoryAccess at {newaccess[x]} and
+    {begin} control flow dominates {newaccess[x].access} and
+    {end} control flow post dominates {newaccess[x].access}) and
   collect x 24
   ( include MemoryAccess at {newaccess[x]} and
+    {begin} control flow dominates {newaccess[x].access} and
+    {end} control flow post dominates {newaccess[x].access} and
     {newaccess[x].index} is the same as {newaffine[x].value} and
     include AffineCalculation(M=8,N=7) with {affinestart} as {input} at {newaffine[x]}))
 End
@@ -69,9 +73,14 @@ else
           {input[j]} is an integer for all j=0..M) for some i=0..M) and
         {l.value} is unused and
         {r.value} is unused) or
-    ( {value} is add instruction and
+    ( ( {value} is add instruction or 
+        {value} is sub instruction) and
       {l.value} is first argument of {value} and
       {r.value} is second argument of {value} and
+      {input[j]} is an integer for all j=0..M) or
+    ( {value} is select instruction and
+      {l.value} is second argument of {value} and
+      {r.value} is third argument of {value} and
       {input[j]} is an integer for all j=0..M) or
     ( {value} is mul instruction and
       ( ( {l.value} is first argument of {value} and
@@ -137,7 +146,7 @@ Constraint StructuredControlFlowPart
   collect i 8
   ( include IfBlock at {conditional[i]} and
     {body.begin} control flow dominates {conditional[i].precursor} and
-    {body.end} control flow post dominates {conditional[i].successor})  and
+    {body.end} control flow post dominates {conditional[i].successor}) and
   {loop[0..8].end,conditional[0..8].precursor} is the same set as {branch[0..16].value})
 End
 
