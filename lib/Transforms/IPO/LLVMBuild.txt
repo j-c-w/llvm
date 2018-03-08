@@ -25,7 +25,7 @@ required_libraries =
  BitReader
  BitWriter
  Core
- CAnDLPasses
+ IDLPasses
  InstCombine
  IRReader
  Linker

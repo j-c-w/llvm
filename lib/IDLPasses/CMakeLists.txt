@@ -1,4 +1,4 @@
-add_llvm_library(LLVMCAnDLPasses
+add_llvm_library(LLVMIDLPasses
 
   CustomPassMergePointercalcs.cpp
   CustomPassFlattenPointercalcs.cpp
