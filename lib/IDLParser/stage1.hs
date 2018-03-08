@@ -22,7 +22,8 @@ collectOperators::[(String,SyntaxRule3)]->[String]
 collectOperators xs = Set.toList $ Set.fromList $ [s|(n,S3Operator s)<-xs] ++ [s|(n,S3Continue _ (T1Operator s))<-xs]
 
 collectRules1::[(String,SyntaxRule3)]->[(String,String)]
-collectRules1 xs = Set.toList $ Set.fromList $ [(s,l)|(n,S3Continue s (T1Literal l))<-xs]++[(s,l)|(n,S3Continue s (T1Operator l))<-xs]
+collectRules1 xs = Set.toList $ Set.fromList $ [(s,l)|(n,S3Continue s (T1Literal l))<-xs]
+                                             ++[(s,l)|(n,S3Continue s (T1Operator l))<-xs]
 
 printRule1Matches::String->String->[(String,SyntaxRule3)]->[String]
 printRule1Matches ref lit ((n,S3Continue ref' (T1Literal lit')):xs) =
@@ -48,6 +49,31 @@ printRule1Matches ref lit [] = []
 
 printRules1::[(String,SyntaxRule3)]->[String]
 printRules1 xs = ["[PNode \""++r++"\" _,PLiteral \""++s++"\"] -> "++intercalate "++" matches|(r,s)<-collectRules1 xs,let matches = printRule1Matches r s xs,length matches /= 0]
+
+collectRules1b::[(String,SyntaxRule3)]->[(String,String)]
+collectRules1b xs = Set.toList $ Set.fromList $ [(s,l)|(n,S3Continue s (T1IntLiteral l))<-xs]
+
+printRule1bMatches::String->String->[(String,SyntaxRule3)]->[String]
+printRule1bMatches ref lit ((n,S3Continue ref' (T1IntLiteral lit')):xs) =
+    if ref == ref' && lit == lit' then ("match (PNode \""++n++"\" [y]:xs)"):printRule1bMatches ref lit xs
+                                  else printRule1bMatches ref lit xs
+printRule1bMatches ref lit ((n,S3Continue ref' (T1Number)):xs) =
+    if ref == ref' then ("match (PNode \""++n++"\" [y,x]:xs)"):printRule1bMatches ref lit xs
+                   else printRule1bMatches ref lit xs
+printRule1bMatches ref lit ((n,S3Name refs):xs) =
+    if elem ref refs then ("match (PNode \""++n++"\" [x]:y:xs)"):printRule1bMatches ref lit xs
+                      else printRule1bMatches ref lit xs
+printRule1bMatches ref lit ((n,S3Literal lit'):xs) =
+    if lit == lit' then ("match (PNode \""++n++"\" []:y:xs)"):printRule1bMatches ref lit xs
+                   else printRule1bMatches ref lit xs
+printRule1bMatches ref lit ((n,S3Operator lit'):xs) =
+    if lit == lit' then ("match (PNode \""++n++"\" []:y:xs)"):printRule1bMatches ref lit xs
+                   else printRule1bMatches ref lit xs
+printRule1bMatches ref lit (x:xs) = printRule1bMatches ref lit xs
+printRule1bMatches ref lit [] = []
+
+printRules1b::[(String,SyntaxRule3)]->[String]
+printRules1b xs = ["[PNode \""++r++"\" _,PNumber \""++s++"\"] -> "++intercalate "++" matches|(r,s)<-collectRules1b xs,let matches = printRule1bMatches r s xs,length matches /= 0]
 
 collectRules2::[(String,SyntaxRule3)]->[(String,String)]
 collectRules2 xs = Set.toList $ Set.fromList $ [(s,l)|(n,S3Continue s (T1Reference l))<-xs]
@@ -130,7 +156,7 @@ printRules6 xs = ["[_,PNode \""++r++"\" _] -> "++intercalate "++" matches|r<-col
                  where cont = Set.toList $ Set.fromList $ "#":[r|(n,S3Continue r _)<-xs]
 
 printRules::[(String,SyntaxRule3)]->String
-printRules xs = "match (x:y:xs) = case [y,x] of\n    "++intercalate "\n    " (printRules1 xs ++ printRules2 xs ++ printRules3 xs ++ printRules4 xs ++ printRules5 xs ++ printRules6 xs ++ ["_ ->[]"])
+printRules xs = "match (x:y:xs) = case [y,x] of\n    "++intercalate "\n    " (printRules1 xs ++ printRules1b xs ++ printRules2 xs ++ printRules3 xs ++ printRules4 xs ++ printRules5 xs ++ printRules6 xs ++ ["_ ->[]"])
 
 main = do
     contents <- getContents

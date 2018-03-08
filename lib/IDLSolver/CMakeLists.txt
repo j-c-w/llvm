@@ -1,4 +1,4 @@
-add_llvm_library(LLVMCAnDLSolver
+add_llvm_library(LLVMIDLSolver
 
   Solver.cpp
   Solution.cpp

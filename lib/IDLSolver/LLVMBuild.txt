@@ -1,4 +1,4 @@
-;===- ./lib/CAnDLSupport/LLVMBuild.txt --------------------------*- Conf -*--===;
+;===- ./lib/IDLSupport/LLVMBuild.txt --------------------------*- Conf -*--===;
 ;
 ;                     The LLVM Compiler Infrastructure
 ;
@@ -17,5 +17,5 @@
 
 [component_0]
 type = Library
-name = CAnDLSolver
+name = IDLSolver
 parent = Libraries

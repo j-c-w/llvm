@@ -27,6 +27,5 @@ IdiomSpecification DetectHisto       (llvm::Function& function, unsigned max_sol
 IdiomSpecification DetectStencil     (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 IdiomSpecification DetectStencilPlus (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 IdiomSpecification DetectExperiment  (llvm::Function& function, unsigned max_solutions = UINT_MAX);
-IdiomSpecification DetectSCoP        (llvm::Function& function, unsigned max_solutions = UINT_MAX);
 
 #endif

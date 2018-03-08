@@ -1,6 +1,6 @@
-#include "llvm/CAnDLPasses/CustomPasses.hpp"
-#include "llvm/CAnDLParser/IdiomSpecifications.hpp"
-#include "llvm/CAnDLPasses/Transforms.hpp"
+#include "llvm/IDLPasses/CustomPasses.hpp"
+#include "llvm/IDLParser/IdiomSpecifications.hpp"
+#include "llvm/IDLPasses/Transforms.hpp"
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/DebugLoc.h"
@@ -27,8 +27,7 @@ public:
                                                {"GEMM",    DetectGEMM},    {"GEMV",    DetectGEMV},
                                                {"AXPY",    DetectAXPY},    {"AXPYn",   DetectAXPYn},
                                                {"DOT",     DetectDOT},     {"SPMV",    DetectSPMV},
-                                               {"stencil", DetectStencil}, {"stenpls", DetectStencilPlus},
-                                               {"SCoP",    DetectSCoP}} { }
+                                               {"stencil", DetectStencil}, {"stenpls", DetectStencilPlus}} { }
 
     bool runOnModule(Module& module) override;
 

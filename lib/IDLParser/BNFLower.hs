@@ -1,5 +1,5 @@
 module BNFLower (lowerBNF, SyntaxRule2(S2Name,S2Number,S2Operator,S2Literal,S2Reference,S2Continue),
-                           TokenRule1(T1Name,T1Number,T1Operator,T1Reference,T1Literal)) where
+                           TokenRule1(T1Name,T1Number,T1Operator,T1Reference,T1Literal,T1IntLiteral)) where
 
 import BNFParser
 

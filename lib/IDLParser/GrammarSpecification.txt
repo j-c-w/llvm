@@ -7,7 +7,7 @@ specification ::= Constraint <s> <@constraint> End
               | <GeneralizedDominance> | <GeneralizedSame> | <@nested>
 
 @nested     ::= '(' <@constraint> ')'
-inheritance ::= include <s> [ '(' <s> '=' <@calculation> { ',' <s> = <@calculation> } ')' ]
+inheritance ::= inherits <s> [ '(' <s> '=' <@calculation> { ',' <s> = <@calculation> } ')' ]
 conjunction ::= '(' <@constraint> and <@constraint> { and <@constraint> } ')'
 disjunction ::= '(' <@constraint> or <@constraint> { or <@constraint> } ')'
 forall      ::= <@constraint> for all <s> '=' <@calculation> '..' <@calculation>

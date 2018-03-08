@@ -14,10 +14,10 @@ classifyChars::String -> [CharType]
 classifyChars [] = []
 classifyChars ('#':xs)      = skipChars xs
 classifyChars (x:xs)
-    | x `elem` "(){}[]=.+-,"  = Special x:classifyChars xs
-    | isDigit x               = Digit x:classifyChars xs
-    | isSpace x               = Whitespace x:classifyChars xs
-    | otherwise               = Normal x:classifyChars xs
+    | x `elem` "(){}[]=.+-,@&|" = Special x:classifyChars xs
+    | isDigit x                 = Digit x:classifyChars xs
+    | isSpace x                 = Whitespace x:classifyChars xs
+    | otherwise                 = Normal x:classifyChars xs
 
 tokenize::[CharType]->[SyntaxType]
 tokenize [] = []

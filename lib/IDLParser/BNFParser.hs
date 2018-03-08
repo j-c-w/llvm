@@ -1,7 +1,9 @@
-module BNFParser (parseBNF, TokenRule1(T1Name,T1Number,T1Operator,T1Reference,T1Literal),
+module BNFParser (parseBNF, TokenRule1(T1Name,T1Number,T1Operator,T1Reference,T1Literal,T1IntLiteral),
                             SyntaxRule1(S1Token,S1Empty,S1Nest,S1Choice,S1Repeat,S1Optional)) where
 
-data TokenRule1 = T1Name | T1Number | T1Operator String | T1Reference String | T1Literal String
+import Data.Char
+
+data TokenRule1 = T1Name | T1Number | T1Operator String | T1Reference String | T1Literal String | T1IntLiteral String
                   deriving (Eq,Ord,Show)
 
 data SyntaxRule1 = S1Token TokenRule1 | S1Empty | S1Nest SyntaxRule1 SyntaxRule1
@@ -31,7 +33,7 @@ parseBNFAtomic "<s>"     = T1Name
 parseBNFAtomic "<n>"     = T1Number
 parseBNFAtomic ('\'':xs) = if (last xs == '\'') then T1Operator  (init xs) else T1Literal ('\'':xs)
 parseBNFAtomic ('<' :xs) = if (last xs == '>')  then T1Reference (init xs) else T1Literal ('<' :xs)
-parseBNFAtomic x         = T1Literal x
+parseBNFAtomic x         = if all isDigit x then T1IntLiteral x else T1Literal x
 
 attachRules::SyntaxRule1->(SyntaxRule1,[String])->(SyntaxRule1,[String])
 attachRules rule (S1Empty,            tail) = (rule, tail)
