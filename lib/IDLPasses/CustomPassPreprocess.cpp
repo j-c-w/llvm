@@ -33,11 +33,6 @@ bool ResearchPreprocessor::runOnModule(Module& module)
 {
     ModuleSlotTracker slot_tracker(&module);
 
-    std::stringstream sstr;
-    sstr<<"preprocess-report-"<<(std::string)module.getName()<<".json";
-    std::ofstream ofs(sstr.str().c_str());
-    ofs<<"{\n  \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"transformations\": [";
-
     std::vector<Value*> removed_instructions;
 
     char first_hit = true;
@@ -76,19 +71,6 @@ bool ResearchPreprocessor::runOnModule(Module& module)
                         if(do_continue)
                             continue;
 
-                        ofs<<(first_hit?"\n":",\n");
-                        ofs<<"    {\n      \"function\": \""<<(std::string)function.getName()<<"\",\n";
-                        ofs<<"      \"type\": \""<<std::get<0>(spec)<<"\",\n";
-                        ofs<<"      \"solution\":\n        ";
-                        for(char c : solution.prune().print_json(slot_tracker))
-                        {
-                            ofs.put(c);
-                            if(c == '\n') ofs<<"        ";
-                        }
-                        ofs<<"\n    }";
-
-                        ofs.flush();
-
                         (*std::get<2>(spec))(function, solution);
                         first_hit = false;
 
@@ -101,8 +83,6 @@ bool ResearchPreprocessor::runOnModule(Module& module)
             }
         }
     }
-
-    ofs<<"]\n}\n";
 
     return false;
 }

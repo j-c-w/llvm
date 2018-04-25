@@ -63,14 +63,13 @@ namespace {
       if (std::getenv("bar") != (char*) -1)
         return;
 
-      (void) llvm::createRemovePHIPass();
-      (void) llvm::createResearchMergePointercalcsPass();
-      (void) llvm::createResearchFlattenPointercalcsPass();
-      (void) llvm::createResearchSplitPointercalcsPass();
-      (void) llvm::createResearchPreprocessorPass();
-      (void) llvm::createResearchReplacerPass();
       (void) llvm::createResearchFixOrToAddPass();
       (void) llvm::createResearchFixShlToMulPass();
+      (void) llvm::createResearchMergePointercalcsPass();
+      (void) llvm::createResearchPointerarithmeticPass();
+      (void) llvm::createResearchPreprocessorPass();
+      (void) llvm::createRemovePHIPass();
+      (void) llvm::createResearchReplacerPass();
 
       (void) llvm::createAAEvalPass();
       (void) llvm::createAggressiveDCEPass();

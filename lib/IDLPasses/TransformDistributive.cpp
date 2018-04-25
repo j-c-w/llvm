@@ -2,6 +2,7 @@
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Value.h"
@@ -11,17 +12,9 @@
 
 using namespace llvm;
 
-void transform(std::map<std::string,Value*> solution, Function* abs)
-{
-    llvm::ReplaceInstWithInst(llvm::dyn_cast<Instruction>(solution["sqrt_call"]),
-                              llvm::CallInst::Create(abs, {solution["a"]}));
-}
-
 void transform_distributive(Function& function, std::map<std::string,Value*> solution)
 {
-    Instruction* sum   = dyn_cast<Instruction>(solution["value"]);
-    Value* first_prod  = nullptr;
-    Value* second_prod = nullptr;
+    Instruction* sum = dyn_cast<Instruction>(solution["value"]);
 
     std::vector<Value*> prod1_factors;
     std::vector<Value*> prod2_factors;
@@ -78,79 +71,49 @@ void transform_distributive(Function& function, std::map<std::string,Value*> sol
     if(prod1_factors.size() > 0 && prod2_factors.size() > 0 && sum1_factors.size() > 0 && sum2_factors.size() > 0 &&
        sum1_factors.size() == sum1_results.size() && sum2_factors.size() == sum2_results.size())
     {
-        if(prod1_factors.size() == 1) first_prod = ConstantInt::get(prod1_factors.front()->getType(), 1);
-        else                          first_prod = prod1_factors[1];
+        Type* int_type = sum->getType();
 
-        if(prod2_factors.size() == 1) second_prod = ConstantInt::get(prod2_factors.front()->getType(), 1);
-        else                          second_prod = prod2_factors[1];
+        BasicBlock::iterator insert_point(sum);
+        IRBuilder<> builder(sum->getParent(), insert_point);
 
-        for(unsigned j = 2; j <= prod1_factors.size()-1; j++)
-        {
-            first_prod = BinaryOperator::Create(Instruction::Mul, prod1_factors[j], first_prod, "", sum);
-        }
+        Value* first_sum = ConstantInt::get(int_type, 0);
+        for(unsigned j = 1; j <= sum1_factors.size()-1; j++)
+            if(j==1 || dyn_cast<Instruction>(sum2_results[j])->getOpcode() == Instruction::Add)
+                first_sum = builder.CreateAdd(builder.CreateSExtOrTrunc(sum1_factors[j], int_type), first_sum);
+            else
+                first_sum = builder.CreateSub(builder.CreateSExtOrTrunc(sum1_factors[j], int_type), first_sum);
 
-        for(unsigned j = 2; j <= prod2_factors.size()-1; j++)
-        {
-            second_prod = BinaryOperator::Create(Instruction::Mul, prod2_factors[j], second_prod, "", sum);
-        }
+        Value* second_sum = ConstantInt::get(int_type, 0);
+        for(unsigned j = 1; j <= sum2_factors.size()-1; j++)
+            if(j==1 || dyn_cast<Instruction>(sum2_results[j])->getOpcode() == Instruction::Add)
+                first_sum = builder.CreateAdd(builder.CreateSExtOrTrunc(sum2_factors[j], int_type), second_sum);
+            else
+                first_sum = builder.CreateSub(builder.CreateSExtOrTrunc(sum2_factors[j], int_type), second_sum);
 
-        Value* new_sum  = BinaryOperator::Create(Instruction::Add, first_prod, second_prod,      "", sum);
-        Value* new_prod = BinaryOperator::Create(Instruction::Mul, new_sum,    prod1_factors[0], "", sum);
+        int factor1 = 1;
+        for(unsigned j = 1; j <= sum1_factors.size()-1; j++)
+            if(dyn_cast<Instruction>(sum1_results[j])->getOpcode() == Instruction::Sub)
+                factor1 *= -1;
 
-        Value* final_value = new_prod;
+        int factor2 = 1;
+        for(unsigned j = 1; j <= sum2_factors.size()-1; j++)
+            if(dyn_cast<Instruction>(sum2_results[j])->getOpcode() == Instruction::Sub)
+                factor2 *= -1;
 
-        Value* first_sum = nullptr;
-        if(sum1_factors.size() > 1)
-        {
-            first_sum = sum1_factors[1];
+        Value* first_prod  = ConstantInt::get(int_type, factor1);
+        Value* second_prod = ConstantInt::get(int_type, factor2);
 
-            for(unsigned j = 2; j <= sum1_factors.size()-1; j++)
-            {
-                if(auto binary_op = dyn_cast<BinaryOperator>(sum1_results[j]))
-                {
-                    first_sum = BinaryOperator::Create(binary_op->getOpcode(), sum1_factors[j], first_sum, "",  sum);
-                }
-            } 
-        }
+        for(unsigned j = 1; j <= prod1_factors.size()-1; j++)
+            first_prod = builder.CreateMul(builder.CreateSExtOrTrunc(prod1_factors[j], int_type), first_prod);
 
-        Value* second_sum = nullptr;
-        if(sum2_factors.size() > 1)
-        {
-            second_sum = sum2_factors[1];
+        for(unsigned j = 1; j <= prod2_factors.size()-1; j++)
+            second_prod = builder.CreateMul(builder.CreateSExtOrTrunc(prod2_factors[j], int_type), second_prod);
 
-            for(unsigned j = 2; j <= sum2_factors.size()-1; j++)
-            {
-                if(auto binary_op = dyn_cast<BinaryOperator>(sum2_results[j]))
-                {
-                    second_sum = BinaryOperator::Create(binary_op->getOpcode(), sum2_factors[j], second_sum, "",  sum);
-                }
-            } 
-        }
-
-        if(first_sum && second_sum)
-        {
-            llvm::Value* new_product = BinaryOperator::Create(Instruction::Add, first_sum, second_sum, "", sum);
-            final_value = BinaryOperator::Create(Instruction::Add, new_product, final_value, "", sum);
-        }
-        else if(first_sum)
-        {
-            final_value = BinaryOperator::Create(Instruction::Add, first_sum, final_value, "", sum);
-        }
-        else if(second_sum)
-        {
-            final_value = BinaryOperator::Create(Instruction::Add, second_sum, final_value, "", sum);
-        }
-
-        for(BasicBlock& basic_block : function.getBasicBlockList())
-        {
-            for(Instruction& instruction : basic_block.getInstList())
-            {
-                for(unsigned i = 0; i < instruction.getNumOperands(); i++)
-                    if(instruction.getOperand(i) == sum)
-                        instruction.setOperand(i, final_value);
-            }
-        }
-
-        sum->eraseFromParent();
+        ReplaceInstWithValue(sum->getParent()->getInstList(), insert_point,
+            builder.CreateAdd(
+                builder.CreateAdd(first_sum, second_sum),
+                builder.CreateMul(
+                    builder.CreateAdd(first_prod, second_prod),
+                    builder.CreateSExtOrTrunc(prod1_factors[0], int_type))));
     }
 }

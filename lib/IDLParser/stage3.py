@@ -1,8 +1,7 @@
 #!/usr/bin/pypy
 
 
-whitelist = ["Distributive", "HoistSelect", "AXPYn", "GEMM", "GEMV", "AXPY",
-             "DOT", "SPMV", "Reduction", "Histo", "Stencil", "StencilPlus", "Experiment", "SCoP", "IfBlock", "IfBlock2"]
+whitelist = ["Distributive", "HoistSelect", "GEMM", "Histo", "SPMV", "Stencil", "Reduction", "StencilPlus", "Experiment"]
 
 def partial_evaluator(syntax, handler, *extras):
     handler_result = handler(syntax, *extras)
@@ -291,6 +290,7 @@ def code_generation_core(syntax, counter):
     elif syntax[0] == "ConstraintOpcode":
         opcode = syntax[2][:1].upper()+syntax[2][1:]
         if opcode[:3] == "Gep": opcode = "GEP"+opcode[3:]
+        if opcode[:3] == "Phi": opcode = "PHI"+opcode[3:]
         if opcode[-2:] == "or": opcode = opcode[:-2]+"Or"
         if opcode[-3:] == "and": opcode = opcode[:-3]+"And"
         if opcode[-3:] == "add": opcode = opcode[:-3]+"Add"

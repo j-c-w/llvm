@@ -1,15 +1,12 @@
 add_llvm_library(LLVMIDLPasses
 
   CustomPassMergePointercalcs.cpp
-  CustomPassFlattenPointercalcs.cpp
-  CustomPassSplitPointercalcs.cpp
+  CustomPassPointerarithmetic.cpp
   CustomPassReplace.cpp
   CustomPassRemovePHI.cpp
   CustomPassPreprocess.cpp
   CustomPassFixOrToAdd.cpp
   CustomPassFixShlToMul.cpp
-  CustomPassEliminatePointerCasts.cpp
-  CustomPassPointerarithmetic.cpp
 
   TransformReduction.cpp
   TransformDistributive.cpp

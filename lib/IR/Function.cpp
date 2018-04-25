@@ -294,8 +294,7 @@ void Function::stealArgumentListFrom(Function &Src) {
     return;
 
   // Steal arguments from Src, and fix the lazy argument bits.
-//  assert(arg_size() == Src.arg_size());
-  NumArgs = Src.NumArgs;
+  assert(arg_size() == Src.arg_size());
   Arguments = Src.Arguments;
   Src.Arguments = nullptr;
   for (Argument &A : makeArgArray(Arguments, NumArgs)) {

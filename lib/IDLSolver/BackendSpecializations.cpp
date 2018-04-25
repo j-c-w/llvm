@@ -53,7 +53,8 @@ BackendFunctionAttribute::BackendFunctionAttribute(const FunctionWrap& wrap)
        function_name == "logf" || function_name == "expf" || function_name == "sqrtf" ||
        function_name == "cosf" || function_name == "sinf" || function_name == "tanf" ||
        function_name == "llvm.fabs.f64" || function_name == "llvm.fabs.f32" ||
-       function_name == "llvm.dbg.value" || function_name == "llvm.dbg.declare")
+       function_name == "llvm.dbg.value" || function_name == "llvm.dbg.declare" ||
+       function_name == "__log_finite")
         return true;
 
     return false;
@@ -147,7 +148,8 @@ std::vector<unsigned> BackendLLVMDominate<inverted,unstrict,origin_calc,forw_gra
                    function_name == "logf" || function_name == "expf" || function_name == "sqrtf" ||
                    function_name == "cosf" || function_name == "sinf" || function_name == "tanf" ||
                    function_name == "llvm.fabs.f64" || function_name == "llvm.fabs.f32" ||
-                   function_name == "llvm.dbg.value" || function_name == "llvm.dbg.declare")
+                   function_name == "llvm.dbg.value" || function_name == "llvm.dbg.declare" ||
+                   function_name == "__log_finite")
                     continue;
 
                 auto attributes = call_inst->getCalledFunction()->getAttributes();

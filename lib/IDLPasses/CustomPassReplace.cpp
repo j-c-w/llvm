@@ -22,17 +22,14 @@ public:
     static char ID;
 
     ResearchReplacer() : ModulePass(ID),
-                         simple_constraint_specs{{"Experiment", DetectExperiment}},
-                         loop_constraint_specs{{"histo",   DetectHisto},   {"scalar",  DetectReduction},
-                                               {"GEMM",    DetectGEMM},    {"GEMV",    DetectGEMV},
-                                               {"AXPY",    DetectAXPY},    {"AXPYn",   DetectAXPYn},
-                                               {"DOT",     DetectDOT},     {"SPMV",    DetectSPMV},
-                                               {"stencil", DetectStencil}, {"stenpls", DetectStencilPlus}} { }
+                         loop_constraint_specs{{"histo",      DetectHisto},   {"scalar",  DetectReduction},
+                                               {"GEMM",       DetectGEMM},    {"SPMV",    DetectSPMV},
+                                               {"stencil",    DetectStencil}, {"stenpls", DetectStencilPlus},
+                                               {"Experiment", DetectExperiment}} { }
 
     bool runOnModule(Module& module) override;
 
 private:
-    std::vector<std::pair<std::string,IdiomSpecification(*)(Function&,unsigned)>> simple_constraint_specs;
     std::vector<std::pair<std::string,IdiomSpecification(*)(Function&,unsigned)>> loop_constraint_specs;
 };
 
@@ -77,9 +74,6 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string
             Instruction* body_end       = dyn_cast_or_null<Instruction>(body_end_value);
             Instruction* body_successor = dyn_cast_or_null<Instruction>(body_successor_value);
 
-            if(!precursor || !begin || !end || !successor ||
-               !body_precursor || !body_begin || !body_end || !body_successor) continue;
-
             auto find_it = std::find_if(result.begin(), result.end(), [=](const SolutionCluster& cluster)
                                         { return cluster.begin == begin && cluster.successor == successor; });
 
@@ -94,7 +88,6 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string
 
     return result;
 }
-
 
 bool ResearchReplacer::runOnModule(Module& module)
 {
@@ -122,7 +115,10 @@ bool ResearchReplacer::runOnModule(Module& module)
 
             for(unsigned i = 0; i < clustered_solutions.size(); i++)
             {
-                unsigned line_begin = clustered_solutions[i].precursor->getDebugLoc().getLine();
+                unsigned line_begin = 999;
+
+                if(clustered_solutions[i].precursor && clustered_solutions[i].precursor->getDebugLoc())
+                    line_begin = clustered_solutions[i].precursor->getDebugLoc().getLine();
 
                 ofs<<(first_hit1?"\n":",\n");
                 ofs<<"    {\n      \"function\": \""<<(std::string)function.getName()<<"\",\n";
@@ -153,6 +149,7 @@ bool ResearchReplacer::runOnModule(Module& module)
                    clustered_solutions[i].solutions["scalar"].size() > 0)
                 {
                     ofs<<",\n      \"operator\": \"";
+                    /*
                     std::vector<Instruction*> outputs;
 
                     SESEFunction sese_function(clustered_solutions[i].body_begin,
@@ -181,44 +178,13 @@ bool ResearchReplacer::runOnModule(Module& module)
                         else if(c=='\'') ofs<<"\\\'";
                         else ofs<<c;
                     }
-                    ofs<<"\"";
                     delete function;
+                    */
+                    ofs<<"\"";
                 }
 
                 ofs<<"\n    }";
                 first_hit1 = false;
-            }
-        }
-    }
-
-    ofs<<"],\n  \"transformations\": [";
-
-    char first_hit = true;
-    for(Function& function : module.getFunctionList())
-    {
-        if(!function.isDeclaration())
-        {
-            for(const auto& spec : simple_constraint_specs)
-            {
-                auto solutions = spec.second(function, UINT_MAX);
-
-                if(!solutions.empty())
-                {
-                    for(auto& solution : solutions)
-                    {
-                        ofs<<(first_hit?"\n":",\n");
-                        ofs<<"    {\n      \"function\": \""<<(std::string)function.getName()<<"\",\n";
-                        ofs<<"      \"type\": \""<<spec.first<<"\",\n";
-                        ofs<<"      \"solution\":\n        ";
-                        for(char c : solution.prune().print_json(slot_tracker))
-                        {
-                            ofs.put(c);
-                            if(c == '\n') ofs<<"        ";
-                        }
-                        ofs<<"\n    }";
-                        first_hit = false;
-                    }
-                }
             }
         }
     }
