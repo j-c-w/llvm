@@ -63,6 +63,7 @@ namespace {
       if (std::getenv("bar") != (char*) -1)
         return;
 
+      (void) llvm::createResearchFlangfixPass();
       (void) llvm::createResearchFixOrToAddPass();
       (void) llvm::createResearchFixShlToMulPass();
       (void) llvm::createResearchMergePointercalcsPass();

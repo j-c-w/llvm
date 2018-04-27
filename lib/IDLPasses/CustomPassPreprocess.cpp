@@ -35,7 +35,6 @@ bool ResearchPreprocessor::runOnModule(Module& module)
 
     std::vector<Value*> removed_instructions;
 
-    char first_hit = true;
     for(Function& function : module.getFunctionList())
     {
         if(!function.isDeclaration())
@@ -72,7 +71,6 @@ bool ResearchPreprocessor::runOnModule(Module& module)
                             continue;
 
                         (*std::get<2>(spec))(function, solution);
-                        first_hit = false;
 
                         if(find_it != solution_map.end())
                         {

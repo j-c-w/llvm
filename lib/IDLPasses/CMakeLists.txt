@@ -2,6 +2,7 @@ add_llvm_library(LLVMIDLPasses
 
   CustomPassMergePointercalcs.cpp
   CustomPassPointerarithmetic.cpp
+  CustomPassFlangfix.cpp
   CustomPassReplace.cpp
   CustomPassRemovePHI.cpp
   CustomPassPreprocess.cpp

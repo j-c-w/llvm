@@ -56,7 +56,6 @@ Value* smart_add(IRBuilder<>& builder, Value* a, Value* b)
     if((c = dyn_cast<ConstantInt>(a))) return smart_add(builder, b, c);
     if((c = dyn_cast<ConstantInt>(b))) return smart_add(builder, a, c);
 
-
     BinaryOperator* binop1;
     BinaryOperator* binop2;
     ConstantInt*    fac1;
