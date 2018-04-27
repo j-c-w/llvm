@@ -16,9 +16,9 @@
 
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/BinaryFormat/COFF.h"
-#include "llvm/DebugInfo/CodeView/CVDebugRecord.h"
 #include "llvm/MC/SubtargetFeature.h"
 #include "llvm/Object/Binary.h"
+#include "llvm/Object/CVDebugRecord.h"
 #include "llvm/Object/Error.h"
 #include "llvm/Object/ObjectFile.h"
 #include "llvm/Support/BinaryByteStream.h"
@@ -275,6 +275,8 @@ struct coff_symbol_generic {
   support::ulittle32_t Value;
 };
 
+struct coff_aux_section_definition;
+
 class COFFSymbolRef {
 public:
   COFFSymbolRef() = default;
@@ -344,6 +346,18 @@ public:
 
   uint8_t getComplexType() const {
     return (getType() & 0xF0) >> COFF::SCT_COMPLEX_TYPE_SHIFT;
+  }
+
+  template <typename T> const T *getAux() const {
+    return CS16 ? reinterpret_cast<const T *>(CS16 + 1)
+                : reinterpret_cast<const T *>(CS32 + 1);
+  }
+
+  const coff_aux_section_definition *getSectionDefinition() const {
+    if (!getNumberOfAuxSymbols() ||
+        getStorageClass() != COFF::IMAGE_SYM_CLASS_STATIC)
+      return nullptr;
+    return getAux<coff_aux_section_definition>();
   }
 
   bool isAbsolute() const {
@@ -729,6 +743,12 @@ struct coff_resource_dir_table {
   support::ulittle16_t NumberOfIDEntries;
 };
 
+struct debug_h_header {
+  support::ulittle32_t Magic;
+  support::ulittle16_t Version;
+  support::ulittle16_t HashAlgorithm;
+};
+
 class COFFObjectFile : public ObjectFile {
 private:
   friend class ImportDirectoryEntryRef;
@@ -906,7 +926,7 @@ public:
 
   uint8_t getBytesInAddress() const override;
   StringRef getFileFormatName() const override;
-  unsigned getArch() const override;
+  Triple::ArchType getArch() const override;
   SubtargetFeatures getFeatures() const override { return SubtargetFeatures(); }
 
   import_directory_iterator import_directory_begin() const;
@@ -992,8 +1012,7 @@ public:
     llvm_unreachable("null symbol table pointer!");
   }
 
-  iterator_range<const coff_relocation *>
-  getRelocations(const coff_section *Sec) const;
+  ArrayRef<coff_relocation> getRelocations(const coff_section *Sec) const;
 
   std::error_code getSectionName(const coff_section *Sec, StringRef &Res) const;
   uint64_t getSectionSize(const coff_section *Sec) const;

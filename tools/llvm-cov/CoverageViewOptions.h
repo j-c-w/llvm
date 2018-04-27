@@ -10,6 +10,7 @@
 #ifndef LLVM_COV_COVERAGEVIEWOPTIONS_H
 #define LLVM_COV_COVERAGEVIEWOPTIONS_H
 
+#include "llvm/Config/llvm-config.h"
 #include "RenderingSupport.h"
 #include <vector>
 
@@ -32,12 +33,14 @@ struct CoverageViewOptions {
   bool ShowFullFilenames;
   bool ShowRegionSummary;
   bool ShowInstantiationSummary;
+  bool ExportSummaryOnly;
   OutputFormat Format;
   std::string ShowOutputDirectory;
   std::vector<std::string> DemanglerOpts;
   uint32_t TabSize;
   std::string ProjectTitle;
   std::string CreatedTimeStr;
+  unsigned NumThreads;
 
   /// \brief Change the output's stream color if the colors are enabled.
   ColoredRawOstream colored_ostream(raw_ostream &OS,

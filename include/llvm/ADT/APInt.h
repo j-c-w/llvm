@@ -739,6 +739,11 @@ public:
 
   /// @brief Move assignment operator.
   APInt &operator=(APInt &&that) {
+#ifdef _MSC_VER
+    // The MSVC std::shuffle implementation still does self-assignment.
+    if (this == &that)
+      return *this;
+#endif
     assert(this != &that && "Self-move not supported");
     if (!isSingleWord())
       delete[] U.pVal;
@@ -1279,7 +1284,7 @@ public:
   /// \returns true if *this >= RHS when considered unsigned.
   bool uge(uint64_t RHS) const { return !ult(RHS); }
 
-  /// \brief Signed greather or equal comparison
+  /// \brief Signed greater or equal comparison
   ///
   /// Regards both *this and RHS as signed quantities and compares them for
   /// validity of the greater-or-equal relationship.

@@ -38,6 +38,7 @@
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Analysis/PHITransAddr.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Analysis/Utils/Local.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/BasicBlock.h"
@@ -69,7 +70,6 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
-#include "llvm/Transforms/Utils/Local.h"
 #include "llvm/Transforms/Utils/SSAUpdater.h"
 #include "llvm/Transforms/Utils/VNCoercion.h"
 #include <algorithm>
@@ -1299,7 +1299,10 @@ static void reportLoadElim(LoadInst *LI, Value *AvailableValue,
 /// non-local by performing PHI construction.
 bool GVN::processNonLocalLoad(LoadInst *LI) {
   // non-local speculations are not allowed under asan.
-  if (LI->getParent()->getParent()->hasFnAttribute(Attribute::SanitizeAddress))
+  if (LI->getParent()->getParent()->hasFnAttribute(
+          Attribute::SanitizeAddress) ||
+      LI->getParent()->getParent()->hasFnAttribute(
+          Attribute::SanitizeHWAddress))
     return false;
 
   // Step 1: Find the non-local dependencies of the load.
@@ -2102,6 +2105,7 @@ bool GVN::processBlock(BasicBlock *BB) {
     for (auto *I : InstrsToErase) {
       assert(I->getParent() == BB && "Removing instruction from wrong block?");
       DEBUG(dbgs() << "GVN removed: " << *I << '\n');
+      salvageDebugInfo(*I);
       if (MD) MD->removeInstruction(I);
       DEBUG(verifyRemoved(I));
       if (MaybeFirstICF == I) {
@@ -2255,6 +2259,20 @@ bool GVN::performScalarPRE(Instruction *CurInst) {
   Instruction *PREInstr = nullptr;
 
   if (NumWithout != 0) {
+    if (!isSafeToSpeculativelyExecute(CurInst)) {
+      // It is only valid to insert a new instruction if the current instruction
+      // is always executed. An instruction with implicit control flow could
+      // prevent us from doing it. If we cannot speculate the execution, then
+      // PRE should be prohibited.
+      auto It = FirstImplicitControlFlowInsts.find(CurrentBlock);
+      if (It != FirstImplicitControlFlowInsts.end()) {
+        assert(It->second->getParent() == CurrentBlock &&
+               "Implicit control flow map broken?");
+        if (OI->dominates(It->second, CurInst))
+          return false;
+      }
+    }
+
     // Don't do PRE across indirect branch.
     if (isa<IndirectBrInst>(PREPred->getTerminator()))
       return false;

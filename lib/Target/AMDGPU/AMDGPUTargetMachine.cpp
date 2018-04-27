@@ -79,7 +79,7 @@ static cl::opt<bool> EnableLoadStoreVectorizer(
   cl::init(true),
   cl::Hidden);
 
-// Option to to control global loads scalarization
+// Option to control global loads scalarization
 static cl::opt<bool> ScalarizeGlobal(
   "amdgpu-scalarize-global-loads",
   cl::desc("Enable global load scalarization"),
@@ -147,6 +147,7 @@ extern "C" void LLVMInitializeAMDGPUTarget() {
   initializeR600PacketizerPass(*PR);
   initializeR600ExpandSpecialInstrsPassPass(*PR);
   initializeR600VectorRegMergerPass(*PR);
+  initializeGlobalISel(*PR);
   initializeAMDGPUDAGToDAGISelPass(*PR);
   initializeSILowerI1CopiesPass(*PR);
   initializeSIFixSGPRCopiesPass(*PR);
@@ -219,6 +220,16 @@ static ScheduleDAGInstrs *createMinRegScheduler(MachineSchedContext *C) {
     GCNIterativeScheduler::SCHEDULE_MINREGFORCED);
 }
 
+static ScheduleDAGInstrs *
+createIterativeILPMachineScheduler(MachineSchedContext *C) {
+  auto DAG = new GCNIterativeScheduler(C,
+    GCNIterativeScheduler::SCHEDULE_ILP);
+  DAG->addMutation(createLoadClusterDAGMutation(DAG->TII, DAG->TRI));
+  DAG->addMutation(createStoreClusterDAGMutation(DAG->TII, DAG->TRI));
+  DAG->addMutation(createAMDGPUMacroFusionDAGMutation());
+  return DAG;
+}
+
 static MachineSchedRegistry
 R600SchedRegistry("r600", "Run R600's custom scheduler",
                    createR600MachineScheduler);
@@ -242,27 +253,23 @@ GCNMinRegSchedRegistry("gcn-minreg",
   "Run GCN iterative scheduler for minimal register usage (experimental)",
   createMinRegScheduler);
 
+static MachineSchedRegistry
+GCNILPSchedRegistry("gcn-ilp",
+  "Run GCN iterative scheduler for ILP scheduling (experimental)",
+  createIterativeILPMachineScheduler);
+
 static StringRef computeDataLayout(const Triple &TT) {
   if (TT.getArch() == Triple::r600) {
     // 32-bit pointers.
-    if (TT.getEnvironmentName() == "amdgiz" ||
-        TT.getEnvironmentName() == "amdgizcl")
       return "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128"
-             "-v192:256-v256:256-v512:512-v1024:1024-v2048:2048-n32:64-A5";
-    return "e-p:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128"
-            "-v192:256-v256:256-v512:512-v1024:1024-v2048:2048-n32:64";
+             "-v192:256-v256:256-v512:512-v1024:1024-v2048:2048-n32:64-S32-A5";
   }
 
   // 32-bit private, local, and region pointers. 64-bit global, constant and
   // flat.
-  if (TT.getEnvironmentName() == "amdgiz" ||
-      TT.getEnvironmentName() == "amdgizcl")
-    return "e-p:64:64-p1:64:64-p2:64:64-p3:32:32-p4:32:32-p5:32:32"
+    return "e-p:64:64-p1:64:64-p2:32:32-p3:32:32-p4:64:64-p5:32:32-p6:32:32"
          "-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128"
-         "-v192:256-v256:256-v512:512-v1024:1024-v2048:2048-n32:64-A5";
-  return "e-p:32:32-p1:64:64-p2:64:64-p3:32:32-p4:64:64-p5:32:32"
-      "-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128"
-      "-v192:256-v256:256-v512:512-v1024:1024-v2048:2048-n32:64";
+         "-v192:256-v256:256-v512:512-v1024:1024-v2048:2048-n32:64-S32-A5";
 }
 
 LLVM_READNONE
@@ -556,10 +563,9 @@ public:
 
 } // end anonymous namespace
 
-TargetIRAnalysis AMDGPUTargetMachine::getTargetIRAnalysis() {
-  return TargetIRAnalysis([this](const Function &F) {
-    return TargetTransformInfo(AMDGPUTTIImpl(this, F));
-  });
+TargetTransformInfo
+AMDGPUTargetMachine::getTargetTransformInfo(const Function &F) {
+  return TargetTransformInfo(AMDGPUTTIImpl(this, F));
 }
 
 void AMDGPUPassConfig::addEarlyCSEOrGVNPass() {
@@ -768,7 +774,7 @@ void GCNPassConfig::addMachineSSAOptimization() {
   addPass(&SILoadStoreOptimizerID);
   if (EnableSDWAPeephole) {
     addPass(&SIPeepholeSDWAID);
-    addPass(&MachineLICMID);
+    addPass(&EarlyMachineLICMID);
     addPass(&MachineCSEID);
     addPass(&SIFoldOperandsID);
     addPass(&DeadMachineInstructionElimID);
@@ -869,13 +875,13 @@ void GCNPassConfig::addPreEmitPass() {
   // cases.
   addPass(&PostRAHazardRecognizerID);
 
+  addPass(createSIMemoryLegalizerPass());
   if (EnableSIInsertWaitcntsPass)
     addPass(createSIInsertWaitcntsPass());
   else
     addPass(createSIInsertWaitsPass());
   addPass(createSIShrinkInstructionsPass());
   addPass(&SIInsertSkipsPassID);
-  addPass(createSIMemoryLegalizerPass());
   addPass(createSIDebuggerInsertNopsPass());
   addPass(&BranchRelaxationPassID);
 }
@@ -883,4 +889,3 @@ void GCNPassConfig::addPreEmitPass() {
 TargetPassConfig *GCNTargetMachine::createPassConfig(PassManagerBase &PM) {
   return new GCNPassConfig(*this, PM);
 }
-

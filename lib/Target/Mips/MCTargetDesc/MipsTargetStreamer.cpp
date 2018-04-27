@@ -52,6 +52,10 @@ void MipsTargetStreamer::emitDirectiveSetMsa() { forbidModuleDirective(); }
 void MipsTargetStreamer::emitDirectiveSetNoMsa() { forbidModuleDirective(); }
 void MipsTargetStreamer::emitDirectiveSetMt() {}
 void MipsTargetStreamer::emitDirectiveSetNoMt() { forbidModuleDirective(); }
+void MipsTargetStreamer::emitDirectiveSetCRC() {}
+void MipsTargetStreamer::emitDirectiveSetNoCRC() {}
+void MipsTargetStreamer::emitDirectiveSetVirt() {}
+void MipsTargetStreamer::emitDirectiveSetNoVirt() {}
 void MipsTargetStreamer::emitDirectiveSetAt() { forbidModuleDirective(); }
 void MipsTargetStreamer::emitDirectiveSetAtWithArg(unsigned RegNo) {
   forbidModuleDirective();
@@ -122,6 +126,10 @@ void MipsTargetStreamer::emitDirectiveModuleOddSPReg() {
 void MipsTargetStreamer::emitDirectiveModuleSoftFloat() {}
 void MipsTargetStreamer::emitDirectiveModuleHardFloat() {}
 void MipsTargetStreamer::emitDirectiveModuleMT() {}
+void MipsTargetStreamer::emitDirectiveModuleCRC() {}
+void MipsTargetStreamer::emitDirectiveModuleNoCRC() {}
+void MipsTargetStreamer::emitDirectiveModuleVirt() {}
+void MipsTargetStreamer::emitDirectiveModuleNoVirt() {}
 void MipsTargetStreamer::emitDirectiveSetFp(
     MipsABIFlagsSection::FpABIKind Value) {
   forbidModuleDirective();
@@ -421,6 +429,26 @@ void MipsTargetAsmStreamer::emitDirectiveSetNoMt() {
   MipsTargetStreamer::emitDirectiveSetNoMt();
 }
 
+void MipsTargetAsmStreamer::emitDirectiveSetCRC() {
+  OS << "\t.set\tcrc\n";
+  MipsTargetStreamer::emitDirectiveSetCRC();
+}
+
+void MipsTargetAsmStreamer::emitDirectiveSetNoCRC() {
+  OS << "\t.set\tnocrc\n";
+  MipsTargetStreamer::emitDirectiveSetNoCRC();
+}
+
+void MipsTargetAsmStreamer::emitDirectiveSetVirt() {
+  OS << "\t.set\tvirt\n";
+  MipsTargetStreamer::emitDirectiveSetVirt();
+}
+
+void MipsTargetAsmStreamer::emitDirectiveSetNoVirt() {
+  OS << "\t.set\tnovirt\n";
+  MipsTargetStreamer::emitDirectiveSetNoVirt();
+}
+
 void MipsTargetAsmStreamer::emitDirectiveSetAt() {
   OS << "\t.set\tat\n";
   MipsTargetStreamer::emitDirectiveSetAt();
@@ -692,6 +720,22 @@ void MipsTargetAsmStreamer::emitDirectiveModuleHardFloat() {
 
 void MipsTargetAsmStreamer::emitDirectiveModuleMT() {
   OS << "\t.module\tmt\n";
+}
+
+void MipsTargetAsmStreamer::emitDirectiveModuleCRC() {
+  OS << "\t.module\tcrc\n";
+}
+
+void MipsTargetAsmStreamer::emitDirectiveModuleNoCRC() {
+  OS << "\t.module\tnocrc\n";
+}
+
+void MipsTargetAsmStreamer::emitDirectiveModuleVirt() {
+  OS << "\t.module\tvirt\n";
+}
+
+void MipsTargetAsmStreamer::emitDirectiveModuleNoVirt() {
+  OS << "\t.module\tnovirt\n";
 }
 
 // This part is for ELF object output.

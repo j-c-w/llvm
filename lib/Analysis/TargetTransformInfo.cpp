@@ -26,11 +26,6 @@ using namespace PatternMatch;
 
 #define DEBUG_TYPE "tti"
 
-static cl::opt<bool> UseWideMemcpyLoopLowering(
-    "use-wide-memcpy-loop-lowering", cl::init(false),
-    cl::desc("Enables the new wide memcpy loop lowering in Transforms/Utils."),
-    cl::Hidden);
-
 static cl::opt<bool> EnableReduxCost("costmodel-reduxcost", cl::init(false),
                                      cl::Hidden,
                                      cl::desc("Recognize reduction patterns."));
@@ -160,6 +155,14 @@ bool TargetTransformInfo::isLSRCostLess(LSRCost &C1, LSRCost &C2) const {
   return TTIImpl->isLSRCostLess(C1, C2);
 }
 
+bool TargetTransformInfo::canMacroFuseCmp() const {
+  return TTIImpl->canMacroFuseCmp();
+}
+
+bool TargetTransformInfo::shouldFavorPostInc() const {
+  return TTIImpl->shouldFavorPostInc();
+}
+
 bool TargetTransformInfo::isLegalMaskedStore(Type *DataType) const {
   return TTIImpl->isLegalMaskedStore(DataType);
 }
@@ -212,6 +215,8 @@ bool TargetTransformInfo::isProfitableToHoist(Instruction *I) const {
   return TTIImpl->isProfitableToHoist(I);
 }
 
+bool TargetTransformInfo::useAA() const { return TTIImpl->useAA(); }
+
 bool TargetTransformInfo::isTypeLegal(Type *Ty) const {
   return TTIImpl->isTypeLegal(Ty);
 }
@@ -229,6 +234,10 @@ bool TargetTransformInfo::shouldBuildLookupTables() const {
 }
 bool TargetTransformInfo::shouldBuildLookupTablesForConstant(Constant *C) const {
   return TTIImpl->shouldBuildLookupTablesForConstant(C);
+}
+
+bool TargetTransformInfo::useColdCCForColdCall(Function &F) const {
+  return TTIImpl->useColdCCForColdCall(F);
 }
 
 unsigned TargetTransformInfo::
@@ -281,6 +290,10 @@ bool TargetTransformInfo::haveFastSqrt(Type *Ty) const {
   return TTIImpl->haveFastSqrt(Ty);
 }
 
+bool TargetTransformInfo::isFCmpOrdCheaperThanFCmpZero(Type *Ty) const {
+  return TTIImpl->isFCmpOrdCheaperThanFCmpZero(Ty);
+}
+
 int TargetTransformInfo::getFPOpCost(Type *Ty) const {
   int Cost = TTIImpl->getFPOpCost(Ty);
   assert(Cost >= 0 && "TTI should not produce negative costs!");
@@ -325,6 +338,14 @@ unsigned TargetTransformInfo::getRegisterBitWidth(bool Vector) const {
 
 unsigned TargetTransformInfo::getMinVectorRegisterBitWidth() const {
   return TTIImpl->getMinVectorRegisterBitWidth();
+}
+
+bool TargetTransformInfo::shouldMaximizeVectorBandwidth(bool OptSize) const {
+  return TTIImpl->shouldMaximizeVectorBandwidth(OptSize);
+}
+
+unsigned TargetTransformInfo::getMinimumVF(unsigned ElemWidth) const {
+  return TTIImpl->getMinimumVF(ElemWidth);
 }
 
 bool TargetTransformInfo::shouldConsiderAddressTypePromotion(
@@ -543,13 +564,19 @@ void TargetTransformInfo::getMemcpyLoopResidualLoweringType(
                                              SrcAlign, DestAlign);
 }
 
-bool TargetTransformInfo::useWideIRMemcpyLoopLowering() const {
-  return UseWideMemcpyLoopLowering;
-}
-
 bool TargetTransformInfo::areInlineCompatible(const Function *Caller,
                                               const Function *Callee) const {
   return TTIImpl->areInlineCompatible(Caller, Callee);
+}
+
+bool TargetTransformInfo::isIndexedLoadLegal(MemIndexedMode Mode,
+                                             Type *Ty) const {
+  return TTIImpl->isIndexedLoadLegal(Mode, Ty);
+}
+
+bool TargetTransformInfo::isIndexedStoreLegal(MemIndexedMode Mode,
+                                              Type *Ty) const {
+  return TTIImpl->isIndexedStoreLegal(Mode, Ty);
 }
 
 unsigned TargetTransformInfo::getLoadStoreVecRegBitWidth(unsigned AS) const {
@@ -654,6 +681,66 @@ static bool isAlternateVectorMask(ArrayRef<int> Mask) {
   }
 
   return isAlternate;
+}
+
+static bool isTransposeVectorMask(ArrayRef<int> Mask) {
+  // Transpose vector masks transpose a 2xn matrix. They read corresponding
+  // even- or odd-numbered vector elements from two n-dimensional source
+  // vectors and write each result into consecutive elements of an
+  // n-dimensional destination vector. Two shuffles are necessary to complete
+  // the transpose, one for the even elements and another for the odd elements.
+  // This description closely follows how the TRN1 and TRN2 AArch64
+  // instructions operate.
+  //
+  // For example, a simple 2x2 matrix can be transposed with:
+  //
+  //   ; Original matrix
+  //   m0 = <a, b>
+  //   m1 = <c, d>
+  //
+  //   ; Transposed matrix
+  //   t0 = <a, c> = shufflevector m0, m1, <0, 2>
+  //   t1 = <b, d> = shufflevector m0, m1, <1, 3>
+  //
+  // For matrices having greater than n columns, the resulting nx2 transposed
+  // matrix is stored in two result vectors such that one vector contains
+  // interleaved elements from all the even-numbered rows and the other vector
+  // contains interleaved elements from all the odd-numbered rows. For example,
+  // a 2x4 matrix can be transposed with:
+  //
+  //   ; Original matrix
+  //   m0 = <a, b, c, d>
+  //   m1 = <e, f, g, h>
+  //
+  //   ; Transposed matrix
+  //   t0 = <a, e, c, g> = shufflevector m0, m1 <0, 4, 2, 6>
+  //   t1 = <b, f, d, h> = shufflevector m0, m1 <1, 5, 3, 7>
+  //
+  // The above explanation places limitations on what valid transpose masks can
+  // look like. These limitations are defined by the checks below.
+  //
+  // 1. The number of elements in the mask must be a power of two.
+  if (!isPowerOf2_32(Mask.size()))
+    return false;
+
+  // 2. The first element of the mask must be either a zero (for the
+  // even-numbered vector elements) or a one (for the odd-numbered vector
+  // elements).
+  if (Mask[0] != 0 && Mask[0] != 1)
+    return false;
+
+  // 3. The difference between the first two elements must be equal to the
+  // number of elements in the mask.
+  if (Mask[1] - Mask[0] != (int)Mask.size())
+    return false;
+
+  // 4. The difference between consecutive even-numbered and odd-numbered
+  // elements must be equal to two.
+  for (int I = 2; I < (int)Mask.size(); ++I)
+    if (Mask[I] - Mask[I - 2] != 2)
+      return false;
+
+  return true;
 }
 
 static TargetTransformInfo::OperandValueKind getOperandInfo(Value *V) {
@@ -1112,22 +1199,26 @@ int TargetTransformInfo::getInstructionThroughput(const Instruction *I) const {
 
     if (NumVecElems == Mask.size()) {
       if (isReverseVectorMask(Mask))
-        return getShuffleCost(TargetTransformInfo::SK_Reverse, VecTypOp0,
-                                   0, nullptr);
+        return TTIImpl->getShuffleCost(TargetTransformInfo::SK_Reverse,
+                                       VecTypOp0, 0, nullptr);
       if (isAlternateVectorMask(Mask))
-        return getShuffleCost(TargetTransformInfo::SK_Alternate,
-                                   VecTypOp0, 0, nullptr);
+        return TTIImpl->getShuffleCost(TargetTransformInfo::SK_Alternate,
+                                       VecTypOp0, 0, nullptr);
+
+      if (isTransposeVectorMask(Mask))
+        return TTIImpl->getShuffleCost(TargetTransformInfo::SK_Transpose,
+                                       VecTypOp0, 0, nullptr);
 
       if (isZeroEltBroadcastVectorMask(Mask))
-        return getShuffleCost(TargetTransformInfo::SK_Broadcast,
-                                   VecTypOp0, 0, nullptr);
+        return TTIImpl->getShuffleCost(TargetTransformInfo::SK_Broadcast,
+                                       VecTypOp0, 0, nullptr);
 
       if (isSingleSourceVectorMask(Mask))
-        return getShuffleCost(TargetTransformInfo::SK_PermuteSingleSrc,
-                                   VecTypOp0, 0, nullptr);
+        return TTIImpl->getShuffleCost(TargetTransformInfo::SK_PermuteSingleSrc,
+                                       VecTypOp0, 0, nullptr);
 
-      return getShuffleCost(TargetTransformInfo::SK_PermuteTwoSrc,
-                                 VecTypOp0, 0, nullptr);
+      return TTIImpl->getShuffleCost(TargetTransformInfo::SK_PermuteTwoSrc,
+                                     VecTypOp0, 0, nullptr);
     }
 
     return -1;

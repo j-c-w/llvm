@@ -17,9 +17,9 @@
 
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/SelectionDAG.h"
+#include "llvm/CodeGen/TargetSubtargetInfo.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/Pass.h"
-#include "llvm/Target/TargetSubtargetInfo.h"
 #include <memory>
 
 namespace llvm {
@@ -110,6 +110,11 @@ public:
                             CodeGenOpt::Level OptLevel,
                             bool IgnoreChains = false);
 
+  static void InvalidateNodeId(SDNode *N);
+  static int getUninvalidatedNodeId(SDNode *N);
+
+  static void EnforceNodeIdInvariant(SDNode *N);
+
   // Opcodes used by the DAG state machine:
   enum BuiltinOpcodes {
     OPC_Scope,
@@ -130,6 +135,7 @@ public:
     OPC_CheckOpcode,
     OPC_SwitchOpcode,
     OPC_CheckType,
+    OPC_CheckTypeRes,
     OPC_SwitchType,
     OPC_CheckChild0Type, OPC_CheckChild1Type, OPC_CheckChild2Type,
     OPC_CheckChild3Type, OPC_CheckChild4Type, OPC_CheckChild5Type,
@@ -198,23 +204,28 @@ protected:
   /// of the new node T.
   void ReplaceUses(SDValue F, SDValue T) {
     CurDAG->ReplaceAllUsesOfValueWith(F, T);
+    EnforceNodeIdInvariant(T.getNode());
   }
 
   /// ReplaceUses - replace all uses of the old nodes F with the use
   /// of the new nodes T.
   void ReplaceUses(const SDValue *F, const SDValue *T, unsigned Num) {
     CurDAG->ReplaceAllUsesOfValuesWith(F, T, Num);
+    for (unsigned i = 0; i < Num; ++i)
+      EnforceNodeIdInvariant(T[i].getNode());
   }
 
   /// ReplaceUses - replace all uses of the old node F with the use
   /// of the new node T.
   void ReplaceUses(SDNode *F, SDNode *T) {
     CurDAG->ReplaceAllUsesWith(F, T);
+    EnforceNodeIdInvariant(T);
   }
 
   /// Replace all uses of \c F with \c T, then remove \c F from the DAG.
   void ReplaceNode(SDNode *F, SDNode *T) {
     CurDAG->ReplaceAllUsesWith(F, T);
+    EnforceNodeIdInvariant(T);
     CurDAG->RemoveDeadNode(F);
   }
 
@@ -274,6 +285,8 @@ public:
   virtual bool ComplexPatternFuncMutatesDAG() const {
     return false;
   }
+
+  bool isOrEquivalentToAdd(const SDNode *N) const;
 
 private:
 

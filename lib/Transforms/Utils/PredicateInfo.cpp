@@ -32,7 +32,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/DebugCounter.h"
 #include "llvm/Support/FormattedStream.h"
-#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Utils.h"
 #include "llvm/Transforms/Utils/OrderedInstructions.h"
 #include <algorithm>
 #define DEBUG_TYPE "predicateinfo"
@@ -553,7 +553,7 @@ void PredicateInfo::renameUses(SmallPtrSetImpl<Value *> &OpSet) {
   auto Comparator = [&](const Value *A, const Value *B) {
     return valueComesBefore(OI, A, B);
   };
-  std::sort(OpsToRename.begin(), OpsToRename.end(), Comparator);
+  llvm::sort(OpsToRename.begin(), OpsToRename.end(), Comparator);
   ValueDFS_Compare Compare(OI);
   // Compute liveness, and rename in O(uses) per Op.
   for (auto *Op : OpsToRename) {
@@ -611,6 +611,11 @@ void PredicateInfo::renameUses(SmallPtrSetImpl<Value *> &OpSet) {
     }
 
     convertUsesToDFSOrdered(Op, OrderedUses);
+    // Here we require a stable sort because we do not bother to try to
+    // assign an order to the operands the uses represent. Thus, two
+    // uses in the same instruction do not have a strict sort order
+    // currently and will be considered equal. We could get rid of the
+    // stable sort by creating one if we wanted.
     std::stable_sort(OrderedUses.begin(), OrderedUses.end(), Compare);
     SmallVector<ValueDFS, 8> RenameStack;
     // For each use, sorted into dfs order, push values and replaces uses with

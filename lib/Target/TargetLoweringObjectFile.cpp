@@ -20,17 +20,14 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/Mangler.h"
-#include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCStreamer.h"
 #include "llvm/MC/MCSymbol.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Target/TargetLowering.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
-#include "llvm/Target/TargetSubtargetInfo.h"
 using namespace llvm;
 
 //===----------------------------------------------------------------------===//
@@ -54,11 +51,24 @@ TargetLoweringObjectFile::~TargetLoweringObjectFile() {
   delete Mang;
 }
 
+static bool isNullOrUndef(const Constant *C) {
+  // Check that the constant isn't all zeros or undefs.
+  if (C->isNullValue() || isa<UndefValue>(C))
+    return true;
+  if (!isa<ConstantAggregate>(C))
+    return false;
+  for (auto Operand : C->operand_values()) {
+    if (!isNullOrUndef(cast<Constant>(Operand)))
+      return false;
+  }
+  return true;
+}
+
 static bool isSuitableForBSS(const GlobalVariable *GV, bool NoZerosInBSS) {
   const Constant *C = GV->getInitializer();
 
   // Must have zero initializer.
-  if (!C->isNullValue())
+  if (!isNullOrUndef(C))
     return false;
 
   // Leave constant zeros in readonly constant sections, so they can be shared.

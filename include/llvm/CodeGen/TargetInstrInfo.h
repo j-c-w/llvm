@@ -18,7 +18,6 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseMapInfo.h"
 #include "llvm/ADT/None.h"
-#include "llvm/CodeGen/LiveIntervalAnalysis.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
 #include "llvm/CodeGen/MachineCombinerPattern.h"
 #include "llvm/CodeGen/MachineFunction.h"
@@ -39,6 +38,7 @@ namespace llvm {
 
 class DFAPacketizer;
 class InstrItineraryData;
+class LiveIntervals;
 class LiveVariables;
 class MachineMemOperand;
 class MachineRegisterInfo;
@@ -225,6 +225,17 @@ public:
     return 0;
   }
 
+  /// Optional extension of isLoadFromStackSlot that returns the number of
+  /// bytes loaded from the stack. This must be implemented if a backend
+  /// supports partial stack slot spills/loads to further disambiguate
+  /// what the load does.
+  virtual unsigned isLoadFromStackSlot(const MachineInstr &MI,
+                                       int &FrameIndex,
+                                       unsigned &MemBytes) const {
+    MemBytes = 0;
+    return isLoadFromStackSlot(MI, FrameIndex);
+  }
+
   /// Check for post-frame ptr elimination stack locations as well.
   /// This uses a heuristic so it isn't reliable for correctness.
   virtual unsigned isLoadFromStackSlotPostFE(const MachineInstr &MI,
@@ -250,6 +261,17 @@ public:
   virtual unsigned isStoreToStackSlot(const MachineInstr &MI,
                                       int &FrameIndex) const {
     return 0;
+  }
+
+  /// Optional extension of isStoreToStackSlot that returns the number of
+  /// bytes stored to the stack. This must be implemented if a backend
+  /// supports partial stack slot spills/loads to further disambiguate
+  /// what the store does.
+  virtual unsigned isStoreToStackSlot(const MachineInstr &MI,
+                                      int &FrameIndex,
+                                      unsigned &MemBytes) const {
+    MemBytes = 0;
+    return isStoreToStackSlot(MI, FrameIndex);
   }
 
   /// Check for post-frame ptr elimination stack locations as well.
@@ -421,11 +443,12 @@ public:
   /// Build the equivalent inputs of a REG_SEQUENCE for the given \p MI
   /// and \p DefIdx.
   /// \p [out] InputRegs of the equivalent REG_SEQUENCE. Each element of
-  /// the list is modeled as <Reg:SubReg, SubIdx>.
-  /// E.g., REG_SEQUENCE vreg1:sub1, sub0, vreg2, sub1 would produce
+  /// the list is modeled as <Reg:SubReg, SubIdx>. Operands with the undef
+  /// flag are not added to this list.
+  /// E.g., REG_SEQUENCE %1:sub1, sub0, %2, sub1 would produce
   /// two elements:
-  /// - vreg1:sub1, sub0
-  /// - vreg2<:0>, sub1
+  /// - %1:sub1, sub0
+  /// - %2<:0>, sub1
   ///
   /// \returns true if it is possible to build such an input sequence
   /// with the pair \p MI, \p DefIdx. False otherwise.
@@ -442,11 +465,12 @@ public:
   /// Build the equivalent inputs of a EXTRACT_SUBREG for the given \p MI
   /// and \p DefIdx.
   /// \p [out] InputReg of the equivalent EXTRACT_SUBREG.
-  /// E.g., EXTRACT_SUBREG vreg1:sub1, sub0, sub1 would produce:
-  /// - vreg1:sub1, sub0
+  /// E.g., EXTRACT_SUBREG %1:sub1, sub0, sub1 would produce:
+  /// - %1:sub1, sub0
   ///
   /// \returns true if it is possible to build such an input sequence
-  /// with the pair \p MI, \p DefIdx. False otherwise.
+  /// with the pair \p MI, \p DefIdx and the operand has no undef flag set.
+  /// False otherwise.
   ///
   /// \pre MI.isExtractSubreg() or MI.isExtractSubregLike().
   ///
@@ -460,12 +484,13 @@ public:
   /// and \p DefIdx.
   /// \p [out] BaseReg and \p [out] InsertedReg contain
   /// the equivalent inputs of INSERT_SUBREG.
-  /// E.g., INSERT_SUBREG vreg0:sub0, vreg1:sub1, sub3 would produce:
-  /// - BaseReg: vreg0:sub0
-  /// - InsertedReg: vreg1:sub1, sub3
+  /// E.g., INSERT_SUBREG %0:sub0, %1:sub1, sub3 would produce:
+  /// - BaseReg: %0:sub0
+  /// - InsertedReg: %1:sub1, sub3
   ///
   /// \returns true if it is possible to build such an input sequence
-  /// with the pair \p MI, \p DefIdx. False otherwise.
+  /// with the pair \p MI, \p DefIdx and the operand has no undef flag set.
+  /// False otherwise.
   ///
   /// \pre MI.isInsertSubreg() or MI.isInsertSubregLike().
   ///
@@ -547,7 +572,7 @@ public:
   /// Represents a predicate at the MachineFunction level.  The control flow a
   /// MachineBranchPredicate represents is:
   ///
-  ///  Reg <def>= LHS `Predicate` RHS         == ConditionDef
+  ///  Reg = LHS `Predicate` RHS         == ConditionDef
   ///  if Reg then goto TrueDest else goto FalseDest
   ///
   struct MachineBranchPredicate {
@@ -632,8 +657,8 @@ public:
     return true;
   }
 
-  /// Generate code to reduce the loop iteration by one and check if the loop is
-  /// finished.  Return the value/register of the the new loop count.  We need
+  /// Generate code to reduce the loop iteration by one and check if the loop
+  /// is finished.  Return the value/register of the new loop count.  We need
   /// this function when peeling off one or more iterations of a loop. This
   /// function assumes the nth iteration is peeled first.
   virtual unsigned reduceLoopCount(MachineBasicBlock &MBB, MachineInstr *IndVar,
@@ -949,6 +974,15 @@ public:
 
   /// Return true when a target supports MachineCombiner.
   virtual bool useMachineCombiner() const { return false; }
+
+  /// Return true if the given SDNode can be copied during scheduling
+  /// even if it has glue.
+  virtual bool canCopyGluedNodeDuringSchedule(SDNode *N) const { return false; }
+
+  /// Remember what registers the specified instruction uses and modifies.
+  virtual void trackRegDefsUses(const MachineInstr &MI, BitVector &ModifiedRegs,
+                                BitVector &UsedRegs,
+                                const TargetRegisterInfo *TRI) const;
 
 protected:
   /// Target-dependent implementation for foldMemoryOperand.
@@ -1432,7 +1466,7 @@ public:
   /// For example, AVX instructions may copy part of a register operand into
   /// the unused high bits of the destination register.
   ///
-  /// vcvtsi2sdq %rax, %xmm0<undef>, %xmm14
+  /// vcvtsi2sdq %rax, undef %xmm0, %xmm14
   ///
   /// In the code above, vcvtsi2sdq copies %xmm0[127:64] into %xmm14 creating a
   /// false dependence on any previous write to %xmm0.
@@ -1562,6 +1596,9 @@ public:
     return false;
   }
 
+  /// Returns true if the target implements the MachineOutliner.
+  virtual bool useMachineOutliner() const { return false; }
+
   /// \brief Describes the number of instructions that it will take to call and
   /// construct a frame for a given outlining candidate.
   struct MachineOutlinerInfo {
@@ -1596,7 +1633,7 @@ public:
           std::pair<MachineBasicBlock::iterator, MachineBasicBlock::iterator>>
           &RepeatedSequenceLocs) const {
     llvm_unreachable(
-        "Target didn't implement TargetInstrInfo::getOutliningOverhead!");
+        "Target didn't implement TargetInstrInfo::getOutliningCandidateInfo!");
   }
 
   /// Represents how an instruction should be mapped by the outliner.
@@ -1607,9 +1644,16 @@ public:
   enum MachineOutlinerInstrType { Legal, Illegal, Invisible };
 
   /// Returns how or if \p MI should be outlined.
-  virtual MachineOutlinerInstrType getOutliningType(MachineInstr &MI) const {
+  virtual MachineOutlinerInstrType
+  getOutliningType(MachineBasicBlock::iterator &MIT, unsigned Flags) const {
     llvm_unreachable(
         "Target didn't implement TargetInstrInfo::getOutliningType!");
+  }
+
+  /// \brief Returns target-defined flags defining properties of the MBB for
+  /// the outliner.
+  virtual unsigned getMachineOutlinerMBBFlags(MachineBasicBlock &MBB) const {
+    return 0x0;
   }
 
   /// Insert a custom epilogue for outlined functions.

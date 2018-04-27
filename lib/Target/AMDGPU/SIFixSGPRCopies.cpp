@@ -14,46 +14,46 @@
 ///  Register Class <vsrc> is the union of <vgpr> and <sgpr>
 ///
 /// BB0:
-///   %vreg0 <sgpr> = SCALAR_INST
-///   %vreg1 <vsrc> = COPY %vreg0 <sgpr>
+///   %0 <sgpr> = SCALAR_INST
+///   %1 <vsrc> = COPY %0 <sgpr>
 ///    ...
 ///    BRANCH %cond BB1, BB2
 ///  BB1:
-///    %vreg2 <vgpr> = VECTOR_INST
-///    %vreg3 <vsrc> = COPY %vreg2 <vgpr>
+///    %2 <vgpr> = VECTOR_INST
+///    %3 <vsrc> = COPY %2 <vgpr>
 ///  BB2:
-///    %vreg4 <vsrc> = PHI %vreg1 <vsrc>, <BB#0>, %vreg3 <vrsc>, <BB#1>
-///    %vreg5 <vgpr> = VECTOR_INST %vreg4 <vsrc>
+///    %4 <vsrc> = PHI %1 <vsrc>, <%bb.0>, %3 <vrsc>, <%bb.1>
+///    %5 <vgpr> = VECTOR_INST %4 <vsrc>
 ///
 ///
 /// The coalescer will begin at BB0 and eliminate its copy, then the resulting
 /// code will look like this:
 ///
 /// BB0:
-///   %vreg0 <sgpr> = SCALAR_INST
+///   %0 <sgpr> = SCALAR_INST
 ///    ...
 ///    BRANCH %cond BB1, BB2
 /// BB1:
-///   %vreg2 <vgpr> = VECTOR_INST
-///   %vreg3 <vsrc> = COPY %vreg2 <vgpr>
+///   %2 <vgpr> = VECTOR_INST
+///   %3 <vsrc> = COPY %2 <vgpr>
 /// BB2:
-///   %vreg4 <sgpr> = PHI %vreg0 <sgpr>, <BB#0>, %vreg3 <vsrc>, <BB#1>
-///   %vreg5 <vgpr> = VECTOR_INST %vreg4 <sgpr>
+///   %4 <sgpr> = PHI %0 <sgpr>, <%bb.0>, %3 <vsrc>, <%bb.1>
+///   %5 <vgpr> = VECTOR_INST %4 <sgpr>
 ///
 /// Now that the result of the PHI instruction is an SGPR, the register
-/// allocator is now forced to constrain the register class of %vreg3 to
+/// allocator is now forced to constrain the register class of %3 to
 /// <sgpr> so we end up with final code like this:
 ///
 /// BB0:
-///   %vreg0 <sgpr> = SCALAR_INST
+///   %0 <sgpr> = SCALAR_INST
 ///    ...
 ///    BRANCH %cond BB1, BB2
 /// BB1:
-///   %vreg2 <vgpr> = VECTOR_INST
-///   %vreg3 <sgpr> = COPY %vreg2 <vgpr>
+///   %2 <vgpr> = VECTOR_INST
+///   %3 <sgpr> = COPY %2 <vgpr>
 /// BB2:
-///   %vreg4 <sgpr> = PHI %vreg0 <sgpr>, <BB#0>, %vreg3 <sgpr>, <BB#1>
-///   %vreg5 <vgpr> = VECTOR_INST %vreg4 <sgpr>
+///   %4 <sgpr> = PHI %0 <sgpr>, <%bb.0>, %3 <sgpr>, <%bb.1>
+///   %5 <vgpr> = VECTOR_INST %4 <sgpr>
 ///
 /// Now this code contains an illegal copy from a VGPR to an SGPR.
 ///
@@ -81,13 +81,13 @@
 #include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/CodeGen/MachineOperand.h"
 #include "llvm/CodeGen/MachineRegisterInfo.h"
+#include "llvm/CodeGen/TargetRegisterInfo.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/CodeGen.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetMachine.h"
-#include "llvm/Target/TargetRegisterInfo.h"
 #include <cassert>
 #include <cstdint>
 #include <iterator>
@@ -513,8 +513,9 @@ static bool hoistAndMergeSGPRInits(unsigned Reg,
 
         if (MDT.dominates(MI1, MI2)) {
           if (!intereferes(MI2, MI1)) {
-            DEBUG(dbgs() << "Erasing from BB#" << MI2->getParent()->getNumber()
-                         << " " << *MI2);
+            DEBUG(dbgs() << "Erasing from "
+                         << printMBBReference(*MI2->getParent()) << " "
+                         << *MI2);
             MI2->eraseFromParent();
             Defs.erase(I2++);
             Changed = true;
@@ -522,8 +523,9 @@ static bool hoistAndMergeSGPRInits(unsigned Reg,
           }
         } else if (MDT.dominates(MI2, MI1)) {
           if (!intereferes(MI1, MI2)) {
-            DEBUG(dbgs() << "Erasing from BB#" << MI1->getParent()->getNumber()
-                         << " " << *MI1);
+            DEBUG(dbgs() << "Erasing from "
+                         << printMBBReference(*MI1->getParent()) << " "
+                         << *MI1);
             MI1->eraseFromParent();
             Defs.erase(I1++);
             Changed = true;
@@ -539,10 +541,11 @@ static bool hoistAndMergeSGPRInits(unsigned Reg,
 
           MachineBasicBlock::iterator I = MBB->getFirstNonPHI();
           if (!intereferes(MI1, I) && !intereferes(MI2, I)) {
-            DEBUG(dbgs() << "Erasing from BB#" << MI1->getParent()->getNumber()
-                         << " " << *MI1 << "and moving from BB#"
-                         << MI2->getParent()->getNumber() << " to BB#"
-                         << I->getParent()->getNumber() << " " << *MI2);
+            DEBUG(dbgs() << "Erasing from "
+                         << printMBBReference(*MI1->getParent()) << " " << *MI1
+                         << "and moving from "
+                         << printMBBReference(*MI2->getParent()) << " to "
+                         << printMBBReference(*I->getParent()) << " " << *MI2);
             I->getParent()->splice(I, MI2->getParent(), MI2);
             MI1->eraseFromParent();
             Defs.erase(I1++);

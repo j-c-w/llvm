@@ -92,8 +92,8 @@
 #include "llvm/Target/TargetMachine.h"
 #include <algorithm>
 #include <cassert>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -242,7 +242,7 @@ bool GlobalMerge::doMerge(SmallVectorImpl<GlobalVariable*> &Globals,
   // code (currently, a Function) to the set of globals seen so far that are
   // used together in that unit (GlobalUsesByFunction).
   //
-  // When we look at the Nth global, we now that any new set is either:
+  // When we look at the Nth global, we know that any new set is either:
   // - the singleton set {N}, containing this global only, or
   // - the union of {N} and a previously-discovered set, containing some
   //   combination of the previous N-1 globals.
@@ -497,6 +497,8 @@ bool GlobalMerge::doMerge(const SmallVectorImpl<GlobalVariable *> &Globals,
     for (ssize_t k = i, idx = 0; k != j; k = GlobalSet.find_next(k), ++idx) {
       GlobalValue::LinkageTypes Linkage = Globals[k]->getLinkage();
       std::string Name = Globals[k]->getName();
+      GlobalValue::DLLStorageClassTypes DLLStorage =
+          Globals[k]->getDLLStorageClass();
 
       // Copy metadata while adjusting any debug info metadata by the original
       // global's offset within the merged global.
@@ -517,7 +519,9 @@ bool GlobalMerge::doMerge(const SmallVectorImpl<GlobalVariable *> &Globals,
       // It's not safe on Mach-O as the alias (and thus the portion of the
       // MergedGlobals variable) may be dead stripped at link time.
       if (Linkage != GlobalValue::InternalLinkage || !IsMachO) {
-        GlobalAlias::create(Tys[idx], AddrSpace, Linkage, Name, GEP, &M);
+        GlobalAlias *GA =
+            GlobalAlias::create(Tys[idx], AddrSpace, Linkage, Name, GEP, &M);
+        GA->setDLLStorageClass(DLLStorage);
       }
 
       NumMerged++;

@@ -11,13 +11,6 @@
 // that are not yet supported remain commented out.
 //===----------------------------------------------------------------------===//
 
-def has16BankLDS : Predicate<"Subtarget->getLDSBankCount() == 16">;
-def has32BankLDS : Predicate<"Subtarget->getLDSBankCount() == 32">;
-def HasVGPRIndexMode : Predicate<"Subtarget->hasVGPRIndexMode()">,
-                      AssemblerPredicate<"FeatureVGPRIndexMode">;
-def HasMovrel : Predicate<"Subtarget->hasMovrel()">,
-                AssemblerPredicate<"FeatureMovrel">;
-
 class GCNPat<dag pattern, dag result> : AMDGPUPat<pattern, result> {
   let SubtargetPredicate = isGCN;
 }
@@ -40,15 +33,18 @@ defm EXP_DONE : EXP_m<1, AMDGPUexport_done>;
 // VINTRP Instructions
 //===----------------------------------------------------------------------===//
 
+// Used to inject printing of "_e32" suffix for VI (there are "_e64" variants for VI)
+def VINTRPDst : VINTRPDstOperand <VGPR_32>;
+
 let Uses = [M0, EXEC] in {
 
 // FIXME: Specify SchedRW for VINTRP insturctions.
 
 multiclass V_INTERP_P1_F32_m : VINTRP_m <
   0x00000000,
-  (outs VGPR_32:$vdst),
+  (outs VINTRPDst:$vdst),
   (ins VGPR_32:$vsrc, Attr:$attr, AttrChan:$attrchan),
-  "v_interp_p1_f32 $vdst, $vsrc, $attr$attrchan",
+  "v_interp_p1_f32$vdst, $vsrc, $attr$attrchan",
   [(set f32:$vdst, (AMDGPUinterp_p1 f32:$vsrc, (i32 imm:$attrchan),
                                                (i32 imm:$attr)))]
 >;
@@ -69,9 +65,9 @@ let DisableEncoding = "$src0", Constraints = "$src0 = $vdst" in {
 
 defm V_INTERP_P2_F32 : VINTRP_m <
   0x00000001,
-  (outs VGPR_32:$vdst),
+  (outs VINTRPDst:$vdst),
   (ins VGPR_32:$src0, VGPR_32:$vsrc, Attr:$attr, AttrChan:$attrchan),
-  "v_interp_p2_f32 $vdst, $vsrc, $attr$attrchan",
+  "v_interp_p2_f32$vdst, $vsrc, $attr$attrchan",
   [(set f32:$vdst, (AMDGPUinterp_p2 f32:$src0, f32:$vsrc, (i32 imm:$attrchan),
                                                           (i32 imm:$attr)))]>;
 
@@ -79,9 +75,9 @@ defm V_INTERP_P2_F32 : VINTRP_m <
 
 defm V_INTERP_MOV_F32 : VINTRP_m <
   0x00000002,
-  (outs VGPR_32:$vdst),
+  (outs VINTRPDst:$vdst),
   (ins InterpSlot:$vsrc, Attr:$attr, AttrChan:$attrchan),
-  "v_interp_mov_f32 $vdst, $vsrc, $attr$attrchan",
+  "v_interp_mov_f32$vdst, $vsrc, $attr$attrchan",
   [(set f32:$vdst, (AMDGPUinterp_mov (i32 imm:$vsrc), (i32 imm:$attrchan),
                                      (i32 imm:$attr)))]>;
 
@@ -108,8 +104,8 @@ def V_CNDMASK_B64_PSEUDO : VOP3Common <(outs VReg_64:$vdst),
   let usesCustomInserter = 1;
 }
 
-// 64-bit vector move instruction.  This is mainly used by the SIFoldOperands
-// pass to enable folding of inline immediates.
+// 64-bit vector move instruction. This is mainly used by the
+// SIFoldOperands pass to enable folding of inline immediates.
 def V_MOV_B64_PSEUDO : VPseudoInstSI <(outs VReg_64:$vdst),
                                       (ins VSrc_b64:$src0)>;
 
@@ -147,6 +143,28 @@ def V_SET_INACTIVE_B64 : VPseudoInstSI <(outs VReg_64:$vdst),
   let Constraints = "$src = $vdst";
 }
 
+
+let usesCustomInserter = 1, Defs = [SCC] in {
+def S_ADD_U64_PSEUDO : SPseudoInstSI <
+  (outs SReg_64:$vdst), (ins SSrc_b64:$src0, SSrc_b64:$src1),
+  [(set SReg_64:$vdst, (add i64:$src0, i64:$src1))]
+>;
+
+def S_SUB_U64_PSEUDO : SPseudoInstSI <
+  (outs SReg_64:$vdst), (ins SSrc_b64:$src0, SSrc_b64:$src1),
+  [(set SReg_64:$vdst, (sub i64:$src0, i64:$src1))]
+>;
+
+def S_ADD_U64_CO_PSEUDO : SPseudoInstSI <
+  (outs SReg_64:$vdst, VOPDstS64:$sdst), (ins SSrc_b64:$src0, SSrc_b64:$src1)
+>;
+
+def S_SUB_U64_CO_PSEUDO : SPseudoInstSI <
+  (outs SReg_64:$vdst, VOPDstS64:$sdst), (ins SSrc_b64:$src0, SSrc_b64:$src1)
+>;
+
+} // End usesCustomInserter = 1, Defs = [SCC]
+
 let usesCustomInserter = 1, SALU = 1 in {
 def GET_GROUPSTATICSIZE : PseudoInstSI <(outs SReg_32:$sdst), (ins),
   [(set SReg_32:$sdst, (int_amdgcn_groupstaticsize))]>;
@@ -164,6 +182,7 @@ def S_XOR_B64_term : PseudoInstSI<(outs SReg_64:$dst),
   let SALU = 1;
   let isAsCheapAsAMove = 1;
   let isTerminator = 1;
+  let Defs = [SCC];
 }
 
 def S_ANDN2_B64_term : PseudoInstSI<(outs SReg_64:$dst),
@@ -224,7 +243,6 @@ def SI_IF: CFPseudoInstSI <
 def SI_ELSE : CFPseudoInstSI <
   (outs SReg_64:$dst),
   (ins SReg_64:$src, brtarget:$target, i1imm:$execfix), [], 1, 1> {
-  let Constraints = "$src = $dst";
   let Size = 12;
   let hasSideEffects = 1;
 }
@@ -547,11 +565,6 @@ def : GCNPat<
   (SI_ELSE $src, $target, 0)
 >;
 
-def : GCNPat <
-  (int_AMDGPU_kilp),
-  (SI_KILL_I1_PSEUDO (i1 0), 0)
->;
-
 def : Pat <
   // -1.0 as i32 (LowerINTRINSIC_VOID converts all other constants to -1.0)
   (AMDGPUkill (i32 -1082130432)),
@@ -702,6 +715,10 @@ defm : SelectPat <f32, V_CNDMASK_B32_e64>;
 
 def : GCNPat <
   (i32 (add (i32 (ctpop i32:$popcnt)), i32:$val)),
+  (V_BCNT_U32_B32_e64 $popcnt, $val)
+>;
+def : GCNPat <
+  (i16 (add (i16 (trunc (ctpop i32:$popcnt))), i16:$val)),
   (V_BCNT_U32_B32_e64 $popcnt, $val)
 >;
 
@@ -1075,6 +1092,7 @@ let SubtargetPredicate = isGCN in {
 def : IMad24Pat<V_MAD_I32_I24, 1>;
 def : UMad24Pat<V_MAD_U32_U24, 1>;
 
+// FIXME: This should only be done for VALU inputs
 defm : BFIPatterns <V_BFI_B32, S_MOV_B32, SReg_64>;
 def : ROTRPattern <V_ALIGNBIT_B32>;
 
@@ -1464,7 +1482,7 @@ defm : BFMPatterns <i32, S_BFM_B32, S_MOV_B32>;
 // FIXME: defm : BFMPatterns <i64, S_BFM_B64, S_MOV_B64>;
 
 defm : BFEPattern <V_BFE_U32, V_BFE_I32, S_MOV_B32>;
-def : SHA256MaPattern <V_BFI_B32, V_XOR_B32_e64>;
+defm : SHA256MaPattern <V_BFI_B32, V_XOR_B32_e64, SReg_64>;
 
 def : IntMed3Pat<V_MED3_I32, smax, smax_oneuse, smin_oneuse>;
 def : IntMed3Pat<V_MED3_U32, umax, umax_oneuse, umin_oneuse>;
@@ -1510,47 +1528,3 @@ def : FP16Med3Pat<f16, V_MED3_F16>;
 def : Int16Med3Pat<V_MED3_I16, smax, smax_oneuse, smin_oneuse, i16>;
 def : Int16Med3Pat<V_MED3_U16, umax, umax_oneuse, umin_oneuse, i16>;
 } // End Predicates = [isGFX9]
-
-//============================================================================//
-// Assembler aliases
-//============================================================================//
-
-multiclass NoCarryAlias<string Inst,
-  Instruction Inst32NC, Instruction Inst64NC,
-  Instruction Inst32CO, Instruction Inst64CO> {
-  def : InstAlias<Inst#" $vdst, $src0, $src1",
-    (Inst32NC VGPR_32:$vdst, VSrc_b32:$src0, VGPR_32:$src1), 1000>,
-    Requires<[HasAddNoCarryInsts]>;
-
-  def : InstAlias<Inst#" $vdst, $src0, $src1",
-    (Inst64NC VGPR_32:$vdst, VCSrc_b32:$src0, VCSrc_b32:$src1), -10>,
-    Requires<[HasAddNoCarryInsts]>;
-
-  def : InstAlias<Inst#" $vdst, vcc, $src0, $src1",
-    (Inst32CO VGPR_32:$vdst, VSrc_b32:$src0, VGPR_32:$src1), 1000>,
-    Requires<[HasAddNoCarryInsts]>;
-
-  def : InstAlias<Inst#" $vdst, $sdst, $src0, $src1",
-    (Inst64CO VGPR_32:$vdst, SReg_64:$sdst, VSrc_b32:$src0, VGPR_32:$src1), -10>,
-    Requires<[HasAddNoCarryInsts]>;
-}
-
-// gfx9 made a mess of add instruction names. The existing add
-// instructions add _co added to the names, and their old names were
-// repurposed to a version without carry out.
-// TODO: Do we need SubtargetPredicates for MnemonicAliases?
-let Predicates = [HasAddNoCarryInsts] in {
-defm : NoCarryAlias<"v_add_u32", V_ADD_U32_e32_vi, V_ADD_U32_e64_vi,
-                                 V_ADD_I32_e32_vi, V_ADD_I32_e64_vi>;
-defm : NoCarryAlias<"v_sub_u32", V_SUB_U32_e32_vi, V_SUB_U32_e64_vi,
-                                 V_SUB_I32_e32_vi, V_SUB_I32_e64_vi>;
-defm : NoCarryAlias<"v_subrev_u32",
-  V_SUBREV_U32_e32_vi, V_SUBREV_U32_e64_vi,
-  V_SUBREV_I32_e32_vi, V_SUBREV_I32_e64_vi>;
-}
-
-let Predicates = [NotHasAddNoCarryInsts] in {
-def : MnemonicAlias<"v_add_u32", "v_add_i32">;
-def : MnemonicAlias<"v_sub_u32", "v_sub_i32">;
-def : MnemonicAlias<"v_subrev_u32", "v_subrev_i32">;
-}

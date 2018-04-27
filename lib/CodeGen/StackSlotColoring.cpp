@@ -15,8 +15,8 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/CodeGen/LiveInterval.h"
-#include "llvm/CodeGen/LiveIntervalAnalysis.h"
-#include "llvm/CodeGen/LiveStackAnalysis.h"
+#include "llvm/CodeGen/LiveIntervals.h"
+#include "llvm/CodeGen/LiveStacks.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
 #include "llvm/CodeGen/MachineBlockFrequencyInfo.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
@@ -29,13 +29,13 @@
 #include "llvm/CodeGen/PseudoSourceValue.h"
 #include "llvm/CodeGen/SlotIndexes.h"
 #include "llvm/CodeGen/TargetInstrInfo.h"
+#include "llvm/CodeGen/TargetRegisterInfo.h"
+#include "llvm/CodeGen/TargetSubtargetInfo.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Target/TargetRegisterInfo.h"
-#include "llvm/Target/TargetSubtargetInfo.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -209,8 +209,8 @@ void StackSlotColoring::InitializeSlots() {
   Intervals.reserve(LS->getNumIntervals());
   for (auto &I : *LS)
     Intervals.push_back(&I);
-  std::sort(Intervals.begin(), Intervals.end(),
-            [](Pair *LHS, Pair *RHS) { return LHS->first < RHS->first; });
+  llvm::sort(Intervals.begin(), Intervals.end(),
+             [](Pair *LHS, Pair *RHS) { return LHS->first < RHS->first; });
 
   // Gather all spill slots into a list.
   DEBUG(dbgs() << "Spill slot intervals:\n");
@@ -418,7 +418,9 @@ bool StackSlotColoring::RemoveDeadStores(MachineBasicBlock* MBB) {
 
     unsigned LoadReg = 0;
     unsigned StoreReg = 0;
-    if (!(LoadReg = TII->isLoadFromStackSlot(*I, FirstSS)))
+    unsigned LoadSize = 0;
+    unsigned StoreSize = 0;
+    if (!(LoadReg = TII->isLoadFromStackSlot(*I, FirstSS, LoadSize)))
       continue;
     // Skip the ...pseudo debugging... instructions between a load and store.
     while ((NextMI != E) && NextMI->isDebugValue()) {
@@ -426,9 +428,11 @@ bool StackSlotColoring::RemoveDeadStores(MachineBasicBlock* MBB) {
       ++I;
     }
     if (NextMI == E) continue;
-    if (!(StoreReg = TII->isStoreToStackSlot(*NextMI, SecondSS)))
+    if (!(StoreReg = TII->isStoreToStackSlot(*NextMI, SecondSS, StoreSize)))
       continue;
-    if (FirstSS != SecondSS || LoadReg != StoreReg || FirstSS == -1) continue;
+    if (FirstSS != SecondSS || LoadReg != StoreReg || FirstSS == -1 ||
+        LoadSize != StoreSize)
+      continue;
 
     ++NumDead;
     changed = true;
@@ -454,6 +458,9 @@ bool StackSlotColoring::runOnMachineFunction(MachineFunction &MF) {
       dbgs() << "********** Stack Slot Coloring **********\n"
              << "********** Function: " << MF.getName() << '\n';
     });
+
+  if (skipFunction(MF.getFunction()))
+    return false;
 
   MFI = &MF.getFrameInfo();
   TII = MF.getSubtarget().getInstrInfo();

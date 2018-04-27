@@ -161,6 +161,10 @@ public:
       ASESet |= Mips::AFL_ASE_MIPS16;
     if (P.hasMT())
       ASESet |= Mips::AFL_ASE_MT;
+    if (P.hasCRC())
+      ASESet |= Mips::AFL_ASE_CRC;
+    if (P.hasVirt())
+      ASESet |= Mips::AFL_ASE_VIRT;
   }
 
   template <class PredicateLibrary>

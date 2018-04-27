@@ -36,6 +36,10 @@
 #include <type_traits>
 #include <utility>
 
+#ifdef EXPENSIVE_CHECKS
+#include <random> // for std::mt19937
+#endif
+
 namespace llvm {
 
 // Only used by compiler if both template types are the same.  Useful when
@@ -101,6 +105,7 @@ class function_ref<Ret(Params...)> {
 
 public:
   function_ref() = default;
+  function_ref(std::nullptr_t) {}
 
   template <typename Callable>
   function_ref(Callable &&callable,
@@ -129,6 +134,52 @@ inline void deleter(T *Ptr) {
 //===----------------------------------------------------------------------===//
 //     Extra additions to <iterator>
 //===----------------------------------------------------------------------===//
+
+namespace adl_detail {
+
+using std::begin;
+
+template <typename ContainerTy>
+auto adl_begin(ContainerTy &&container)
+    -> decltype(begin(std::forward<ContainerTy>(container))) {
+  return begin(std::forward<ContainerTy>(container));
+}
+
+using std::end;
+
+template <typename ContainerTy>
+auto adl_end(ContainerTy &&container)
+    -> decltype(end(std::forward<ContainerTy>(container))) {
+  return end(std::forward<ContainerTy>(container));
+}
+
+using std::swap;
+
+template <typename T>
+void adl_swap(T &&lhs, T &&rhs) noexcept(noexcept(swap(std::declval<T>(),
+                                                       std::declval<T>()))) {
+  swap(std::forward<T>(lhs), std::forward<T>(rhs));
+}
+
+} // end namespace adl_detail
+
+template <typename ContainerTy>
+auto adl_begin(ContainerTy &&container)
+    -> decltype(adl_detail::adl_begin(std::forward<ContainerTy>(container))) {
+  return adl_detail::adl_begin(std::forward<ContainerTy>(container));
+}
+
+template <typename ContainerTy>
+auto adl_end(ContainerTy &&container)
+    -> decltype(adl_detail::adl_end(std::forward<ContainerTy>(container))) {
+  return adl_detail::adl_end(std::forward<ContainerTy>(container));
+}
+
+template <typename T>
+void adl_swap(T &&lhs, T &&rhs) noexcept(
+    noexcept(adl_detail::adl_swap(std::declval<T>(), std::declval<T>()))) {
+  adl_detail::adl_swap(std::forward<T>(lhs), std::forward<T>(rhs));
+}
 
 // mapped_iterator - This is a simple iterator adapter that causes a function to
 // be applied whenever operator* is invoked on the iterator.
@@ -220,59 +271,120 @@ auto reverse(
 ///   auto R = make_filter_range(A, [](int N) { return N % 2 == 1; });
 ///   // R contains { 1, 3 }.
 /// \endcode
-template <typename WrappedIteratorT, typename PredicateT>
-class filter_iterator
+///
+/// Note: filter_iterator_base implements support for forward iteration.
+/// filter_iterator_impl exists to provide support for bidirectional iteration,
+/// conditional on whether the wrapped iterator supports it.
+template <typename WrappedIteratorT, typename PredicateT, typename IterTag>
+class filter_iterator_base
     : public iterator_adaptor_base<
-          filter_iterator<WrappedIteratorT, PredicateT>, WrappedIteratorT,
+          filter_iterator_base<WrappedIteratorT, PredicateT, IterTag>,
+          WrappedIteratorT,
           typename std::common_type<
-              std::forward_iterator_tag,
-              typename std::iterator_traits<
-                  WrappedIteratorT>::iterator_category>::type> {
+              IterTag, typename std::iterator_traits<
+                           WrappedIteratorT>::iterator_category>::type> {
   using BaseT = iterator_adaptor_base<
-      filter_iterator<WrappedIteratorT, PredicateT>, WrappedIteratorT,
+      filter_iterator_base<WrappedIteratorT, PredicateT, IterTag>,
+      WrappedIteratorT,
       typename std::common_type<
-          std::forward_iterator_tag,
-          typename std::iterator_traits<WrappedIteratorT>::iterator_category>::
-          type>;
+          IterTag, typename std::iterator_traits<
+                       WrappedIteratorT>::iterator_category>::type>;
 
-  struct PayloadType {
-    WrappedIteratorT End;
-    PredicateT Pred;
-  };
-
-  Optional<PayloadType> Payload;
+protected:
+  WrappedIteratorT End;
+  PredicateT Pred;
 
   void findNextValid() {
-    assert(Payload && "Payload should be engaged when findNextValid is called");
-    while (this->I != Payload->End && !Payload->Pred(*this->I))
+    while (this->I != End && !Pred(*this->I))
       BaseT::operator++();
   }
 
-  // Construct the begin iterator. The begin iterator requires to know where end
-  // is, so that it can properly stop when it hits end.
-  filter_iterator(WrappedIteratorT Begin, WrappedIteratorT End, PredicateT Pred)
-      : BaseT(std::move(Begin)),
-        Payload(PayloadType{std::move(End), std::move(Pred)}) {
+  // Construct the iterator. The begin iterator needs to know where the end
+  // is, so that it can properly stop when it gets there. The end iterator only
+  // needs the predicate to support bidirectional iteration.
+  filter_iterator_base(WrappedIteratorT Begin, WrappedIteratorT End,
+                       PredicateT Pred)
+      : BaseT(Begin), End(End), Pred(Pred) {
     findNextValid();
   }
-
-  // Construct the end iterator. It's not incrementable, so Payload doesn't
-  // have to be engaged.
-  filter_iterator(WrappedIteratorT End) : BaseT(End) {}
 
 public:
   using BaseT::operator++;
 
-  filter_iterator &operator++() {
+  filter_iterator_base &operator++() {
     BaseT::operator++();
     findNextValid();
     return *this;
   }
-
-  template <typename RT, typename PT>
-  friend iterator_range<filter_iterator<detail::IterOfRange<RT>, PT>>
-  make_filter_range(RT &&, PT);
 };
+
+/// Specialization of filter_iterator_base for forward iteration only.
+template <typename WrappedIteratorT, typename PredicateT,
+          typename IterTag = std::forward_iterator_tag>
+class filter_iterator_impl
+    : public filter_iterator_base<WrappedIteratorT, PredicateT, IterTag> {
+  using BaseT = filter_iterator_base<WrappedIteratorT, PredicateT, IterTag>;
+
+public:
+  filter_iterator_impl(WrappedIteratorT Begin, WrappedIteratorT End,
+                       PredicateT Pred)
+      : BaseT(Begin, End, Pred) {}
+};
+
+/// Specialization of filter_iterator_base for bidirectional iteration.
+template <typename WrappedIteratorT, typename PredicateT>
+class filter_iterator_impl<WrappedIteratorT, PredicateT,
+                           std::bidirectional_iterator_tag>
+    : public filter_iterator_base<WrappedIteratorT, PredicateT,
+                                  std::bidirectional_iterator_tag> {
+  using BaseT = filter_iterator_base<WrappedIteratorT, PredicateT,
+                                     std::bidirectional_iterator_tag>;
+  void findPrevValid() {
+    while (!this->Pred(*this->I))
+      BaseT::operator--();
+  }
+
+public:
+  using BaseT::operator--;
+
+  filter_iterator_impl(WrappedIteratorT Begin, WrappedIteratorT End,
+                       PredicateT Pred)
+      : BaseT(Begin, End, Pred) {}
+
+  filter_iterator_impl &operator--() {
+    BaseT::operator--();
+    findPrevValid();
+    return *this;
+  }
+};
+
+namespace detail {
+
+template <bool is_bidirectional> struct fwd_or_bidi_tag_impl {
+  using type = std::forward_iterator_tag;
+};
+
+template <> struct fwd_or_bidi_tag_impl<true> {
+  using type = std::bidirectional_iterator_tag;
+};
+
+/// Helper which sets its type member to forward_iterator_tag if the category
+/// of \p IterT does not derive from bidirectional_iterator_tag, and to
+/// bidirectional_iterator_tag otherwise.
+template <typename IterT> struct fwd_or_bidi_tag {
+  using type = typename fwd_or_bidi_tag_impl<std::is_base_of<
+      std::bidirectional_iterator_tag,
+      typename std::iterator_traits<IterT>::iterator_category>::value>::type;
+};
+
+} // namespace detail
+
+/// Defines filter_iterator to a suitable specialization of
+/// filter_iterator_impl, based on the underlying iterator's category.
+template <typename WrappedIteratorT, typename PredicateT>
+using filter_iterator = filter_iterator_impl<
+    WrappedIteratorT, PredicateT,
+    typename detail::fwd_or_bidi_tag<WrappedIteratorT>::type>;
 
 /// Convenience function that takes a range of elements and a predicate,
 /// and return a new filter_iterator range.
@@ -286,10 +398,11 @@ iterator_range<filter_iterator<detail::IterOfRange<RangeT>, PredicateT>>
 make_filter_range(RangeT &&Range, PredicateT Pred) {
   using FilterIteratorT =
       filter_iterator<detail::IterOfRange<RangeT>, PredicateT>;
-  return make_range(FilterIteratorT(std::begin(std::forward<RangeT>(Range)),
-                                    std::end(std::forward<RangeT>(Range)),
-                                    std::move(Pred)),
-                    FilterIteratorT(std::end(std::forward<RangeT>(Range))));
+  return make_range(
+      FilterIteratorT(std::begin(std::forward<RangeT>(Range)),
+                      std::end(std::forward<RangeT>(Range)), Pred),
+      FilterIteratorT(std::end(std::forward<RangeT>(Range)),
+                      std::end(std::forward<RangeT>(Range)), Pred));
 }
 
 // forward declarations required by zip_shortest/zip_first
@@ -715,6 +828,10 @@ inline void array_pod_sort(IteratorTy Start, IteratorTy End) {
   // behavior with an empty sequence.
   auto NElts = End - Start;
   if (NElts <= 1) return;
+#ifdef EXPENSIVE_CHECKS
+  std::mt19937 Generator(std::random_device{}());
+  std::shuffle(Start, End, Generator);
+#endif
   qsort(&*Start, NElts, sizeof(*Start), get_array_pod_sort_comparator(*Start));
 }
 
@@ -728,8 +845,32 @@ inline void array_pod_sort(
   // behavior with an empty sequence.
   auto NElts = End - Start;
   if (NElts <= 1) return;
+#ifdef EXPENSIVE_CHECKS
+  std::mt19937 Generator(std::random_device{}());
+  std::shuffle(Start, End, Generator);
+#endif
   qsort(&*Start, NElts, sizeof(*Start),
         reinterpret_cast<int (*)(const void *, const void *)>(Compare));
+}
+
+// Provide wrappers to std::sort which shuffle the elements before sorting
+// to help uncover non-deterministic behavior (PR35135).
+template <typename IteratorTy>
+inline void sort(IteratorTy Start, IteratorTy End) {
+#ifdef EXPENSIVE_CHECKS
+  std::mt19937 Generator(std::random_device{}());
+  std::shuffle(Start, End, Generator);
+#endif
+  std::sort(Start, End);
+}
+
+template <typename IteratorTy, typename Compare>
+inline void sort(IteratorTy Start, IteratorTy End, Compare Comp) {
+#ifdef EXPENSIVE_CHECKS
+  std::mt19937 Generator(std::random_device{}());
+  std::shuffle(Start, End, Generator);
+#endif
+  std::sort(Start, End, Comp);
 }
 
 //===----------------------------------------------------------------------===//
@@ -758,106 +899,110 @@ void DeleteContainerSeconds(Container &C) {
 /// pass begin/end explicitly.
 template <typename R, typename UnaryPredicate>
 UnaryPredicate for_each(R &&Range, UnaryPredicate P) {
-  return std::for_each(std::begin(Range), std::end(Range), P);
+  return std::for_each(adl_begin(Range), adl_end(Range), P);
 }
 
 /// Provide wrappers to std::all_of which take ranges instead of having to pass
 /// begin/end explicitly.
 template <typename R, typename UnaryPredicate>
 bool all_of(R &&Range, UnaryPredicate P) {
-  return std::all_of(std::begin(Range), std::end(Range), P);
+  return std::all_of(adl_begin(Range), adl_end(Range), P);
 }
 
 /// Provide wrappers to std::any_of which take ranges instead of having to pass
 /// begin/end explicitly.
 template <typename R, typename UnaryPredicate>
 bool any_of(R &&Range, UnaryPredicate P) {
-  return std::any_of(std::begin(Range), std::end(Range), P);
+  return std::any_of(adl_begin(Range), adl_end(Range), P);
 }
 
 /// Provide wrappers to std::none_of which take ranges instead of having to pass
 /// begin/end explicitly.
 template <typename R, typename UnaryPredicate>
 bool none_of(R &&Range, UnaryPredicate P) {
-  return std::none_of(std::begin(Range), std::end(Range), P);
+  return std::none_of(adl_begin(Range), adl_end(Range), P);
 }
 
 /// Provide wrappers to std::find which take ranges instead of having to pass
 /// begin/end explicitly.
 template <typename R, typename T>
-auto find(R &&Range, const T &Val) -> decltype(std::begin(Range)) {
-  return std::find(std::begin(Range), std::end(Range), Val);
+auto find(R &&Range, const T &Val) -> decltype(adl_begin(Range)) {
+  return std::find(adl_begin(Range), adl_end(Range), Val);
 }
 
 /// Provide wrappers to std::find_if which take ranges instead of having to pass
 /// begin/end explicitly.
 template <typename R, typename UnaryPredicate>
-auto find_if(R &&Range, UnaryPredicate P) -> decltype(std::begin(Range)) {
-  return std::find_if(std::begin(Range), std::end(Range), P);
+auto find_if(R &&Range, UnaryPredicate P) -> decltype(adl_begin(Range)) {
+  return std::find_if(adl_begin(Range), adl_end(Range), P);
 }
 
 template <typename R, typename UnaryPredicate>
-auto find_if_not(R &&Range, UnaryPredicate P) -> decltype(std::begin(Range)) {
-  return std::find_if_not(std::begin(Range), std::end(Range), P);
+auto find_if_not(R &&Range, UnaryPredicate P) -> decltype(adl_begin(Range)) {
+  return std::find_if_not(adl_begin(Range), adl_end(Range), P);
 }
 
 /// Provide wrappers to std::remove_if which take ranges instead of having to
 /// pass begin/end explicitly.
 template <typename R, typename UnaryPredicate>
-auto remove_if(R &&Range, UnaryPredicate P) -> decltype(std::begin(Range)) {
-  return std::remove_if(std::begin(Range), std::end(Range), P);
+auto remove_if(R &&Range, UnaryPredicate P) -> decltype(adl_begin(Range)) {
+  return std::remove_if(adl_begin(Range), adl_end(Range), P);
 }
 
 /// Provide wrappers to std::copy_if which take ranges instead of having to
 /// pass begin/end explicitly.
 template <typename R, typename OutputIt, typename UnaryPredicate>
 OutputIt copy_if(R &&Range, OutputIt Out, UnaryPredicate P) {
-  return std::copy_if(std::begin(Range), std::end(Range), Out, P);
+  return std::copy_if(adl_begin(Range), adl_end(Range), Out, P);
+}
+
+template <typename R, typename OutputIt>
+OutputIt copy(R &&Range, OutputIt Out) {
+  return std::copy(adl_begin(Range), adl_end(Range), Out);
 }
 
 /// Wrapper function around std::find to detect if an element exists
 /// in a container.
 template <typename R, typename E>
 bool is_contained(R &&Range, const E &Element) {
-  return std::find(std::begin(Range), std::end(Range), Element) !=
-         std::end(Range);
+  return std::find(adl_begin(Range), adl_end(Range), Element) != adl_end(Range);
 }
 
 /// Wrapper function around std::count to count the number of times an element
 /// \p Element occurs in the given range \p Range.
 template <typename R, typename E>
-auto count(R &&Range, const E &Element) -> typename std::iterator_traits<
-    decltype(std::begin(Range))>::difference_type {
-  return std::count(std::begin(Range), std::end(Range), Element);
+auto count(R &&Range, const E &Element) ->
+    typename std::iterator_traits<decltype(adl_begin(Range))>::difference_type {
+  return std::count(adl_begin(Range), adl_end(Range), Element);
 }
 
 /// Wrapper function around std::count_if to count the number of times an
 /// element satisfying a given predicate occurs in a range.
 template <typename R, typename UnaryPredicate>
-auto count_if(R &&Range, UnaryPredicate P) -> typename std::iterator_traits<
-    decltype(std::begin(Range))>::difference_type {
-  return std::count_if(std::begin(Range), std::end(Range), P);
+auto count_if(R &&Range, UnaryPredicate P) ->
+    typename std::iterator_traits<decltype(adl_begin(Range))>::difference_type {
+  return std::count_if(adl_begin(Range), adl_end(Range), P);
 }
 
 /// Wrapper function around std::transform to apply a function to a range and
 /// store the result elsewhere.
 template <typename R, typename OutputIt, typename UnaryPredicate>
 OutputIt transform(R &&Range, OutputIt d_first, UnaryPredicate P) {
-  return std::transform(std::begin(Range), std::end(Range), d_first, P);
+  return std::transform(adl_begin(Range), adl_end(Range), d_first, P);
 }
 
 /// Provide wrappers to std::partition which take ranges instead of having to
 /// pass begin/end explicitly.
 template <typename R, typename UnaryPredicate>
-auto partition(R &&Range, UnaryPredicate P) -> decltype(std::begin(Range)) {
-  return std::partition(std::begin(Range), std::end(Range), P);
+auto partition(R &&Range, UnaryPredicate P) -> decltype(adl_begin(Range)) {
+  return std::partition(adl_begin(Range), adl_end(Range), P);
 }
 
 /// Provide wrappers to std::lower_bound which take ranges instead of having to
 /// pass begin/end explicitly.
 template <typename R, typename ForwardIt>
-auto lower_bound(R &&Range, ForwardIt I) -> decltype(std::begin(Range)) {
-  return std::lower_bound(std::begin(Range), std::end(Range), I);
+auto lower_bound(R &&Range, ForwardIt I) -> decltype(adl_begin(Range)) {
+  return std::lower_bound(adl_begin(Range), adl_end(Range), I);
 }
 
 /// \brief Given a range of type R, iterate the entire range and return a
@@ -866,7 +1011,7 @@ auto lower_bound(R &&Range, ForwardIt I) -> decltype(std::begin(Range)) {
 template <unsigned Size, typename R>
 SmallVector<typename std::remove_const<detail::ValueOfRange<R>>::type, Size>
 to_vector(R &&Range) {
-  return {std::begin(Range), std::end(Range)};
+  return {adl_begin(Range), adl_end(Range)};
 }
 
 /// Provide a container algorithm similar to C++ Library Fundamentals v2's

@@ -251,7 +251,7 @@ ENDIF:                                            ; preds = %IF, %main_body
 ; GCN: s_load_dword [[COND:s[0-9]+]]
 ; GCN: s_cmp_lt_i32 [[COND]], 1
 ; GCN: s_cbranch_scc1 [[EXIT:[A-Za-z0-9_]+]]
-; GCN: v_cmp_gt_i32_e64 vcc, [[COND]], 0{{$}}
+; GCN: v_cmp_gt_i32_e64 {{[^,]*}}, [[COND]], 0{{$}}
 ; GCN: s_cbranch_vccz [[BODY:[A-Za-z0-9_]+]]
 ; GCN: {{^}}[[EXIT]]:
 ; GCN: s_endpgm
@@ -401,7 +401,7 @@ exit:
 ; GCN: s_cmp_lt_i32 [[COND]], 1
 ; GCN: s_cbranch_scc1 BB[[FNNUM:[0-9]+]]_3
 
-; GCN: BB#1:
+; GCN: %bb.1:
 ; GCN-NOT: cmp
 ; GCN: buffer_load_dword
 ; GCN: buffer_store_dword
@@ -560,7 +560,7 @@ done:
 }
 
 ; GCN-LABEL: {{^}}move_to_valu_vgpr_operand_phi:
-; GCN: v_add_i32_e32
+; GCN: v_add_{{[iu]}}32_e32
 ; GCN: ds_write_b32
 define void @move_to_valu_vgpr_operand_phi(i32 addrspace(3)* %out) {
 bb0:

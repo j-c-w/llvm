@@ -1,5 +1,5 @@
-; RUN: llc -verify-machineinstrs -march=amdgcn -mcpu=tahiti -mattr=+max-private-element-size-16 < %s | FileCheck -check-prefix=GCN -check-prefix=SI -check-prefix=GCN-NO-TONGA %s
-; RUN: llc -verify-machineinstrs -march=amdgcn -mcpu=tonga -mattr=-flat-for-global -mattr=+max-private-element-size-16 < %s | FileCheck -check-prefix=GCN -check-prefix=SI -check-prefix=GCN-TONGA %s
+; RUN: llc -verify-machineinstrs -march=amdgcn -mtriple=amdgcn---amdgiz -mcpu=tahiti -mattr=+max-private-element-size-16 < %s | FileCheck -check-prefix=GCN -check-prefix=SI -check-prefix=GCN-NO-TONGA %s
+; RUN: llc -verify-machineinstrs -march=amdgcn -mtriple=amdgcn---amdgiz -mcpu=tonga -mattr=-flat-for-global -mattr=+max-private-element-size-16 < %s | FileCheck -check-prefix=GCN -check-prefix=SI -check-prefix=GCN-TONGA %s
 
 ; FIXME: Broken on evergreen
 ; FIXME: For some reason the 8 and 16 vectors are being stored as
@@ -217,7 +217,7 @@ define amdgpu_kernel void @dynamic_insertelement_v3i16(<3 x i16> addrspace(1)* %
 ; GCN-DAG: buffer_store_short v{{[0-9]+}}, off, s{{\[[0-9]+:[0-9]+\]}}, s{{[0-9]+}} offset:8
 ; GCN: buffer_store_short v{{[0-9]+}}, [[IDX]], s{{\[[0-9]+:[0-9]+\]}}, s{{[0-9]+}} offen{{$}}
 
-; GCN: s_waitcnt
+; GCN-NO-TONGA: s_waitcnt expcnt
 
 ; GCN: buffer_load_dwordx2
 

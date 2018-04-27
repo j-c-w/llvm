@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_TARGET_TARGETLOWERINGOBJECTFILE_H
-#define LLVM_TARGET_TARGETLOWERINGOBJECTFILE_H
+#ifndef LLVM_CODEGEN_TARGETLOWERINGOBJECTFILE_H
+#define LLVM_CODEGEN_TARGETLOWERINGOBJECTFILE_H
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
@@ -71,8 +71,7 @@ public:
                                     const MCSymbol *Sym) const;
 
   /// Emit the module-level metadata that the platform cares about.
-  virtual void emitModuleMetadata(MCStreamer &Streamer, Module &M,
-                                  const TargetMachine &TM) const {}
+  virtual void emitModuleMetadata(MCStreamer &Streamer, Module &M) const {}
 
   /// Given a constant with the SectionKind, return a section that it should be
   /// placed in.
@@ -183,6 +182,9 @@ public:
   virtual void emitLinkerFlagsForGlobal(raw_ostream &OS,
                                         const GlobalValue *GV) const {}
 
+  virtual void emitLinkerFlagsForUsed(raw_ostream &OS,
+                                      const GlobalValue *GV) const {}
+
 protected:
   virtual MCSection *SelectSectionForGlobal(const GlobalObject *GO,
                                             SectionKind Kind,
@@ -191,4 +193,4 @@ protected:
 
 } // end namespace llvm
 
-#endif // LLVM_TARGET_TARGETLOWERINGOBJECTFILE_H
+#endif // LLVM_CODEGEN_TARGETLOWERINGOBJECTFILE_H

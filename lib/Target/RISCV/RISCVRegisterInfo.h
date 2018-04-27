@@ -14,7 +14,7 @@
 #ifndef LLVM_LIB_TARGET_RISCV_RISCVREGISTERINFO_H
 #define LLVM_LIB_TARGET_RISCV_RISCVREGISTERINFO_H
 
-#include "llvm/Target/TargetRegisterInfo.h"
+#include "llvm/CodeGen/TargetRegisterInfo.h"
 
 #define GET_REGINFO_HEADER
 #include "RISCVGenRegisterInfo.inc"
@@ -39,6 +39,18 @@ struct RISCVRegisterInfo : public RISCVGenRegisterInfo {
                            RegScavenger *RS = nullptr) const override;
 
   unsigned getFrameRegister(const MachineFunction &MF) const override;
+
+  bool requiresRegisterScavenging(const MachineFunction &MF) const override {
+    return true;
+  }
+
+  bool requiresFrameIndexScavenging(const MachineFunction &MF) const override {
+    return true;
+  }
+
+  bool trackLivenessAfterRegAlloc(const MachineFunction &) const override {
+    return true;
+  }
 };
 }
 

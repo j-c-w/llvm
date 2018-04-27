@@ -26,10 +26,10 @@
 #include "llvm/CodeGen/GlobalISel/LegalizerInfo.h"
 #include "llvm/CodeGen/GlobalISel/RegisterBankInfo.h"
 #include "llvm/CodeGen/MachineFunction.h"
+#include "llvm/CodeGen/TargetSubtargetInfo.h"
 #include "llvm/MC/MCInstrItineraries.h"
 #include "llvm/MC/MCSchedule.h"
 #include "llvm/Target/TargetOptions.h"
-#include "llvm/Target/TargetSubtargetInfo.h"
 #include <memory>
 #include <string>
 
@@ -235,6 +235,10 @@ protected:
   /// HasDataBarrier - True if the subtarget supports DMB / DSB data barrier
   /// instructions.
   bool HasDataBarrier = false;
+
+  /// HasFullDataBarrier - True if the subtarget supports DFB data barrier
+  /// instruction.
+  bool HasFullDataBarrier = false;
 
   /// HasV7Clrex - True if the subtarget supports CLREX instructions
   bool HasV7Clrex = false;
@@ -544,6 +548,7 @@ public:
   bool hasDivideInThumbMode() const { return HasHardwareDivideInThumb; }
   bool hasDivideInARMMode() const { return HasHardwareDivideInARM; }
   bool hasDataBarrier() const { return HasDataBarrier; }
+  bool hasFullDataBarrier() const { return HasFullDataBarrier; }
   bool hasV7Clrex() const { return HasV7Clrex; }
   bool hasAcquireRelease() const { return HasAcquireRelease; }
 
@@ -711,10 +716,6 @@ public:
   bool isLittle() const { return IsLittle; }
 
   unsigned getMispredictionPenalty() const;
-
-  /// This function returns true if the target has sincos() routine in its
-  /// compiler runtime or math libraries.
-  bool hasSinCos() const;
 
   /// Returns true if machine scheduler should be enabled.
   bool enableMachineScheduler() const override;

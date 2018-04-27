@@ -17,9 +17,9 @@
 #include "MCTargetDesc/ARMBaseInfo.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
 #include "llvm/CodeGen/MachineInstr.h"
+#include "llvm/CodeGen/TargetRegisterInfo.h"
 #include "llvm/IR/CallingConv.h"
 #include "llvm/MC/MCRegisterInfo.h"
-#include "llvm/Target/TargetRegisterInfo.h"
 #include <cstdint>
 
 #define GET_REGINFO_HEADER
@@ -154,6 +154,7 @@ public:
 
   void updateRegAllocHint(unsigned Reg, unsigned NewReg,
                           MachineFunction &MF) const override;
+  bool enableMultipleCopyHints() const override { return true; }
 
   bool hasBasePointer(const MachineFunction &MF) const;
 

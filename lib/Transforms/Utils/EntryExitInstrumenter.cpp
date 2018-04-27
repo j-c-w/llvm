@@ -9,17 +9,17 @@
 
 #include "llvm/Transforms/Utils/EntryExitInstrumenter.h"
 #include "llvm/Analysis/GlobalsModRef.h"
-#include "llvm/CodeGen/Passes.h"
+#include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/Pass.h"
-#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Utils.h"
 using namespace llvm;
 
 static void insertCall(Function &CurFn, StringRef Func,
-                       Instruction *InsertionPt) {
+                       Instruction *InsertionPt, DebugLoc DL) {
   Module &M = *InsertionPt->getParent()->getParent()->getParent();
   LLVMContext &C = InsertionPt->getParent()->getContext();
 
@@ -29,9 +29,11 @@ static void insertCall(Function &CurFn, StringRef Func,
       Func == "\01_mcount" ||
       Func == "\01mcount" ||
       Func == "__mcount" ||
-      Func == "_mcount") {
+      Func == "_mcount" ||
+      Func == "__cyg_profile_func_enter_bare") {
     Constant *Fn = M.getOrInsertFunction(Func, Type::getVoidTy(C));
-    CallInst::Create(Fn, "", InsertionPt);
+    CallInst *Call = CallInst::Create(Fn, "", InsertionPt);
+    Call->setDebugLoc(DL);
     return;
   }
 
@@ -45,11 +47,14 @@ static void insertCall(Function &CurFn, StringRef Func,
         Intrinsic::getDeclaration(&M, Intrinsic::returnaddress),
         ArrayRef<Value *>(ConstantInt::get(Type::getInt32Ty(C), 0)), "",
         InsertionPt);
+    RetAddr->setDebugLoc(DL);
 
     Value *Args[] = {ConstantExpr::getBitCast(&CurFn, Type::getInt8PtrTy(C)),
                      RetAddr};
 
-    CallInst::Create(Fn, ArrayRef<Value *>(Args), "", InsertionPt);
+    CallInst *Call =
+        CallInst::Create(Fn, ArrayRef<Value *>(Args), "", InsertionPt);
+    Call->setDebugLoc(DL);
     return;
   }
 
@@ -75,18 +80,38 @@ static bool runOnFunction(Function &F, bool PostInlining) {
   // run later for some reason.
 
   if (!EntryFunc.empty()) {
-    insertCall(F, EntryFunc, &*F.begin()->getFirstInsertionPt());
+    DebugLoc DL;
+    if (auto SP = F.getSubprogram())
+      DL = DebugLoc::get(SP->getScopeLine(), 0, SP);
+
+    insertCall(F, EntryFunc, &*F.begin()->getFirstInsertionPt(), DL);
     Changed = true;
     F.removeAttribute(AttributeList::FunctionIndex, EntryAttr);
   }
 
   if (!ExitFunc.empty()) {
     for (BasicBlock &BB : F) {
-      TerminatorInst *T = BB.getTerminator();
-      if (isa<ReturnInst>(T)) {
-        insertCall(F, ExitFunc, T);
-        Changed = true;
+      Instruction *T = BB.getTerminator();
+      if (!isa<ReturnInst>(T))
+        continue;
+
+      // If T is preceded by a musttail call, that's the real terminator.
+      Instruction *Prev = T->getPrevNode();
+      if (BitCastInst *BCI = dyn_cast_or_null<BitCastInst>(Prev))
+        Prev = BCI->getPrevNode();
+      if (CallInst *CI = dyn_cast_or_null<CallInst>(Prev)) {
+        if (CI->isMustTailCall())
+          T = CI;
       }
+
+      DebugLoc DL;
+      if (DebugLoc TerminatorDL = T->getDebugLoc())
+        DL = TerminatorDL;
+      else if (auto SP = F.getSubprogram())
+        DL = DebugLoc::get(0, 0, SP);
+
+      insertCall(F, ExitFunc, T, DL);
+      Changed = true;
     }
     F.removeAttribute(AttributeList::FunctionIndex, ExitAttr);
   }

@@ -36,8 +36,8 @@ public:
                         SmallVectorImpl<MachineInstr *> &DeadInsts) {
     if (MI.getOpcode() != TargetOpcode::G_ANYEXT)
       return false;
-    if (MachineInstr *DefMI =
-            getOpcodeDef(TargetOpcode::G_TRUNC, MI.getOperand(1).getReg())) {
+    if (MachineInstr *DefMI = getOpcodeDef(TargetOpcode::G_TRUNC,
+                                           MI.getOperand(1).getReg(), MRI)) {
       DEBUG(dbgs() << ".. Combine MI: " << MI;);
       unsigned DstReg = MI.getOperand(0).getReg();
       unsigned SrcReg = DefMI->getOperand(1).getReg();
@@ -55,12 +55,12 @@ public:
 
     if (MI.getOpcode() != TargetOpcode::G_ZEXT)
       return false;
-    if (MachineInstr *DefMI =
-            getOpcodeDef(TargetOpcode::G_TRUNC, MI.getOperand(1).getReg())) {
+    if (MachineInstr *DefMI = getOpcodeDef(TargetOpcode::G_TRUNC,
+                                           MI.getOperand(1).getReg(), MRI)) {
       unsigned DstReg = MI.getOperand(0).getReg();
       LLT DstTy = MRI.getType(DstReg);
-      if (isInstUnsupported(TargetOpcode::G_AND, DstTy) ||
-          isInstUnsupported(TargetOpcode::G_CONSTANT, DstTy))
+      if (isInstUnsupported({TargetOpcode::G_AND, {DstTy}}) ||
+          isInstUnsupported({TargetOpcode::G_CONSTANT, {DstTy}}))
         return false;
       DEBUG(dbgs() << ".. Combine MI: " << MI;);
       Builder.setInstr(MI);
@@ -83,13 +83,13 @@ public:
 
     if (MI.getOpcode() != TargetOpcode::G_SEXT)
       return false;
-    if (MachineInstr *DefMI =
-            getOpcodeDef(TargetOpcode::G_TRUNC, MI.getOperand(1).getReg())) {
+    if (MachineInstr *DefMI = getOpcodeDef(TargetOpcode::G_TRUNC,
+                                           MI.getOperand(1).getReg(), MRI)) {
       unsigned DstReg = MI.getOperand(0).getReg();
       LLT DstTy = MRI.getType(DstReg);
-      if (isInstUnsupported(TargetOpcode::G_SHL, DstTy) ||
-          isInstUnsupported(TargetOpcode::G_ASHR, DstTy) ||
-          isInstUnsupported(TargetOpcode::G_CONSTANT, DstTy))
+      if (isInstUnsupported({TargetOpcode::G_SHL, {DstTy}}) ||
+          isInstUnsupported({TargetOpcode::G_ASHR, {DstTy}}) ||
+          isInstUnsupported({TargetOpcode::G_CONSTANT, {DstTy}}))
         return false;
       DEBUG(dbgs() << ".. Combine MI: " << MI;);
       Builder.setInstr(MI);
@@ -118,10 +118,10 @@ public:
       return false;
 
     if (MachineInstr *DefMI = getOpcodeDef(TargetOpcode::G_IMPLICIT_DEF,
-                                           MI.getOperand(1).getReg())) {
+                                           MI.getOperand(1).getReg(), MRI)) {
       unsigned DstReg = MI.getOperand(0).getReg();
       LLT DstTy = MRI.getType(DstReg);
-      if (isInstUnsupported(TargetOpcode::G_IMPLICIT_DEF, DstTy))
+      if (isInstUnsupported({TargetOpcode::G_IMPLICIT_DEF, {DstTy}}))
         return false;
       DEBUG(dbgs() << ".. Combine EXT(IMPLICIT_DEF) " << MI;);
       Builder.setInstr(MI);
@@ -139,9 +139,9 @@ public:
       return false;
 
     unsigned NumDefs = MI.getNumOperands() - 1;
-    unsigned SrcReg = MI.getOperand(NumDefs).getReg();
-    MachineInstr *MergeI = MRI.getVRegDef(SrcReg);
-    if (!MergeI || (MergeI->getOpcode() != TargetOpcode::G_MERGE_VALUES))
+    MachineInstr *MergeI = getOpcodeDef(TargetOpcode::G_MERGE_VALUES,
+                                        MI.getOperand(NumDefs).getReg(), MRI);
+    if (!MergeI)
       return false;
 
     const unsigned NumMergeRegs = MergeI->getNumOperands() - 1;
@@ -235,35 +235,47 @@ public:
 private:
   /// Mark MI as dead. If a def of one of MI's operands, DefMI, would also be
   /// dead due to MI being killed, then mark DefMI as dead too.
+  /// Some of the combines (extends(trunc)), try to walk through redundant
+  /// copies in between the extends and the truncs, and this attempts to collect
+  /// the in between copies if they're dead.
   void markInstAndDefDead(MachineInstr &MI, MachineInstr &DefMI,
                           SmallVectorImpl<MachineInstr *> &DeadInsts) {
     DeadInsts.push_back(&MI);
-    if (MRI.hasOneUse(DefMI.getOperand(0).getReg()))
+
+    // Collect all the copy instructions that are made dead, due to deleting
+    // this instruction. Collect all of them until the Trunc(DefMI).
+    // Eg,
+    // %1(s1) = G_TRUNC %0(s32)
+    // %2(s1) = COPY %1(s1)
+    // %3(s1) = COPY %2(s1)
+    // %4(s32) = G_ANYEXT %3(s1)
+    // In this case, we would have replaced %4 with a copy of %0,
+    // and as a result, %3, %2, %1 are dead.
+    MachineInstr *PrevMI = &MI;
+    while (PrevMI != &DefMI) {
+      unsigned PrevRegSrc =
+          PrevMI->getOperand(PrevMI->getNumOperands() - 1).getReg();
+      MachineInstr *TmpDef = MRI.getVRegDef(PrevRegSrc);
+      if (MRI.hasOneUse(PrevRegSrc)) {
+        if (TmpDef != &DefMI) {
+          assert(TmpDef->getOpcode() == TargetOpcode::COPY &&
+                 "Expecting copy here");
+          DeadInsts.push_back(TmpDef);
+        }
+      } else
+        break;
+      PrevMI = TmpDef;
+    }
+    if (PrevMI == &DefMI && MRI.hasOneUse(DefMI.getOperand(0).getReg()))
       DeadInsts.push_back(&DefMI);
   }
+
   /// Checks if the target legalizer info has specified anything about the
   /// instruction, or if unsupported.
-  bool isInstUnsupported(unsigned Opcode, const LLT &DstTy) const {
-    auto Action = LI.getAction({Opcode, 0, DstTy});
-    return Action.first == LegalizerInfo::LegalizeAction::Unsupported ||
-           Action.first == LegalizerInfo::LegalizeAction::NotFound;
-  }
-  /// See if Reg is defined by an single def instruction that is
-  /// Opcode. Also try to do trivial folding if it's a COPY with
-  /// same types. Returns null otherwise.
-  MachineInstr *getOpcodeDef(unsigned Opcode, unsigned Reg) {
-    auto *DefMI = MRI.getVRegDef(Reg);
-    auto DstTy = MRI.getType(DefMI->getOperand(0).getReg());
-    if (!DstTy.isValid())
-      return nullptr;
-    while (DefMI->getOpcode() == TargetOpcode::COPY) {
-      unsigned SrcReg = DefMI->getOperand(1).getReg();
-      auto SrcTy = MRI.getType(SrcReg);
-      if (!SrcTy.isValid() || SrcTy != DstTy)
-        break;
-      DefMI = MRI.getVRegDef(SrcReg);
-    }
-    return DefMI->getOpcode() == Opcode ? DefMI : nullptr;
+  bool isInstUnsupported(const LegalityQuery &Query) const {
+    using namespace LegalizeActions;
+    auto Step = LI.getAction(Query);
+    return Step.Action == Unsupported || Step.Action == NotFound;
   }
 };
 

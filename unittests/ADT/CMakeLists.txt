@@ -16,6 +16,7 @@ set(ADTSources
   DenseMapTest.cpp
   DenseSetTest.cpp
   DepthFirstIteratorTest.cpp
+  EquivalenceClassesTest.cpp
   FoldingSet.cpp
   FunctionRefTest.cpp
   HashingTest.cpp
@@ -55,6 +56,7 @@ set(ADTSources
   SparseBitVectorTest.cpp
   SparseMultiSetTest.cpp
   SparseSetTest.cpp
+  StatisticTest.cpp
   StringExtrasTest.cpp
   StringMapTest.cpp
   StringRefTest.cpp
