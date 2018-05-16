@@ -16,4 +16,3 @@ add_llvm_library(LLVMIDLSolver
   DEPENDS
   intrinsics_gen
 )
-

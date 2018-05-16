@@ -67,12 +67,7 @@ namespace {
         return;
 
       (void) llvm::createResearchFlangfixPass();
-      (void) llvm::createResearchFixOrToAddPass();
-      (void) llvm::createResearchFixShlToMulPass();
-      (void) llvm::createResearchMergePointercalcsPass();
-      (void) llvm::createResearchPointerarithmeticPass();
       (void) llvm::createResearchPreprocessorPass();
-      (void) llvm::createRemovePHIPass();
       (void) llvm::createResearchReplacerPass();
 
       (void) llvm::createAAEvalPass();

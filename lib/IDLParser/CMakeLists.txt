@@ -1,5 +1,8 @@
 add_llvm_library(LLVMIDLParser
   IdiomSpecifications.s
+
+  DEPENDS
+  intrinsics_gen
 )
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/BNFParser

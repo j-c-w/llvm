@@ -45,6 +45,28 @@ bool ResearchFlangfix::runOnFunction(Function& function)
                         }
                     }
                 }
+                if(auto addinst = dyn_cast<BinaryOperator>(phinode->getOperand(0)))
+                {
+                    if(auto constint = dyn_cast<ConstantInt>(addinst->getOperand(1)))
+                    {
+                        if(phinode->getNumOperands() == 2 &&   //check same target block as well
+                           addinst->getOpcode() == Instruction::Add &&
+                           addinst->getOperand(0) == phinode)
+                        {
+                            Value* op0 = phinode->getIncomingValue(0);
+                            Value* op1 = phinode->getIncomingValue(1);
+                            phinode->setIncomingValue(0, op1);
+                            phinode->setIncomingValue(1, op0);
+
+                            BasicBlock* bl0 = phinode->getIncomingBlock(0);
+                            BasicBlock* bl1 = phinode->getIncomingBlock(1);
+                            phinode->setIncomingBlock(0, bl1);
+                            phinode->setIncomingBlock(1, bl0);
+
+                            induction_variables.emplace_back(phinode, constint->getSExtValue());
+                        }
+                    }
+                }
             }
         }
 
@@ -52,7 +74,7 @@ bool ResearchFlangfix::runOnFunction(Function& function)
         {
             for(unsigned i = 1; i < induction_variables.size(); i++)
             {
-                Instruction* instruction = dyn_cast<Instruction>(induction_variables[i].first->getOperand(1));
+                Instruction* instruction = dyn_cast<Instruction>(block.getFirstNonPHI());
                 BasicBlock::iterator insert_point(instruction);
                 IRBuilder<> builder(instruction->getParent(), insert_point);
 
@@ -111,6 +133,9 @@ bool ResearchFlangfix::runOnFunction(Function& function)
     {
         for(Instruction& inst : block.getInstList())
         {
+            BasicBlock::iterator iter(&inst);
+            IRBuilder<> builder(&block, iter);
+
             if(auto compare = dyn_cast<CmpInst>(&inst))
             {
                 if(auto addition = dyn_cast<BinaryOperator>(compare->getOperand(0)))
@@ -122,17 +147,6 @@ bool ResearchFlangfix::runOnFunction(Function& function)
                         compare->setOperand(1, ConstantInt::get(addition->getOperand(0)->getType(), 0));
                     }
                 }
-            }
-        }
-    }
-
-    // Simplify comparison with zero and a subtraction.
-    for(BasicBlock& block : function.getBasicBlockList())
-    {
-        for(Instruction& inst : block.getInstList())
-        {
-            if(auto compare = dyn_cast<CmpInst>(&inst))
-            {
                 if(auto subtraction = dyn_cast<BinaryOperator>(compare->getOperand(0)))
                 {
                     if(auto constant = dyn_cast<Constant>(compare->getOperand(1)))
@@ -144,63 +158,35 @@ bool ResearchFlangfix::runOnFunction(Function& function)
                         }
                     }
                 }
-            }
-        }
-    }
-
-    // Raise comparisons with one truncated value to larger ints.
-    for(BasicBlock& block : function.getBasicBlockList())
-    {
-        std::vector<std::tuple<BasicBlock::iterator,CmpInst::Predicate,Value*,Value*>> worklist;
-
-        for(Instruction& inst : block.getInstList())
-        {
-            if(auto compare = dyn_cast<CmpInst>(&inst))
-            {
                 if(auto truncation = dyn_cast<TruncInst>(compare->getOperand(1)))
                 {
-                    worklist.emplace_back(compare, compare->getPredicate(),
-                                          compare->getOperand(0), truncation->getOperand(0));
+                    inst.replaceAllUsesWith(
+                        builder.CreateICmp(compare->getPredicate(),
+                            builder.CreateSExt(compare->getOperand(0), truncation->getOperand(0)->getType()),
+                            truncation->getOperand(0)));
                 }
             }
-        }
-
-        for(auto& entry : worklist)
-        {
-            IRBuilder<> builder(&block, std::get<0>(entry));
-
-            ReplaceInstWithValue(block.getInstList(), std::get<0>(entry),
-                builder.CreateICmp(std::get<1>(entry),
-                    builder.CreateSExt(std::get<2>(entry), std::get<3>(entry)->getType()),
-                    std::get<3>(entry)));
         }
     }
 
     // Raise BinaryOperations if they are extended later.
     for(BasicBlock& block : function.getBasicBlockList())
     {
-        std::vector<std::tuple<BasicBlock::iterator,Instruction::BinaryOps,Value*,Value*>> worklist;
-
         for(Instruction& inst : block.getInstList())
         {
+            BasicBlock::iterator iter(&inst);
+            IRBuilder<> builder(&block, iter);
+
             if(auto extension = dyn_cast<SExtInst>(&inst))
             {
                 if(auto binaryop = dyn_cast<BinaryOperator>(extension->getOperand(0)))
                 {
-                    worklist.emplace_back(extension, binaryop->getOpcode(),
-                                          binaryop->getOperand(0), binaryop->getOperand(1));
+                    inst.replaceAllUsesWith(
+                        builder.CreateBinOp(binaryop->getOpcode(),
+                            builder.CreateSExt(binaryop->getOperand(0), extension->getType()),
+                            builder.CreateSExt(binaryop->getOperand(1), extension->getType())));
                 }
             }
-        }
-
-        for(auto& entry : worklist)
-        {
-            IRBuilder<> builder(&block, std::get<0>(entry));
-
-            ReplaceInstWithValue(block.getInstList(), std::get<0>(entry),
-                builder.CreateBinOp(std::get<1>(entry),
-                    builder.CreateSExt(std::get<2>(entry), std::get<0>(entry)->getType()),
-                    builder.CreateSExt(std::get<3>(entry), std::get<0>(entry)->getType())));
         }
     }
 
@@ -303,67 +289,6 @@ bool ResearchFlangfix::runOnFunction(Function& function)
         }
     }
 
-
-
-    auto pass1 = createResearchPointerarithmeticPass();
-    auto pass2 = createResearchMergePointercalcsPass();
-/*
-    for(auto& block : function.getBasicBlockList())
-        pass1->runOnBasicBlock(block);
-
-    for(BasicBlock& block : function.getBasicBlockList())
-    {
-        std::vector<std::pair<BasicBlock::iterator,Value*>> worklist;
-        for(Instruction& instruction : block.getInstList())
-        {
-            if(auto bitcast_inst = dyn_cast<BitCastInst>(&instruction))
-            {
-                if(auto bitcast_inst2 = dyn_cast<BitCastInst>(bitcast_inst->getOperand(0)))
-                {
-                    auto origin = bitcast_inst2->getOperand(0);
-
-                    while(auto bitcast_inst3 = dyn_cast<BitCastInst>(origin))
-                    {
-                        origin = bitcast_inst3->getOperand(0);
-                    }
-
-                    worklist.emplace_back(&instruction, origin);
-                }
-            }
-        }
-
-        for(auto& entry : worklist)
-        {
-            IRBuilder<> builder(&block, entry.first);
-            ReplaceInstWithValue(block.getInstList(), entry.first,
-                                 builder.CreateBitCast(entry.second, entry.first->getType()));
-        }
-    }
-*/
-    pass2->runOnFunction(function);
-/*
-    while(true)
-    {
-        std::vector<Instruction*> worklist;
-
-        for(BasicBlock& block : function.getBasicBlockList())
-        {
-            for(Instruction& instruction : block.getInstList())
-            {
-                if((isa<BitCastInst>(&instruction) || isa<GetElementPtrInst>(&instruction)) && instruction.use_empty())
-                {
-                    worklist.push_back(&instruction);
-                }
-            }
-        }
-
-        for(auto instruction : worklist)
-            instruction->eraseFromParent();
-
-        if(worklist.empty())
-            break;
-    }
-*/
     return false;
 }
 

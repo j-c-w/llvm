@@ -1,22 +1,12 @@
 add_llvm_library(LLVMIDLPasses
 
-  CustomPassMergePointercalcs.cpp
-  CustomPassPointerarithmetic.cpp
   CustomPassFlangfix.cpp
-  CustomPassReplace.cpp
-  CustomPassRemovePHI.cpp
   CustomPassPreprocess.cpp
-  CustomPassFixOrToAdd.cpp
-  CustomPassFixShlToMul.cpp
+  CustomPassReplace.cpp
 
-  TransformReduction.cpp
   TransformDistributive.cpp
   TransformHoistSelection.cpp
-
-  SeparateSESE.cpp
-  GenerateCOperator.cpp
 
   DEPENDS
   intrinsics_gen
 )
-

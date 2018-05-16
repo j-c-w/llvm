@@ -43,18 +43,16 @@ BackendPreexecution::BackendPreexecution(const FunctionWrap& wrap)
                                              { return !llvm::isa<llvm::Instruction>(value); }) { }
 
 
+std::vector<std::string> function_whitelist = {"log", "exp", "sqrt", "cos", "sin", "tan", "logf", "expf", "sqrtf",
+                                               "cosf", "sinf", "tanf", "llvm.fabs.f64", "llvm.fabs.f32",
+                                               "llvm.dbg.value", "llvm.dbg.declare", "__log_finite"};
+
 BackendFunctionAttribute::BackendFunctionAttribute(const FunctionWrap& wrap)
       : BackendLLVMSingle<llvm::Function>(wrap, [](llvm::Function& value)
 {
     std::string function_name = value.getName();
 
-    if(function_name == "log" || function_name == "exp" || function_name == "sqrt" ||
-       function_name == "cos" || function_name == "sin" || function_name == "tan" ||
-       function_name == "logf" || function_name == "expf" || function_name == "sqrtf" ||
-       function_name == "cosf" || function_name == "sinf" || function_name == "tanf" ||
-       function_name == "llvm.fabs.f64" || function_name == "llvm.fabs.f32" ||
-       function_name == "llvm.dbg.value" || function_name == "llvm.dbg.declare" ||
-       function_name == "__log_finite")
+    if(std::find(function_whitelist.begin(), function_whitelist.end(), function_name) != function_whitelist.end())
         return true;
 
     return false;
@@ -143,13 +141,8 @@ std::vector<unsigned> BackendLLVMDominate<inverted,unstrict,origin_calc,forw_gra
 
                 std::string function_name = call_inst->getCalledFunction()->getName();
 
-                if(function_name == "log" || function_name == "exp" || function_name == "sqrt" ||
-                   function_name == "cos" || function_name == "sin" || function_name == "tan" ||
-                   function_name == "logf" || function_name == "expf" || function_name == "sqrtf" ||
-                   function_name == "cosf" || function_name == "sinf" || function_name == "tanf" ||
-                   function_name == "llvm.fabs.f64" || function_name == "llvm.fabs.f32" ||
-                   function_name == "llvm.dbg.value" || function_name == "llvm.dbg.declare" ||
-                   function_name == "__log_finite")
+                if(std::find(function_whitelist.begin(), function_whitelist.end(), function_name)
+                   != function_whitelist.end())
                     continue;
 
                 auto attributes = call_inst->getCalledFunction()->getAttributes();

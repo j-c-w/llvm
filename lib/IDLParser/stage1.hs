@@ -11,7 +11,6 @@ import BNFOptimize
 import BNFPrefix
 import GraphCalculations
 
-
 collectReferences::[(String,SyntaxRule3)]->[String]
 collectReferences xs = Set.toList $ Set.fromList [n|(n,r)<-xs]
 
@@ -87,7 +86,6 @@ printRule2Matches ref1 ref2 cont ((n,S3Reference refs):xs) =
                       else printRule2Matches ref1 ref2 cont xs
 printRule2Matches ref1 ref2 cont (x:xs) = printRule2Matches ref1 ref2 cont xs
 printRule2Matches ref1 ref2 cont [] = if elem ref2 cont then ["[x:y:xs]"] else []
-
 
 printRules2::[(String,SyntaxRule3)]->[String]
 printRules2 xs = ["[PNode \""++r++"\" _,PNode \""++s++"\" _] -> "++intercalate "++" matches|(r,s)<-collectRules2 xs,let matches = printRule2Matches r s cont xs,length matches /= 0]

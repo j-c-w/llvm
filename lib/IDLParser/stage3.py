@@ -1,7 +1,6 @@
 #!/usr/bin/pypy
 
-
-whitelist = ["Distributive", "HoistSelect", "GEMM", "Histo", "SPMV", "Stencil", "Reduction", "StencilPlus", "Experiment"]
+whitelist = ["Distributive", "HoistSelect", "GEMM", "Histo", "SPMV", "Stencil", "Reduction", "Experiment", "ForWithIteratorTest"]
 
 def partial_evaluator(syntax, handler, *extras):
     handler_result = handler(syntax, *extras)
@@ -559,7 +558,12 @@ def generate_cpp_code(syntax_list):
                     +["    my_shared_ptr<T>& operator=(T t) { shared_ptr<T>::operator=(make_shared<T>(move(t))); return *this; }"]
                     +["    my_shared_ptr<T>& operator=(const my_shared_ptr<T>& t) { return *this = *t; }"]
                     +["};"]
-                    +[generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] in whitelist])
+                    +[generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] in whitelist]
+                    +["IdiomSpecification(*GenerateAnalysis(std::string name))(llvm::Function&, unsigned)"]
+                    +["{"]
+                    +["    if(name == \""+name+"\") return Detect"+name+";" for name in whitelist]
+                    +["    return nullptr;"]
+                    +["}"])
 
 def print_syntax_tree(syntax, indent=0):
     if type(syntax) is str or type(syntax) is int:

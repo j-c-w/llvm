@@ -1,14 +1,13 @@
 Constraint Experiment
 ( {store_old_next} is store instruction and
   {old_next} is first argument of {store_old_next} and
-  {new_member_pointer} is second argument of {store_old_next} and
-
-  {store_new_next} is store instruction and
-  {new_next} is first argument of {store_new_next} and
-  {old_member_pointer} is second argument of {store_new_next} and
-
   {old_next} is load instruction and
   {old_member_pointer} is first argument of {old_next} and
+  {old_member_pointer} is second argument of {store_new_next} and
+  {store_new_next} is store instruction and
+  {new_next} is first argument of {store_new_next} and
+
+  {new_member_pointer} is second argument of {store_old_next} and
 
   ( ( {new_member_pointer} is gep instruction and
       {new_next} is first argument of {new_member_pointer}) or
@@ -67,12 +66,23 @@ Constraint SPMV
   inherits VectorStore
       with {iterator} as {idx}
        and {begin} as {begin} at {output} and
-  {inner.iter_end} reaches phi node {inner.iter_begin} from {end} and
-  {inner.iter_begin} strictly control flow dominates {end} and
-  {inner.iter_begin} is not the same as {iterator} and
+
+  ( ( {inner.iter_end} is load instruction and
+      {inner.iter_end} reaches phi node {inner.iter_begin} from {end} and
+      {iter_begin_read.value} is the same as {iter_end_read.value} and
+      {inner.iter_end} is the same as {iter_end_read.value} and
+      {inner.iter_begin} strictly control flow dominates {end}) or
+    ( {inner.iter_begin} is load instruction and
+      {inner.iter_end} is load instruction and
+      {inner.iter_begin} is the same as {iter_begin_read.value} and 
+      {inner.iter_end} is the same as {iter_end_read.value} and
+      {inner.iter_begin} strictly control flow dominates {end})) and
+
   inherits VectorRead with {iterator} as {idx}
-                       and {begin} as {begin} 
-                       and {inner.iter_end} as {value} at {index_read} and
+                       and {begin} as {begin} at {iter_begin_read} and
+  inherits VectorRead with {iterator} as {idx}
+                       and {begin} as {begin} at {iter_end_read} and
+
   inherits For at {inner} and
   inherits VectorRead
       with {inner.iterator} as {idx}
@@ -159,7 +169,7 @@ Constraint SumChain
       {results[i]} is the same as {factors[i]} and
       {results[i+1]} is unused)) for all i=0..N and
   {factors[N]} is unused)
-for N=8 if not otherwise specified
+for N=4 if not otherwise specified
 End
 
 Constraint MulChain
@@ -178,7 +188,7 @@ Constraint MulChain
       {results[i]} is the same as {factors[i]} and
       {results[i+1]} is unused)) for all i=0..N and
   {factors[N]} is unused)
-for N=8 if not otherwise specified
+for N=4 if not otherwise specified
 End
 
 # This is another preprocessing pass to normalize some memory address calculations.
@@ -311,14 +321,33 @@ Constraint InductionVar
 {new_ind} reaches phi node {old_ind} from {end}
 End
 
+Constraint ForWithIteratorTest
+( inherits Loop and
+  inherits InductionVar with {iterator}  as {old_ind}
+                         and {increment} as {new_ind} and
+  {iterator} has data flow to {comparison} and
+  {comparison} is icmp instruction and
+  {comparison} has data flow to {end} and
+  {increment} has data flow to {iterator} and
+  {increment} is add instruction and
+  {iterator} has data flow to {increment} and
+  {iter_end} has data flow to {comparison} and
+  inherits LocalConst with {iter_end} as {value}
+                       and {begin}    as {begin} and
+  {iter_begin} has data flow to {iterator} and
+  inherits LocalConst with {iter_begin} as {value}
+                       and {begin}      as {begin} and
+  {iter_step} has data flow to {increment} and
+  inherits LocalConst with {iter_step} as {value}
+                       and {begin}     as {begin})
+End
+
 Constraint For
 ( inherits Loop and
   inherits InductionVar with {iterator}  as {old_ind}
                          and {increment} as {new_ind} and
-  ( ( {increment} has data flow to {comparison} and
-      {iterator} is phi instruction) or
-    ( {iterator} has data flow to {comparison} and
-      {increment} is add instruction)) and
+  {increment} has data flow to {comparison} and
+  {iterator} is phi instruction and
   {comparison} is icmp instruction and
   {comparison} has data flow to {end} and
   {increment} has data flow to {iterator} and
@@ -549,97 +578,3 @@ Constraint ConditionalReadModifyWrite
   {old_value} is load instruction and
   {new_value} is first argument of {store_instr})
 End
-
-# These are some hacky extensions to the toplevel constraint specifications.
-
-Constraint ExtendHisto
-( inherits For and
-  inherits ConditionalReadModifyWrite
-      with {indexkernel.output} as {address}
-       and {kernel.output} as {value} and
-  {reduction_array} is first argument of {indexkernel.output} and
-
-  collect i 30
-  ( inherits VectorRead
-        with {read_value[i]} as {value}
-         and {iterator} as {idx}
-         and {begin} as {begin} at {read[i]} and
-    {read[i].base_pointer} is not the same as {reduction_array}) and
-
-  {read_value[0]} is load instruction and
-
-  # This is a hack for tpacf :(
-  collect i 2
-  ( inherits ArrayRead
-        with {closure_read[i]} as {value}
-         and {begin} as {begin} at {closure[i]} and
-    {closure[i].base_pointer} is not the same as {read[0].base_pointer} and
-    {closure[i].base_pointer} is not the same as {reduction_array}) and
-
-  inherits Concat(N1=29,N2=2,N3=1)
-      with {read_value}   as {in1}
-       and {closure_read} as {in2}
-       and {old_value}    as {in3}
-       and {kernel.input} as {out} and
-  inherits KernelFunction
-      with {begin} as {outer}
-       and {body.begin} as {inner} at {kernel} and
-  inherits Concat(N1=30,N2=2)
-      with {read_value}   as {in1}
-       and {closure_read} as {in2}
-       and {indexkernel.input} as {out} and
-  inherits KernelFunction
-      with {begin} as {outer}
-       and {body.begin} as {inner} at {indexkernel})
-End
-
-
-Constraint StencilPlus
-( inherits ForNest(N=3) and
-  inherits PermMultidStore(N=1) with {loop[N-1].iterator} as {input[0]}
-                                 and {begin} as {begin}   at {temp_write} and
-
-  {compute_expr.output} is first argument of {temp_write.store} and
-
-  collect i 32 inherits StencilRead with {iterator[0]}  as {input[0]}
-                                    and {iterator[1]}  as {input[1]}
-                                    and {iterator[2]}  as {input[2]}
-                                    and {begin} as {begin} at {reads[i]} and
-  {reads[0].value} is load instruction and
-
-  {compute_expr.input[i]} is the same as {reads[i].value} for all i=0..32 and
-  inherits KernelFunction with {begin} as {outer}
-                         and {body.begin} as {inner} at {compute_expr} and
-
-
-  inherits SamePostfixSESE with {stencil_loop} as {other} at {loop[1].body}  and
-  inherits For at {stencil_loop} and
-  {loop[2].successor} control flow dominates {stencil_loop.begin} and
-  {stencil_loop.begin} control flow post dominates {loop[2].successor} and
-
-  inherits PermMultidStore(N=N) with {iterator[0]} as {input[0]}
-                                and {iterator[1]} as {input[1]}
-                                and {stencil_loop.iterator} as {input[2]}
-                                and {begin} as {begin} at {stencil_write} and
-
-  {stencil_expr.output} is first argument of {stencil_write.store}  and
-
-  collect i 32 inherits StencilRead with {iterator[0]}  as {input[0]}
-                                    and {iterator[1]}  as {input[1]}
-                                    and {stencil_loop.iterator}  as {input[2]}
-                                    and {begin} as {begin} at {stencil_reads[i]} and
-
-  collect i 32 ( inherits StencilRead(N=1) with {stencil_loop.iterator}  as {input[0]}
-                                            and {begin} as {begin} at {temp_reads[i]} and
-                 {temp_reads[i].base_pointer} is the same as {temp_write.base_pointer}) and
-
-
-  {stencil_expr.input[i]} is the same as {stencil_reads[i].value} for all i=0..32 and
-  {stencil_expr.input[i+32]} is the same as {temp_reads[i].value} for all i=0..32
-# and
-#  inherits KernelFunction with {begin} as {outer}
-#                         and {body.begin} as {inner} at {stencil_expr}
-)
-for N=3 if not otherwise specified
-End
-

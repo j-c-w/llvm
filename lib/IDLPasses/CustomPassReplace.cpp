@@ -1,8 +1,9 @@
 #include "llvm/IDLPasses/CustomPasses.hpp"
-#include "llvm/IDLParser/IdiomSpecifications.hpp"
+#include "llvm/IDLParser/Solution.hpp"
 #include "llvm/IDLPasses/Transforms.hpp"
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
@@ -22,15 +23,17 @@ public:
     static char ID;
 
     ResearchReplacer() : ModulePass(ID),
-                         loop_constraint_specs{{"histo",      DetectHisto},   {"scalar",  DetectReduction},
-                                               {"GEMM",       DetectGEMM},    {"SPMV",    DetectSPMV},
-                                               {"stencil",    DetectStencil}, {"stenpls", DetectStencilPlus},
-                                               {"Experiment", DetectExperiment}} { }
+                         loop_constraint_specs{/*{"histo",      GenerateAnalysis("Histo")},
+                                               {"scalar",     GenerateAnalysis("Reduction")},
+                                               {"GEMM",       GenerateAnalysis("GEMM")},
+                                               {"SPMV",       GenerateAnalysis("SPMV")},
+                                               {"stencil",    GenerateAnalysis("Stencil")},*/
+                                               {"Experiment", GenerateAnalysis("Experiment")}} { }
 
     bool runOnModule(Module& module) override;
 
 private:
-    std::vector<std::pair<std::string,IdiomSpecification(*)(Function&,unsigned)>> loop_constraint_specs;
+    std::vector<std::pair<std::string,std::vector<Solution>(*)(Function&,unsigned)>> loop_constraint_specs;
 };
 
 struct SolutionCluster
@@ -39,10 +42,6 @@ struct SolutionCluster
     Instruction*                                begin;
     Instruction*                                end;
     Instruction*                                successor;
-    Instruction*                                body_precursor;
-    Instruction*                                body_begin;
-    Instruction*                                body_end;
-    Instruction*                                body_successor;
     std::map<std::string,std::vector<Solution>> solutions;
 };
 
@@ -60,26 +59,22 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string
             Value* begin_value          = (Value*)solution.get("begin");
             Value* end_value            = (Value*)solution.get("end");
             Value* successor_value      = (Value*)solution.get("successor");
-            Value* body_precursor_value = (Value*)solution.get("body", "precursor");
-            Value* body_begin_value     = (Value*)solution.get("body", "begin");
-            Value* body_end_value       = (Value*)solution.get("body", "end");
-            Value* body_successor_value = (Value*)solution.get("body", "successor");
+
+            if(precursor_value == nullptr)
+                precursor_value = (Value*)solution.get("store_new_next");
 
             Instruction* precursor      = dyn_cast_or_null<Instruction>(precursor_value);
             Instruction* begin          = dyn_cast_or_null<Instruction>(begin_value);
             Instruction* end            = dyn_cast_or_null<Instruction>(end_value);
             Instruction* successor      = dyn_cast_or_null<Instruction>(successor_value);
-            Instruction* body_precursor = dyn_cast_or_null<Instruction>(body_precursor_value);
-            Instruction* body_begin     = dyn_cast_or_null<Instruction>(body_begin_value);
-            Instruction* body_end       = dyn_cast_or_null<Instruction>(body_end_value);
-            Instruction* body_successor = dyn_cast_or_null<Instruction>(body_successor_value);
+
+            
 
             auto find_it = std::find_if(result.begin(), result.end(), [=](const SolutionCluster& cluster)
                                         { return cluster.begin == begin && cluster.successor == successor; });
 
             if(find_it == result.end())
                 result.push_back(SolutionCluster{precursor, begin, end, successor,
-                                                 body_precursor, body_begin, body_end, body_successor,
                                                  {{input.first, {std::move(solution)}}}});
             else
                 find_it->solutions[input.first].push_back(std::move(solution));
@@ -89,12 +84,48 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string
     return result;
 }
 
+void replace_spmv(Function& function, Solution solution)
+{
+    Instruction* precursor = dyn_cast_or_null<Instruction>((Value*)solution.get("precursor"));
+
+    Instruction* store = dyn_cast_or_null<Instruction>((Value*)solution.get("output").get("store"));
+
+    if(store)
+    {
+        auto ov     = (Value*)solution.get("output").get("base_pointer");
+        auto a      = (Value*)solution.get("seq_read").get("base_pointer");
+        auto iv     = (Value*)solution.get("indir_read").get("base_pointer");
+        auto rowstr = (Value*)solution.get("iter_begin_read").get("base_pointer");
+        auto colidx = (Value*)solution.get("idx_read").get("base_pointer");
+        auto rows   = (Value*)solution.get("iter_end");
+
+        store->removeFromParent();
+        FunctionType* func_type = FunctionType::get(ov->getType(),
+                                     {ov->getType(), a->getType(), iv->getType(),
+                                     rowstr->getType(), colidx->getType(), rows->getType()}, false);
+
+
+        Constant* func = function.getParent()->getOrInsertFunction("spmv_harness", func_type);
+
+    //    BasicBlock::iterator iter(precursor);
+    //    SmartIRBuilder builder(comparison->getParent(), iter);
+
+
+        CallInst::Create(func, {ov, a, iv, rowstr, colidx, rows}, "", precursor);
+    }
+}
+
 bool ResearchReplacer::runOnModule(Module& module)
 {
     ModuleSlotTracker slot_tracker(&module);
 
+    std::string filename = module.getName();
+    for(char& c : filename)
+        if(c == '/')
+            c = '_';
+
     std::stringstream sstr;
-    sstr<<"replace-report-"<<(std::string)module.getName()<<".json";
+    sstr<<"replace-report-"<<filename<<".json";
     std::ofstream ofs(sstr.str().c_str());
     ofs<<"{\n  \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"loops\": [";
 
@@ -104,7 +135,6 @@ bool ResearchReplacer::runOnModule(Module& module)
         if(!function.isDeclaration())
         {
             std::vector<std::pair<std::string,std::vector<Solution>>> raw_solutions;
-
             for(const auto& spec : loop_constraint_specs)
                 raw_solutions.push_back({spec.first, spec.second(function,100)});
 
@@ -141,6 +171,11 @@ bool ResearchReplacer::runOnModule(Module& module)
                         ofs<<"\n    }";
                         first_hit2 = false;
                     }
+                }
+
+                for(auto& solution : clustered_solutions[i].solutions["SPMV"])
+                {
+                    replace_spmv(function, solution);
                 }
 
                 ofs<<"]";

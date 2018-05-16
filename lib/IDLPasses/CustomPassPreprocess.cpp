@@ -1,8 +1,10 @@
 #include "llvm/IDLPasses/CustomPasses.hpp"
-#include "llvm/IDLParser/IdiomSpecifications.hpp"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
+#include "llvm/IDLParser/Solution.hpp"
 #include "llvm/IDLPasses/Transforms.hpp"
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 #include <fstream>
@@ -13,71 +15,336 @@
 
 using namespace llvm;
 
-class ResearchPreprocessor : public ModulePass
+class ResearchPreprocessor : public FunctionPass
 {
 public:
     static char ID;
 
-    ResearchPreprocessor() : ModulePass(ID),
-                         constraint_specs{{"HOISTSELECT",  DetectHoistSelect,  &transform_hoistselect_pattern},
-                                          {"DISTRIBUTIVE", DetectDistributive, &transform_distributive}} { }
+    ResearchPreprocessor() : FunctionPass(ID),
+                         constraint_specs{{"HoistSelect",  GenerateAnalysis("HoistSelect"),  &transform_hoistselect_pattern},
+                                          {"Distributive", GenerateAnalysis("Distributive"), &transform_distributive}} { }
 
-    bool runOnModule(Module& module) override;
+    bool runOnFunction(Function& function) override;
 
 private:
-    std::vector<std::tuple<std::string,IdiomSpecification(*)(llvm::Function&,unsigned),
+    std::vector<std::tuple<std::string,std::vector<Solution>(*)(llvm::Function&,unsigned),
                                        void(*)(Function&,std::map<std::string,Value*>)>> constraint_specs;
 };
 
-bool ResearchPreprocessor::runOnModule(Module& module)
+
+class SmartIRBuilder : public IRBuilder<>
 {
-    ModuleSlotTracker slot_tracker(&module);
+public:
+    using IRBuilder<>::IRBuilder;
+
+    Value* CreateAdd(Value* a, int64_t bv)
+    {
+        if(bv == 0) return a;
+
+        ConstantInt*    b = dyn_cast<ConstantInt>(ConstantInt::get(a->getType(), bv));
+        BinaryOperator* binop;
+        BinaryOperator* binop2;
+        ConstantInt*    c;
+        ConstantInt*    d;
+
+        if((binop = dyn_cast<BinaryOperator>(a)) &&
+           binop->getOpcode() == Instruction::Add &&
+           (c = dyn_cast<ConstantInt>(binop->getOperand(1))))
+        {
+            return IRBuilder<>::CreateAdd(binop->getOperand(0),
+                                          IRBuilder<>::CreateAdd(c, b));
+        }
+        if((binop = dyn_cast<BinaryOperator>(a)) &&
+           binop->getOpcode() == Instruction::Mul &&
+           (c = dyn_cast<ConstantInt>(binop->getOperand(1))) &&
+           (binop2 = dyn_cast<BinaryOperator>(binop->getOperand(0))) &&
+           binop2->getOpcode() == Instruction::Add &&
+           (d = dyn_cast<ConstantInt>(binop2->getOperand(1))) &&
+           b->getSExtValue() > 0 && c->getSExtValue() > 0 &&
+           b->getSExtValue() % c->getSExtValue() == 0)
+        {
+            return IRBuilder<>::CreateMul(
+                       IRBuilder<>::CreateAdd(binop2->getOperand(0),
+                                              IRBuilder<>::CreateAdd(d, IRBuilder<>::CreateUDiv(b, c))), c);
+        }
+        return IRBuilder<>::CreateAdd(a, b);
+    }
+
+
+    Value* CreateAdd(Value* a, Value* b)
+    {
+        ConstantInt* c;
+        if((c = dyn_cast<ConstantInt>(a))) return CreateAdd(b, c->getSExtValue());
+        if((c = dyn_cast<ConstantInt>(b))) return CreateAdd(a, c->getSExtValue());
+
+        BinaryOperator* binop1;
+        BinaryOperator* binop2;
+        ConstantInt*    fac1;
+        ConstantInt*    fac2;
+
+        if((binop1 = dyn_cast<BinaryOperator>(a)) &&
+           binop1->getOpcode() == Instruction::Mul &&
+           (fac1 = dyn_cast<ConstantInt>(binop1->getOperand(1))) &&
+           (binop2 = dyn_cast<BinaryOperator>(b)) &&
+           binop2->getOpcode() == Instruction::Mul &&
+           (fac2 = dyn_cast<ConstantInt>(binop2->getOperand(1))))
+        {
+            if(fac1->getSExtValue() % fac2->getSExtValue() == 0)
+            {
+                return IRBuilder<>::CreateMul(
+                           IRBuilder<>::CreateAdd(IRBuilder<>::CreateMul(binop1->getOperand(0),
+                                                                         IRBuilder<>::CreateUDiv(fac1, fac2)),
+                                                  binop2->getOperand(0)), fac2);
+            }
+            if(fac2->getSExtValue() % fac1->getSExtValue() == 0)
+            {
+                return IRBuilder<>::CreateMul(
+                           IRBuilder<>::CreateAdd(binop1->getOperand(0),
+                                                  IRBuilder<>::CreateMul(binop2->getOperand(0),
+                                                                         IRBuilder<>::CreateUDiv(fac2, fac1))), fac1);
+            }
+        }
+
+        return IRBuilder<>::CreateAdd(a, b);
+    }
+
+    Value* CreateMul(Value* a, int64_t bv)
+    {
+        if(bv == 1) return a;
+
+        ConstantInt*    b = dyn_cast<ConstantInt>(ConstantInt::get(a->getType(), bv));
+        BinaryOperator* binop;
+        BinaryOperator* binop2;
+        ConstantInt*    c;
+        ConstantInt*    d;
+
+        if((binop = dyn_cast<BinaryOperator>(a)) &&
+           binop->getOpcode() == Instruction::Mul &&
+           (c = dyn_cast<ConstantInt>(binop->getOperand(1))))
+        {
+            return IRBuilder<>::CreateMul(binop->getOperand(0),
+                                          IRBuilder<>::CreateMul(c, b));
+        }
+        if((binop = dyn_cast<BinaryOperator>(a)) &&
+           binop->getOpcode() == Instruction::Add &&
+           (c = dyn_cast<ConstantInt>(binop->getOperand(1))) &&
+           (binop2 = dyn_cast<BinaryOperator>(binop->getOperand(0))) &&
+           binop2->getOpcode() == Instruction::Mul &&
+           (d = dyn_cast<ConstantInt>(binop2->getOperand(1))))
+        {
+            return IRBuilder<>::CreateAdd(IRBuilder<>::CreateMul(binop2->getOperand(0),
+                                                                 IRBuilder<>::CreateMul(d, b)),
+                                          IRBuilder<>::CreateMul(c, b));
+        }
+        return IRBuilder<>::CreateMul(a, b);
+    }
+
+    Value* CreateMul(Value* a, Value* b)
+    {
+        ConstantInt* c;
+        if((c = dyn_cast<ConstantInt>(a))) return CreateMul(b, c->getSExtValue());
+        if((c = dyn_cast<ConstantInt>(b))) return CreateMul(a, c->getSExtValue());
+        return IRBuilder<>::CreateMul(a, b);
+    }
+};
+
+bool ResearchPreprocessor::runOnFunction(Function& function)
+{
+    DataLayout data_layout(function.getParent());
+
+    for(BasicBlock& block : function.getBasicBlockList())
+    {
+        for(Instruction& instruction : block.getInstList())
+        {
+            BasicBlock::iterator iter(&instruction);
+            SmartIRBuilder builder(&block, iter);
+
+            Instruction* mul_inst;
+            ConstantInt* intconst;
+            int64_t      or_const;
+            int64_t      mul_const;
+
+            if(instruction.getOpcode() == Instruction::Shl &&
+               (intconst = dyn_cast<ConstantInt>(instruction.getOperand(1))) &&
+               intconst->getZExtValue() < 32)
+            {
+                instruction.replaceAllUsesWith(
+                    builder.CreateMul(
+                        instruction.getOperand(0),
+                        ConstantInt::get(intconst->getType(), 1<<intconst->getZExtValue())));
+            }
+            else if(instruction.getOpcode() == Instruction::Or &&
+               (intconst = dyn_cast<ConstantInt>(instruction.getOperand(1))) &&
+               (or_const = intconst->getSExtValue()) &&
+               (mul_inst = dyn_cast<Instruction>(instruction.getOperand(0))) &&
+               (intconst = dyn_cast<ConstantInt>(mul_inst->getOperand(1))) &&
+               ((mul_inst->getOpcode() == Instruction::Mul && (mul_const = intconst->getSExtValue())) ||
+                (mul_inst->getOpcode() == Instruction::Shl && intconst->getZExtValue() < 32 &&
+                                                              (mul_const = 1 << intconst->getZExtValue()))))
+            {
+                while(mul_const % 2 == 0)
+                {
+                    mul_const /= 2;
+                    or_const  /= 2;
+                }
+
+                if(or_const != 0) continue;
+
+                instruction.replaceAllUsesWith(
+                    builder.CreateAdd(instruction.getOperand(0), instruction.getOperand(1)));
+            }
+            else if(auto gep_inst = dyn_cast<GetElementPtrInst>(&instruction))
+            {
+                std::vector<Value*> reverse_index_vector;
+                for(unsigned i = 1; i < gep_inst->getNumOperands(); i++)
+                {
+                    reverse_index_vector.push_back(gep_inst->getOperand(gep_inst->getNumOperands()-i));
+                }
+
+                auto innermost_gep = gep_inst;
+                while(auto next_gep = dyn_cast<GetElementPtrInst>(innermost_gep->getPointerOperand()))
+                {
+                    reverse_index_vector.back() = builder.CreateAdd(reverse_index_vector.back(),
+                                                                    next_gep->getOperand(next_gep->getNumOperands()-1));
+
+                    for(unsigned i = 2; i < next_gep->getNumOperands(); i++)
+                    {
+                        reverse_index_vector.push_back(next_gep->getOperand(next_gep->getNumOperands()-i));
+                    }
+                    
+                    innermost_gep = next_gep;
+                }
+
+                std::reverse(reverse_index_vector.begin(), reverse_index_vector.end());
+
+                auto gepinst = dyn_cast<GetElementPtrInst>(&instruction);
+                PointerType* pointertype = dyn_cast<PointerType>(innermost_gep->getPointerOperandType());
+
+                Value* index = ConstantInt::get(reverse_index_vector[0]->getType(), 0);
+                Type*  type  = pointertype;
+
+                std::vector<Value*> indizes;
+                std::vector<size_t> factors;
+
+                for(auto operand : reverse_index_vector)
+                {
+                    PointerType*    pointer_type;
+                    SequentialType* seq_type;
+                    StructType*     struct_type;
+                    ConstantInt*    struct_member;
+
+                    if((pointer_type = dyn_cast<PointerType>(type)))
+                    {
+                        index = builder.CreateAdd(
+                                    index,
+                                    builder.CreateMul(
+                                        operand,
+                                        data_layout.getTypeAllocSize(pointer_type->getElementType())));
+                        type = pointer_type->getElementType();
+                    }
+                    else if((seq_type = dyn_cast<SequentialType>(type)))
+                    {
+                        index = builder.CreateAdd(
+                                    index,
+                                    builder.CreateMul(
+                                        operand,
+                                        data_layout.getTypeAllocSize(seq_type->getElementType())));
+                        type = seq_type->getElementType();
+                    }
+                    else if((struct_type = dyn_cast<StructType>(type)) &&
+                            (struct_member = dyn_cast<ConstantInt>(operand)))
+                    {
+                        unsigned member_nr = struct_member->getZExtValue();
+
+                        auto offset = data_layout.getStructLayout(struct_type)->getElementOffset(member_nr);
+
+                        index = builder.CreateAdd(index, offset);
+                        type = struct_type->getElementType(member_nr);
+                    }
+                }
+
+                auto gep_origin = innermost_gep->getOperand(0);
+
+                while(auto bitcast_inst = dyn_cast<BitCastInst>(gep_origin))
+                {
+                    gep_origin = bitcast_inst->getOperand(0);
+                }
+
+                auto new_gep = builder.CreateBitCast(
+                                   builder.CreateGEP(
+                                       builder.CreateBitCast(
+                                           gep_origin,
+                                           Type::getInt8PtrTy(gepinst->getContext(),
+                                                              pointertype->getAddressSpace())),
+                                       index),
+                                   gepinst->getType());
+
+                std::vector<std::pair<Instruction*,unsigned>> uses;
+                for(auto& use : instruction.uses())
+                {
+                    if(auto instruction2 = dyn_cast<Instruction>(use.getUser()))
+                        if(instruction2->getOpcode() == Instruction::Load ||
+                           instruction2->getOpcode() == Instruction::Store)
+                        {
+                            uses.emplace_back(instruction2, use.getOperandNo());
+                        }
+                }
+
+                for(auto use : uses)
+                {
+                    use.first->setOperand(use.second, new_gep);
+                }
+            }
+        }
+    }
+
+    return false;
+
+    for(auto solution : GenerateAnalysis("ForWithIteratorTest")(function, UINT_MAX))
+    {
+        auto comparison = dyn_cast<Instruction>((Value*)solution["comparison"]);
+        auto increment  = dyn_cast<Instruction>((Value*)solution["increment"]);
+
+        comparison->setOperand(0, increment);
+        comparison->setOperand(1, BinaryOperator::Create(Instruction::Add,
+                                      comparison->getOperand(1),
+                                      increment->getOperand(1), "", comparison));
+    }
 
     std::vector<Value*> removed_instructions;
 
-    for(Function& function : module.getFunctionList())
+    for(const auto& spec : constraint_specs)
     {
-        if(!function.isDeclaration())
+        for(auto solution : std::get<1>(spec)(function, UINT_MAX))
         {
-            for(const auto& spec : constraint_specs)
+            std::map<std::string,llvm::Value*> solution_map = solution;
+
+            auto find_it = solution_map.find("value");
+            if(find_it == solution_map.end())
+                find_it = solution_map.find("select");
+
+
+            bool do_continue = false;
+            for(auto& entry: solution_map)
             {
-                auto solutions = std::get<1>(spec)(function, UINT_MAX);
+                auto find_it2 = std::find(removed_instructions.begin(),
+                                          removed_instructions.end(), entry.second);
 
-                if(!solutions.empty())
+                if(find_it2 != removed_instructions.end())
                 {
-                    for(auto& solution : solutions)
-                    {
-                        std::map<std::string,llvm::Value*> solution_map = solution;
-
-                        auto find_it = solution_map.find("value");
-                        if(find_it == solution_map.end())
-                            find_it = solution_map.find("select");
-
-
-                        bool do_continue = false;
-                        for(auto& entry: solution_map)
-                        {
-                            auto find_it2 = std::find(removed_instructions.begin(),
-                                                      removed_instructions.end(), entry.second);
-
-                            if(find_it2 != removed_instructions.end())
-                            {
-                                do_continue = true;
-                                break;
-                            }
-                        }
-
-                        if(do_continue)
-                            continue;
-
-                        (*std::get<2>(spec))(function, solution);
-
-                        if(find_it != solution_map.end())
-                        {
-                            removed_instructions.push_back(find_it->second);
-                        }
-                    }
+                    do_continue = true;
+                    break;
                 }
+            }
+
+            if(do_continue)
+                continue;
+
+            (*std::get<2>(spec))(function, solution);
+
+            if(find_it != solution_map.end())
+            {
+                removed_instructions.push_back(find_it->second);
             }
         }
     }
@@ -89,6 +356,6 @@ char ResearchPreprocessor::ID = 0;
 
 static RegisterPass<ResearchPreprocessor> X("research-preprocessor", "Research preprocessor", false, false);
 
-ModulePass *llvm::createResearchPreprocessorPass() {
+FunctionPass *llvm::createResearchPreprocessorPass() {
   return new ResearchPreprocessor();
 }

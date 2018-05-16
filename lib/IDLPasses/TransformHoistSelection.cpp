@@ -34,3 +34,16 @@ void transform_hoistselect_pattern(Function& function, std::map<std::string,Valu
                 select_inst->getType()));
     }
 }
+
+
+
+/* Program to apply hoistselect
+insert {select}:
+%a = Select {input1}, {input2}
+%b = GEP {base}, {a}
+done
+
+replace {select} with {result}
+*/
+
+

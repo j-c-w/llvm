@@ -48,4 +48,6 @@ private:
     std::shared_ptr<std::unordered_map<llvm::Value*,std::string>> instr_strings;
 };
 
+std::vector<Solution>(*GenerateAnalysis(std::string name))(llvm::Function&, unsigned);
+
 #endif

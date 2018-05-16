@@ -23,7 +23,7 @@ void transform_distributive(Function& function, std::map<std::string,Value*> sol
     std::vector<Value*> sum1_results;
     std::vector<Value*> sum2_results;
 
-    for(unsigned i = 0; i < 16 ; i++)
+    for(unsigned i = 0; i < 4 ; i++)
     {
         std::stringstream index_sstr;
         index_sstr<<"["<<i<<"]";
@@ -78,7 +78,7 @@ void transform_distributive(Function& function, std::map<std::string,Value*> sol
 
         Value* first_sum = ConstantInt::get(int_type, 0);
         for(unsigned j = 1; j <= sum1_factors.size()-1; j++)
-            if(j==1 || dyn_cast<Instruction>(sum2_results[j])->getOpcode() == Instruction::Add)
+            if(j==1 || dyn_cast<Instruction>(sum1_results[j])->getOpcode() == Instruction::Add)
                 first_sum = builder.CreateAdd(builder.CreateSExtOrTrunc(sum1_factors[j], int_type), first_sum);
             else
                 first_sum = builder.CreateSub(builder.CreateSExtOrTrunc(sum1_factors[j], int_type), first_sum);
