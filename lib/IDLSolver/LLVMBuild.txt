@@ -1,4 +1,4 @@
-;===- ./lib/LLVMBuild.txt --------------------------------------*- Conf -*--===;
+;===- ./lib/IDLSupport/LLVMBuild.txt --------------------------*- Conf -*--===;
 ;
 ;                     The LLVM Compiler Infrastructure
 ;
@@ -15,40 +15,7 @@
 ;
 ;===------------------------------------------------------------------------===;
 
-[common]
-subdirectories =
- Analysis
- AsmParser
- Bitcode
- CodeGen
- IDLParser
- IDLPasses
- IDLSolver
- DebugInfo
- Demangle
- ExecutionEngine
- FuzzMutate
- LineEditor
- Linker
- IR
- IRReader
- LTO
- MC
- Object
- BinaryFormat
- ObjectYAML
- Option
- Passes
- ProfileData
- Support
- TableGen
- Target
- Testing
- ToolDrivers
- Transforms
- WindowsManifest
-
 [component_0]
-type = Group
-name = Libraries
-parent = $ROOT
+type = Library
+name = IDLSolver
+parent = Libraries
