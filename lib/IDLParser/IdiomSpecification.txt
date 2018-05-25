@@ -1,3 +1,19 @@
+Constraint Experiment
+( {store_old_next} is store instruction and
+  {old_next} is first argument of {store_old_next} and
+  {old_next} is load instruction and
+  {old_member_pointer} is first argument of {old_next} and
+  {old_member_pointer} is second argument of {store_new_next} and
+  {store_new_next} is store instruction and
+  {new_next} is first argument of {store_new_next} and
+
+  {new_member_pointer} is second argument of {store_old_next} and
+
+  ( ( {new_member_pointer} is gep instruction and
+      {new_next} is first argument of {new_member_pointer}) or
+    {new_next} is the same as {new_member_pointer}))
+End
+
 Constraint Distributive
 ( {value} is add instruction and
   {sum1.value} is first argument of {value} and
