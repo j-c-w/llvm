@@ -30,6 +30,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/BinaryFormat/Dwarf.h"
+#include "llvm/Config/llvm-config.h"
 #include "llvm/IR/Argument.h"
 #include "llvm/IR/AssemblyAnnotationWriter.h"
 #include "llvm/IR/Attributes.h"
@@ -762,7 +763,7 @@ private:
   /// CreateFunctionSlot - Insert the specified Value* into the slot table.
   void CreateFunctionSlot(const Value *V);
 
-  /// \brief Insert the specified AttributeSet into the slot table.
+  /// Insert the specified AttributeSet into the slot table.
   void CreateAttributeSetSlot(AttributeSet AS);
 
   /// Add all of the module level global variables (and their initializers)
@@ -1830,7 +1831,7 @@ static void writeDISubprogram(raw_ostream &Out, const DISubprogram *N,
   Printer.printMetadata("unit", N->getRawUnit());
   Printer.printMetadata("templateParams", N->getRawTemplateParams());
   Printer.printMetadata("declaration", N->getRawDeclaration());
-  Printer.printMetadata("variables", N->getRawVariables());
+  Printer.printMetadata("retainedNodes", N->getRawRetainedNodes());
   Printer.printMetadata("thrownTypes", N->getRawThrownTypes());
   Out << ")";
 }
@@ -1967,6 +1968,18 @@ static void writeDILocalVariable(raw_ostream &Out, const DILocalVariable *N,
   Printer.printMetadata("type", N->getRawType());
   Printer.printDIFlags("flags", N->getFlags());
   Printer.printInt("align", N->getAlignInBits());
+  Out << ")";
+}
+
+static void writeDILabel(raw_ostream &Out, const DILabel *N,
+                         TypePrinting *TypePrinter,
+                         SlotTracker *Machine, const Module *Context) {
+  Out << "!DILabel(";
+  MDFieldPrinter Printer(Out, TypePrinter, Machine, Context);
+  Printer.printMetadata("scope", N->getRawScope(), /* ShouldSkipNull */ false);
+  Printer.printString("name", N->getName());
+  Printer.printMetadata("file", N->getRawFile());
+  Printer.printInt("line", N->getLine());
   Out << ")";
 }
 
@@ -2235,7 +2248,7 @@ public:
   void printUseLists(const Function *F);
 
 private:
-  /// \brief Print out metadata attachments.
+  /// Print out metadata attachments.
   void printMetadataAttachments(
       const SmallVectorImpl<std::pair<unsigned, MDNode *>> &MDs,
       StringRef Separator);
@@ -2465,6 +2478,43 @@ void AssemblyWriter::printModule(const Module *M) {
   }
 }
 
+static std::string getLinkageName(GlobalValue::LinkageTypes LT) {
+  switch (LT) {
+  case GlobalValue::ExternalLinkage:
+    return "external";
+  case GlobalValue::PrivateLinkage:
+    return "private";
+  case GlobalValue::InternalLinkage:
+    return "internal";
+  case GlobalValue::LinkOnceAnyLinkage:
+    return "linkonce";
+  case GlobalValue::LinkOnceODRLinkage:
+    return "linkonce_odr";
+  case GlobalValue::WeakAnyLinkage:
+    return "weak";
+  case GlobalValue::WeakODRLinkage:
+    return "weak_odr";
+  case GlobalValue::CommonLinkage:
+    return "common";
+  case GlobalValue::AppendingLinkage:
+    return "appending";
+  case GlobalValue::ExternalWeakLinkage:
+    return "extern_weak";
+  case GlobalValue::AvailableExternallyLinkage:
+    return "available_externally";
+  }
+  llvm_unreachable("invalid linkage");
+}
+
+// When printing the linkage types in IR where the ExternalLinkage is
+// not printed, and other linkage types are expected to be printed with
+// a space after the name.
+static std::string getLinkageNameWithSpace(GlobalValue::LinkageTypes LT) {
+  if (LT == GlobalValue::ExternalLinkage)
+    return "";
+  return getLinkageName(LT) + " ";
+}
+
 static void printMetadataIdentifier(StringRef Name,
                                     formatted_raw_ostream &Out) {
   if (Name.empty()) {
@@ -2509,34 +2559,6 @@ void AssemblyWriter::printNamedMDNode(const NamedMDNode *NMD) {
       Out << '!' << Slot;
   }
   Out << "}\n";
-}
-
-static const char *getLinkagePrintName(GlobalValue::LinkageTypes LT) {
-  switch (LT) {
-  case GlobalValue::ExternalLinkage:
-    return "";
-  case GlobalValue::PrivateLinkage:
-    return "private ";
-  case GlobalValue::InternalLinkage:
-    return "internal ";
-  case GlobalValue::LinkOnceAnyLinkage:
-    return "linkonce ";
-  case GlobalValue::LinkOnceODRLinkage:
-    return "linkonce_odr ";
-  case GlobalValue::WeakAnyLinkage:
-    return "weak ";
-  case GlobalValue::WeakODRLinkage:
-    return "weak_odr ";
-  case GlobalValue::CommonLinkage:
-    return "common ";
-  case GlobalValue::AppendingLinkage:
-    return "appending ";
-  case GlobalValue::ExternalWeakLinkage:
-    return "extern_weak ";
-  case GlobalValue::AvailableExternallyLinkage:
-    return "available_externally ";
-  }
-  llvm_unreachable("invalid linkage");
 }
 
 static void PrintVisibility(GlobalValue::VisibilityTypes Vis,
@@ -2627,7 +2649,7 @@ void AssemblyWriter::printGlobal(const GlobalVariable *GV) {
   if (!GV->hasInitializer() && GV->hasExternalLinkage())
     Out << "external ";
 
-  Out << getLinkagePrintName(GV->getLinkage());
+  Out << getLinkageNameWithSpace(GV->getLinkage());
   PrintDSOLocation(*GV, Out);
   PrintVisibility(GV->getVisibility(), Out);
   PrintDLLStorageClass(GV->getDLLStorageClass(), Out);
@@ -2674,7 +2696,7 @@ void AssemblyWriter::printIndirectSymbol(const GlobalIndirectSymbol *GIS) {
   WriteAsOperandInternal(Out, GIS, &TypePrinter, &Machine, GIS->getParent());
   Out << " = ";
 
-  Out << getLinkagePrintName(GIS->getLinkage());
+  Out << getLinkageNameWithSpace(GIS->getLinkage());
   PrintDSOLocation(*GIS, Out);
   PrintVisibility(GIS->getVisibility(), Out);
   PrintDLLStorageClass(GIS->getDLLStorageClass(), Out);
@@ -2777,7 +2799,7 @@ void AssemblyWriter::printFunction(const Function *F) {
   } else
     Out << "define ";
 
-  Out << getLinkagePrintName(F->getLinkage());
+  Out << getLinkageNameWithSpace(F->getLinkage());
   PrintDSOLocation(*F, Out);
   PrintVisibility(F->getVisibility(), Out);
   PrintDLLStorageClass(F->getDLLStorageClass(), Out);
@@ -3694,7 +3716,7 @@ void Module::dump() const {
         /*ShouldPreserveUseListOrder=*/false, /*IsForDebug=*/true);
 }
 
-// \brief Allow printing of Comdats from the debugger.
+// Allow printing of Comdats from the debugger.
 LLVM_DUMP_METHOD
 void Comdat::dump() const { print(dbgs(), /*IsForDebug=*/true); }
 

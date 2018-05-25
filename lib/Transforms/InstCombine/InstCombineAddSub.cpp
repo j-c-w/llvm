@@ -856,48 +856,6 @@ Value *FAddCombine::createAddendVal(const FAddend &Opnd, bool &NeedNeg) {
   return createFMul(OpndVal, Coeff.getValue(Instr->getType()));
 }
 
-/// \brief Return true if we can prove that:
-///    (sub LHS, RHS)  === (sub nsw LHS, RHS)
-/// This basically requires proving that the add in the original type would not
-/// overflow to change the sign bit or have a carry out.
-/// TODO: Handle this for Vectors.
-bool InstCombiner::willNotOverflowSignedSub(const Value *LHS,
-                                            const Value *RHS,
-                                            const Instruction &CxtI) const {
-  // If LHS and RHS each have at least two sign bits, the subtraction
-  // cannot overflow.
-  if (ComputeNumSignBits(LHS, 0, &CxtI) > 1 &&
-      ComputeNumSignBits(RHS, 0, &CxtI) > 1)
-    return true;
-
-  KnownBits LHSKnown = computeKnownBits(LHS, 0, &CxtI);
-
-  KnownBits RHSKnown = computeKnownBits(RHS, 0, &CxtI);
-
-  // Subtraction of two 2's complement numbers having identical signs will
-  // never overflow.
-  if ((LHSKnown.isNegative() && RHSKnown.isNegative()) ||
-      (LHSKnown.isNonNegative() && RHSKnown.isNonNegative()))
-    return true;
-
-  // TODO: implement logic similar to checkRippleForAdd
-  return false;
-}
-
-/// \brief Return true if we can prove that:
-///    (sub LHS, RHS)  === (sub nuw LHS, RHS)
-bool InstCombiner::willNotOverflowUnsignedSub(const Value *LHS,
-                                              const Value *RHS,
-                                              const Instruction &CxtI) const {
-  // If the LHS is negative and the RHS is non-negative, no unsigned wrap.
-  KnownBits LHSKnown = computeKnownBits(LHS, /*Depth=*/0, &CxtI);
-  KnownBits RHSKnown = computeKnownBits(RHS, /*Depth=*/0, &CxtI);
-  if (LHSKnown.isNegative() && RHSKnown.isNonNegative())
-    return true;
-
-  return false;
-}
-
 // Checks if any operand is negative and we can convert add to sub.
 // This function checks for following negative patterns
 //   ADD(XOR(OR(Z, NOT(C)), C)), 1) == NEG(AND(Z, C))
@@ -1363,26 +1321,15 @@ Instruction *InstCombiner::visitAdd(BinaryOperator &I) {
   }
 
   // (add (xor A, B) (and A, B)) --> (or A, B)
-  if (match(LHS, m_Xor(m_Value(A), m_Value(B))) &&
-      match(RHS, m_c_And(m_Specific(A), m_Specific(B))))
-    return BinaryOperator::CreateOr(A, B);
-
   // (add (and A, B) (xor A, B)) --> (or A, B)
-  if (match(RHS, m_Xor(m_Value(A), m_Value(B))) &&
-      match(LHS, m_c_And(m_Specific(A), m_Specific(B))))
+  if (match(&I, m_c_BinOp(m_Xor(m_Value(A), m_Value(B)),
+                          m_c_And(m_Deferred(A), m_Deferred(B)))))
     return BinaryOperator::CreateOr(A, B);
 
   // (add (or A, B) (and A, B)) --> (add A, B)
-  if (match(LHS, m_Or(m_Value(A), m_Value(B))) &&
-      match(RHS, m_c_And(m_Specific(A), m_Specific(B)))) {
-    I.setOperand(0, A);
-    I.setOperand(1, B);
-    return &I;
-  }
-
   // (add (and A, B) (or A, B)) --> (add A, B)
-  if (match(RHS, m_Or(m_Value(A), m_Value(B))) &&
-      match(LHS, m_c_And(m_Specific(A), m_Specific(B)))) {
+  if (match(&I, m_c_BinOp(m_Or(m_Value(A), m_Value(B)),
+                          m_c_And(m_Deferred(A), m_Deferred(B))))) {
     I.setOperand(0, A);
     I.setOperand(1, B);
     return &I;
@@ -1680,6 +1627,22 @@ Instruction *InstCombiner::visitSub(BinaryOperator &I) {
           *ShAmt == BitWidth - 1) {
         Value *ShAmtOp = cast<Instruction>(Op1)->getOperand(1);
         return BinaryOperator::CreateLShr(X, ShAmtOp);
+      }
+
+      if (Op1->hasOneUse()) {
+        Value *LHS, *RHS;
+        SelectPatternFlavor SPF = matchSelectPattern(Op1, LHS, RHS).Flavor;
+        if (SPF == SPF_ABS || SPF == SPF_NABS) {
+          // This is a negate of an ABS/NABS pattern. Just swap the operands
+          // of the select.
+          SelectInst *SI = cast<SelectInst>(Op1);
+          Value *TrueVal = SI->getTrueValue();
+          Value *FalseVal = SI->getFalseValue();
+          SI->setTrueValue(FalseVal);
+          SI->setFalseValue(TrueVal);
+          // Don't swap prof metadata, we didn't change the branch behavior.
+          return replaceInstUsesWith(I, SI);
+        }
       }
     }
 
