@@ -162,7 +162,7 @@ static unsigned estimateRSStackSizeLimit(MachineFunction &MF) {
   // realistically that's not a big deal at this stage of the game.
   for (MachineBasicBlock &MBB : MF) {
     for (MachineInstr &MI : MBB) {
-      if (MI.isDebugValue() || MI.isPseudo() ||
+      if (MI.isDebugInstr() || MI.isPseudo() ||
           MI.getOpcode() == AArch64::ADDXri ||
           MI.getOpcode() == AArch64::ADDSXri)
         continue;
@@ -512,6 +512,38 @@ static void fixupCalleeSaveRestoreStackOffset(MachineInstr &MI,
   // All generated opcodes have scaled offsets.
   assert(LocalStackSize % 8 == 0);
   OffsetOpnd.setImm(OffsetOpnd.getImm() + LocalStackSize / 8);
+}
+
+static void adaptForLdStOpt(MachineBasicBlock &MBB,
+                            MachineBasicBlock::iterator FirstSPPopI,
+                            MachineBasicBlock::iterator LastPopI) {
+  // Sometimes (when we restore in the same order as we save), we can end up
+  // with code like this:
+  //
+  // ldp      x26, x25, [sp]
+  // ldp      x24, x23, [sp, #16]
+  // ldp      x22, x21, [sp, #32]
+  // ldp      x20, x19, [sp, #48]
+  // add      sp, sp, #64
+  //
+  // In this case, it is always better to put the first ldp at the end, so
+  // that the load-store optimizer can run and merge the ldp and the add into
+  // a post-index ldp.
+  // If we managed to grab the first pop instruction, move it to the end.
+  if (ReverseCSRRestoreSeq)
+    MBB.splice(FirstSPPopI, &MBB, LastPopI);
+  // We should end up with something like this now:
+  //
+  // ldp      x24, x23, [sp, #16]
+  // ldp      x22, x21, [sp, #32]
+  // ldp      x20, x19, [sp, #48]
+  // ldp      x26, x25, [sp]
+  // add      sp, sp, #64
+  //
+  // and the load-store optimizer can merge the last two instructions into:
+  //
+  // ldp      x26, x25, [sp], #64
+  //
 }
 
 void AArch64FrameLowering::emitPrologue(MachineFunction &MF,
@@ -930,12 +962,20 @@ void AArch64FrameLowering::emitEpilogue(MachineFunction &MF,
     int StackRestoreBytes = RedZone ? 0 : NumBytes;
     if (NoCalleeSaveRestore)
       StackRestoreBytes += AfterCSRPopSize;
-    emitFrameOffset(MBB, LastPopI, DL, AArch64::SP, AArch64::SP,
-                    StackRestoreBytes, TII, MachineInstr::FrameDestroy);
+
     // If we were able to combine the local stack pop with the argument pop,
     // then we're done.
-    if (NoCalleeSaveRestore || AfterCSRPopSize == 0)
+    bool Done = NoCalleeSaveRestore || AfterCSRPopSize == 0;
+
+    // If we're done after this, make sure to help the load store optimizer.
+    if (Done)
+      adaptForLdStOpt(MBB, MBB.getFirstTerminator(), LastPopI);
+
+    emitFrameOffset(MBB, LastPopI, DL, AArch64::SP, AArch64::SP,
+                    StackRestoreBytes, TII, MachineInstr::FrameDestroy);
+    if (Done)
       return;
+
     NumBytes = 0;
   }
 
@@ -967,33 +1007,8 @@ void AArch64FrameLowering::emitEpilogue(MachineFunction &MF,
       FirstSPPopI = Prev;
     }
 
-    // Sometimes (when we restore in the same order as we save), we can end up
-    // with code like this:
-    //
-    // ldp      x26, x25, [sp]
-    // ldp      x24, x23, [sp, #16]
-    // ldp      x22, x21, [sp, #32]
-    // ldp      x20, x19, [sp, #48]
-    // add      sp, sp, #64
-    //
-    // In this case, it is always better to put the first ldp at the end, so
-    // that the load-store optimizer can run and merge the ldp and the add into
-    // a post-index ldp.
-    // If we managed to grab the first pop instruction, move it to the end.
-    if (LastPopI != Begin)
-      MBB.splice(FirstSPPopI, &MBB, LastPopI);
-    // We should end up with something like this now:
-    //
-    // ldp      x24, x23, [sp, #16]
-    // ldp      x22, x21, [sp, #32]
-    // ldp      x20, x19, [sp, #48]
-    // ldp      x26, x25, [sp]
-    // add      sp, sp, #64
-    //
-    // and the load-store optimizer can merge the last two instructions into:
-    //
-    // ldp      x26, x25, [sp], #64
-    //
+    adaptForLdStOpt(MBB, FirstSPPopI, LastPopI);
+
     emitFrameOffset(MBB, FirstSPPopI, DL, AArch64::SP, AArch64::SP,
                     AfterCSRPopSize, TII, MachineInstr::FrameDestroy);
   }
@@ -1272,13 +1287,11 @@ bool AArch64FrameLowering::spillCalleeSavedRegisters(
       StrOpc = RPI.isPaired() ? AArch64::STPXi : AArch64::STRXui;
     else
       StrOpc = RPI.isPaired() ? AArch64::STPDi : AArch64::STRDui;
-    DEBUG(dbgs() << "CSR spill: (" << printReg(Reg1, TRI);
-          if (RPI.isPaired())
-            dbgs() << ", " << printReg(Reg2, TRI);
-          dbgs() << ") -> fi#(" << RPI.FrameIdx;
-          if (RPI.isPaired())
-            dbgs() << ", " << RPI.FrameIdx+1;
-          dbgs() << ")\n");
+    LLVM_DEBUG(dbgs() << "CSR spill: (" << printReg(Reg1, TRI);
+               if (RPI.isPaired()) dbgs() << ", " << printReg(Reg2, TRI);
+               dbgs() << ") -> fi#(" << RPI.FrameIdx;
+               if (RPI.isPaired()) dbgs() << ", " << RPI.FrameIdx + 1;
+               dbgs() << ")\n");
 
     MachineInstrBuilder MIB = BuildMI(MBB, MI, DL, TII.get(StrOpc));
     if (!MRI.isReserved(Reg1))
@@ -1335,13 +1348,11 @@ bool AArch64FrameLowering::restoreCalleeSavedRegisters(
       LdrOpc = RPI.isPaired() ? AArch64::LDPXi : AArch64::LDRXui;
     else
       LdrOpc = RPI.isPaired() ? AArch64::LDPDi : AArch64::LDRDui;
-    DEBUG(dbgs() << "CSR restore: (" << printReg(Reg1, TRI);
-          if (RPI.isPaired())
-            dbgs() << ", " << printReg(Reg2, TRI);
-          dbgs() << ") -> fi#(" << RPI.FrameIdx;
-          if (RPI.isPaired())
-            dbgs() << ", " << RPI.FrameIdx+1;
-          dbgs() << ")\n");
+    LLVM_DEBUG(dbgs() << "CSR restore: (" << printReg(Reg1, TRI);
+               if (RPI.isPaired()) dbgs() << ", " << printReg(Reg2, TRI);
+               dbgs() << ") -> fi#(" << RPI.FrameIdx;
+               if (RPI.isPaired()) dbgs() << ", " << RPI.FrameIdx + 1;
+               dbgs() << ")\n");
 
     MachineInstrBuilder MIB = BuildMI(MBB, MI, DL, TII.get(LdrOpc));
     if (RPI.isPaired()) {
@@ -1450,10 +1461,11 @@ void AArch64FrameLowering::determineCalleeSaves(MachineFunction &MF,
     }
   }
 
-  DEBUG(dbgs() << "*** determineCalleeSaves\nUsed CSRs:";
-        for (unsigned Reg : SavedRegs.set_bits())
-          dbgs() << ' ' << printReg(Reg, RegInfo);
-        dbgs() << "\n";);
+  LLVM_DEBUG(dbgs() << "*** determineCalleeSaves\nUsed CSRs:";
+             for (unsigned Reg
+                  : SavedRegs.set_bits()) dbgs()
+             << ' ' << printReg(Reg, RegInfo);
+             dbgs() << "\n";);
 
   // If any callee-saved registers are used, the frame cannot be eliminated.
   unsigned NumRegsSpilled = SavedRegs.count();
@@ -1462,7 +1474,7 @@ void AArch64FrameLowering::determineCalleeSaves(MachineFunction &MF,
   // The CSR spill slots have not been allocated yet, so estimateStackSize
   // won't include them.
   unsigned CFSize = MFI.estimateStackSize(MF) + 8 * NumRegsSpilled;
-  DEBUG(dbgs() << "Estimated stack frame size: " << CFSize << " bytes.\n");
+  LLVM_DEBUG(dbgs() << "Estimated stack frame size: " << CFSize << " bytes.\n");
   unsigned EstimatedStackSizeLimit = estimateRSStackSizeLimit(MF);
   bool BigStack = (CFSize > EstimatedStackSizeLimit);
   if (BigStack || !CanEliminateFrame || RegInfo->cannotEliminateFrame(MF))
@@ -1476,8 +1488,8 @@ void AArch64FrameLowering::determineCalleeSaves(MachineFunction &MF,
   // here.
   if (BigStack) {
     if (!ExtraCSSpill && UnspilledCSGPR != AArch64::NoRegister) {
-      DEBUG(dbgs() << "Spilling " << printReg(UnspilledCSGPR, RegInfo)
-                   << " to get a scratch register.\n");
+      LLVM_DEBUG(dbgs() << "Spilling " << printReg(UnspilledCSGPR, RegInfo)
+                        << " to get a scratch register.\n");
       SavedRegs.set(UnspilledCSGPR);
       // MachO's compact unwind format relies on all registers being stored in
       // pairs, so if we need to spill one extra for BigStack, then we need to
@@ -1497,8 +1509,8 @@ void AArch64FrameLowering::determineCalleeSaves(MachineFunction &MF,
       unsigned Align = TRI->getSpillAlignment(RC);
       int FI = MFI.CreateStackObject(Size, Align, false);
       RS->addScavengingFrameIndex(FI);
-      DEBUG(dbgs() << "No available CS registers, allocated fi#" << FI
-                   << " as the emergency spill slot.\n");
+      LLVM_DEBUG(dbgs() << "No available CS registers, allocated fi#" << FI
+                        << " as the emergency spill slot.\n");
     }
   }
 
