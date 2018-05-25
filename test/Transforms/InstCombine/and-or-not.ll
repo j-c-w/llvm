@@ -333,7 +333,7 @@ define i32 @xor_to_xor3(i32 %a, i32 %b) {
 
 define i32 @xor_to_xor4(i32 %a, i32 %b) {
 ; CHECK-LABEL: @xor_to_xor4(
-; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[A:%.*]], [[B:%.*]]
+; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[B:%.*]], [[A:%.*]]
 ; CHECK-NEXT:    ret i32 [[XOR]]
 ;
   %or = or i32 %a, %b
@@ -389,7 +389,7 @@ define i32 @xor_to_xor7(float %fa, float %fb) {
 ; CHECK-LABEL: @xor_to_xor7(
 ; CHECK-NEXT:    [[A:%.*]] = fptosi float [[FA:%.*]] to i32
 ; CHECK-NEXT:    [[B:%.*]] = fptosi float [[FB:%.*]] to i32
-; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[A]], [[B]]
+; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[B]], [[A]]
 ; CHECK-NEXT:    ret i32 [[XOR]]
 ;
   %a = fptosi float %fa to i32
@@ -408,7 +408,7 @@ define i32 @xor_to_xor8(float %fa, float %fb) {
 ; CHECK-LABEL: @xor_to_xor8(
 ; CHECK-NEXT:    [[A:%.*]] = fptosi float [[FA:%.*]] to i32
 ; CHECK-NEXT:    [[B:%.*]] = fptosi float [[FB:%.*]] to i32
-; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[A]], [[B]]
+; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[B]], [[A]]
 ; CHECK-NEXT:    ret i32 [[XOR]]
 ;
   %a = fptosi float %fa to i32
@@ -465,7 +465,7 @@ define i32 @xor_to_xor11(float %fa, float %fb) {
 ; CHECK-LABEL: @xor_to_xor11(
 ; CHECK-NEXT:    [[A:%.*]] = fptosi float [[FA:%.*]] to i32
 ; CHECK-NEXT:    [[B:%.*]] = fptosi float [[FB:%.*]] to i32
-; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[A]], [[B]]
+; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[B]], [[A]]
 ; CHECK-NEXT:    ret i32 [[XOR]]
 ;
   %a = fptosi float %fa to i32
@@ -484,7 +484,7 @@ define i32 @xor_to_xor12(float %fa, float %fb) {
 ; CHECK-LABEL: @xor_to_xor12(
 ; CHECK-NEXT:    [[A:%.*]] = fptosi float [[FA:%.*]] to i32
 ; CHECK-NEXT:    [[B:%.*]] = fptosi float [[FB:%.*]] to i32
-; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[A]], [[B]]
+; CHECK-NEXT:    [[XOR:%.*]] = xor i32 [[B]], [[A]]
 ; CHECK-NEXT:    ret i32 [[XOR]]
 ;
   %a = fptosi float %fa to i32
@@ -502,11 +502,10 @@ define i32 @xor_to_xor12(float %fa, float %fb) {
 
 define i64 @PR32830(i64 %a, i64 %b, i64 %c) {
 ; CHECK-LABEL: @PR32830(
-; CHECK-NEXT:    [[NOTA:%.*]] = xor i64 [[A:%.*]], -1
 ; CHECK-NEXT:    [[NOTB:%.*]] = xor i64 [[B:%.*]], -1
-; CHECK-NEXT:    [[OR1:%.*]] = or i64 [[NOTB]], [[A]]
-; CHECK-NEXT:    [[OR2:%.*]] = or i64 [[NOTA]], [[C:%.*]]
-; CHECK-NEXT:    [[AND:%.*]] = and i64 [[OR1]], [[OR2]]
+; CHECK-NEXT:    [[TMP1:%.*]] = xor i64 [[NOTB]], [[C:%.*]]
+; CHECK-NEXT:    [[TMP2:%.*]] = and i64 [[TMP1]], [[A:%.*]]
+; CHECK-NEXT:    [[AND:%.*]] = xor i64 [[TMP2]], [[NOTB]]
 ; CHECK-NEXT:    ret i64 [[AND]]
 ;
   %nota = xor i64 %a, -1
