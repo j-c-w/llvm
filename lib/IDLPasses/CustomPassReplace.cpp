@@ -23,11 +23,8 @@ public:
     static char ID;
 
     ResearchReplacer() : ModulePass(ID),
-                         loop_constraint_specs{{"histo",      GenerateAnalysis("Histo")},
-                                               {"scalar",     GenerateAnalysis("Reduction")},
-                                               {"GEMM",       GenerateAnalysis("GEMM")},
-                                               {"SPMV",       GenerateAnalysis("SPMV")},
-                                               {"stencil",    GenerateAnalysis("Stencil")}} { }
+                         loop_constraint_specs{{"GEMM",       GenerateAnalysis("GEMM")},
+                                               {"SPMV",       GenerateAnalysis("SPMV")}} { }
 
     bool runOnModule(Module& module) override;
 
@@ -177,45 +174,6 @@ bool ResearchReplacer::runOnModule(Module& module)
                 }
 
                 ofs<<"]";
-
-                if(clustered_solutions[i].solutions["histo"].size() > 0 ||
-                   clustered_solutions[i].solutions["scalar"].size() > 0)
-                {
-                    ofs<<",\n      \"operator\": \"";
-                    /*
-                    std::vector<Instruction*> outputs;
-
-                    SESEFunction sese_function(clustered_solutions[i].body_begin,
-                                               clustered_solutions[i].body_successor);
-
-                    Function* function = sese_function.make_function();
-
-                    std::vector<std::map<std::string,Value*>> scalar_solutions;
-                    for(const auto& solution : clustered_solutions[i].solutions["scalar"])
-                        scalar_solutions.emplace_back(sese_function.transform_forw(solution));
-
-                    std::vector<std::map<std::string,Value*>> histo_solutions;
-                    for(const auto& solution : clustered_solutions[i].solutions["histo"])
-                        histo_solutions.emplace_back(sese_function.transform_forw(solution));
-
-                    transform_reduction_operator(*function, scalar_solutions, histo_solutions);
-
-                    function->setName("op");
-                    function->arg_begin()->setName("acc");
-                    for(char c : print_pretty_c_operator(*function))
-                    {
-                        if(c=='\n') ofs<<"\\n";
-                        else if(c=='\t') ofs<<"\\t";
-                        else if(c=='\r') ofs<<"\\r";
-                        else if(c=='\"') ofs<<"\\\"";
-                        else if(c=='\'') ofs<<"\\\'";
-                        else ofs<<c;
-                    }
-                    delete function;
-                    */
-                    ofs<<"\"";
-                }
-
                 ofs<<"\n    }";
                 first_hit1 = false;
             }

@@ -21,30 +21,6 @@ Constraint GEMM
        and {output.address} as {update_address})
 End
 
-Constraint Histo
-( inherits For and
-  inherits ConditionalReadModifyWrite
-    with {body} as {body} at {update} and
-  collect i 32
-  ( inherits VectorRead at {read[i]} and
-    {read[i].value} is the same as {indexkernel.input[i]} and
-    {read[i].idx} is the same as {iterator} and
-    {read[i].begin} is the same as {begin}) and
-  inherits KernelFunction
-      with {begin} as {outer}
-       and {body.begin} as {inner} at {kernel} and
-  {kernel.output} is the same as {update.new_value} and
-  inherits KernelFunction
-      with {begin} as {outer}
-       and {body.begin} as {inner} at {indexkernel} and
-  {indexkernel.output} is the same as {update.address} and
-  ( {indexkernel.output} is not the same as {read[i].address} for all i=0..32) and
-  inherits Concat(N1=31,N2=1)
-      with {indexkernel.input} as {in1}
-       and {update.old_value}  as {in2}
-       and {kernel.input}      as {out})
-End
-
 Constraint SPMV
 ( inherits For and
   inherits VectorStore
@@ -82,44 +58,6 @@ Constraint SPMV
        and {indir_read.value} as {src1}
        and {seq_read.value}   as {src2}
        and {output.address}   as {update_address})
-End
-
-Constraint Reduction
-( inherits For and
-  {kernel.output} reaches phi node {old_value} from {end} and
-  {old_value} strictly control flow dominates {end} and
-  {old_value} is not the same as {iterator} and
-  {kernel.output} reaches phi node {final_value} from {end} and
-  {final_value} strictly control flow post dominates {end} and
-  collect i 32
-  ( inherits VectorRead
-        with {iterator} as {idx}
-         and {read_value[i]} as {value}
-         and {begin}    as {begin} at {read[i]}) and
-  inherits KernelFunction
-      with {begin}      as {outer}
-       and {body.begin} as {inner} at {kernel} and
-  inherits Concat(N1=31,N2=1)
-      with {read_value}   as {in1}
-       and {old_value}    as {in2}
-       and {kernel.input} as {out})
-End
-
-Constraint Stencil
-( inherits ForNest and
-  inherits PermMultidStore
-      with {iterator} as {input} 
-       and {begin} as {begin} at {write} and
-  collect i 32 
-  ( inherits StencilRead
-        with {write.input_index} as {input}
-         and {kernel.input[i]} as {value}
-         and {begin} as {begin}  at {reads[i]}) and
-  {kernel.output} is first argument of {write.store} and
-  inherits KernelFunction
-      with {begin}      as {outer}
-       and {body.begin} as {inner} at {kernel})
-for N=3 if not otherwise specified
 End
 
 # These are some buidling blocks for the toplevel constraints.
@@ -425,18 +363,6 @@ Constraint Concat
   endif)
 for N2=0 if not otherwise specified
 for N3=0 if not otherwise specified
-End
-
-Constraint ConditionalReadModifyWrite
-( {store_instr} is store instruction and
-  inherits MaxOnceInSESE
-      with {store_instr} as {value}
-       and {store_instr_after} as {value_after} at {body} and
-  {address} is second argument of {store_instr} and
-  {address} is gep instruction and
-  {address} is first argument of {old_value} and
-  {old_value} is load instruction and
-  {new_value} is first argument of {store_instr})
 End
 
 # This is for preprocessing.
