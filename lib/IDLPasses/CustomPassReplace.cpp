@@ -1,6 +1,5 @@
 #include "llvm/IDLPasses/CustomPasses.hpp"
 #include "llvm/IDLParser/Solution.hpp"
-#include "llvm/IDLPasses/Transforms.hpp"
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/IRBuilder.h"
@@ -23,11 +22,11 @@ public:
     static char ID;
 
     ResearchReplacer() : ModulePass(ID),
-                         loop_constraint_specs{{"histo",      GenerateAnalysis("Histo")},
-                                               {"scalar",     GenerateAnalysis("Reduction")},
-                                               {"GEMM",       GenerateAnalysis("GEMM")},
-                                               {"SPMV",       GenerateAnalysis("SPMV")},
-                                               {"stencil",    GenerateAnalysis("Stencil")}} { }
+                         loop_constraint_specs{{"histo",   GenerateAnalysis("Histo")},
+                                               {"scalar",  GenerateAnalysis("Reduction")},
+                                               {"GEMM",    GenerateAnalysis("GEMM")},
+                                               {"SPMV",    GenerateAnalysis("SPMV")},
+                                               {"stencil", GenerateAnalysis("Stencil")}} { }
 
     bool runOnModule(Module& module) override;
 
@@ -54,20 +53,15 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string
     {
         for(const auto& solution : input.second)
         {
-            Value* precursor_value      = (Value*)solution.get("precursor");
-            Value* begin_value          = (Value*)solution.get("begin");
-            Value* end_value            = (Value*)solution.get("end");
-            Value* successor_value      = (Value*)solution.get("successor");
+            Value* precursor_value = (Value*)solution.get("precursor");
+            Value* begin_value     = (Value*)solution.get("begin");
+            Value* end_value       = (Value*)solution.get("end");
+            Value* successor_value = (Value*)solution.get("successor");
 
-            if(precursor_value == nullptr)
-                precursor_value = (Value*)solution.get("store_new_next");
-
-            Instruction* precursor      = dyn_cast_or_null<Instruction>(precursor_value);
-            Instruction* begin          = dyn_cast_or_null<Instruction>(begin_value);
-            Instruction* end            = dyn_cast_or_null<Instruction>(end_value);
-            Instruction* successor      = dyn_cast_or_null<Instruction>(successor_value);
-
-            
+            Instruction* precursor = dyn_cast_or_null<Instruction>(precursor_value);
+            Instruction* begin     = dyn_cast_or_null<Instruction>(begin_value);
+            Instruction* end       = dyn_cast_or_null<Instruction>(end_value);
+            Instruction* successor = dyn_cast_or_null<Instruction>(successor_value);
 
             auto find_it = std::find_if(result.begin(), result.end(), [=](const SolutionCluster& cluster)
                                         { return cluster.begin == begin && cluster.successor == successor; });
@@ -81,36 +75,6 @@ std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string
     }
 
     return result;
-}
-
-void replace_spmv(Function& function, Solution solution)
-{
-    Instruction* precursor = dyn_cast_or_null<Instruction>((Value*)solution.get("precursor"));
-
-    Instruction* store = dyn_cast_or_null<Instruction>((Value*)solution.get("output").get("store"));
-
-    if(store)
-    {
-        auto ov     = (Value*)solution.get("output").get("base_pointer");
-        auto a      = (Value*)solution.get("seq_read").get("base_pointer");
-        auto iv     = (Value*)solution.get("indir_read").get("base_pointer");
-        auto rowstr = (Value*)solution.get("iter_begin_read").get("base_pointer");
-        auto colidx = (Value*)solution.get("idx_read").get("base_pointer");
-        auto rows   = (Value*)solution.get("iter_end");
-
-        store->removeFromParent();
-        FunctionType* func_type = FunctionType::get(ov->getType(),
-                                     {ov->getType(), a->getType(), iv->getType(),
-                                     rowstr->getType(), colidx->getType(), rows->getType()}, false);
-
-
-        Constant* func = function.getParent()->getOrInsertFunction("spmv_harness", func_type);
-
-    //    BasicBlock::iterator iter(precursor);
-    //    SmartIRBuilder builder(comparison->getParent(), iter);
-
-        CallInst::Create(func, {ov, a, iv, rowstr, colidx, rows}, "", precursor);
-    }
 }
 
 bool ResearchReplacer::runOnModule(Module& module)
@@ -169,11 +133,6 @@ bool ResearchReplacer::runOnModule(Module& module)
                         ofs<<"\n    }";
                         first_hit2 = false;
                     }
-                }
-
-                for(auto& solution : clustered_solutions[i].solutions["SPMV"])
-                {
-                    replace_spmv(function, solution);
                 }
 
                 ofs<<"]";
