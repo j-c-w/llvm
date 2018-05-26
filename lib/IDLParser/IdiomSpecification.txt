@@ -140,26 +140,6 @@ Constraint For
                        and {begin}     as {begin})
 End
 
-Constraint ConditionalReadModifyWrite
-( {store_instr} is store instruction and
-  inherits MaxOnceInSESE
-      with {store_instr} as {value}
-       and {store_instr_after} as {value_after} at {body} and
-  {address} is second argument of {store_instr} and
-  {address} is gep instruction and
-  {address} is first argument of {old_value} and
-  {old_value} is load instruction and
-  {new_value} is first argument of {store_instr})
-End
-
-Constraint MaxOnceInSESE
-( {begin} control flow dominates {value} and
-  {end} control flow post dominates {value} and
-  {value} has control flow to {value_after} and
-  all control flow from {value_after} to {value} passes through {end} and
-  all control flow from {value_after} to {value} passes through {begin})
-End
-
 Constraint MatrixStore
   inherits PermMultidStore(N=2) with {col} as {input[0]} and {row} as {input[1]}
 End
@@ -174,24 +154,6 @@ End
 
 Constraint VectorRead
   inherits PermMultidRead(N=1) with {idx} as {input[0]}
-End
-
-Constraint StencilRead
-( {value} is load instruction and
-  {address} is first argument of {value} and
-  inherits StencilAccess and
-  {input_index[i]} is the same as {input[i]} for all i=0..N)
-End
-
-Constraint StencilAccess
-( inherits AffineAccess with {begin} as {begin} at {read} and
-  {read.base_pointer} is the same as {base_pointer} and
-  {read.address} is the same as {address} and
-  ( {read.input_index[i]} is the same as {index[i].value} and
-    inherits Addition at {index[i]} and
-    ( {index[i].addend} is a constant or
-      {index[i].addend} is unused) and
-    {index[i].input} is the same as {input_index[i]}) for all i=0..N)
 End
 
 Constraint PermMultidStore
@@ -266,20 +228,6 @@ Constraint Multiplication
     inherits ArgumentsPermuted with {value} as {dst}
                                 and {input} as {src1}
                                 and {multiplier} as {src2}))
-End
-
-Constraint KernelFunction
-( collect i 4 {origin[i]} has control flow to {inner} and
-  collect i 24 ( inherits LocalConst with {outer} as {begin} at {constants[i]} and
-                 {constants[i].value} is not a numeric constant and
-                 {constants[i].value} has data flow to {constants[i].use} and
-                 {inner} control flow dominates {constants[i].use}) and
-  collect i 8 ( {outer} control flow dominates {restrictions[i].value} and
-                 {restrictions[i].value} strictly control flow dominates {inner} and
-                 {restrictions[i].value} has data flow to {restrictions[i].use} and
-                 {inner} control flow dominates {restrictions[i].use}) and
-
-  all flow from {restrictions[0..8].value} or any origin to any of {output} passes through at least one of {origin[0..4],constants[0..24].value,input[0..32]})
 End
 
 Constraint Permute
