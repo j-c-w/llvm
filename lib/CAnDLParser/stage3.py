@@ -544,8 +544,8 @@ def generate_cpp_code(syntax_list):
     includes  = ["BackendSpecializations", "BackendDirectClasses", "BackendSelectors"]
     specs     = {spec[1] : spec[2] for spec in syntax_list}
 
-    return "\n".join(["#include \"llvm/IDL/{}.hpp\"".format(s) for s in includes]
-                    +["#include \"llvm/IDL/Solution.hpp\""]
+    return "\n".join(["#include \"llvm/CAnDL/{}.hpp\"".format(s) for s in includes]
+                    +["#include \"llvm/CAnDL/Solution.hpp\""]
                     +["using namespace std;"]
                     +["#pragma GCC optimize (\"O0\")"]
                     +["#pragma clang optimize off"]

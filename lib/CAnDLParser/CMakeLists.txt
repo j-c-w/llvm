@@ -1,4 +1,4 @@
-add_llvm_library(LLVMIDLParser
+add_llvm_library(LLVMCAnDLParser
   IdiomSpecifications.s
 
   DEPENDS

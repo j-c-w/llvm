@@ -1,6 +1,6 @@
-#include "llvm/IDL/CustomPasses.hpp"
+#include "llvm/CAnDL/CustomPasses.hpp"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
-#include "llvm/IDL/Solution.hpp"
+#include "llvm/CAnDL/Solution.hpp"
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/IRBuilder.h"

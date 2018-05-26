@@ -21,9 +21,9 @@ subdirectories =
  AsmParser
  Bitcode
  CodeGen
- IDLParser
- IDLPasses
- IDLSolver
+ CAnDLParser
+ CAnDLPasses
+ CAnDLSolver
  DebugInfo
  Demangle
  ExecutionEngine
