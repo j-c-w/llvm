@@ -7,16 +7,16 @@ specification ::= Constraint <s> <@constraint> End
               | <GeneralizedDominance> | <GeneralizedSame> | <@nested>
 
 @nested     ::= '(' <@constraint> ')'
-inheritance ::= inherits <s> [ '(' <s> '=' <@calculation> { ',' <s> = <@calculation> } ')' ]
-conjunction ::= '(' <@constraint> and <@constraint> { and <@constraint> } ')'
-disjunction ::= '(' <@constraint> or <@constraint> { or <@constraint> } ')'
-forall      ::= <@constraint> for all <s> '=' <@calculation> '..' <@calculation>
-forsome     ::= <@constraint> for some <s> '=' <@calculation> '..' <@calculation>
+inheritance ::= include <s> [ '[' <s> '=' <@calculation> { ',' <s> = <@calculation> } ']' ]
+conjunction ::= '(' <@constraint> ( '∧' | '&' '&' ) <@constraint> { ( '∧' | '&' '&' ) <@constraint> } ')'
+disjunction ::= '(' <@constraint> ( '∨' | '|' '|' ) <@constraint> { ( '∨' | '|' '|' ) <@constraint> } ')'
+forall      ::= <@constraint> foreach <s> '=' <@calculation> '..' <@calculation>
+forsome     ::= <@constraint> forany <s> '=' <@calculation> '..' <@calculation>
 forone      ::= <@constraint> for <s> '=' <@calculation>
 default     ::= <@constraint> for <s> '=' <@calculation> if not otherwise specified
 if          ::= if <@calculation> '=' <@calculation> then <@constraint> else <@constraint> endif
 collect     ::= collect <s> <n> <@constraint>
-rename      ::= ( <inheritance> | <forall> | <forsome> ) [ with <@slot> as <@slot> { and <@slot> as <@slot> } ] [ at <@slot> ]
+rename      ::= ( <inheritance> | <forall> | <forsome> ) [ '(' <@slot> '-' '>' <@slot> { ',' <@slot> '-' '>' <@slot> } ')' ] [ '@' <@slot> ]
 
 @slot      ::= '{' <@openslot> '}' | <slottuple>
 @openslot  ::= <slotbase> | <slotindex> | <slotrange> | <slotmember> | <slottuple>
@@ -60,53 +60,53 @@ atom ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintVectorType
        | <ConstraintDFGBlocked> | <ConstraintCFGBlocked> | <ConstraintPDGBlocked>
        | <ConstraintFunctionAttribute>
 
-ConstraintIntegerType ::= <@slot> is an integer
-ConstraintFloatType   ::= <@slot> is a float
-ConstraintVectorType  ::= <@slot> is a vector
-ConstraintPointerType ::= <@slot> is a pointer
+ConstraintIntegerType ::= data_type <@slot> '=' integer
+ConstraintFloatType   ::= data_type <@slot> '=' float
+ConstraintVectorType  ::= data_type <@slot> '=' vector
+ConstraintPointerType ::= data_type <@slot> '=' pointer
 
 ConstraintIntZero   ::= <@slot> is integer zero
 ConstraintFloatZero ::= <@slot> is floating point zero
 
 ConstraintUnused             ::= <@slot> is unused
-ConstraintNotNumericConstant ::= <@slot> is not a numeric constant
-ConstraintConstant           ::= <@slot> is a constant
-ConstraintPreexecution       ::= <@slot> is preexecution
-ConstraintArgument           ::= <@slot> is an argument
-ConstraintInstruction        ::= <@slot> is instruction
+ConstraintNotNumericConstant ::= ir_type <@slot> ( '≠' | '!' '=' ) numeric constant
+ConstraintConstant           ::= ir_type <@slot> '=' constant
+ConstraintPreexecution       ::= ir_type <@slot> '=' preexecution
+ConstraintArgument           ::= ir_type <@slot> '=' argument
+ConstraintInstruction        ::= ir_type <@slot> '=' instruction
 
 ConstraintIndirOpcode1 ::= <@slot> is <@slot> instruction
 ConstraintIndirOpcode2 ::= <@slot> is <s> opcode
 
-ConstraintOpcode ::= <@slot> is <s> instruction
+ConstraintOpcode ::= opcode <@slot> = <s>
 
-ConstraintSame     ::= <@slot> is the same as <@slot>
-ConstraintDistinct ::= <@slot> is not the same as <@slot>
+ConstraintSame     ::= <@slot> '=' <@slot>
+ConstraintDistinct ::= <@slot> ( '≠' | '!' '=' ) <@slot>
 
-ConstraintDFGEdge ::= <@slot> has data flow to <@slot>
-ConstraintCFGEdge ::= <@slot> has control flow to <@slot>
+ConstraintDFGEdge ::= <@slot> ( '∈' | in ) <@slot> '.' args
+ConstraintCFGEdge ::= <@slot> ( '∈' | in ) <@slot> '.' successors
 ConstraintCDGEdge ::= <@slot> has control dominance to <@slot>
 ConstraintPDGEdge ::= <@slot> has dependence edge to <@slot>
 
-ConstraintFirstOperand  ::= <@slot> is first argument of <@slot>
-ConstraintSecondOperand ::= <@slot> is second argument of <@slot>
-ConstraintThirdOperand  ::= <@slot> is third argument of <@slot>
-ConstraintFourthOperand ::= <@slot> is fourth argument of <@slot>
+ConstraintFirstOperand  ::= <@slot> '=' <@slot> '.' args '[' 0 ']'
+ConstraintSecondOperand ::= <@slot> '=' <@slot> '.' args '[' 1 ']'
+ConstraintThirdOperand  ::= <@slot> '=' <@slot> '.' args '[' 2 ']'
+ConstraintFourthOperand ::= <@slot> '=' <@slot> '.' args '[' 3 ']'
 
-ConstraintFirstSuccessor  ::= <@slot> is first successor of <@slot>
-ConstraintSecondSuccessor ::= <@slot> is second successor of <@slot>
-ConstraintThirdSuccessor  ::= <@slot> is third successor of <@slot>
-ConstraintFourthSuccessor ::= <@slot> is fourth successor of <@slot>
+ConstraintFirstSuccessor  ::= <@slot> = <@slot> '.' successors '[' 0 ']'
+ConstraintSecondSuccessor ::= <@slot> = <@slot> '.' successors '[' 1 ']'
+ConstraintThirdSuccessor  ::= <@slot> = <@slot> '.' successors '[' 2 ']'
+ConstraintFourthSuccessor ::= <@slot> = <@slot> '.' successors '[' 3 ']'
 
 ConstraintDFGDominate       ::= <@slot> data flow dominates <@slot>
 ConstraintDFGPostdom        ::= <@slot> data flow post dominates <@slot>
 ConstraintDFGDominateStrict ::= <@slot> strictly data flow dominates <@slot>
 ConstraintDFGPostdomStrict  ::= <@slot> strictly data flow post dominates <@slot>
 
-ConstraintCFGDominate       ::= <@slot> control flow dominates <@slot>
-ConstraintCFGPostdom        ::= <@slot> control flow post dominates <@slot>
-ConstraintCFGDominateStrict ::= <@slot> strictly control flow dominates <@slot>
-ConstraintCFGPostdomStrict  ::= <@slot> strictly control flow post dominates <@slot>
+ConstraintCFGDominate       ::= domination '(' <@slot> ',' <@slot> ')'
+ConstraintCFGPostdom        ::= post_domination '(' <@slot> ',' <@slot> ')'
+ConstraintCFGDominateStrict ::= strict_domination '(' <@slot> ',' <@slot> ')'
+ConstraintCFGPostdomStrict  ::= strict_post_domination '(' <@slot> ',' <@slot> ')'
 
 ConstraintPDGDominate       ::= <@slot> dominates <@slot>
 ConstraintPDGPostdom        ::= <@slot> post dominates <@slot>
@@ -138,4 +138,4 @@ ConstraintFunctionAttribute ::= <@slot> has attribute pure
 
 GeneralizedSame  ::= <@slot> is the same set as <@slot>
 
-GeneralizedDominance ::= all flow from <@slot> or any origin to any of <@slot> passes through at least one of <@slot>
+GeneralizedDominance ::= calculated_from '(' <@slot> ',' <@slot> ',' <@slot> ')'
