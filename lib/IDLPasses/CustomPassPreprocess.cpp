@@ -1,17 +1,15 @@
 #include "llvm/IDLPasses/CustomPasses.hpp"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/IDLParser/Solution.hpp"
-#include "llvm/IDLPasses/Transforms.hpp"
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
-#include <fstream>
+#include <unordered_set>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <map>
 
 using namespace llvm;
 
@@ -20,15 +18,9 @@ class ResearchPreprocessor : public FunctionPass
 public:
     static char ID;
 
-    ResearchPreprocessor() : FunctionPass(ID),
-                         constraint_specs{{"HoistSelect",  GenerateAnalysis("HoistSelect"),  &transform_hoistselect_pattern},
-                                          {"Distributive", GenerateAnalysis("Distributive"), &transform_distributive}} { }
+    ResearchPreprocessor() : FunctionPass(ID) { }
 
     bool runOnFunction(Function& function) override;
-
-private:
-    std::vector<std::tuple<std::string,std::vector<Solution>(*)(llvm::Function&,unsigned),
-                                       void(*)(Function&,std::map<std::string,Value*>)>> constraint_specs;
 };
 
 
@@ -298,8 +290,6 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
         }
     }
 
-    return false;
-
     for(auto solution : GenerateAnalysis("ForWithIteratorTest")(function, UINT_MAX))
     {
         auto comparison = dyn_cast<Instruction>((Value*)solution["comparison"]);
@@ -311,41 +301,134 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
                                       increment->getOperand(1), "", comparison));
     }
 
-    std::vector<Value*> removed_instructions;
+    std::unordered_set<Value*> removed_instructions;
 
-    for(const auto& spec : constraint_specs)
+    for(auto solution : GenerateAnalysis("HoistSelect")(function, UINT_MAX))
     {
-        for(auto solution : std::get<1>(spec)(function, UINT_MAX))
+        SelectInst*        select_inst  = dyn_cast<SelectInst>       ((Value*)solution["select"]);
+        GetElementPtrInst* gep_inst1    = dyn_cast<GetElementPtrInst>((Value*)solution["input1"]);
+        GetElementPtrInst* gep_inst2    = dyn_cast<GetElementPtrInst>((Value*)solution["input2"]);
+
+        if(removed_instructions.find(select_inst) == removed_instructions.end() &&
+           removed_instructions.find(gep_inst1)   == removed_instructions.end() &&
+           removed_instructions.find(gep_inst2)   == removed_instructions.end() &&
+           gep_inst1->getNumOperands() == 2 && gep_inst2->getNumOperands() == 2 &&
+           gep_inst1->getOperand(0)->getType() == gep_inst2->getOperand(0)->getType() &&
+           gep_inst1->getOperand(1)->getType() == gep_inst2->getOperand(1)->getType())
         {
-            std::map<std::string,llvm::Value*> solution_map = solution;
+            BasicBlock::iterator insert_point(select_inst);
+            IRBuilder<> builder(select_inst->getParent(), insert_point);
 
-            auto find_it = solution_map.find("value");
-            if(find_it == solution_map.end())
-                find_it = solution_map.find("select");
+            ReplaceInstWithValue(select_inst->getParent()->getInstList(), insert_point,
+                builder.CreateBitCast(
+                    builder.CreateGEP(
+                        gep_inst1->getOperand(0),
+                        builder.CreateSelect(select_inst->getCondition(),
+                                             gep_inst1->getOperand(1),
+                                             gep_inst2->getOperand(1))),
+                    select_inst->getType()));
 
+            removed_instructions.insert(select_inst);
+        }
+    }
 
-            bool do_continue = false;
-            for(auto& entry: solution_map)
-            {
-                auto find_it2 = std::find(removed_instructions.begin(),
-                                          removed_instructions.end(), entry.second);
+    for(auto solution : GenerateAnalysis("Distributive")(function, UINT_MAX))
+    {
+        Instruction* sum = dyn_cast<Instruction>((Value*)solution["value"]);
 
-                if(find_it2 != removed_instructions.end())
-                {
-                    do_continue = true;
-                    break;
-                }
-            }
+        std::vector<Value*> prod1_factors;
+        std::vector<Value*> prod2_factors;
+        std::vector<Value*> sum1_factors;
+        std::vector<Value*> sum2_factors;
+        std::vector<Value*> sum1_results;
+        std::vector<Value*> sum2_results;
 
-            if(do_continue)
-                continue;
+        bool any_factor_removed = false;
+        for(unsigned i = 0; i < 4 ; i++)
+        {
+            std::stringstream index_sstr;
+            index_sstr<<"["<<i<<"]";
 
-            (*std::get<2>(spec))(function, solution);
+            Value* find_prod1_it   = solution["product1.factors"+index_sstr.str()];
+            Value* find_prod2_it   = solution["product2.factors"+index_sstr.str()];
+            Value* find_sum1_it    = solution["sum1.factors"+index_sstr.str()];
+            Value* find_sum2_it    = solution["sum2.factors"+index_sstr.str()];
+            Value* find_sumres1_it = solution["sum1.results"+index_sstr.str()];
+            Value* find_sumres2_it = solution["sum2.results"+index_sstr.str()];
 
-            if(find_it != solution_map.end())
-            {
-                removed_instructions.push_back(find_it->second);
-            }
+            if(find_prod1_it   != nullptr) prod1_factors.push_back(find_prod1_it);
+            if(find_prod2_it   != nullptr) prod2_factors.push_back(find_prod2_it);
+            if(find_sum1_it    != nullptr) sum1_factors.push_back(find_prod1_it);
+            if(find_sum2_it    != nullptr) sum2_factors.push_back(find_sum2_it);
+            if(find_sumres1_it != nullptr) sum1_results.push_back(find_sumres1_it);
+            if(find_sumres2_it != nullptr) sum2_results.push_back(find_sumres2_it);
+
+            if(removed_instructions.find(find_prod1_it)   != removed_instructions.end() ||
+               removed_instructions.find(find_prod2_it)   != removed_instructions.end() ||
+               removed_instructions.find(find_sum1_it)    != removed_instructions.end() ||
+               removed_instructions.find(find_sum2_it)    != removed_instructions.end() ||
+               removed_instructions.find(find_sumres1_it) != removed_instructions.end() ||
+               removed_instructions.find(find_sumres2_it) != removed_instructions.end()) any_factor_removed = true;
+        }
+
+        std::reverse(prod1_factors.begin(), prod1_factors.end());
+        std::reverse(prod2_factors.begin(), prod2_factors.end());
+        std::reverse(sum1_factors.begin(), sum1_factors.end());
+        std::reverse(sum2_factors.begin(), sum2_factors.end());
+        std::reverse(sum1_results.begin(), sum1_results.end());
+        std::reverse(sum2_results.begin(), sum2_results.end());
+
+        if(removed_instructions.find(sum) == removed_instructions.end() &&! any_factor_removed &&
+           prod1_factors.size() > 0 && prod2_factors.size() > 0 &&
+           sum1_factors.size() > 0 && sum2_factors.size() > 0 &&
+           sum1_factors.size() == sum1_results.size() && sum2_factors.size() == sum2_results.size())
+        {
+            Type* int_type = sum->getType();
+
+            BasicBlock::iterator insert_point(sum);
+            IRBuilder<> builder(sum->getParent(), insert_point);
+
+            Value* first_sum = ConstantInt::get(int_type, 0);
+            for(unsigned j = 1; j <= sum1_factors.size()-1; j++)
+                if(j==1 || dyn_cast<Instruction>(sum1_results[j])->getOpcode() == Instruction::Add)
+                    first_sum = builder.CreateAdd(builder.CreateSExtOrTrunc(sum1_factors[j], int_type), first_sum);
+                else
+                    first_sum = builder.CreateSub(builder.CreateSExtOrTrunc(sum1_factors[j], int_type), first_sum);
+
+            Value* second_sum = ConstantInt::get(int_type, 0);
+            for(unsigned j = 1; j <= sum2_factors.size()-1; j++)
+                if(j==1 || dyn_cast<Instruction>(sum2_results[j])->getOpcode() == Instruction::Add)
+                    first_sum = builder.CreateAdd(builder.CreateSExtOrTrunc(sum2_factors[j], int_type), second_sum);
+                else
+                    first_sum = builder.CreateSub(builder.CreateSExtOrTrunc(sum2_factors[j], int_type), second_sum);
+
+            int factor1 = 1;
+            for(unsigned j = 1; j <= sum1_factors.size()-1; j++)
+                if(dyn_cast<Instruction>(sum1_results[j])->getOpcode() == Instruction::Sub)
+                    factor1 *= -1;
+
+            int factor2 = 1;
+            for(unsigned j = 1; j <= sum2_factors.size()-1; j++)
+                if(dyn_cast<Instruction>(sum2_results[j])->getOpcode() == Instruction::Sub)
+                    factor2 *= -1;
+
+            Value* first_prod  = ConstantInt::get(int_type, factor1);
+            Value* second_prod = ConstantInt::get(int_type, factor2);
+
+            for(unsigned j = 1; j <= prod1_factors.size()-1; j++)
+                first_prod = builder.CreateMul(builder.CreateSExtOrTrunc(prod1_factors[j], int_type), first_prod);
+
+            for(unsigned j = 1; j <= prod2_factors.size()-1; j++)
+                second_prod = builder.CreateMul(builder.CreateSExtOrTrunc(prod2_factors[j], int_type), second_prod);
+
+            ReplaceInstWithValue(sum->getParent()->getInstList(), insert_point,
+                builder.CreateAdd(
+                    builder.CreateAdd(first_sum, second_sum),
+                    builder.CreateMul(
+                        builder.CreateAdd(first_prod, second_prod),
+                        builder.CreateSExtOrTrunc(prod1_factors[0], int_type))));
+
+            removed_instructions.insert(sum);
         }
     }
 

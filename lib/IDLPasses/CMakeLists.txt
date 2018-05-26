@@ -4,9 +4,6 @@ add_llvm_library(LLVMIDLPasses
   CustomPassPreprocess.cpp
   CustomPassReplace.cpp
 
-  TransformDistributive.cpp
-  TransformHoistSelection.cpp
-
   DEPENDS
   intrinsics_gen
 )
