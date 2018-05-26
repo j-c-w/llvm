@@ -1,4 +1,4 @@
-;===- ./lib/IDLParser/LLVMBuild.txt --------------------------*- Conf -*--===;
+;===- ./lib/CAnDLPasses/LLVMBuild.txt --------------------------*- Conf -*--===;
 ;
 ;                     The LLVM Compiler Infrastructure
 ;
@@ -17,6 +17,6 @@
 
 [component_0]
 type = Library
-name = IDLParser
+name = CAnDLPasses
 parent = Libraries
-required_libraries = IDLSolver
+required_libraries = CAnDLSolver CAnDLParser

@@ -1,4 +1,4 @@
-add_llvm_library(LLVMIDLPasses
+add_llvm_library(LLVMCAnDLPasses
 
   CustomPassFlangfix.cpp
   CustomPassPreprocess.cpp

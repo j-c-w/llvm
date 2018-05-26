@@ -1,5 +1,5 @@
-#include "llvm/IDLPasses/CustomPasses.hpp"
-#include "llvm/IDLParser/Solution.hpp"
+#include "llvm/CAnDL/CustomPasses.hpp"
+#include "llvm/CAnDL/Solution.hpp"
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/IRBuilder.h"

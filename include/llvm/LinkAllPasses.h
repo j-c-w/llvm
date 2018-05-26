@@ -36,7 +36,7 @@
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TypeBasedAliasAnalysis.h"
 #include "llvm/CodeGen/Passes.h"
-#include "llvm/IDLPasses/CustomPasses.hpp"
+#include "llvm/CAnDL/CustomPasses.hpp"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRPrintingPasses.h"
 #include "llvm/Support/Valgrind.h"
