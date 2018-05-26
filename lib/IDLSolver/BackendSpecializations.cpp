@@ -1,4 +1,4 @@
-#include "llvm/IDLSolver/BackendSpecializations.hpp"
+#include "llvm/IDL/BackendSpecializations.hpp"
 
 template<unsigned ... constants>
 BackendConstantValue<constants...>::BackendConstantValue(const FunctionWrap& wrap)
