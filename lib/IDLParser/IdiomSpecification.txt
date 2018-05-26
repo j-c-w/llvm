@@ -62,27 +62,179 @@ End
 
 # These are some buidling blocks for the toplevel constraints.
 
-Constraint Permute
-if M+1=N then
-  {input[M]} is the same as {output[M]}
-else
-  ( {input[M]} is the same as {output[n]} and
-    inherits Permute(N=N,M=M+1) with {output[M]} as {output[n]}
-                                and {output[n]} as {output[M]}) for some n=M..N
-endif
-for M=0 if not otherwise specified
+Constraint ForNest
+( inherits For with {iterator[0]} as {iterator} at {loop[0]} and
+  inherits SameSESE with {loop[0]} as {other} and
+  ( inherits For with {iterator[i+1]} as {iterator} at {loop[i+1]} and
+    {loop[i].begin} strictly control flow dominates {loop[i+1].begin} and
+    all control flow from {loop[i+1].begin} to {loop[i+1].precursor} passes through {loop[i].begin} and
+    {loop[i].end} strictly control flow post dominates {loop[i+1].end}) for all i=0..N-1 and
+  inherits SameSESE with {loop[N-1].body} as {other} at {body})
 End
 
-Constraint InSESE
-( {begin} control flow dominates {value} and
-  {end} control flow post dominates {value})
+Constraint SameSESE
+( {precursor} is the same as {other.precursor} and
+  {begin}     is the same as {other.begin} and
+  {end}       is the same as {other.end} and
+  {successor} is the same as {other.successor})
+End
+
+Constraint DotProductLoop
+( inherits GeneralDotProduct with {src1} as {src1}
+                              and {src2} as {src2} at {loop} and
+  ( ( {loop.initial} is load instruction and
+      {update_address} has data flow to {loop.initial}) or
+    ( {loop.initial} is floating point zero and
+      {update_address} is gep instruction)) and
+  {old_ind} reaches phi node {raw_final} from {loop.end} and
+  {raw_final} reaches phi node {raw_final2} from {exit_break} and
+  {final_value} is first argument of {output.store} and
+  inherits Addition with {scaled_reduc} as {input}
+                     and {final_value}  as {value}
+                     and {scaled_prev}  as {addend} and
+  inherits Multiplication with {raw_final2}    as {input}
+                           and {scaled_reduc} as {value}
+                           and {alpha}        as {multiplier} and
+  inherits LocalConst with {alpha} as {value} and
+  inherits Multiplication with {prev}        as {input}
+                           and {scaled_prev} as {value}
+                           and {beta}        as {multiplier} and
+  ( ( {prev} is unused and
+      {update_address} is gep instruction) or
+    ( {prev} is load instruction and
+      {update_address} is first argument of {prev})) and
+  inherits LocalConst with {beta} as {value})
+End
+
+Constraint GeneralDotProduct
+( inherits For and
+  inherits InductionVar and
+  {new_ind} is fadd instruction and
+  inherits ArgumentsPermuted with {new_ind}  as {dst}
+                              and {old_ind}  as {src1}
+                              and {dotvalue} as {src2} and
+  {dotvalue} is fmul instruction and
+  inherits ArgumentsPermuted with {dotvalue} as {dst} and
+  {initial} reaches phi node {old_ind} from {precursor})
+End
+
+Constraint For
+( inherits Loop and
+  inherits InductionVar with {iterator}  as {old_ind}
+                         and {increment} as {new_ind} and
+  {increment} has data flow to {comparison} and
+  {iterator} is phi instruction and
+  {comparison} is icmp instruction and
+  {comparison} has data flow to {end} and
+  {increment} has data flow to {iterator} and
+  {increment} is add instruction and
+  {iterator} has data flow to {increment} and
+  {iter_end} has data flow to {comparison} and
+  inherits LocalConst with {iter_end} as {value}
+                       and {begin}    as {begin} and
+  {iter_begin} has data flow to {iterator} and
+  inherits LocalConst with {iter_begin} as {value}
+                       and {begin}      as {begin} and
+  {iter_step} has data flow to {increment} and
+  inherits LocalConst with {iter_step} as {value}
+                       and {begin}     as {begin})
+End
+
+Constraint ConditionalReadModifyWrite
+( {store_instr} is store instruction and
+  inherits MaxOnceInSESE
+      with {store_instr} as {value}
+       and {store_instr_after} as {value_after} at {body} and
+  {address} is second argument of {store_instr} and
+  {address} is gep instruction and
+  {address} is first argument of {old_value} and
+  {old_value} is load instruction and
+  {new_value} is first argument of {store_instr})
 End
 
 Constraint MaxOnceInSESE
-( inherits InSESE and
+( {begin} control flow dominates {value} and
+  {end} control flow post dominates {value} and
   {value} has control flow to {value_after} and
   all control flow from {value_after} to {value} passes through {end} and
   all control flow from {value_after} to {value} passes through {begin})
+End
+
+Constraint MatrixStore
+  inherits PermMultidStore(N=2) with {col} as {input[0]} and {row} as {input[1]}
+End
+
+Constraint MatrixRead
+  inherits PermMultidRead(N=2) with {col} as {input[0]} and {row} as {input[1]}
+End
+
+Constraint VectorStore
+  inherits PermMultidStore(N=1) with {idx} as {input[0]}
+End
+
+Constraint VectorRead
+  inherits PermMultidRead(N=1) with {idx} as {input[0]}
+End
+
+Constraint StencilRead
+( {value} is load instruction and
+  {address} is first argument of {value} and
+  inherits StencilAccess and
+  {input_index[i]} is the same as {input[i]} for all i=0..N)
+End
+
+Constraint StencilAccess
+( inherits AffineAccess with {begin} as {begin} at {read} and
+  {read.base_pointer} is the same as {base_pointer} and
+  {read.address} is the same as {address} and
+  ( {read.input_index[i]} is the same as {index[i].value} and
+    inherits Addition at {index[i]} and
+    ( {index[i].addend} is a constant or
+      {index[i].addend} is unused) and
+    {index[i].input} is the same as {input_index[i]}) for all i=0..N)
+End
+
+Constraint PermMultidStore
+( {store} is store instruction and
+  {address} is second argument of {store} and
+  inherits AffineAccess and
+  inherits Permute with {input_index} as {output})
+End
+
+Constraint PermMultidRead
+( {value} is load instruction and
+  {address} is first argument of {value} and
+  inherits AffineAccess and
+  inherits Permute with {input_index} as {output})
+End
+
+Constraint AffineAccess
+( {address} is gep instruction and
+  {base_pointer} is first argument of {address} and
+  inherits LocalConst with {base_pointer} as {value}
+                            and {begin}       as {begin} and
+  {output_index} is second argument of {address} and
+  {offset_add.value} is the same as {output_index} and
+  inherits Addition at {offset_add} and
+  inherits LocalConst with {offset_add.addend} as {value} and
+  ( {stride_mul[N-i-1].value} is the same as {index_add[N-i].input} and
+    inherits Multiplication at {stride_mul[N-i-1]} and
+    inherits LocalConst with {stride_mul[N-i-1].multiplier} as {value} and
+    {index_add[N-i-1].value} is the same as {stride_mul[N-i-1].input} and
+    inherits Addition at {index_add[N-i-1]} and
+    {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
+    ( ( {add_input[N-i-1]} is not the same as {input_index[N-i]} and
+        {input_index[N-i-1]} is an integer) or
+      ( {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
+        {input_index[N-i]} is an integer))) for all i=0..N
+                                           with {offset_add.input} as {index_add[N].input}
+                                            and {offset_add.value} as {input_index[N]}
+                                            and {index_add[0].input}  as {add_input[0]}
+                                            and {index_add[1].addend} as {add_input[1]}
+                                            and {index_add[2].addend} as {add_input[2]}
+                                            and {index_add[3].addend} as {add_input[3]} and
+  {base_index} is the same as {index_add[0].addend} and
+  inherits LocalConst with {base_index} as {value})
 End
 
 Constraint Addition
@@ -116,154 +268,6 @@ Constraint Multiplication
                                 and {multiplier} as {src2}))
 End
 
-Constraint ArrayAccess
-( {address} is gep instruction and
-  {base_pointer} is first argument of {address} and
-  inherits LocalConst with {base_pointer} as {value}
-                            and {begin}       as {begin} and
-  {output_index} is second argument of {address})
-End
-
-Constraint ArrayRead
-( {value} is load instruction and
-  {address} is first argument of {value} and
-  inherits ArrayAccess)
-End
-
-Constraint ArrayStore
-( {store} is store instruction and
-  {address} is second argument of {store} and
-  inherits ArrayAccess)
-End
-
-Constraint InductionVar
-{new_ind} reaches phi node {old_ind} from {end}
-End
-
-Constraint For
-( inherits Loop and
-  inherits InductionVar with {iterator}  as {old_ind}
-                         and {increment} as {new_ind} and
-  {increment} has data flow to {comparison} and
-  {iterator} is phi instruction and
-  {comparison} is icmp instruction and
-  {comparison} has data flow to {end} and
-  {increment} has data flow to {iterator} and
-  {increment} is add instruction and
-  {iterator} has data flow to {increment} and
-  {iter_end} has data flow to {comparison} and
-  inherits LocalConst with {iter_end} as {value}
-                       and {begin}    as {begin} and
-  {iter_begin} has data flow to {iterator} and
-  inherits LocalConst with {iter_begin} as {value}
-                       and {begin}      as {begin} and
-  {iter_step} has data flow to {increment} and
-  inherits LocalConst with {iter_step} as {value}
-                       and {begin}     as {begin})
-End
-
-Constraint SamePrefixSESE
-( {precursor} is the same as {other.precursor} and
-  {begin}     is the same as {other.begin})
-End
-
-Constraint SamePostfixSESE
-( {end}       is the same as {other.end} and
-  {successor} is the same as {other.successor})
-End
-
-Constraint SameSESE
-( inherits SamePrefixSESE and inherits SamePostfixSESE)
-End
-
-Constraint ConnectSESE
-( {first.end} is the same as {second.precursor} and
-  {first.successor} is the same as {second.begin})
-End
-
-Constraint PotentialSESE
-( {precursor} is branch instruction and
-  {precursor} has control flow to {begin} and
-  {end} is branch instruction and
-  {end} has control flow to {successor} and
-  ( ( {begin} control flow dominates {end} and
-      {end} control flow post dominates {begin} and
-      all control flow from {begin} to {precursor} passes through {end} and
-      all control flow from {successor} to {end} passes through {begin}) or
-    ( {begin} is the same as {end} and
-      {precursor} has control flow to {begin} and
-      {end} has control flow to {successor}) or
-    ( {precursor} is the same as {end} and
-      {begin} is the same as {successor})))
-End
-
-Constraint ForNest
-( inherits For with {iterator[0]} as {iterator} at {loop[0]} and
-  inherits SameSESE with {loop[0]} as {other} and
-  ( inherits For with {iterator[i+1]} as {iterator} at {loop[i+1]} and
-    {loop[i].begin} strictly control flow dominates {loop[i+1].begin} and
-    all control flow from {loop[i+1].begin} to {loop[i+1].precursor} passes through {loop[i].begin} and
-    {loop[i].end} strictly control flow post dominates {loop[i+1].end}) for all i=0..N-1 and
-  inherits SameSESE with {loop[N-1].body} as {other} at {body})
-End
-
-Constraint AffineAccess
-( inherits ArrayAccess and
-  {offset_add.value} is the same as {output_index} and
-  inherits Addition at {offset_add} and
-  inherits LocalConst with {offset_add.addend} as {value} and
-  ( {stride_mul[N-i-1].value} is the same as {index_add[N-i].input} and
-    inherits Multiplication at {stride_mul[N-i-1]} and
-    inherits LocalConst with {stride_mul[N-i-1].multiplier} as {value} and
-    {index_add[N-i-1].value} is the same as {stride_mul[N-i-1].input} and
-    inherits Addition at {index_add[N-i-1]} and
-    {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
-    ( ( {add_input[N-i-1]} is not the same as {input_index[N-i]} and
-        {input_index[N-i-1]} is an integer) or
-      ( {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
-        {input_index[N-i]} is an integer))) for all i=0..N
-                                           with {offset_add.input} as {index_add[N].input}
-                                            and {offset_add.value} as {input_index[N]}
-                                            and {index_add[0].input}  as {add_input[0]}
-                                            and {index_add[1].addend} as {add_input[1]}
-                                            and {index_add[2].addend} as {add_input[2]}
-                                            and {index_add[3].addend} as {add_input[3]} and
-  {base_index} is the same as {index_add[0].addend} and
-  inherits LocalConst with {base_index} as {value})
-End
-
-Constraint StencilAccess
-( inherits AffineAccess with {begin} as {begin} at {read} and
-  {read.base_pointer} is the same as {base_pointer} and
-  {read.address} is the same as {address} and
-  ( {read.input_index[i]} is the same as {index[i].value} and
-    inherits Addition at {index[i]} and
-    ( {index[i].addend} is a constant or
-      {index[i].addend} is unused) and
-    {index[i].input} is the same as {input_index[i]}) for all i=0..N)
-End
-
-Constraint PermMultidRead
-( {value} is load instruction and
-  {address} is first argument of {value} and
-  inherits AffineAccess and
-  inherits Permute with {input_index} as {output})
-End
-
-Constraint PermMultidStore
-( {store} is store instruction and
-  {address} is second argument of {store} and
-  inherits AffineAccess and
-  inherits Permute with {input_index} as {output})
-End
-
-Constraint StencilRead
-( {value} is load instruction and
-  {address} is first argument of {value} and
-  inherits StencilAccess and
-  {input_index[i]} is the same as {input[i]} for all i=0..N)
-End
-
 Constraint KernelFunction
 ( collect i 4 {origin[i]} has control flow to {inner} and
   collect i 24 ( inherits LocalConst with {outer} as {begin} at {constants[i]} and
@@ -278,71 +282,15 @@ Constraint KernelFunction
   all flow from {restrictions[0..8].value} or any origin to any of {output} passes through at least one of {origin[0..4],constants[0..24].value,input[0..32]})
 End
 
-Constraint GeneralDotProduct
-( inherits For and
-  inherits InductionVar and
-  {new_ind} is fadd instruction and
-  inherits ArgumentsPermuted with {new_ind}  as {dst}
-                              and {old_ind}  as {src1}
-                              and {dotvalue} as {src2} and
-  {dotvalue} is fmul instruction and
-  inherits ArgumentsPermuted with {dotvalue} as {dst} and
-  {initial} reaches phi node {old_ind} from {precursor})
-End
-
-Constraint MatrixStore
-  inherits PermMultidStore(N=2) with {col} as {input[0]} and {row} as {input[1]}
-End
-
-Constraint MatrixRead
-  inherits PermMultidRead(N=2) with {col} as {input[0]} and {row} as {input[1]}
-End
-
-Constraint VectorStore
-  inherits PermMultidStore(N=1) with {idx} as {input[0]}
-End
-
-Constraint VectorRead
-  inherits PermMultidRead(N=1) with {idx} as {input[0]}
-End
-
-Constraint DotProductLoop
-( inherits GeneralDotProduct with {src1} as {src1}
-                              and {src2} as {src2} at {loop} and
-  ( ( {loop.initial} is load instruction and
-      {update_address} has data flow to {loop.initial}) or
-    ( {loop.initial} is floating point zero and
-      {update_address} is gep instruction)) and
-  {old_ind} reaches phi node {raw_final} from {loop.end} and
-  {raw_final} reaches phi node {raw_final2} from {exit_break} and
-  {final_value} is first argument of {output.store} and
-  inherits Addition with {scaled_reduc} as {input}
-                     and {final_value}  as {value}
-                     and {scaled_prev}  as {addend} and
-  inherits Multiplication with {raw_final2}    as {input}
-                           and {scaled_reduc} as {value}
-                           and {alpha}        as {multiplier} and
-  inherits LocalConst with {alpha} as {value} and
-  inherits Multiplication with {prev}        as {input}
-                           and {scaled_prev} as {value}
-                           and {beta}        as {multiplier} and
-  ( ( {prev} is unused and
-      {update_address} is gep instruction) or
-    ( {prev} is load instruction and
-      {update_address} is first argument of {prev})) and
-  inherits LocalConst with {beta} as {value})
-End
-
-Constraint ReadRange
-( {begin_idx.offset_add.addend} is unused and
-  inherits VectorRead with {idx} as {idx}
-                       and {begin} as {begin} at {begin_idx} and
-  {begin_idx.base_index} is the same as {end_idx.base_index} and
-  {begin_idx.base_pointer} is the same as {end_idx.base_pointer} and
-  inherits VectorRead with {idx} as {idx}
-                       and {begin} as {begin} at {end_idx} and
-  {begin_idx.value} is the same as {range_begin} and
-  {end_idx.value} is the same as {range_end})
+Constraint Permute
+if M+1=N then
+  {input[M]} is the same as {output[M]}
+else
+  ( {input[M]} is the same as {output[n]} and
+    inherits Permute(N=N,M=M+1) with {output[M]} as {output[n]}
+                                and {output[n]} as {output[M]}) for some n=M..N
+endif
+for M=0 if not otherwise specified
 End
 
 Constraint Concat
