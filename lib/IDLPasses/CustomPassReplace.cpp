@@ -23,29 +23,33 @@ public:
     bool runOnModule(Module& module) override;
 };
 
-void replace_spmv(Function& function, Solution solution)
+void replace_idiom(Function& function, Solution solution, std::string harness_name,
+                   Value* insertion, std::vector<Value*> variables, std::vector<Value*> removeeffects)
 {
-    Instruction* precursor = dyn_cast_or_null<Instruction>((Value*)solution.get("precursor"));
+    Instruction* insertion_point = dyn_cast_or_null<Instruction>(insertion);
 
-    Instruction* store = dyn_cast_or_null<Instruction>((Value*)solution.get("output").get("store"));
-
-    if(store)
+    std::vector<Value*> variable_values;
+    std::vector<Type*>  variable_types;
+    for(auto value : variables)
     {
-        auto ov     = (Value*)solution.get("output").get("base_pointer");
-        auto a      = (Value*)solution.get("seq_read").get("base_pointer");
-        auto iv     = (Value*)solution.get("indir_read").get("base_pointer");
-        auto rowstr = (Value*)solution.get("iter_begin_read").get("base_pointer");
-        auto colidx = (Value*)solution.get("idx_read").get("base_pointer");
-        auto rows   = (Value*)solution.get("iter_end");
+        if(value)
+        {
+            variable_values.push_back(value);
+            variable_types.push_back(value->getType());
+        }
+    }
 
-        store->removeFromParent();
-        FunctionType* func_type = FunctionType::get(ov->getType(),
-                                     {ov->getType(), a->getType(), iv->getType(),
-                                     rowstr->getType(), colidx->getType(), rows->getType()}, false);
+    FunctionType* func_type = FunctionType::get(Type::getVoidTy(function.getContext()), variable_types, false);
+    Constant*          func = function.getParent()->getOrInsertFunction(harness_name, func_type);
 
-        Constant* func = function.getParent()->getOrInsertFunction("spmv_harness", func_type);
+    CallInst::Create(func, variable_values, "", insertion_point);
 
-        CallInst::Create(func, {ov, a, iv, rowstr, colidx, rows}, "", precursor);
+    for(auto& value : removeeffects)
+    {
+        if(auto inst = dyn_cast_or_null<Instruction>(value))
+        {
+            inst->removeFromParent();
+        }
     }
 }
 
@@ -54,9 +58,7 @@ bool ResearchReplacer::runOnModule(Module& module)
     ModuleSlotTracker slot_tracker(&module);
 
     std::string filename = module.getName();
-    for(char& c : filename)
-        if(c == '/')
-            c = '_';
+    for(char& c : filename) if(c == '/') c = '_';
 
     std::stringstream sstr;
     sstr<<"replace-report-"<<filename<<".json";
@@ -89,9 +91,25 @@ bool ResearchReplacer::runOnModule(Module& module)
                 ofs<<"\n  }";
                 first_hit1 = false;
 
+                if(idiom == "GEMM")
+                {/*
+                    replace_idiom(function, solution, "gemm_harness", solution["precursor"],
+                                  {solution["loop"][0]["iter_end"],
+                                   solution["loop"][1]["iter_end"],
+                                   solution["loop"][2]["iter_end"],
+                                   solution["iter_begin_read"]["base_pointer"],
+                                   solution["idx_read"]["base_pointer"],
+                                   solution["iter_end"]}, {solution["output"]["store"]});*/
+                }
                 if(idiom == "SPMV")
                 {
-                    replace_spmv(function, solution);
+                    replace_idiom(function, solution, "spmv_harness", solution["precursor"],
+                                  {solution["output"]["base_pointer"],
+                                   solution["seq_read"]["base_pointer"],
+                                   solution["indir_read"]["base_pointer"],
+                                   solution["iter_begin_read"]["base_pointer"],
+                                   solution["idx_read"]["base_pointer"],
+                                   solution["iter_end"]}, {solution["output"]["store"]});
                 }
             }
         }
