@@ -89,7 +89,7 @@ bool ResearchReplacer::runOnModule(Module& module)
     std::stringstream sstr;
     sstr<<"replace-report-"<<filename<<".json";
     std::ofstream ofs(sstr.str().c_str());
-    ofs<<"{\n  \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"loops\": [";
+    ofs<<"{ \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"loops\": [";
 
     char first_hit1 = true;
     for(Function& function : module.getFunctionList())
@@ -112,25 +112,25 @@ bool ResearchReplacer::runOnModule(Module& module)
                 if(clustered_solutions[i].precursor && clustered_solutions[i].precursor->getDebugLoc())
                     line_begin = clustered_solutions[i].precursor->getDebugLoc().getLine();
 
-                ofs<<(first_hit1?"\n":",\n");
-                ofs<<"    {\n      \"function\": \""<<(std::string)function.getName()<<"\",\n";
-                ofs<<"      \"line\": "<<line_begin<<",\n";
-                ofs<<"      \"idioms\": [\n";
+                ofs<<(first_hit1?"{\n":", {\n");
+                ofs<<"    \"function\": \""<<(std::string)function.getName()<<"\",\n";
+                ofs<<"    \"line\": "<<line_begin<<",\n";
+                ofs<<"    \"idioms\": [";
 
                 char first_hit2 = true;
                 for(const auto& spec : loop_constraint_specs)
                 {
                     for(auto& solution : clustered_solutions[i].solutions[spec.first])
                     {
-                        ofs<<(first_hit2?"\n":",\n");
-                        ofs<<"    {\n      \"type\": \""<<spec.first<<"\",\n";
-                        ofs<<"      \"solution\":\n        ";
+                        ofs<<(first_hit2?"{\n":", {\n");
+                        ofs<<"        \"type\": \""<<spec.first<<"\",\n";
+                        ofs<<"        \"solution\":\n         ";
                         for(char c : solution.prune().print_json(slot_tracker))
                         {
                             ofs.put(c);
-                            if(c == '\n') ofs<<"        ";
+                            if(c == '\n') ofs<<"         ";
                         }
-                        ofs<<"\n    }";
+                        ofs<<"\n      }";
                         first_hit2 = false;
                     }
                 }
@@ -175,7 +175,7 @@ bool ResearchReplacer::runOnModule(Module& module)
                     ofs<<"\"";
                 }
 
-                ofs<<"\n    }";
+                ofs<<"\n  }";
                 first_hit1 = false;
             }
         }
