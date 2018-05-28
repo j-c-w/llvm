@@ -2,17 +2,13 @@
 #include "llvm/IDL/Solution.hpp"
 #include "llvm/IR/ModuleSlotTracker.h"
 #include "llvm/IR/Instruction.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
-#include <algorithm>
-#include <iostream>
 #include <sstream>
 #include <fstream>
 #include <string>
 #include <vector>
-#include <map>
 
 using namespace llvm;
 
@@ -69,7 +65,7 @@ bool ResearchReplacer::runOnModule(Module& module)
         }
     }
 
-    ofs<<"]}\n";
+    ofs<<"]\n}\n";
 
     return false;
 }
