@@ -21,70 +21,17 @@ class ResearchReplacer : public ModulePass
 public:
     static char ID;
 
-    ResearchReplacer() : ModulePass(ID),
-                         loop_constraint_specs{{"histo",   GenerateAnalysis("Histo")},
-                                               {"scalar",  GenerateAnalysis("Reduction")},
-                                               {"GEMM",    GenerateAnalysis("GEMM")},
-                                               {"SPMV",    GenerateAnalysis("SPMV")},
-                                               {"stencil", GenerateAnalysis("Stencil")}} { }
+    ResearchReplacer() : ModulePass(ID) { }
 
     bool runOnModule(Module& module) override;
-
-private:
-    std::vector<std::pair<std::string,std::vector<Solution>(*)(Function&,unsigned)>> loop_constraint_specs;
 };
-
-struct SolutionCluster
-{
-    Instruction*                                precursor;
-    Instruction*                                begin;
-    Instruction*                                end;
-    Instruction*                                successor;
-    std::map<std::string,std::vector<Solution>> solutions;
-};
-
-// This function applies some postprocessing to bundle together reductions.
-// The proper way would be to encode it in a new constraint specification "composed reduction" but this will do for now.
-std::vector<SolutionCluster> cluster_solutions(std::vector<std::pair<std::string,std::vector<Solution>>> inputs)
-{
-    std::vector<SolutionCluster> result;
-
-    for(auto& input : inputs)
-    {
-        for(const auto& solution : input.second)
-        {
-            Value* precursor_value = (Value*)solution.get("precursor");
-            Value* begin_value     = (Value*)solution.get("begin");
-            Value* end_value       = (Value*)solution.get("end");
-            Value* successor_value = (Value*)solution.get("successor");
-
-            Instruction* precursor = dyn_cast_or_null<Instruction>(precursor_value);
-            Instruction* begin     = dyn_cast_or_null<Instruction>(begin_value);
-            Instruction* end       = dyn_cast_or_null<Instruction>(end_value);
-            Instruction* successor = dyn_cast_or_null<Instruction>(successor_value);
-
-            auto find_it = std::find_if(result.begin(), result.end(), [=](const SolutionCluster& cluster)
-                                        { return cluster.begin == begin && cluster.successor == successor; });
-
-            if(find_it == result.end())
-                result.push_back(SolutionCluster{precursor, begin, end, successor,
-                                                 {{input.first, {std::move(solution)}}}});
-            else
-                find_it->solutions[input.first].push_back(std::move(solution));
-        }
-    }
-
-    return result;
-}
 
 bool ResearchReplacer::runOnModule(Module& module)
 {
     ModuleSlotTracker slot_tracker(&module);
 
     std::string filename = module.getName();
-    for(char& c : filename)
-        if(c == '/')
-            c = '_';
+    for(char& c : filename) if(c == '/') c = '_';
 
     std::stringstream sstr;
     sstr<<"replace-report-"<<filename<<".json";
@@ -96,92 +43,33 @@ bool ResearchReplacer::runOnModule(Module& module)
     {
         if(!function.isDeclaration())
         {
-            std::vector<std::pair<std::string,std::vector<Solution>>> raw_solutions;
-            for(const auto& spec : loop_constraint_specs)
-                raw_solutions.push_back({spec.first, spec.second(function,100)});
-
-            auto clustered_solutions = cluster_solutions(std::move(raw_solutions));
-
-            if(clustered_solutions.empty())
-                continue;
-
-            for(unsigned i = 0; i < clustered_solutions.size(); i++)
+            for(auto& idiom : std::vector<std::string>{"ComplexReduction", "GEMM", "SPMV", "Stencil"})
             {
-                unsigned line_begin = 999;
-
-                if(clustered_solutions[i].precursor && clustered_solutions[i].precursor->getDebugLoc())
-                    line_begin = clustered_solutions[i].precursor->getDebugLoc().getLine();
-
-                ofs<<(first_hit1?"{\n":", {\n");
-                ofs<<"    \"function\": \""<<(std::string)function.getName()<<"\",\n";
-                ofs<<"    \"line\": "<<line_begin<<",\n";
-                ofs<<"    \"idioms\": [";
-
-                char first_hit2 = true;
-                for(const auto& spec : loop_constraint_specs)
+                for(auto& solution : GenerateAnalysis(idiom)(function, 100))
                 {
-                    for(auto& solution : clustered_solutions[i].solutions[spec.first])
+                    unsigned line_begin = 999;
+                    if(auto precursor = dyn_cast_or_null<Instruction>((Value*)solution["precursor"]))
+                        if(auto& debugloc = precursor->getDebugLoc())
+                            line_begin = debugloc.getLine();
+
+                    ofs<<(first_hit1?"{\n":", {\n");
+                    ofs<<"    \"function\": \""<<(std::string)function.getName()<<"\",\n";
+                    ofs<<"    \"line\": "<<line_begin<<",\n";
+                    ofs<<"    \"type\": \""<<idiom<<"\",\n";
+                    ofs<<"    \"solution\":\n     ";
+                    for(char c : solution.prune().print_json(slot_tracker))
                     {
-                        ofs<<(first_hit2?"{\n":", {\n");
-                        ofs<<"        \"type\": \""<<spec.first<<"\",\n";
-                        ofs<<"        \"solution\":\n         ";
-                        for(char c : solution.prune().print_json(slot_tracker))
-                        {
-                            ofs.put(c);
-                            if(c == '\n') ofs<<"         ";
-                        }
-                        ofs<<"\n      }";
-                        first_hit2 = false;
+                        ofs.put(c);
+                        if(c == '\n') ofs<<"     ";
                     }
+                    ofs<<"\n  }";
+                    first_hit1 = false;
                 }
-
-                ofs<<"]";
-
-                if(clustered_solutions[i].solutions["histo"].size() > 0 ||
-                   clustered_solutions[i].solutions["scalar"].size() > 0)
-                {
-                    ofs<<",\n      \"operator\": \"";
-                    /*
-                    std::vector<Instruction*> outputs;
-
-                    SESEFunction sese_function(clustered_solutions[i].body_begin,
-                                               clustered_solutions[i].body_successor);
-
-                    Function* function = sese_function.make_function();
-
-                    std::vector<std::map<std::string,Value*>> scalar_solutions;
-                    for(const auto& solution : clustered_solutions[i].solutions["scalar"])
-                        scalar_solutions.emplace_back(sese_function.transform_forw(solution));
-
-                    std::vector<std::map<std::string,Value*>> histo_solutions;
-                    for(const auto& solution : clustered_solutions[i].solutions["histo"])
-                        histo_solutions.emplace_back(sese_function.transform_forw(solution));
-
-                    transform_reduction_operator(*function, scalar_solutions, histo_solutions);
-
-                    function->setName("op");
-                    function->arg_begin()->setName("acc");
-                    for(char c : print_pretty_c_operator(*function))
-                    {
-                        if(c=='\n') ofs<<"\\n";
-                        else if(c=='\t') ofs<<"\\t";
-                        else if(c=='\r') ofs<<"\\r";
-                        else if(c=='\"') ofs<<"\\\"";
-                        else if(c=='\'') ofs<<"\\\'";
-                        else ofs<<c;
-                    }
-                    delete function;
-                    */
-                    ofs<<"\"";
-                }
-
-                ofs<<"\n  }";
-                first_hit1 = false;
             }
         }
     }
 
-    ofs<<"]\n}\n";
+    ofs<<"]}\n";
 
     return false;
 }

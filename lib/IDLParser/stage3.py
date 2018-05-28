@@ -1,7 +1,7 @@
 #!/usr/bin/pypy
 
 whitelist = ["Distributive", "HoistSelect", "ForWithIteratorTest"]
-whitelist += ["GEMM", "Histo", "SPMV", "Stencil", "Reduction"]
+whitelist += ["GEMM", "SPMV", "Stencil", "ComplexReduction"]
 
 def partial_evaluator(syntax, handler, *extras):
     handler_result = handler(syntax, *extras)
