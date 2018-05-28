@@ -20,15 +20,9 @@ class Solution
 {
 public:
     operator llvm::Value* () const;
-    operator std::map<std::string,llvm::Value*> () const;
 
     Solution operator[](std::string str) const;
     Solution operator[](unsigned idx) const;
-
-    Solution get() const { return *this; }
-
-    template<typename T1, typename ... Tn>
-    Solution get(T1 t1, Tn ... tn) const { return operator[](t1).get(tn...); }
 
     Solution prune() const;
     std::string print_json(llvm::ModuleSlotTracker&) const;
