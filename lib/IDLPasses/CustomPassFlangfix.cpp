@@ -1,5 +1,6 @@
 #include "llvm/IDL/CustomPasses.hpp"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
+#include "llvm/Transforms/Scalar.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/InstrTypes.h"
@@ -7,8 +8,6 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
-#include "llvm/Transforms/Scalar.h"
-#include <iostream>
 
 using namespace llvm;
 
