@@ -1,13 +1,11 @@
 #include "llvm/IDL/CustomPasses.hpp"
-#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/IDL/Solution.hpp"
-#include "llvm/IR/ModuleSlotTracker.h"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 #include <unordered_set>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -22,7 +20,6 @@ public:
 
     bool runOnFunction(Function& function) override;
 };
-
 
 class SmartIRBuilder : public IRBuilder<>
 {
@@ -61,7 +58,6 @@ public:
         }
         return IRBuilder<>::CreateAdd(a, b);
     }
-
 
     Value* CreateAdd(Value* a, Value* b)
     {
@@ -346,15 +342,12 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
         bool any_factor_removed = false;
         for(unsigned i = 0; i < 4 ; i++)
         {
-            std::stringstream index_sstr;
-            index_sstr<<"["<<i<<"]";
-
-            Value* find_prod1_it   = solution["product1.factors"+index_sstr.str()];
-            Value* find_prod2_it   = solution["product2.factors"+index_sstr.str()];
-            Value* find_sum1_it    = solution["sum1.factors"+index_sstr.str()];
-            Value* find_sum2_it    = solution["sum2.factors"+index_sstr.str()];
-            Value* find_sumres1_it = solution["sum1.results"+index_sstr.str()];
-            Value* find_sumres2_it = solution["sum2.results"+index_sstr.str()];
+            Value* find_prod1_it   = solution["product1"]["factors"][i];
+            Value* find_prod2_it   = solution["product2"]["factors"][i];
+            Value* find_sum1_it    = solution["sum1"]["factors"][i];
+            Value* find_sum2_it    = solution["sum2"]["factors"][i];
+            Value* find_sumres1_it = solution["sum1"]["results"][i];
+            Value* find_sumres2_it = solution["sum2"]["results"][i];
 
             if(find_prod1_it   != nullptr) prod1_factors.push_back(find_prod1_it);
             if(find_prod2_it   != nullptr) prod2_factors.push_back(find_prod2_it);
@@ -373,10 +366,10 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
 
         std::reverse(prod1_factors.begin(), prod1_factors.end());
         std::reverse(prod2_factors.begin(), prod2_factors.end());
-        std::reverse(sum1_factors.begin(), sum1_factors.end());
-        std::reverse(sum2_factors.begin(), sum2_factors.end());
-        std::reverse(sum1_results.begin(), sum1_results.end());
-        std::reverse(sum2_results.begin(), sum2_results.end());
+        std::reverse(sum1_factors.begin(),  sum1_factors.end());
+        std::reverse(sum2_factors.begin(),  sum2_factors.end());
+        std::reverse(sum1_results.begin(),  sum1_results.end());
+        std::reverse(sum2_results.begin(),  sum2_results.end());
 
         if(removed_instructions.find(sum) == removed_instructions.end() &&! any_factor_removed &&
            prod1_factors.size() > 0 && prod2_factors.size() > 0 &&
