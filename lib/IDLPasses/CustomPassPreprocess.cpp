@@ -351,7 +351,7 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
 
             if(find_prod1_it   != nullptr) prod1_factors.push_back(find_prod1_it);
             if(find_prod2_it   != nullptr) prod2_factors.push_back(find_prod2_it);
-            if(find_sum1_it    != nullptr) sum1_factors.push_back(find_prod1_it);
+            if(find_sum1_it    != nullptr) sum1_factors.push_back(find_sum1_it);
             if(find_sum2_it    != nullptr) sum2_factors.push_back(find_sum2_it);
             if(find_sumres1_it != nullptr) sum1_results.push_back(find_sumres1_it);
             if(find_sumres2_it != nullptr) sum2_results.push_back(find_sumres2_it);
