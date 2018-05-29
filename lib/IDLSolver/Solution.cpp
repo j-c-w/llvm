@@ -213,57 +213,6 @@ Solution Solution::operator[](unsigned idx) const
     return idx < vector_value.size() ? vector_value[idx] : Solution();
 }
 
-
-Solution::operator std::map<std::string,llvm::Value*>() const
-{
-    if(single_value)
-        return std::map<std::string,llvm::Value*>{{"",single_value}};
-
-    if(map_value.empty())
-    {
-        std::map<std::string,llvm::Value*> result;
-
-        for(unsigned i = 0; i < vector_value.size(); i++)
-        {
-            for(auto& part2 : (std::map<std::string,llvm::Value*>)vector_value[i])
-            {
-                std::stringstream sstr;
-                sstr<<"["<<i<<"]";
-                if(!part2.first.empty())
-                    sstr<<".";
-                sstr<<part2.first;
-
-                result.emplace(sstr.str(), part2.second);
-            }
-        }
-
-        return result;
-    }
-
-    if(vector_value.empty())
-    {
-        std::map<std::string,llvm::Value*> result;
-
-        for(auto& part : map_value)
-        {
-            for(auto& part2 : (std::map<std::string,llvm::Value*>)part.second)
-            {
-                std::stringstream sstr;
-                sstr<<part.first;
-                if(!part2.first.empty() && part2.first.front() != '[')
-                    sstr<<".";
-                sstr<<part2.first;
-
-                result.emplace(sstr.str(), part2.second);
-            }
-        }
-
-        return result;
-    }
-
-    return {};
-}
-
 Solution Solution::prune() const
 {
     if(!map_value.empty() && vector_value.empty())
