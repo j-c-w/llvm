@@ -1,5 +1,21 @@
 # These are the toplevel constraint specifications.
 
+Constraint ListInsert
+( {store_old_next} is store instruction and
+  {old_next} is first argument of {store_old_next} and
+  {old_next} is load instruction and
+  {old_member_pointer} is first argument of {old_next} and
+  {old_member_pointer} is second argument of {store_new_next} and
+  {store_new_next} is store instruction and
+  {new_next} is first argument of {store_new_next} and
+
+  {new_member_pointer} is second argument of {store_old_next} and
+
+  ( ( {new_member_pointer} is gep instruction and
+      {new_next} is first argument of {new_member_pointer}) or
+    {new_next} is the same as {new_member_pointer}))
+End
+
 Constraint GEMM 
 ( inherits ForNest(N=3) and
   inherits MatrixStore
@@ -58,81 +74,6 @@ Constraint SPMV
        and {indir_read.value} as {src1}
        and {seq_read.value}   as {src2}
        and {output.address}   as {update_address})
-End
-
-Constraint ComplexReduction
-( inherits For and
-  collect k 4
-  ( {histo[k].begin} is the same as {begin} and
-    {histo[k].end} is the same as {end} and
-    inherits Histo at {histo[k]}) and
-  collect k 4
-  ( {scalar[k].begin} is the same as {begin} and
-    {scalar[k].end} is the same as {end} and
-    inherits Reduction at {scalar[k]}) and
-  {scalar[0].kernel.output} is not the same as {histo[0].kernel.output})
-End
-
-Constraint Histo
-( inherits For and
-  inherits ConditionalReadModifyWrite
-    with {body} as {body} at {update} and
-  collect i 32
-  ( inherits VectorRead at {read[i]} and
-    {read[i].value} is the same as {indexkernel.input[i]} and
-    {read[i].idx} is the same as {iterator} and
-    {read[i].begin} is the same as {begin}) and
-  inherits KernelFunction
-      with {begin} as {outer}
-       and {body.begin} as {inner} at {kernel} and
-  {kernel.output} is the same as {update.new_value} and
-  inherits KernelFunction
-      with {begin} as {outer}
-       and {body.begin} as {inner} at {indexkernel} and
-  {indexkernel.output} is the same as {update.address} and
-  ( {indexkernel.output} is not the same as {read[i].address} for all i=0..32) and
-  inherits Concat(N1=31,N2=1)
-      with {indexkernel.input} as {in1}
-       and {update.old_value}  as {in2}
-       and {kernel.input}      as {out})
-End
-
-Constraint Reduction
-( inherits For and
-  {kernel.output} reaches phi node {old_value} from {end} and
-  {old_value} strictly control flow dominates {end} and
-  {old_value} is not the same as {iterator} and
-  {kernel.output} reaches phi node {final_value} from {end} and
-  {final_value} strictly control flow post dominates {end} and
-  collect i 32
-  ( inherits VectorRead
-        with {iterator} as {idx}
-         and {read_value[i]} as {value}
-         and {begin}    as {begin} at {read[i]}) and
-  inherits KernelFunction
-      with {begin}      as {outer}
-       and {body.begin} as {inner} at {kernel} and
-  inherits Concat(N1=31,N2=1)
-      with {read_value}   as {in1}
-       and {old_value}    as {in2}
-       and {kernel.input} as {out})
-End
-
-Constraint Stencil
-( inherits ForNest and
-  inherits PermMultidStore
-      with {iterator} as {input} 
-       and {begin} as {begin} at {write} and
-  collect i 32 
-  ( inherits StencilRead
-        with {write.input_index} as {input}
-         and {kernel.input[i]} as {value}
-         and {begin} as {begin}  at {reads[i]}) and
-  {kernel.output} is first argument of {write.store} and
-  inherits KernelFunction
-      with {begin}      as {outer}
-       and {body.begin} as {inner} at {kernel})
-for N=3 if not otherwise specified
 End
 
 # These are some buidling blocks for the toplevel constraints.
@@ -215,26 +156,6 @@ Constraint For
                        and {begin}     as {begin})
 End
 
-Constraint ConditionalReadModifyWrite
-( {store_instr} is store instruction and
-  inherits MaxOnceInSESE
-      with {store_instr} as {value}
-       and {store_instr_after} as {value_after} at {body} and
-  {address} is second argument of {store_instr} and
-  {address} is gep instruction and
-  {address} is first argument of {old_value} and
-  {old_value} is load instruction and
-  {new_value} is first argument of {store_instr})
-End
-
-Constraint MaxOnceInSESE
-( {begin} control flow dominates {value} and
-  {end} control flow post dominates {value} and
-  {value} has control flow to {value_after} and
-  all control flow from {value_after} to {value} passes through {end} and
-  all control flow from {value_after} to {value} passes through {begin})
-End
-
 Constraint MatrixStore
   inherits PermMultidStore(N=2) with {col} as {input[0]} and {row} as {input[1]}
 End
@@ -249,24 +170,6 @@ End
 
 Constraint VectorRead
   inherits PermMultidRead(N=1) with {idx} as {input[0]}
-End
-
-Constraint StencilRead
-( {value} is load instruction and
-  {address} is first argument of {value} and
-  inherits StencilAccess and
-  {input_index[i]} is the same as {input[i]} for all i=0..N)
-End
-
-Constraint StencilAccess
-( inherits AffineAccess with {begin} as {begin} at {read} and
-  {read.base_pointer} is the same as {base_pointer} and
-  {read.address} is the same as {address} and
-  ( {read.input_index[i]} is the same as {index[i].value} and
-    inherits Addition at {index[i]} and
-    ( {index[i].addend} is a constant or
-      {index[i].addend} is unused) and
-    {index[i].input} is the same as {input_index[i]}) for all i=0..N)
 End
 
 Constraint PermMultidStore
@@ -341,20 +244,6 @@ Constraint Multiplication
     inherits ArgumentsPermuted with {value} as {dst}
                                 and {input} as {src1}
                                 and {multiplier} as {src2}))
-End
-
-Constraint KernelFunction
-( collect i 4 {origin[i]} has control flow to {inner} and
-  collect i 24 ( inherits LocalConst with {outer} as {begin} at {constants[i]} and
-                 {constants[i].value} is not a numeric constant and
-                 {constants[i].value} has data flow to {constants[i].use} and
-                 {inner} control flow dominates {constants[i].use}) and
-  collect i 8 ( {outer} control flow dominates {restrictions[i].value} and
-                 {restrictions[i].value} strictly control flow dominates {inner} and
-                 {restrictions[i].value} has data flow to {restrictions[i].use} and
-                 {inner} control flow dominates {restrictions[i].use}) and
-
-  all flow from {restrictions[0..8].value} or any origin to any of {output} passes through at least one of {origin[0..4],constants[0..24].value,input[0..32]})
 End
 
 Constraint Permute

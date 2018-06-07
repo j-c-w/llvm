@@ -32,21 +32,28 @@ bool ResearchReplacer::runOnModule(Module& module)
     std::stringstream sstr;
     sstr<<"replace-report-"<<filename<<".json";
     std::ofstream ofs(sstr.str().c_str());
-    ofs<<"{ \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"loops\": [";
+    ofs<<"{ \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"detections\": [";
 
     char first_hit1 = true;
     for(Function& function : module.getFunctionList())
     {
         if(!function.isDeclaration())
         {
-            for(auto& idiom : std::vector<std::string>{"ComplexReduction", "GEMM", "SPMV", "Stencil"})
+            for(auto& idiom : std::vector<std::string>{"GEMM", "SPMV", "ListInsert"})
             {
                 for(auto& solution : GenerateAnalysis(idiom)(function, 100))
                 {
                     unsigned line_begin = 999;
                     if(auto precursor = dyn_cast_or_null<Instruction>((Value*)solution["precursor"]))
+                    {
                         if(auto& debugloc = precursor->getDebugLoc())
                             line_begin = debugloc.getLine();
+                    }
+                    else if(auto precursor = dyn_cast_or_null<Instruction>((Value*)solution["store_old_next"]))
+                    {
+                        if(auto& debugloc = precursor->getDebugLoc())
+                            line_begin = debugloc.getLine();
+                    }
 
                     ofs<<(first_hit1?"{\n":", {\n");
                     ofs<<"    \"function\": \""<<(std::string)function.getName()<<"\",\n";
