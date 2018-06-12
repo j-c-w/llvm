@@ -68,7 +68,7 @@ bool ResearchReplacer::runOnModule(Module& module)
     char first_hit1 = true;
     for(Function& function : module.getFunctionList())
     {
-        for(auto& idiom : std::vector<std::string>{"GEMM", "SPMV"})
+        for(auto& idiom : std::vector<std::string>{"GEMM", "SPMV_CSR", "SPMV_JDS"})
         {
             for(auto& solution : GenerateAnalysis(idiom)(function, 100))
             {
@@ -101,7 +101,7 @@ bool ResearchReplacer::runOnModule(Module& module)
                                    solution["idx_read"]["base_pointer"],
                                    solution["iter_end"]}, {solution["output"]["store"]});*/
                 }
-                if(idiom == "SPMV")
+                if(idiom == "SPMV_CSR")
                 {
                     replace_idiom(function, solution, "spmv_harness", solution["precursor"],
                                   {solution["output"]["base_pointer"],

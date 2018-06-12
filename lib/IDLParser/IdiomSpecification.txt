@@ -21,30 +21,58 @@ Constraint GEMM
        and {output.address} as {update_address})
 End
 
-Constraint SPMV
-( inherits For and
-  inherits VectorStore
-      with {iterator} as {idx}
-       and {begin} as {begin} at {output} and
+Constraint SPMV_CSR
+( inherits SPMV_BASE and
+  {matrix_read.idx} is the same as {inner.iterator} and
+  {vector_read.idx} is the same as {index_read.value} and
+  {index_read.idx}  is the same as {inner.iterator} and
+  {output.idx}      is the same as {iterator} and
   inherits ReadRange
       with {iterator} as {idx}
        and {inner.iter_begin} as {range_begin}
-       and {inner.iter_end}   as {range_end} and
+       and {inner.iter_end}   as {range_end})
+End
+
+Constraint SPMV_JDS
+( inherits SPMV_BASE and
+  {matrix_read.idx} is the same as {j} and
+  {vector_read.idx} is the same as {index_read.value} and
+  {index_read.idx}  is the same as {j} and
+  {output.idx}      is the same as {perm_read.value} and
+  inherits VectorRead
+      with {iterator} as {idx}
+       and {begin} as {begin} at {perm_read} and
+  {inner.iter_begin} is integer zero and
+  inherits VectorRead
+      with {iterator} as {idx}
+       and {begin} as {begin} 
+       and {inner.iter_end} as {value} at {nonzeroes_read} and
+  inherits VectorRead
+      with {inner.iterator} as {idx}
+       and {begin} as {begin} 
+       and {col_begin} as {value} at {col_begin_read} and
+  inherits Addition
+      with {j} as {value}
+       and {col_begin} as {input}
+       and {iterator} as {addend})
+End
+
+Constraint SPMV_BASE
+( inherits For and
   inherits For at {inner} and
+  inherits VectorStore
+      with {begin} as {begin} at {output} and
   inherits VectorRead
-      with {inner.iterator} as {idx}
-       and {begin} as {begin} at {idx_read} and
+      with {begin} as {begin} at {matrix_read} and
   inherits VectorRead
-      with {idx_read.value} as {idx}
-       and {begin} as {begin} at {indir_read} and
+      with {begin} as {begin} at {vector_read} and
   inherits VectorRead
-      with {inner.iterator} as {idx}
-       and {begin} as {begin} at {seq_read} and
+      with {begin} as {begin} at {index_read} and
   inherits DotProductLoop
-      with {inner}            as {loop}
-       and {indir_read.value} as {src1}
-       and {seq_read.value}   as {src2}
-       and {output.address}   as {update_address})
+      with {inner}             as {loop}
+       and {matrix_read.value} as {src1}
+       and {vector_read.value} as {src2}
+       and {output.address} as {update_address})
 End
 
 # These are some buidling blocks for the toplevel constraints.
