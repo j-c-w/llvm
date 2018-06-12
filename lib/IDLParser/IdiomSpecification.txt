@@ -26,23 +26,10 @@ Constraint SPMV
   inherits VectorStore
       with {iterator} as {idx}
        and {begin} as {begin} at {output} and
-
-  ( ( {inner.iter_end} is load instruction and
-      {inner.iter_end} reaches phi node {inner.iter_begin} from {end} and
-      {iter_begin_read.value} is the same as {iter_end_read.value} and
-      {inner.iter_end} is the same as {iter_end_read.value} and
-      {inner.iter_begin} strictly control flow dominates {end}) or
-    ( {inner.iter_begin} is load instruction and
-      {inner.iter_end} is load instruction and
-      {inner.iter_begin} is the same as {iter_begin_read.value} and 
-      {inner.iter_end} is the same as {iter_end_read.value} and
-      {inner.iter_begin} strictly control flow dominates {end})) and
-
-  inherits VectorRead with {iterator} as {idx}
-                       and {begin} as {begin} at {iter_begin_read} and
-  inherits VectorRead with {iterator} as {idx}
-                       and {begin} as {begin} at {iter_end_read} and
-
+  inherits ReadRange
+      with {iterator} as {idx}
+       and {inner.iter_begin} as {range_begin}
+       and {inner.iter_end}   as {range_end} and
   inherits For at {inner} and
   inherits VectorRead
       with {inner.iterator} as {idx}
@@ -116,6 +103,24 @@ Constraint GeneralDotProduct
   {dotvalue} is fmul instruction and
   inherits ArgumentsPermuted with {dotvalue} as {dst} and
   {initial} reaches phi node {old_ind} from {precursor})
+End
+
+Constraint ReadRange
+( ( ( {range_end} is load instruction and
+      {range_end} reaches phi node {range_begin} from {end} and
+      {iter_begin_read.value} is the same as {iter_end_read.value} and
+      {range_end} is the same as {iter_end_read.value} and
+      {range_begin} strictly control flow dominates {end}) or
+    ( {range_begin} is load instruction and
+      {range_end} is load instruction and
+      {range_begin} is the same as {iter_begin_read.value} and 
+      {range_end} is the same as {iter_end_read.value} and
+      {range_begin} strictly control flow dominates {end})) and
+
+  inherits VectorRead with {idx} as {idx}
+                       and {begin} as {begin} at {iter_begin_read} and
+  inherits VectorRead with {idx} as {idx}
+                       and {begin} as {begin} at {iter_end_read})
 End
 
 Constraint For
