@@ -26,11 +26,13 @@ Constraint SPMV
   inherits VectorStore
       with {iterator} as {idx}
        and {begin} as {begin} at {output} and
+  inherits For at {inner} and
+  {begin} control flow dominates {inner.begin} and
+  {end} control flow post dominates {inner.end} and
   inherits ReadRange
       with {iterator} as {idx}
        and {inner.iter_begin} as {range_begin}
        and {inner.iter_end}   as {range_end} and
-  inherits For at {inner} and
   inherits VectorRead
       with {inner.iterator} as {idx}
        and {begin} as {begin} at {idx_read} and
@@ -49,60 +51,42 @@ End
 
 Constraint ComplexReduction
 ( inherits For and
-  collect k 4
-  ( {histo[k].begin} is the same as {begin} and
-    {histo[k].end} is the same as {end} and
-    inherits Histo at {histo[k]}) and
-  collect k 4
-  ( {scalar[k].begin} is the same as {begin} and
-    {scalar[k].end} is the same as {end} and
-    inherits Reduction at {scalar[k]}) and
-  {scalar[0].kernel.output} is not the same as {histo[0].kernel.output})
-End
-
-Constraint Histo
-( inherits For and
-  inherits ConditionalReadModifyWrite
-    with {body} as {body} at {update} and
-  collect i 32
-  ( inherits VectorRead at {read[i]} and
-    {read[i].value} is the same as {indexkernel.input[i]} and
-    {read[i].idx} is the same as {iterator} and
-    {read[i].begin} is the same as {begin}) and
-  inherits KernelFunction
-      with {begin} as {outer}
-       and {body.begin} as {inner} at {kernel} and
-  {kernel.output} is the same as {update.new_value} and
-  inherits KernelFunction
-      with {begin} as {outer}
-       and {body.begin} as {inner} at {indexkernel} and
-  {indexkernel.output} is the same as {update.address} and
-  ( {indexkernel.output} is not the same as {read[i].address} for all i=0..32) and
-  inherits Concat(N1=31,N2=1)
-      with {indexkernel.input} as {in1}
-       and {update.old_value}  as {in2}
-       and {kernel.input}      as {out})
-End
-
-Constraint Reduction
-( inherits For and
-  {kernel.output} reaches phi node {old_value} from {end} and
-  {old_value} strictly control flow dominates {end} and
-  {old_value} is not the same as {iterator} and
-  {kernel.output} reaches phi node {final_value} from {end} and
-  {final_value} strictly control flow post dominates {end} and
   collect i 32
   ( inherits VectorRead
         with {iterator} as {idx}
          and {read_value[i]} as {value}
-         and {begin}    as {begin} at {read[i]}) and
-  inherits KernelFunction
-      with {begin}      as {outer}
-       and {body.begin} as {inner} at {kernel} and
-  inherits Concat(N1=31,N2=1)
-      with {read_value}   as {in1}
-       and {old_value}    as {in2}
-       and {kernel.input} as {out})
+         and {begin} as {begin} at {read[i]}) and
+  collect k 2
+  ( inherits ConditionalReadModifyWrite
+      with {histo[k].indexkernel.output} as {address}
+       and {body} as {body} at {histo[k].update} and
+    inherits KernelFunction
+        with {begin} as {outer}
+         and {body.begin} as {inner} at {histo[k].kernel} and
+    {histo[k].kernel.output} is the same as {histo[k].update.new_value} and
+    inherits KernelFunction
+        with {begin} as {outer}
+         and {read_value} as {input}
+         and {body.begin} as {inner} at {histo[k].indexkernel} and
+    ( {histo[k].indexkernel.output} is not the same as {read[i].address} for all i=0..32) and
+    inherits Concat(N1=31,N2=1)
+        with {read_value}                 as {in1}
+         and {histo[k].update.old_value}  as {in2}
+         and {histo[k].kernel.input}      as {out}) and
+  collect k 2
+  ( {scalar[k].kernel.output} reaches phi node {scalar[k].old_value} from {end} and
+    {scalar[k].old_value} strictly control flow dominates {end} and
+    {scalar[k].old_value} is not the same as {iterator} and
+    {scalar[k].kernel.output} reaches phi node {scalar[k].final_value} from {end} and
+    {scalar[k].final_value} strictly control flow post dominates {end} and
+    inherits KernelFunction
+        with {begin}      as {outer}
+         and {body.begin} as {inner} at {scalar[k].kernel} and
+    inherits Concat(N1=31,N2=1)
+        with {read_value}             as {in1}
+         and {scalar[k].old_value}    as {in2}
+         and {scalar[k].kernel.input} as {out}) and
+  {scalar[0].kernel.output} is not the same as {histo[0].kernel.output})
 End
 
 Constraint Stencil
