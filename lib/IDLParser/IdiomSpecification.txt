@@ -86,7 +86,27 @@ Constraint ComplexReduction
         with {read_value}             as {in1}
          and {scalar[k].old_value}    as {in2}
          and {scalar[k].kernel.input} as {out}) and
-  {scalar[0].kernel.output} is not the same as {histo[0].kernel.output})
+  {scalar[0].kernel.output} is not the same as {histo[0].kernel.output} and
+#  collect i 2
+#  ( {histo[i].update.store_instr} is store instruction and
+#    {begin} control flow dominates {histo[i].update.store_instr} and
+#    {end} control flow post dominates {histo[i].update.store_instr}) and
+  collect i 32
+  ( inherits LocalFunctionCall
+        with {begin} as {begin}
+         and {end} as {end} at {call[i]}) and
+  collect i 32
+  ( inherits LocalFunctionCall
+        with {begin} as {begin}
+         and {end} as {end} at {call[i]} and
+    {call[i].function} has attribute pure))
+End
+
+Constraint LocalFunctionCall
+( {callsite} is call instruction and
+  {function} is first argument of {callsite} and
+  {begin} control flow dominates {callsite} and
+  {end} control flow post dominates {callsite})
 End
 
 Constraint Stencil
