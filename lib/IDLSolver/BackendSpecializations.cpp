@@ -45,6 +45,7 @@ BackendPreexecution::BackendPreexecution(const FunctionWrap& wrap)
 
 std::vector<std::string> function_whitelist = {"log", "exp", "sqrt", "cos", "sin", "tan", "logf", "expf", "sqrtf",
                                                "cosf", "sinf", "tanf", "llvm.fabs.f64", "llvm.fabs.f32",
+                                               "@llvm.log.f64", "@llvm.log.f32", "@llvm.sqrt.f64", "@llvm.sqrt.f32",
                                                "llvm.dbg.value", "llvm.dbg.declare", "__log_finite"};
 
 BackendFunctionAttribute::BackendFunctionAttribute(const FunctionWrap& wrap)
@@ -55,7 +56,16 @@ BackendFunctionAttribute::BackendFunctionAttribute(const FunctionWrap& wrap)
     if(std::find(function_whitelist.begin(), function_whitelist.end(), function_name) != function_whitelist.end())
         return true;
 
-    return false;
+    auto attributes = value.getAttributes();
+
+    if(!(attributes.hasAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::ReadOnly) ||
+         attributes.hasAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::ReadNone)) ||
+       !attributes.hasAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::NoUnwind))
+    {
+        return false;
+    }
+
+    return true;
 }) { }
 
 
