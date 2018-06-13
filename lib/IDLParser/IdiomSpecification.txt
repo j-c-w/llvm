@@ -236,7 +236,6 @@ Constraint Addition
 ( ( {input} is the same as {value} and
     {addend} is unused) or
   ( ( {value} is add instruction or
-      {value} is bitor instruction or
       {value} is fadd instruction) and
     inherits ArgumentsPermuted with {value}  as {dst}
                                 and {input}  as {src1}
@@ -252,7 +251,6 @@ Constraint Multiplication
 ( ( {input} is the same as {value} and
     {multiplier} is unused) or
   ( ( {value} is mul instruction or
-      {value} is lshift instruction or
       {value} is fmul instruction) and
     inherits ArgumentsPermuted with {value}      as {dst}
                                 and {input}      as {src1}
