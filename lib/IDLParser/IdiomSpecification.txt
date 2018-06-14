@@ -496,13 +496,10 @@ Constraint ForWithIteratorTest
 ( inherits Loop and
   {comparison} has data flow to {end} and
   {comparison} is icmp instruction and
-  inherits ArgumentsPermuted
-      with {comparison} as {dst}
-       and {iterator}   as {src1}
-       and {iter_end}   as {src2} and
-  {increment} reaches
-     phi node {iterator}
-         from {end} and
+  {iterator} has data flow to {comparison} and
+  inherits InductionVar with {iterator}  as {old_ind}
+                         and {increment} as {new_ind} and
+  {increment} has data flow to {iterator} and
   {increment} is add instruction and
   inherits ArgumentsPermuted
       with {increment} as {dst}
