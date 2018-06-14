@@ -469,11 +469,11 @@ End
 
 Constraint ForWithIteratorTest
 ( inherits Loop and
+  {comparison} has data flow to {end} and
+  {comparison} is icmp instruction and
+  {iterator} has data flow to {comparison} and
   inherits InductionVar with {iterator}  as {old_ind}
                          and {increment} as {new_ind} and
-  {iterator} has data flow to {comparison} and
-  {comparison} is icmp instruction and
-  {comparison} has data flow to {end} and
   {increment} has data flow to {iterator} and
   {increment} is add instruction and
   {iterator} has data flow to {increment} and
