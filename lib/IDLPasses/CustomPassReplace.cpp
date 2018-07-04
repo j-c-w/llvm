@@ -39,12 +39,12 @@ bool ResearchReplacer::runOnModule(Module& module)
     {
         if(!function.isDeclaration())
         {
-            for(auto& idiom : std::vector<std::string>{"ComplexReduction", "GEMM", "SPMV", "Stencil"})
+            for(auto& idiom : std::vector<std::string>{"For"/*"GEMM", "SPMV", "ComplexReduction", "Stencil"*/})
             {
                 for(auto& solution : GenerateAnalysis(idiom)(function, 100))
                 {
                     unsigned line_begin = 999;
-                    if(auto precursor = dyn_cast_or_null<Instruction>((Value*)solution["precursor"]))
+                    if(auto precursor = dyn_cast_or_null<Instruction>((Value*)solution["comparison"]))
                         if(auto& debugloc = precursor->getDebugLoc())
                             line_begin = debugloc.getLine();
 
