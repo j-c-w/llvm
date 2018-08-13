@@ -105,10 +105,10 @@ bool ResearchReplacer::runOnModule(Module& module)
                 {
                     replace_idiom(function, solution, "spmv_harness", solution["precursor"],
                                   {solution["output"]["base_pointer"],
-                                   solution["seq_read"]["base_pointer"],
-                                   solution["indir_read"]["base_pointer"],
+                                   solution["matrix_read"]["base_pointer"],
+                                   solution["vector_read"]["base_pointer"],
                                    solution["iter_begin_read"]["base_pointer"],
-                                   solution["idx_read"]["base_pointer"],
+                                   solution["index_read"]["base_pointer"],
                                    solution["iter_end"]}, {solution["output"]["store"]});
                 }
             }
