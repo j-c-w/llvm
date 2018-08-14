@@ -15,7 +15,7 @@ Constraint GEMM
        and {iterator[2]} as {row}
        and {begin} as {begin} at {input2} and
   inherits DotProductLoop
-      with {loop[2]}        as {loop}
+      with {for[2]}         as {loop}
        and {input1.value}   as {src1}
        and {input2.value}   as {src2}
        and {output.address} as {update_address})
@@ -60,6 +60,14 @@ End
 Constraint SPMV_BASE
 ( inherits For and
   inherits For at {inner} and
+  {loop.begin} spans block to {blockend} and
+  ( {blockend} is the same as {inner.begin} or
+    ( {blockend} has control flow to {inner.begin} and
+      {blockend} control flow dominates {inner.begin} and 
+      {inner.begin} strictly control flow post dominates {blockend})) and
+  {inner.successor} spans block to {loop.end} and
+  {precursor} has control flow to {begin} and
+  {precursor} control flow dominates {begin} and
   inherits VectorStore
       with {begin} as {begin} at {output} and
   inherits VectorRead
@@ -78,13 +86,16 @@ End
 # These are some buidling blocks for the toplevel constraints.
 
 Constraint ForNest
-( inherits For with {iterator[0]} as {iterator} at {loop[0]} and
-  inherits SameSESE with {loop[0]} as {other} and
-  ( inherits For with {iterator[i+1]} as {iterator} at {loop[i+1]} and
-    {loop[i].begin} strictly control flow dominates {loop[i+1].begin} and
-    all control flow from {loop[i+1].begin} to {loop[i+1].precursor} passes through {loop[i].begin} and
-    {loop[i].end} strictly control flow post dominates {loop[i+1].end}) for all i=0..N-1 and
-  inherits SameSESE with {loop[N-1].body} as {other} at {body})
+( inherits For with {iterator[0]} as {iterator} at {for[0]} and
+  {begin} is the same as {for[0].begin} and
+  {successor} is the same as {for[0].successor} and
+  ( inherits For with {iterator[i+1]} as {iterator} at {for[i+1]} and
+    {for[i].loop.begin} spans block to {blockend[i]} and
+    ( {blockend[i]} is the same as {for[i+1].begin} or
+      ( {blockend[i]} has control flow to {for[i+1].begin} and
+        {blockend[i]} control flow dominates {for[i+1].begin} and
+        {for[i+1].begin} strictly control flow post dominates {blockend[i]})) and
+    {for[i+1].successor} spans block to {for[i].loop.end}) for all i=0..N-1)
 End
 
 Constraint SameSESE
@@ -152,25 +163,54 @@ Constraint ReadRange
 End
 
 Constraint For
-( inherits Loop and
+( inherits Loop at {loop} and
+
   inherits InductionVar with {iterator}  as {old_ind}
-                         and {increment} as {new_ind} and
+                         and {increment} as {new_ind}
+                         and {loop.end}  as {end} and
   {increment} has data flow to {comparison} and
   {iterator} is phi instruction and
   {comparison} is icmp instruction and
-  {comparison} has data flow to {end} and
+  {comparison} has data flow to {loop.end} and
   {increment} has data flow to {iterator} and
   {increment} is add instruction and
   {iterator} has data flow to {increment} and
   {iter_end} has data flow to {comparison} and
-  inherits LocalConst with {iter_end} as {value}
-                       and {begin}    as {begin} and
+  inherits LocalConst with {iter_end}   as {value}
+                       and {loop.begin} as {begin} and
   {iter_begin} has data flow to {iterator} and
   inherits LocalConst with {iter_begin} as {value}
-                       and {begin}      as {begin} and
+                       and {loop.begin} as {begin} and
   {iter_step} has data flow to {increment} and
-  inherits LocalConst with {iter_step} as {value}
-                       and {begin}     as {begin})
+  inherits LocalConst with {iter_step}  as {value}
+                       and {loop.begin} as {begin} and
+
+  collect i 1
+  ( ( ( {loop.begin} control flow post dominates {loop.precursor} and
+        {optional.preheader[i]} spans block to {loop.precursor}) or
+      ( {loop.precursor} has control flow to {loop.begin} and
+        {optional.preheader[i]} is the same as {loop.begin})) and
+    {optional.condjump[i]} has control flow to {optional.preheader[i]} and
+    {optional.condjump[i]} strictly control flow dominates {optional.preheader[i]} and
+    {optional.condjump[i]} has control flow to {optional.condtarget[i]} and
+    {optional.comparison[i]} has data flow to {optional.condjump[i]} and
+    {optional.comparison[i]} is icmp instruction and
+    {iter_end} has data flow to {optional.comparison[i]} and
+    ( ( {optional.condtarget[i]} is the same as {loop.successor} and
+        {optional.innerend[i]} is unused) or
+      ( {loop.successor} spans block to {optional.innerend[i]} and
+        {optional.innerend[i]} has control flow to {optional.condtarget[i]}))) and
+
+  ( ( {optional.condjump[0]} is unused and
+      {begin} is the same as {loop.begin}) or
+    ( {optional.condjump[0]} is branch instruction and
+      {begin} is the same as {optional.condjump[0]} and
+      {loop.begin} is instruction)) and
+  ( ( {optional.condtarget[0]} is unused and
+      {successor} is the same as {loop.successor}) or
+    ( {optional.condtarget[0]} is instruction and
+      {loop.successor} is instruction and
+      {successor} is the same as {optional.condtarget[0]})))
 End
 
 Constraint MatrixStore
