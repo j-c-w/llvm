@@ -190,6 +190,7 @@ using BackendSame     = BackendOrderWrap<false,true,false>;
 using BackendDistinct = BackendOrderWrap<true,false,true>;
 using BackendOrder    = BackendOrderWrap<true,false,false>;
 
+using BackendBlock    = BackendLLVMEdge<&FunctionWrap::blocks, &FunctionWrap::rblocks>;
 using BackendDFGEdge  = BackendLLVMEdge<&FunctionWrap::dfg, &FunctionWrap::rdfg>;
 using BackendCFGEdge  = BackendLLVMEdge<&FunctionWrap::cfg, &FunctionWrap::rcfg>;
 using BackendCDGEdge  = BackendLLVMEdge<&FunctionWrap::cdg, &FunctionWrap::rcdg>;
