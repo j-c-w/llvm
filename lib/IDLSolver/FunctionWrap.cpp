@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <vector>
+#include <iostream>
 
 namespace {
 std::vector<std::vector<unsigned>> reverse_graph(const std::vector<std::vector<unsigned>>& graph)
@@ -244,6 +245,15 @@ FunctionWrap::FunctionWrap(llvm::Function& llvm_function)
     }
 
     insert(end(), instructions.begin(), instructions.end());
+
+    blocks.resize(size());
+
+    for(auto& block : llvm_function.getBasicBlockList())
+    {
+        blocks[value_hash.size()+instr_hash[&*block.begin()]].push_back(
+               value_hash.size()+instr_hash[&*block.rbegin()]);
+    }
+    rblocks = reverse_graph(blocks);
 
     cdg   = sort_graph(construct_cdg(instr_hash, value_hash));
     rcdg  = reverse_graph(cdg);

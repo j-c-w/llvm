@@ -38,7 +38,7 @@ atom ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintVectorType
        | <ConstraintIntZero> | <ConstraintFloatZero>
        | <ConstraintUnused>       | <ConstraintNotNumericConstant> | <ConstraintConstant>
        | <ConstraintPreexecution> | <ConstraintArgument>           | <ConstraintInstruction>
-       | <ConstraintSame> | <ConstraintDistinct>
+       | <ConstraintSame> | <ConstraintDistinct> | <ConstraintBlock>
        | <ConstraintDFGEdge> | <ConstraintCFGEdge> | <ConstraintCDGEdge> | <ConstraintPDGEdge>
        | <ConstraintFirstOperand> | <ConstraintSecondOperand>
        | <ConstraintThirdOperand> | <ConstraintFourthOperand>
@@ -82,6 +82,7 @@ ConstraintOpcode ::= <@slot> is <s> instruction
 
 ConstraintSame     ::= <@slot> is the same as <@slot>
 ConstraintDistinct ::= <@slot> is not the same as <@slot>
+ConstraintBlock    ::= <@slot> spans block to <@slot>
 
 ConstraintDFGEdge ::= <@slot> has data flow to <@slot>
 ConstraintCFGEdge ::= <@slot> has control flow to <@slot>
