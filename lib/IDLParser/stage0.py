@@ -25,29 +25,29 @@ def read_input(stream):
             elif len(splitline) == 2 and splitline[0] == "READABLE":
                 currentmode    = "READABLE"
                 currentsubmode = "BODY"
-                currentobject  = {"BODY": [], "CONSTRUCTION" : [], "DESTRUCTION" : []}
+                currentobject  = {"BODY": [], "BeforeFirstExecution" : [], "AfterLastExecution" : []}
                 readables[splitline[1]] = currentobject
 
             elif len(splitline) == 2 and splitline[0] == "WRITEABLE":
                 currentmode    = "WRITEABLE"
                 currentsubmode = "BODY"
-                currentobject  = {"BODY": [], "CONSTRUCTION" : [], "DESTRUCTION" : []}
+                currentobject  = {"BODY": [], "BeforeFirstExecution" : [], "AfterLastExecution" : []}
                 writeables[splitline[1]] = currentobject
 
             elif len(splitline) == 4 and splitline[0] == "HARNESS" and splitline[2] == "IMPLEMENTS":
                 currentmode    = "HARNESS"
                 currentsubmode = "BODY"
                 currentobject  = {"INTERFACE" : splitline[3],
-                                  "BODY": [], "TRANSFORMATIONS" : [],
-                                  "HEADER" : [], "CONTEXT" : [],
-                                  "CONSTRUCTION" : [], "DESTRUCTION" : []}
+                                  "BODY": [], "OnDemandEvaluated" : [],
+                                  "CppHeaderFiles" : [], "PersistentVariables" : [],
+                                  "BeforeFirstExecution" : [], "AfterLastExecution" : []}
                 harnesses[splitline[1]] = currentobject
 
             elif len(splitline) == 1:
                 if ((currentmode in ["WRITEABLE", "READABLE", "HARNESS"]
-                     and splitline[0] in ["CONSTRUCTION", "DESTRUCTION"]) or
+                     and splitline[0] in ["BeforeFirstExecution", "AfterLastExecution"]) or
                      currentmode in ["HARNESS"]
-                     and splitline[0] in ["TRANSFORMATIONS", "HEADER", "CONTEXT"]):
+                     and splitline[0] in ["OnDemandEvaluated", "CppHeaderFiles", "PersistentVariables"]):
                     currentsubmode = splitline[0]
                 else:
                     raise Exception("Syntax error in line "+str(n+1)+"\n")
@@ -57,14 +57,14 @@ def read_input(stream):
 
         elif line.startswith("  "):
 
-            if currentsubmode in ["BODY", "CONSTRUCTION", "DESTRUCTION", "HEADER", "COMPUTATION"]:
+            if currentsubmode in ["BODY", "BeforeFirstExecution", "AfterLastExecution", "CppHeaderFiles", "COMPUTATION"]:
                 currentobject[currentsubmode].append(line[2:].rstrip())
 
-            if currentsubmode in ["ARGUMENTS", "CONTEXT"]:
+            if currentsubmode in ["ARGUMENTS", "PersistentVariables"]:
                 typename, name = line.split()
                 currentobject[currentsubmode].append((typename,name))
 
-            if currentsubmode == "TRANSFORMATIONS":
+            if currentsubmode == "OnDemandEvaluated":
                 left,right = line.split("=")
                 typename,name = left.split()
                 classname,rangeexpr = right.split(" of ")
@@ -93,7 +93,7 @@ def print_to_stream(stream, harness):
     stream.write("#include \"llvm/IDL/harness.hpp\"\n")
     stream.write("#include <cstdio>\n")
 
-    for line in harness["HEADER"]:
+    for line in harness["CppHeaderFiles"]:
         stream.write("{}\n".format(line))
 
     stream.write("\n")
@@ -101,7 +101,7 @@ def print_to_stream(stream, harness):
 
     used_readwriteables = set()
 
-    for typename,name,classname,base,rangeright in harness["TRANSFORMATIONS"]:
+    for typename,name,classname,base,rangeright in harness["OnDemandEvaluated"]:
         if classname in used_readwriteables:
             continue
         used_readwriteables.add(classname)
@@ -123,18 +123,18 @@ def print_to_stream(stream, harness):
             stream.write("}\n")
             stream.write("\n")
 
-        if readwriteable["CONSTRUCTION"]:
+        if readwriteable["BeforeFirstExecution"]:
             stream.write("template<typename type_in, typename type_out>\n")
             stream.write("void {}_construct(int size, type_out& out) {{\n".format(classname))
-            for line in readwriteable["CONSTRUCTION"]:
+            for line in readwriteable["BeforeFirstExecution"]:
                 stream.write("    {}\n".format(line))
             stream.write("}\n")
             stream.write("\n")
 
-        if readwriteable["DESTRUCTION"]:
+        if readwriteable["AfterLastExecution"]:
             stream.write("template<typename type_in, typename type_out>\n")
             stream.write("void {}_destruct(int size, type_out& out) {{\n".format(classname))
-            for line in readwriteable["DESTRUCTION"]:
+            for line in readwriteable["AfterLastExecution"]:
                 stream.write("    {}\n".format(line))
             stream.write("}\n")
             stream.write("\n")
@@ -147,12 +147,12 @@ def print_to_stream(stream, harness):
         else:
             stream.write("    nullptr,\n".format(classname))
 
-        if readwriteable["CONSTRUCTION"]:
+        if readwriteable["BeforeFirstExecution"]:
             stream.write("    {}_construct<type_in,type_out>,\n".format(classname))
         else:
             stream.write("    nullptr,\n".format(classname))
 
-        if readwriteable["DESTRUCTION"]:
+        if readwriteable["AfterLastExecution"]:
             stream.write("    {}_destruct<type_in,type_out>>;\n".format(classname))
         else:
             stream.write("    nullptr>;\n".format(classname))
@@ -161,25 +161,25 @@ def print_to_stream(stream, harness):
     stream.write("struct Functor\n")
     stream.write("{\n")
 
-    if harness["CONSTRUCTION"]:
+    if harness["BeforeFirstExecution"]:
         stream.write("    Functor() {\n")
-        for line in harness["CONSTRUCTION"]:
+        for line in harness["BeforeFirstExecution"]:
             stream.write("        {}\n".format(line))
         stream.write("    }\n")
         stream.write("\n")
 
-    if harness["DESTRUCTION"]:
+    if harness["AfterLastExecution"]:
         stream.write("    ~Functor() {\n")
-        for line in harness["DESTRUCTION"]:
+        for line in harness["AfterLastExecution"]:
             stream.write("        {}\n".format(line))
         stream.write("    }\n")
         stream.write("\n")
 
-    for typename,name in harness["CONTEXT"]:
+    for typename,name in harness["PersistentVariables"]:
         stream.write("    {} {};\n".format(typename, name))
 
-    if harness["TRANSFORMATIONS"]:
-        for typename,name,classname,base,rangeright in harness["TRANSFORMATIONS"]:
+    if harness["OnDemandEvaluated"]:
+        for typename,name,classname,base,rangeright in harness["OnDemandEvaluated"]:
             base_type = None
             for typename2,name2 in interfaces[harness["INTERFACE"]]["ARGUMENTS"]:
                 if name2 == base:
@@ -191,7 +191,7 @@ def print_to_stream(stream, harness):
     stream.write("    void operator()({}) {{\n".format(", ".join(t+" "+n for (t,n) in interfaces[harness["INTERFACE"]]["ARGUMENTS"])))
     stream.write("        printf(\"Entering harness '{}'\\n\");\n".format(harness["INTERFACE"]))
 
-    for typename,name,classname,base,rangeright in harness["TRANSFORMATIONS"]:
+    for typename,name,classname,base,rangeright in harness["OnDemandEvaluated"]:
         stream.write("        auto {} = shadow_{}({}, {});\n".format(name, name, base, rangeright))
 
     for line in harness["BODY"]:
@@ -212,7 +212,7 @@ def parse_computation(computation):
     ast = []
 
     for c in computation:
-        if c in "()[]+,":
+        if c in "()[]+,*=.:{}<;":
             ast.append((None, c))
         else:
             ast.append(("s", c))
@@ -222,38 +222,55 @@ def parse_computation(computation):
                 ast = ast[:-2] + [("s", ast[-2][1] + ast[-1][1])]
 
             elif (len(ast) >= 4 and ast[-4][0] in ["binary", "index", "s", "const"]
-                                and ast[-3][1] in ["+", "-"]
+                                and ast[-3][1] in ["+", "-", "*"]
                                 and ast[-2][0] in ["binary", "index", "s", "const"]
-                                and ast[-1][1] in [")", "]", ",", "+", "-"]):
+                                and ast[-1][1] in [")", "]", ",", "+", "-", "*"]):
                 ast = ast[:-4] + [("binary", ast[-3][1], ast[-4], ast[-2]), ast[-1]]
 
-            elif (len(ast) >= 12 and ast[-1][1] == ")"
+            elif (len(ast) >= 13 and ast[-1][1] == ";"
                                  and ast[-2][0] in ["binary", "index", "s", "const"]
-                                 and ast[-3][1] == ","
+                                 and ast[-3][1] == "*"
                                  and ast[-4][0] in ["binary", "index", "s", "const"]
-                                 and ast[-5][1] == ","
-                                 and ast[-6][0] =="s"
-                                 and ast[-7][1] == ","
-                                 and ast[-8][0] in ["binary", "index", "s", "const"]
-                                 and ast[-9][1] == ","
-                                 and ast[-10][0] in ["binary", "index", "s", "const"]
-                                 and ast[-11][1] == "("
-                                 and ast[-12][1] == "dot"):
-                ast = ast[:-12] + [("dot", [ast[-10], ast[-8], ast[-6], ast[-4], ast[-2]])]
+                                 and ast[-5][1] == ")"
+                                 and ast[-6][0] in ["binary", "index", "s", "const"]
+                                 and ast[-7][1] == "<"
+                                 and ast[-8][0] =="s"
+                                 and ast[-9][1] == "="
+                                 and ast[-10][1] == "<"
+                                 and ast[-11][0] in ["binary", "index", "s", "const"]
+                                 and ast[-12][1] == "("
+                                 and ast[-13][1] == "sum"):
+                ast = ast[:-13] + [("dot", [ast[-11], ast[-6], ast[-8], ast[-4], ast[-2]])]
 
-            elif (len(ast) >= 12 and ast[-1][1] == ")"
+            elif (len(ast) >= 14 and ast[-1][1] == "}"
                                  and ast[-2][0] == "dot"
-                                 and ast[-3][1] == ","
+                                 and ast[-3][1] == "="
                                  and ast[-4][0] == "index"
-                                 and ast[-5][1] == ","
-                                 and ast[-6][0] =="s"
-                                 and ast[-7][1] == ","
-                                 and ast[-8][0] in ["binary", "index", "s", "const"]
-                                 and ast[-9][1] == ","
+                                 and ast[-5][1] == "{"
+                                 and ast[-6][1] == ")"
+                                 and ast[-7][0] in ["binary", "index", "s", "const"]
+                                 and ast[-8][1] == "<"
+                                 and ast[-9][0] == "s"
+                                 and ast[-10][1] == "="
+                                 and ast[-11][1] == "<"
+                                 and ast[-12][0] in ["binary", "index", "s", "const"]
+                                 and ast[-13][1] == "("
+                                 and ast[-14][1] == "forall"):
+                ast = ast[:-14] + [("map", [ast[-12], ast[-7], ast[-9], ast[-4], ast[-2]])]
+
+            elif (len(ast) >= 12 and ast[-1][1] == "}"
+                                 and ast[-2][0] == "map"
+                                 and ast[-3][1] == "{"
+                                 and ast[-4][1] == ")"
+                                 and ast[-5][0] in ["binary", "index", "s", "const"]
+                                 and ast[-6][1] == "<"
+                                 and ast[-7][0] == "s"
+                                 and ast[-8][1] == "="
+                                 and ast[-9][1] == "<"
                                  and ast[-10][0] in ["binary", "index", "s", "const"]
                                  and ast[-11][1] == "("
-                                 and ast[-12][1] == "map"):
-                ast = ast[:-12] + [("map", [ast[-10], ast[-8], ast[-6], ast[-4], ast[-2]])]
+                                 and ast[-12][1] == "forall"):
+                ast = ast[:-12] + [("loop", [ast[-10], ast[-5], ast[-7], ast[-2]])]
 
             elif (len(ast) >= 4 and ast[-1][1] == "]"
                                 and ast[-2][0] in ["binary", "index", "s", "const"]
@@ -263,6 +280,7 @@ def parse_computation(computation):
 
             else:
                 break
+    print ast
     return ast
 
 def generate_naive_recursive(parsed):
@@ -274,14 +292,34 @@ def generate_naive_recursive(parsed):
         return "{}{}{}".format(generate_naive_recursive(parsed[2]),
                                  parsed[1],
                                  generate_naive_recursive(parsed[3]))
+    elif parsed[0] == "loop":
+        return (["int i, j, k;",
+                 "for({} = {}; {} < {}; {}++) {{".format(
+                    parsed[1][2][1], generate_naive_recursive(parsed[1][0]),
+                    parsed[1][2][1], generate_naive_recursive(parsed[1][1]),
+                    parsed[1][2][1]),
+
+                 "  for({} = {}; {} < {}; {}++) {{".format(
+                    parsed[1][3][1][2][1], generate_naive_recursive(parsed[1][3][1][0]),
+                    parsed[1][3][1][2][1], generate_naive_recursive(parsed[1][3][1][1]),
+                    parsed[1][3][1][2][1]),
+
+                 "    double value = 0.0;"] +
+                ["    " + line for line in generate_naive_recursive(parsed[1][3][1][4])] +
+                ["    {} = value;".format(generate_naive_recursive(parsed[1][3][1][3])),
+                 "  }",
+                 "}"])
+
     elif parsed[0] == "map":
         return (["int i, j;",
                  "for({} = {}; {} < {}; {}++) {{".format(
                     parsed[1][2][1], generate_naive_recursive(parsed[1][0]),
                     parsed[1][2][1], generate_naive_recursive(parsed[1][1]),
-                    parsed[1][2][1]), "  double value = 0.0;"] +
+                    parsed[1][2][1]),
+                 "  double value = 0.0;"] +
                 ["  " + line for line in generate_naive_recursive(parsed[1][4])] +
                 ["  {} = value;".format(generate_naive_recursive(parsed[1][3])), "}"])
+
     elif parsed[0] == "dot":
         return ["for({} = {}; {} < {}; {}++)".format(
                     parsed[1][2][1], generate_naive_recursive(parsed[1][0]),
@@ -315,6 +353,16 @@ def generate_interface_recursive(parsed, iterators=[], typed=None):
         parts2 = generate_interface_recursive(parsed[3], iterators, typed)
         return (parts1[0]+parts2[0], parts1[1]+parts2[1],
                 parts1[2]+parts2[2], parts1[3]+parts2[3])
+    elif parsed[0] == "loop":
+        new_iter = iterators[:]
+        new_iter.append(parsed[1][2][1])
+        parts1 = generate_interface_recursive(parsed[1][0], new_iter, "int")
+        parts2 = generate_interface_recursive(parsed[1][1], new_iter, "int")
+        parts3 = generate_interface_recursive(parsed[1][3], new_iter, "float")
+        return (parts1[0]+parts2[0]+parts3[0],
+                parts1[1]+parts2[1]+parts3[1],
+                parts1[2]+parts2[2]+parts3[2],
+                parts1[3]+parts2[3]+parts3[3])
     elif parsed[0] == "map":
         new_iter = iterators[:]
         new_iter.append(parsed[1][2][1])
@@ -360,9 +408,9 @@ if len(sys.argv) == 2:
         parsed = parse_computation(" ".join(computations[computation]["BODY"]).replace(" ", ""))
         program = generate_naive(parsed)
         harnesses["naive"] = {"INTERFACE" : computation,
-                              "BODY": program, "TRANSFORMATIONS" : [],
-                              "HEADER" : [], "CONTEXT" : [],
-                              "CONSTRUCTION" : [], "DESTRUCTION" : []}
+                              "BODY": program, "OnDemandEvaluated" : [],
+                              "CppHeaderFiles" : [], "PersistentVariables" : [],
+                              "BeforeFirstExecution" : [], "AfterLastExecution" : []}
         interfaces[computation]={"ARGUMENTS":generate_interface(parsed)}
 
     for harnessname in harnesses:

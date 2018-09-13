@@ -1,5 +1,46 @@
 # These are the toplevel constraint specifications.
 
+Constraint VectorAdd
+( inherits For and
+  inherits VectorStore
+      with {begin} as {begin}
+       and {iterator} as {idx} at {output} and
+  {output.value} is first argument of {output.store} and
+  {output.value} is fadd instruction and
+  inherits VectorRead
+      with {begin} as {begin}
+       and {iterator} as {idx} at {input1} and
+  inherits VectorRead
+      with {begin} as {begin}
+       and {iterator} as {idx} at {input2} and
+  {scale} is fmul instruction and
+  inherits ArgumentsPermuted with {scale} as {dst}
+                              and {input2.value} as {src1}
+                              and {alpha} as {src2} and
+  inherits ArgumentsPermuted with {output.value} as {dst}
+                              and {input1.value} as {src1}
+                              and {scale} as {src2} and
+  {precursor} has control flow to {begin} and
+  {precursor} control flow dominates {begin})
+End
+
+Constraint VectorDot
+( inherits For and
+  inherits VectorRead
+      with {begin} as {begin}
+       and {iterator} as {idx} at {input1} and
+  inherits VectorRead
+      with {begin} as {begin}
+       and {iterator} as {idx} at {input2} and
+  inherits GeneralDotProduct
+      with {input1.value} as {src1}
+       and {input2.value} as {src2} and
+  {input1.value} is first argument of {dotvalue} and
+  {input2.value} is second argument of {dotvalue} and
+  {precursor} has control flow to {begin} and
+  {precursor} control flow dominates {begin})
+End
+
 Constraint GEMM 
 ( inherits ForNest(N=3) and
   inherits MatrixStore
@@ -66,8 +107,11 @@ Constraint SPMV_BASE
       {blockend} control flow dominates {inner.begin} and 
       {inner.begin} strictly control flow post dominates {blockend})) and
   {inner.successor} spans block to {loop.end} and
-  {precursor} has control flow to {begin} and
-  {precursor} control flow dominates {begin} and
+  inherits DotProductLoop
+      with {inner}             as {loop}
+       and {matrix_read.value} as {src1}
+       and {vector_read.value} as {src2}
+       and {output.address} as {update_address} and
   inherits VectorStore
       with {begin} as {begin} at {output} and
   inherits VectorRead
@@ -76,11 +120,8 @@ Constraint SPMV_BASE
       with {begin} as {begin} at {vector_read} and
   inherits VectorRead
       with {begin} as {begin} at {index_read} and
-  inherits DotProductLoop
-      with {inner}             as {loop}
-       and {matrix_read.value} as {src1}
-       and {vector_read.value} as {src2}
-       and {output.address} as {update_address})
+  {precursor} has control flow to {begin} and
+  {precursor} control flow dominates {begin})
 End
 
 # These are some buidling blocks for the toplevel constraints.
@@ -118,7 +159,7 @@ Constraint DotProductLoop
   inherits Addition with {scaled_reduc} as {input}
                      and {final_value}  as {value}
                      and {scaled_prev}  as {addend} and
-  inherits Multiplication with {raw_final2}    as {input}
+  inherits Multiplication with {raw_final2}   as {input}
                            and {scaled_reduc} as {value}
                            and {alpha}        as {multiplier} and
   inherits LocalConst with {alpha} as {value} and

@@ -1,0 +1,48 @@
+COMPUTATION mm
+  forall(0 <= i < N) {
+    forall(0 <= j < M) {
+      output[i*M+j] = sum(0 <= k < K)
+          left[i*K+k] * right[k*M+j];
+    }
+  }
+
+HARNESS openblas IMPLEMENTS mm
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+               N, M, K, 1.0, left, K, right, N, 0.0, output, N);
+CppHeaderFiles
+  #include <cblas.h>
+
+HARNESS cuda IMPLEMENTS mm
+  double alpha = 1.0;
+  double beta  = 0.0;
+  cublasDgemm_v2(handle, CUBLAS_OP_N, CUBLAS_OP_N,
+                 M, N, K, &alpha, d_A, K, d_B, N, &beta, d_C, N);
+OnDemandEvaluated
+  double* d_A = CudaRead of left[0..N*K]
+  double* d_B = CudaRead of right[0..K*M]
+  double* d_C = CudaWrite of output[0..N*M]
+PersistentVariables
+  cublasHandle_t handle
+BeforeFirstExecution
+  cublasCreate(&handle);
+AfterLastExecution
+  cublasDestroy(handle);
+CppHeaderFiles
+  #include <cuda_runtime.h>
+  #include "cublas_v2.h"
+
+READABLE CudaRead
+  cudaMemcpy(out, in, sizeof(type_in)*size,
+             cudaMemcpyHostToDevice);
+BeforeFirstExecution
+  cudaMalloc(&out, sizeof(type_in)*size);
+AfterLastExecution
+  cudaFree(out);
+
+WRITEABLE CudaWrite
+  cudaMemcpy(in, out, sizeof(type_in)*size,
+             cudaMemcpyDeviceToHost);
+BeforeFirstExecution
+  cudaMalloc(&out, sizeof(type_in)*size);
+AfterLastExecution
+  cudaFree(out);

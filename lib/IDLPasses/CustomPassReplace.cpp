@@ -68,13 +68,13 @@ bool ResearchReplacer::runOnModule(Module& module)
     char first_hit1 = true;
     for(Function& function : module.getFunctionList())
     {
-        for(auto& idiom : std::vector<std::string>{"GEMM", "SPMV_CSR", "SPMV_JDS"})
+        for(auto& idiom : std::vector<std::string>{"GEMM", "SPMV_CSR", "SPMV_JDS", "VectorAdd", "VectorDot"})
         {
             for(auto& solution : GenerateAnalysis(idiom)(function, 100))
             {
                 unsigned line_begin = 999;
 
-                if(auto precursor = dyn_cast<Instruction>((Value*)solution["precursor"]))
+                if(auto precursor = dyn_cast_or_null<Instruction>((Value*)solution["precursor"]))
                     if(auto& debugloc = precursor->getDebugLoc())
                         line_begin = debugloc.getLine();
 
@@ -103,7 +103,7 @@ bool ResearchReplacer::runOnModule(Module& module)
                 }
                 if(idiom == "SPMV_CSR")
                 {
-                    replace_idiom(function, solution, "spmv_harness", solution["precursor"],
+                    replace_idiom(function, solution, "spmv_csr_harness", solution["successor"],
                                   {solution["output"]["base_pointer"],
                                    solution["matrix_read"]["base_pointer"],
                                    solution["vector_read"]["base_pointer"],
