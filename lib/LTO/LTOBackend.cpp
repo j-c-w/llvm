@@ -144,7 +144,9 @@ createTargetMachine(Config &Conf, const Target *TheTarget, Module &M) {
 }
 
 static void runNewPMPasses(Config &Conf, Module &Mod, TargetMachine *TM,
-                           unsigned OptLevel, bool IsThinLTO) {
+                           unsigned OptLevel, bool IsThinLTO,
+                           ModuleSummaryIndex *ExportSummary,
+                           const ModuleSummaryIndex *ImportSummary) {
   Optional<PGOOptions> PGOOpt;
   if (!Conf.SampleProfile.empty())
     PGOOpt = PGOOptions("", "", Conf.SampleProfile, false, true);
@@ -194,9 +196,10 @@ static void runNewPMPasses(Config &Conf, Module &Mod, TargetMachine *TM,
   }
 
   if (IsThinLTO)
-    MPM = PB.buildThinLTODefaultPipeline(OL, Conf.DebugPassManager);
+    MPM = PB.buildThinLTODefaultPipeline(OL, Conf.DebugPassManager,
+                                         ImportSummary);
   else
-    MPM = PB.buildLTODefaultPipeline(OL, Conf.DebugPassManager);
+    MPM = PB.buildLTODefaultPipeline(OL, Conf.DebugPassManager, ExportSummary);
   MPM.run(Mod, MAM);
 
   // FIXME (davide): verify the output.
@@ -279,7 +282,8 @@ bool opt(Config &Conf, TargetMachine *TM, unsigned Task, Module &Mod,
     runNewPMCustomPasses(Mod, TM, Conf.OptPipeline, Conf.AAPipeline,
                          Conf.DisableVerify);
   else if (Conf.UseNewPM)
-    runNewPMPasses(Conf, Mod, TM, Conf.OptLevel, IsThinLTO);
+    runNewPMPasses(Conf, Mod, TM, Conf.OptLevel, IsThinLTO, ExportSummary,
+                   ImportSummary);
   else
     runOldPMPasses(Conf, Mod, TM, IsThinLTO, ExportSummary, ImportSummary);
   return !Conf.PostOptModuleHook || Conf.PostOptModuleHook(Task, Mod);
@@ -291,14 +295,19 @@ void codegen(Config &Conf, TargetMachine *TM, AddStreamFn AddStream,
     return;
 
   std::unique_ptr<ToolOutputFile> DwoOut;
+  SmallString<1024> DwoFile(Conf.DwoPath);
   if (!Conf.DwoDir.empty()) {
     std::error_code EC;
     if (auto EC = llvm::sys::fs::create_directories(Conf.DwoDir))
       report_fatal_error("Failed to create directory " + Conf.DwoDir + ": " +
                          EC.message());
 
-    SmallString<1024> DwoFile(Conf.DwoDir);
+    DwoFile = Conf.DwoDir;
     sys::path::append(DwoFile, std::to_string(Task) + ".dwo");
+  }
+
+  if (!DwoFile.empty()) {
+    std::error_code EC;
     TM->Options.MCOptions.SplitDwarfFile = DwoFile.str().str();
     DwoOut = llvm::make_unique<ToolOutputFile>(DwoFile, EC, sys::fs::F_None);
     if (EC)

@@ -205,6 +205,9 @@ public:
 
   DWARFCompileUnit *getDWOCompileUnitForHash(uint64_t Hash);
 
+  /// Return the compile unit that includes an offset (relative to .debug_info).
+  DWARFCompileUnit *getCompileUnitForOffset(uint32_t Offset);
+
   /// Get a DIE given an exact offset.
   DWARFDie getDIEForOffset(uint32_t Offset);
 
@@ -320,10 +323,11 @@ public:
   /// have initialized the relevant target descriptions.
   Error loadRegisterInfo(const object::ObjectFile &Obj);
 
-private:
-  /// Return the compile unit that includes an offset (relative to .debug_info).
-  DWARFCompileUnit *getCompileUnitForOffset(uint32_t Offset);
+  /// Get address size from CUs.
+  /// TODO: refactor compile_units() to make this const.
+  uint8_t getCUAddrSize();
 
+private:
   /// Return the compile unit which contains instruction with provided
   /// address.
   DWARFCompileUnit *getCompileUnitForAddress(uint64_t Address);
