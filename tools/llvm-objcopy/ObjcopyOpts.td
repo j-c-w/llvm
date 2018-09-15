@@ -27,6 +27,9 @@ defm add_gnu_debuglink : Eq<"add-gnu-debuglink">,
 defm remove_section : Eq<"remove-section">,
                       MetaVarName<"section">,
                       HelpText<"Remove <section>">;
+defm rename_section : Eq<"rename-section">,
+                      MetaVarName<"old=new">,
+                      HelpText<"Renames a section from old to new">;
 defm redefine_symbol : Eq<"redefine-sym">,
                        MetaVarName<"old=new">,
                        HelpText<"Change the name of a symbol old to new">;
@@ -92,3 +95,5 @@ def only_keep_debug : Flag<["-", "--"], "only-keep-debug">,
                           HelpText<"Currently ignored. Only for compaitability with GNU objcopy.">;
 def strip_unneeded : Flag<["-", "--"], "strip-unneeded">,
                       HelpText<"Remove all symbols not needed by relocations">;
+def keep_file_symbols : Flag<["-", "--"], "keep-file-symbols">,
+                      HelpText<"Do not remove file symbols">;

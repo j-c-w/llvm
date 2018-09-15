@@ -299,7 +299,8 @@ class LLVMConfig(object):
                 'count'), verbatim=True, unresolved='fatal'),
             ToolSubst(r'\| \bnot\b', command=FindTool('not'), verbatim=True, unresolved='fatal')]
 
-        self.config.substitutions.append(('%python', sys.executable))
+        self.config.substitutions.append(('%python', '"%s"' % (sys.executable)))
+
         self.add_tool_substitutions(
             tool_patterns, [self.config.llvm_tools_dir])
 
@@ -388,7 +389,7 @@ class LLVMConfig(object):
         builtin_include_dir = self.get_clang_builtin_include_dir(self.config.clang)
         tool_substitutions = [
             ToolSubst('%clang', command=self.config.clang),
-            ToolSubst('%clang_analyze_cc1', command='%clang_cc1', extra_args=['-analyze']),
+            ToolSubst('%clang_analyze_cc1', command='%clang_cc1', extra_args=['-analyze', '%analyze']),
             ToolSubst('%clang_cc1', command=self.config.clang, extra_args=['-cc1', '-internal-isystem', builtin_include_dir, '-nostdsysteminc']),
             ToolSubst('%clang_cpp', command=self.config.clang, extra_args=['--driver-mode=cpp']),
             ToolSubst('%clang_cl', command=self.config.clang, extra_args=['--driver-mode=cl']),
