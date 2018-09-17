@@ -1,6 +1,6 @@
 #!/usr/bin/pypy
 
-whitelist = ["Distributive", "HoistSelect", "ForWithIteratorTest"]
+whitelist = ["HoistSelect", "ForWithIteratorTest"]
 whitelist += ["ListInsert"]
 
 def partial_evaluator(syntax, handler, *extras):
