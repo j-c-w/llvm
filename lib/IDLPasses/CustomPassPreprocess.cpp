@@ -192,6 +192,12 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
                 auto innermost_gep = gep_inst;
                 while(auto next_gep = dyn_cast<GetElementPtrInst>(innermost_gep->getPointerOperand()))
                 {
+                    if(reverse_index_vector.back()->getType() !=
+                       next_gep->getOperand(next_gep->getNumOperands()-1)->getType())
+                    {
+                        break;
+                    }
+
                     reverse_index_vector.back() = builder.CreateAdd(reverse_index_vector.back(),
                                                                     next_gep->getOperand(next_gep->getNumOperands()-1));
 
