@@ -19,4 +19,4 @@
 type = Library
 name = IDLPasses
 parent = Libraries
-required_libraries = IDLSolver IDLParser Core Scalar TransformUtils
+required_libraries = IDLSolver IDLParser Scalar TransformUtils Core Support
