@@ -19,3 +19,4 @@
 type = Library
 name = IDLSolver
 parent = Libraries
+required_libraries = Core Support
