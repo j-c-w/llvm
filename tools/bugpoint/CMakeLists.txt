@@ -4,6 +4,7 @@ set(LLVM_LINK_COMPONENTS
   BitWriter
   CodeGen
   Core
+  IDLPasses
   IPO
   IRReader
   AggressiveInstCombine
