@@ -38,7 +38,7 @@
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Analysis/PHITransAddr.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
-#include "llvm/Analysis/Utils/Local.h"
+#include "llvm/Transforms/Utils/Local.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/Config/llvm-config.h"
 #include "llvm/IR/Attributes.h"
@@ -766,6 +766,15 @@ static Value *ConstructSSAForLoadSet(LoadInst *LI,
     if (SSAUpdate.HasValueForBlock(BB))
       continue;
 
+    // If the value is the load that we will be eliminating, and the block it's
+    // available in is the block that the load is in, then don't add it as
+    // SSAUpdater will resolve the value to the relevant phi which may let it
+    // avoid phi construction entirely if there's actually only one value.
+    if (BB == LI->getParent() &&
+        ((AV.AV.isSimpleValue() && AV.AV.getSimpleValue() == LI) ||
+         (AV.AV.isCoercedLoadValue() && AV.AV.getCoercedLoadValue() == LI)))
+      continue;
+
     SSAUpdate.AddAvailableValue(BB, AV.MaterializeAdjustedValue(LI, gvn));
   }
 
@@ -1064,7 +1073,7 @@ bool GVN::PerformLoadPRE(LoadInst *LI, AvailValInBlkVect &ValuesPerBlock,
   // It is illegal to move the array access to any point above the guard,
   // because if the index is out of bounds we should deoptimize rather than
   // access the array.
-  // Check that there is no guard in this block above our intruction.
+  // Check that there is no guard in this block above our instruction.
   if (!IsSafeToSpeculativelyExecute) {
     auto It = FirstImplicitControlFlowInsts.find(TmpBB);
     if (It != FirstImplicitControlFlowInsts.end()) {
