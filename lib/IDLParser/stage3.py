@@ -1,7 +1,11 @@
 #!/usr/bin/pypy
 
-whitelist = ["Distributive", "HoistSelect", "ForWithIteratorTest"]
-whitelist += ["GEMM", "SPMV_CSR", "SPMV_JDS", "VectorAdd", "VectorDot"]
+blacklist = ["SPMV_BASE", "ForNest", "SameSESE", "DotProductLoop",
+             "GeneralDotProduct", "ReadRange", "For", "MatrixStore",
+             "MatrixRead", "VectorStore", "VectorRead", "PermMultidStore",
+             "PermMultidRead", "AffineAccess", "Addition", "Multiplication",
+             "Permute", "Concat", "SumChain", "MulChain", "ArgumentsPermuted",
+             "Loop", "InductionVar", "LocalConst"]
 
 def partial_evaluator(syntax, handler, *extras):
     handler_result = handler(syntax, *extras)
@@ -559,10 +563,10 @@ def generate_cpp_code(syntax_list):
                     +["    my_shared_ptr<T>& operator=(T t) { shared_ptr<T>::operator=(make_shared<T>(move(t))); return *this; }"]
                     +["    my_shared_ptr<T>& operator=(const my_shared_ptr<T>& t) { return *this = *t; }"]
                     +["};"]
-                    +[generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] in whitelist]
+                    +[generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] not in blacklist]
                     +["IdiomSpecification(*GenerateAnalysis(std::string name))(llvm::Function&, unsigned)"]
                     +["{"]
-                    +["    if(name == \""+name+"\") return Detect"+name+";" for name in whitelist]
+                    +["    if(name == \""+syntax[1]+"\") return Detect"+syntax[1]+";" for syntax in syntax_list if syntax[1] not in blacklist]
                     +["    return nullptr;"]
                     +["}"])
 
