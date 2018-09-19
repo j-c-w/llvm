@@ -177,6 +177,9 @@ private:
   /// Are we parsing ms-style inline assembly?
   bool ParsingInlineAsm = false;
 
+  /// Did we already inform the user about inconsistent MD5 usage?
+  bool ReportedInconsistentMD5 = false;
+
 public:
   AsmParser(SourceMgr &SM, MCContext &Ctx, MCStreamer &Out,
             const MCAsmInfo &MAI, unsigned CB);
@@ -503,6 +506,8 @@ private:
     DK_ERROR,
     DK_WARNING,
     DK_PRINT,
+    DK_ADDRSIG,
+    DK_ADDRSIG_SYM,
     DK_END
   };
 
@@ -651,6 +656,10 @@ private:
   // .print <double-quotes-string>
   bool parseDirectivePrint(SMLoc DirectiveLoc);
 
+  // Directives to support address-significance tables.
+  bool parseDirectiveAddrsig();
+  bool parseDirectiveAddrsigSym();
+
   void initializeDirectiveKindMap();
 };
 
@@ -693,8 +702,7 @@ AsmParser::AsmParser(SourceMgr &SM, MCContext &Ctx, MCStreamer &Out,
   case MCObjectFileInfo::IsWasm:
     // TODO: WASM will need its own MCAsmParserExtension implementation, but
     // for now we can re-use the ELF one, since the directives can be the
-    // same for now, and this makes the -triple=wasm32-unknown-unknown-wasm
-    // path work.
+    // same for now.
     PlatformParser.reset(createELFAsmParser());
     break;
   }
@@ -1113,13 +1121,17 @@ bool AsmParser::parsePrimaryExpr(const MCExpr *&Res, SMLoc &EndLoc) {
 
     // If this is an absolute variable reference, substitute it now to preserve
     // semantics in the face of reassignment.
-    if (Sym->isVariable() &&
-        isa<MCConstantExpr>(Sym->getVariableValue(/*SetUsed*/ false))) {
-      if (Variant)
-        return Error(EndLoc, "unexpected modifier on variable reference");
-
-      Res = Sym->getVariableValue(/*SetUsed*/ false);
-      return false;
+    if (Sym->isVariable()) {
+      auto V = Sym->getVariableValue(/*SetUsed*/ false);
+      bool DoInline = isa<MCConstantExpr>(V);
+      if (auto TV = dyn_cast<MCTargetExpr>(V))
+        DoInline = TV->inlineAssignedExpr();
+      if (DoInline) {
+        if (Variant)
+          return Error(EndLoc, "unexpected modifier on variable reference");
+        Res = Sym->getVariableValue(/*SetUsed*/ false);
+        return false;
+      }
     }
 
     // Otherwise create a symbol ref.
@@ -1351,7 +1363,8 @@ void AsmParser::altMacroString(StringRef AltMacroStr,std::string &Res) {
 bool AsmParser::parseExpression(const MCExpr *&Res, SMLoc &EndLoc) {
   // Parse the expression.
   Res = nullptr;
-  if (parsePrimaryExpr(Res, EndLoc) || parseBinOpRHS(1, Res, EndLoc))
+  if (getTargetParser().parsePrimaryExpr(Res, EndLoc) ||
+      parseBinOpRHS(1, Res, EndLoc))
     return true;
 
   // As a special case, we support 'a op b @ modifier' by rewriting the
@@ -1605,7 +1618,7 @@ bool AsmParser::parseBinOpRHS(unsigned Precedence, const MCExpr *&Res,
 
     // Eat the next primary expression.
     const MCExpr *RHS;
-    if (parsePrimaryExpr(RHS, EndLoc))
+    if (getTargetParser().parsePrimaryExpr(RHS, EndLoc))
       return true;
 
     // If BinOp binds less tightly with RHS than the operator after RHS, let
@@ -2121,6 +2134,10 @@ bool AsmParser::parseStatement(ParseStatementInfo &Info,
       return parseDirectiveDS(IDVal, 12);
     case DK_PRINT:
       return parseDirectivePrint(IDLoc);
+    case DK_ADDRSIG:
+      return parseDirectiveAddrsig();
+    case DK_ADDRSIG_SYM:
+      return parseDirectiveAddrsigSym();
     }
 
     return Error(IDLoc, "unknown directive");
@@ -2945,7 +2962,9 @@ bool AsmParser::parseDirectiveReloc(SMLoc DirectiveLoc) {
                  "unexpected token in .reloc directive"))
       return true;
 
-  if (getStreamer().EmitRelocDirective(*Offset, Name, Expr, DirectiveLoc))
+  const MCTargetAsmParser &MCT = getTargetParser();
+  const MCSubtargetInfo &STI = MCT.getSTI();
+  if (getStreamer().EmitRelocDirective(*Offset, Name, Expr, DirectiveLoc, STI))
     return Error(NameLoc, "unknown relocation name");
 
   return false;
@@ -3274,7 +3293,7 @@ bool AsmParser::parseDirectiveFile(SMLoc DirectiveLoc) {
       return TokError("negative file number");
   }
 
-  std::string Path = getTok().getString();
+  std::string Path;
 
   // Usually the directory and filename together, otherwise just the directory.
   // Allow the strings to have escaped octal character sequence.
@@ -3329,13 +3348,17 @@ bool AsmParser::parseDirectiveFile(SMLoc DirectiveLoc) {
     }
   }
 
-  // In case there is a -g option as well as debug info from directive .file,
-  // we turn off the -g option, directly use the existing debug info instead.
-  getContext().setGenDwarfForAssembly(false);
-
   if (FileNumber == -1)
     getStreamer().EmitFileDirective(Filename);
   else {
+    // In case there is a -g option as well as debug info from directive .file,
+    // we turn off the -g option, directly use the existing debug info instead.
+    // Also reset any implicit ".file 0" for the assembler source.
+    if (Ctx.getGenDwarfForAssembly()) {
+      Ctx.getMCDwarfLineTable(0).resetRootFile();
+      Ctx.setGenDwarfForAssembly(false);
+    }
+
     MD5::MD5Result *CKMem = nullptr;
     if (HasMD5) {
       CKMem = (MD5::MD5Result *)Ctx.allocate(sizeof(MD5::MD5Result), 1);
@@ -3349,14 +3372,22 @@ bool AsmParser::parseDirectiveFile(SMLoc DirectiveLoc) {
       memcpy(SourceBuf, SourceString.data(), SourceString.size());
       Source = StringRef(SourceBuf, SourceString.size());
     }
-    if (FileNumber == 0)
+    if (FileNumber == 0) {
+      if (Ctx.getDwarfVersion() < 5)
+        return Warning(DirectiveLoc, "file 0 not supported prior to DWARF-5");
       getStreamer().emitDwarfFile0Directive(Directory, Filename, CKMem, Source);
-    else {
+    } else {
       Expected<unsigned> FileNumOrErr = getStreamer().tryEmitDwarfFileDirective(
           FileNumber, Directory, Filename, CKMem, Source);
       if (!FileNumOrErr)
         return Error(DirectiveLoc, toString(FileNumOrErr.takeError()));
       FileNumber = FileNumOrErr.get();
+    }
+    // Alert the user if there are some .file directives with MD5 and some not.
+    // But only do that once.
+    if (!ReportedInconsistentMD5 && !Ctx.isDwarfMD5UsageConsistent(0)) {
+      ReportedInconsistentMD5 = true;
+      return Warning(DirectiveLoc, "inconsistent use of MD5 checksums");
     }
   }
 
@@ -3391,7 +3422,7 @@ bool AsmParser::parseDirectiveLoc() {
   int64_t FileNumber = 0, LineNumber = 0;
   SMLoc Loc = getTok().getLoc();
   if (parseIntToken(FileNumber, "unexpected token in '.loc' directive") ||
-      check(FileNumber < 1, Loc,
+      check(FileNumber < 1 && Ctx.getDwarfVersion() < 5, Loc,
             "file number less than one in '.loc' directive") ||
       check(!getContext().isValidDwarfFileNumber(FileNumber), Loc,
             "unassigned file number in '.loc' directive"))
@@ -5271,6 +5302,8 @@ void AsmParser::initializeDirectiveKindMap() {
   DirectiveKindMap[".ds.w"] = DK_DS_W;
   DirectiveKindMap[".ds.x"] = DK_DS_X;
   DirectiveKindMap[".print"] = DK_PRINT;
+  DirectiveKindMap[".addrsig"] = DK_ADDRSIG;
+  DirectiveKindMap[".addrsig_sym"] = DK_ADDRSIG_SYM;
 }
 
 MCAsmMacro *AsmParser::parseMacroLikeBody(SMLoc DirectiveLoc) {
@@ -5285,7 +5318,8 @@ MCAsmMacro *AsmParser::parseMacroLikeBody(SMLoc DirectiveLoc) {
     }
 
     if (Lexer.is(AsmToken::Identifier) &&
-        (getTok().getIdentifier() == ".rept" ||
+        (getTok().getIdentifier() == ".rep" ||
+         getTok().getIdentifier() == ".rept" ||
          getTok().getIdentifier() == ".irp" ||
          getTok().getIdentifier() == ".irpc")) {
       ++NestLevel;
@@ -5507,6 +5541,21 @@ bool AsmParser::parseDirectivePrint(SMLoc DirectiveLoc) {
   if (parseToken(AsmToken::EndOfStatement, "expected end of statement"))
     return true;
   llvm::outs() << StrTok.getStringContents() << '\n';
+  return false;
+}
+
+bool AsmParser::parseDirectiveAddrsig() {
+  getStreamer().EmitAddrsig();
+  return false;
+}
+
+bool AsmParser::parseDirectiveAddrsigSym() {
+  StringRef Name;
+  if (check(parseIdentifier(Name),
+            "expected identifier in '.addrsig_sym' directive"))
+    return true;
+  MCSymbol *Sym = getContext().getOrCreateSymbol(Name);
+  getStreamer().EmitAddrsigSym(Sym);
   return false;
 }
 
@@ -5795,10 +5844,8 @@ bool parseAssignmentExpression(StringRef Name, bool allow_redef,
 
   // FIXME: Use better location, we should use proper tokens.
   SMLoc EqualLoc = Parser.getTok().getLoc();
-
-  if (Parser.parseExpression(Value)) {
+  if (Parser.parseExpression(Value))
     return Parser.TokError("missing expression");
-  }
 
   // Note: we don't count b as used in "a = b". This is to allow
   // a = b

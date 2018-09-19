@@ -51,6 +51,7 @@ FunctionPass *createSIMemoryLegalizerPass();
 FunctionPass *createSIDebuggerInsertNopsPass();
 FunctionPass *createSIInsertWaitcntsPass();
 FunctionPass *createSIFixWWMLivenessPass();
+FunctionPass *createSIFormMemoryClausesPass();
 FunctionPass *createAMDGPUSimplifyLibCallsPass(const TargetOptions &);
 FunctionPass *createAMDGPUUseNativeCallsPass();
 FunctionPass *createAMDGPUCodeGenPreparePass();
@@ -71,6 +72,10 @@ extern char &AMDGPUAnnotateKernelFeaturesID;
 ModulePass *createAMDGPULowerIntrinsicsPass();
 void initializeAMDGPULowerIntrinsicsPass(PassRegistry &);
 extern char &AMDGPULowerIntrinsicsID;
+
+FunctionPass *createAMDGPULowerKernelArgumentsPass();
+void initializeAMDGPULowerKernelArgumentsPass(PassRegistry &);
+extern char &AMDGPULowerKernelArgumentsID;
 
 ModulePass *createAMDGPULowerKernelAttributesPass();
 void initializeAMDGPULowerKernelAttributesPass(PassRegistry &);
@@ -136,6 +141,9 @@ extern char &AMDGPUSimplifyLibCallsID;
 void initializeAMDGPUUseNativeCallsPass(PassRegistry &);
 extern char &AMDGPUUseNativeCallsID;
 
+void initializeAMDGPUPerfHintAnalysisPass(PassRegistry &);
+extern char &AMDGPUPerfHintAnalysisID;
+
 // Passes common to R600 and SI
 FunctionPass *createAMDGPUPromoteAlloca();
 void initializeAMDGPUPromoteAllocaPass(PassRegistry&);
@@ -173,6 +181,9 @@ extern char &SIDebuggerInsertNopsID;
 
 void initializeSIInsertWaitcntsPass(PassRegistry&);
 extern char &SIInsertWaitcntsID;
+
+void initializeSIFormMemoryClausesPass(PassRegistry&);
+extern char &SIFormMemoryClausesID;
 
 void initializeAMDGPUUnifyDivergentExitNodesPass(PassRegistry&);
 extern char &AMDGPUUnifyDivergentExitNodesID;
@@ -218,7 +229,7 @@ struct AMDGPUAS {
 
   enum : unsigned {
     // The maximum value for flat, generic, local, private, constant and region.
-    MAX_COMMON_ADDRESS = 5,
+    MAX_AMDGPU_ADDRESS = 6,
 
     GLOBAL_ADDRESS = 1,   ///< Address space for global memory (RAT0, VTX0).
     CONSTANT_ADDRESS = 4, ///< Address space for constant memory (VTX2)

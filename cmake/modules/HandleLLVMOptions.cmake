@@ -149,6 +149,7 @@ endif()
 # is unloaded.
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,nodelete")
+  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-z,nodelete")
 endif()
 
 
@@ -555,7 +556,7 @@ if (LLVM_ENABLE_WARNINGS AND (LLVM_COMPILER_IS_GCC_COMPATIBLE OR CLANG_CL))
     append("-Wall" CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
   endif()
 
-  append("-W -Wno-unused-parameter -Wwrite-strings" CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+  append("-Wextra -Wno-unused-parameter -Wwrite-strings" CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
   append("-Wcast-qual" CMAKE_CXX_FLAGS)
 
   # Turn off missing field initializer warnings for gcc to avoid noise from
@@ -578,6 +579,11 @@ if (LLVM_ENABLE_WARNINGS AND (LLVM_COMPILER_IS_GCC_COMPATIBLE OR CLANG_CL))
   add_flag_if_supported("-Wcovered-switch-default" COVERED_SWITCH_DEFAULT_FLAG)
   append_if(USE_NO_UNINITIALIZED "-Wno-uninitialized" CMAKE_CXX_FLAGS)
   append_if(USE_NO_MAYBE_UNINITIALIZED "-Wno-maybe-uninitialized" CMAKE_CXX_FLAGS)
+
+  # Disable -Wclass-memaccess, a C++-only warning from GCC 8 that fires on
+  # LLVM's ADT classes.
+  check_cxx_compiler_flag("-Wclass-memaccess" CXX_SUPPORTS_CLASS_MEMACCESS_FLAG)
+  append_if(CXX_SUPPORTS_CLASS_MEMACCESS_FLAG "-Wno-class-memaccess" CMAKE_CXX_FLAGS)
 
   # Check if -Wnon-virtual-dtor warns even though the class is marked final.
   # If it does, don't add it. So it won't be added on clang 3.4 and older.
@@ -665,11 +671,6 @@ if(LLVM_USE_SANITIZER)
       append_common_sanitizer_flags()
       append("-fsanitize=undefined -fno-sanitize=vptr,function -fno-sanitize-recover=all"
               CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
-      set(BLACKLIST_FILE "${CMAKE_SOURCE_DIR}/utils/sanitizers/ubsan_blacklist.txt")
-      if (EXISTS "${BLACKLIST_FILE}")
-        append("-fsanitize-blacklist=${BLACKLIST_FILE}"
-	              CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
-      endif()
     elseif (LLVM_USE_SANITIZER STREQUAL "Thread")
       append_common_sanitizer_flags()
       append("-fsanitize=thread" CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
@@ -700,6 +701,13 @@ if(LLVM_USE_SANITIZER)
   endif()
   if (LLVM_USE_SANITIZE_COVERAGE)
     append("-fsanitize=fuzzer-no-link" CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+  endif()
+  if (LLVM_USE_SANITIZER MATCHES ".*Undefined.*")
+    set(BLACKLIST_FILE "${CMAKE_SOURCE_DIR}/utils/sanitizers/ubsan_blacklist.txt")
+    if (EXISTS "${BLACKLIST_FILE}")
+      append("-fsanitize-blacklist=${BLACKLIST_FILE}"
+             CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+    endif()
   endif()
 endif()
 

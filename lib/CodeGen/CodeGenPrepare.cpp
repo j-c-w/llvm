@@ -30,7 +30,7 @@
 #include "llvm/Analysis/ProfileSummaryInfo.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
-#include "llvm/Analysis/Utils/Local.h"
+#include "llvm/Transforms/Utils/Local.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/CodeGen/Analysis.h"
 #include "llvm/CodeGen/ISDOpcodes.h"
@@ -223,8 +223,17 @@ static cl::opt<bool>
 
 namespace {
 
+enum ExtType {
+  ZeroExtension,   // Zero extension has been seen.
+  SignExtension,   // Sign extension has been seen.
+  BothExtension    // This extension type is used if we saw sext after
+                   // ZeroExtension had been set, or if we saw zext after
+                   // SignExtension had been set. It makes the type
+                   // information of a promoted instruction invalid.
+};
+
 using SetOfInstrs = SmallPtrSet<Instruction *, 16>;
-using TypeIsSExt = PointerIntPair<Type *, 1, bool>;
+using TypeIsSExt = PointerIntPair<Type *, 2, ExtType>;
 using InstrToOrigTy = DenseMap<Instruction *, TypeIsSExt>;
 using SExts = SmallVector<Instruction *, 16>;
 using ValueToSExts = DenseMap<Value *, SExts>;
@@ -321,16 +330,16 @@ class TypePromotionTransaction;
                                        bool isPreheader);
     bool optimizeBlock(BasicBlock &BB, bool &ModifiedDT);
     bool optimizeInst(Instruction *I, bool &ModifiedDT);
-    bool optimizeMemoryInst(Instruction *I, Value *Addr,
-                            Type *AccessTy, unsigned AS);
+    bool optimizeMemoryInst(Instruction *MemoryInst, Value *Addr,
+                            Type *AccessTy, unsigned AddrSpace);
     bool optimizeInlineAsmInst(CallInst *CS);
     bool optimizeCallInst(CallInst *CI, bool &ModifiedDT);
     bool optimizeExt(Instruction *&I);
     bool optimizeExtUses(Instruction *I);
-    bool optimizeLoadExt(LoadInst *I);
+    bool optimizeLoadExt(LoadInst *Load);
     bool optimizeSelectInst(SelectInst *SI);
-    bool optimizeShuffleVectorInst(ShuffleVectorInst *SI);
-    bool optimizeSwitchInst(SwitchInst *CI);
+    bool optimizeShuffleVectorInst(ShuffleVectorInst *SVI);
+    bool optimizeSwitchInst(SwitchInst *SI);
     bool optimizeExtractElementInst(Instruction *Inst);
     bool dupRetToEnableTailCallOpts(BasicBlock *BB);
     bool placeDbgValues(Function &F);
@@ -462,7 +471,10 @@ bool CodeGenPrepare::runOnFunction(Function &F) {
 
   if (!DisableBranchOpts) {
     MadeChange = false;
-    SmallPtrSet<BasicBlock*, 8> WorkList;
+    // Use a set vector to get deterministic iteration order. The order the
+    // blocks are removed may affect whether or not PHI nodes in successors
+    // are removed.
+    SmallSetVector<BasicBlock*, 8> WorkList;
     for (BasicBlock &BB : F) {
       SmallVector<BasicBlock *, 2> Successors(succ_begin(&BB), succ_end(&BB));
       MadeChange |= ConstantFoldTerminator(&BB, true);
@@ -477,8 +489,7 @@ bool CodeGenPrepare::runOnFunction(Function &F) {
     // Delete the dead blocks and any of their dead successors.
     MadeChange |= !WorkList.empty();
     while (!WorkList.empty()) {
-      BasicBlock *BB = *WorkList.begin();
-      WorkList.erase(BB);
+      BasicBlock *BB = WorkList.pop_back_val();
       SmallVector<BasicBlock*, 2> Successors(succ_begin(BB), succ_end(BB));
 
       DeleteDeadBlock(BB);
@@ -516,8 +527,16 @@ bool CodeGenPrepare::runOnFunction(Function &F) {
 bool CodeGenPrepare::eliminateFallThrough(Function &F) {
   bool Changed = false;
   // Scan all of the blocks in the function, except for the entry block.
-  for (Function::iterator I = std::next(F.begin()), E = F.end(); I != E;) {
-    BasicBlock *BB = &*I++;
+  // Use a temporary array to avoid iterator being invalidated when
+  // deleting blocks.
+  SmallVector<WeakTrackingVH, 16> Blocks;
+  for (auto &Block : llvm::make_range(std::next(F.begin()), F.end()))
+    Blocks.push_back(&Block);
+
+  for (auto &Block : Blocks) {
+    auto *BB = cast_or_null<BasicBlock>(Block);
+    if (!BB)
+      continue;
     // If the destination block has a single pred, then this is a trivial
     // edge, just collapse it.
     BasicBlock *SinglePred = BB->getSinglePredecessor();
@@ -528,17 +547,10 @@ bool CodeGenPrepare::eliminateFallThrough(Function &F) {
     BranchInst *Term = dyn_cast<BranchInst>(SinglePred->getTerminator());
     if (Term && !Term->isConditional()) {
       Changed = true;
-      LLVM_DEBUG(dbgs() << "To merge:\n" << *SinglePred << "\n\n\n");
-      // Remember if SinglePred was the entry block of the function.
-      // If so, we will need to move BB back to the entry position.
-      bool isEntry = SinglePred == &SinglePred->getParent()->getEntryBlock();
-      MergeBasicBlockIntoOnlyPred(BB, nullptr);
+      LLVM_DEBUG(dbgs() << "To merge:\n" << *BB << "\n\n\n");
 
-      if (isEntry && BB != &BB->getParent()->getEntryBlock())
-        BB->moveBefore(&BB->getParent()->getEntryBlock());
-
-      // We have erased a block. Update the iterator.
-      I = BB->getIterator();
+      // Merge BB into SinglePred and delete it.
+      MergeBlockIntoPredecessor(BB);
     }
   }
   return Changed;
@@ -591,9 +603,17 @@ bool CodeGenPrepare::eliminateMostlyEmptyBlocks(Function &F) {
   }
 
   bool MadeChange = false;
+  // Copy blocks into a temporary array to avoid iterator invalidation issues
+  // as we remove them.
   // Note that this intentionally skips the entry block.
-  for (Function::iterator I = std::next(F.begin()), E = F.end(); I != E;) {
-    BasicBlock *BB = &*I++;
+  SmallVector<WeakTrackingVH, 16> Blocks;
+  for (auto &Block : llvm::make_range(std::next(F.begin()), F.end()))
+    Blocks.push_back(&Block);
+
+  for (auto &Block : Blocks) {
+    BasicBlock *BB = cast_or_null<BasicBlock>(Block);
+    if (!BB)
+      continue;
     BasicBlock *DestBB = findDestBlockOfMergeableEmptyBlock(BB);
     if (!DestBB ||
         !isMergingEmptyBlockProfitable(BB, DestBB, Preheaders.count(BB)))
@@ -762,15 +782,13 @@ void CodeGenPrepare::eliminateMostlyEmptyBlock(BasicBlock *BB) {
   // just collapse it.
   if (BasicBlock *SinglePred = DestBB->getSinglePredecessor()) {
     if (SinglePred != DestBB) {
-      // Remember if SinglePred was the entry block of the function.  If so, we
-      // will need to move BB back to the entry position.
-      bool isEntry = SinglePred == &SinglePred->getParent()->getEntryBlock();
-      MergeBasicBlockIntoOnlyPred(DestBB, nullptr);
-
-      if (isEntry && BB != &BB->getParent()->getEntryBlock())
-        BB->moveBefore(&BB->getParent()->getEntryBlock());
-
-      LLVM_DEBUG(dbgs() << "AFTER:\n" << *DestBB << "\n\n\n");
+      assert(SinglePred == BB &&
+             "Single predecessor not the same as predecessor");
+      // Merge DestBB into SinglePred/BB and delete it.
+      MergeBlockIntoPredecessor(DestBB);
+      // Note: BB(=SinglePred) will not be deleted on this path.
+      // DestBB(=its single successor) is the one that was deleted.
+      LLVM_DEBUG(dbgs() << "AFTER:\n" << *SinglePred << "\n\n\n");
       return;
     }
   }
@@ -1415,7 +1433,7 @@ SinkShiftAndTruncate(BinaryOperator *ShiftI, Instruction *User, ConstantInt *CI,
 ///   %x.extract.shift.1 = lshr i64 %arg1, 32
 ///   %x.extract.trunc = trunc i64 %x.extract.shift.1 to i16
 ///
-/// CodeGen will recoginze the pattern in BB2 and generate BitExtract
+/// CodeGen will recognize the pattern in BB2 and generate BitExtract
 /// instruction.
 /// Return true if any changes are made.
 static bool OptimizeExtractBits(BinaryOperator *ShiftI, ConstantInt *CI,
@@ -1461,7 +1479,7 @@ static bool OptimizeExtractBits(BinaryOperator *ShiftI, ConstantInt *CI,
       // cmp i16 trunc.result, opnd2
       //
       if (isa<TruncInst>(User) && shiftIsLegal
-          // If the type of the truncate is legal, no trucate will be
+          // If the type of the truncate is legal, no truncate will be
           // introduced in other basic blocks.
           &&
           (!TLI.isTypeLegal(TLI.getValueType(DL, User->getType()))))
@@ -1695,6 +1713,7 @@ bool CodeGenPrepare::optimizeCallInst(CallInst *CI, bool &ModifiedDT) {
       return true;
     }
     case Intrinsic::launder_invariant_group:
+    case Intrinsic::strip_invariant_group:
       II->replaceAllUsesWith(II->getArgOperand(0));
       II->eraseFromParent();
       return true;
@@ -2087,7 +2106,7 @@ class TypePromotionTransaction {
     /// Position of an instruction.
     /// Either an instruction:
     /// - Is the first in a basic block: BB is used.
-    /// - Has a previous instructon: PrevInst is used.
+    /// - Has a previous instruction: PrevInst is used.
     union {
       Instruction *PrevInst;
       BasicBlock *BB;
@@ -2362,7 +2381,7 @@ class TypePromotionTransaction {
     SetOfInstrs &RemovedInsts;
 
   public:
-    /// Remove all reference of \p Inst and optinally replace all its
+    /// Remove all reference of \p Inst and optionally replace all its
     /// uses with New.
     /// \p RemovedInsts Keep track of the instructions removed by this Action.
     /// \pre If !Inst->use_empty(), then New != nullptr
@@ -2602,8 +2621,8 @@ public:
 
 private:
   bool matchScaledValue(Value *ScaleReg, int64_t Scale, unsigned Depth);
-  bool matchAddr(Value *V, unsigned Depth);
-  bool matchOperationAddr(User *Operation, unsigned Opcode, unsigned Depth,
+  bool matchAddr(Value *Addr, unsigned Depth);
+  bool matchOperationAddr(User *AddrInst, unsigned Opcode, unsigned Depth,
                           bool *MovedAway = nullptr);
   bool isProfitableToFoldIntoAddressingMode(Instruction *I,
                                             ExtAddrMode &AMBefore,
@@ -2863,7 +2882,7 @@ private:
 
   /// We have mapping between value A and basic block where value A
   /// seen to other value B where B was a field in addressing mode represented
-  /// by A. Also we have an original value C representin an address in some
+  /// by A. Also we have an original value C representing an address in some
   /// basic block. Traversing from C through phi and selects we ended up with
   /// A's in a map. This utility function tries to find a value V which is a
   /// field in addressing mode C and traversing through phi nodes and selects
@@ -3225,7 +3244,7 @@ static bool MightBeFoldableInst(Instruction *I) {
     // Don't touch identity bitcasts.
     if (I->getType() == I->getOperand(0)->getType())
       return false;
-    return I->getType()->isPointerTy() || I->getType()->isIntegerTy();
+    return I->getType()->isIntOrPtrTy();
   case Instruction::PtrToInt:
     // PtrToInt is always a noop, as we know that the int type is pointer sized.
     return true;
@@ -3267,6 +3286,41 @@ namespace {
 
 /// Hepler class to perform type promotion.
 class TypePromotionHelper {
+  /// Utility function to add a promoted instruction \p ExtOpnd to
+  /// \p PromotedInsts and record the type of extension we have seen.
+  static void addPromotedInst(InstrToOrigTy &PromotedInsts,
+                              Instruction *ExtOpnd,
+                              bool IsSExt) {
+    ExtType ExtTy = IsSExt ? SignExtension : ZeroExtension;
+    InstrToOrigTy::iterator It = PromotedInsts.find(ExtOpnd);
+    if (It != PromotedInsts.end()) {
+      // If the new extension is same as original, the information in
+      // PromotedInsts[ExtOpnd] is still correct.
+      if (It->second.getInt() == ExtTy)
+        return;
+
+      // Now the new extension is different from old extension, we make
+      // the type information invalid by setting extension type to
+      // BothExtension.
+      ExtTy = BothExtension;
+    }
+    PromotedInsts[ExtOpnd] = TypeIsSExt(ExtOpnd->getType(), ExtTy);
+  }
+
+  /// Utility function to query the original type of instruction \p Opnd
+  /// with a matched extension type. If the extension doesn't match, we
+  /// cannot use the information we had on the original type.
+  /// BothExtension doesn't match any extension type.
+  static const Type *getOrigType(const InstrToOrigTy &PromotedInsts,
+                                 Instruction *Opnd,
+                                 bool IsSExt) {
+    ExtType ExtTy = IsSExt ? SignExtension : ZeroExtension;
+    InstrToOrigTy::const_iterator It = PromotedInsts.find(Opnd);
+    if (It != PromotedInsts.end() && It->second.getInt() == ExtTy)
+      return It->second.getPointer();
+    return nullptr;
+  }
+
   /// Utility function to check whether or not a sign or zero extension
   /// of \p Inst with \p ConsideredExtType can be moved through \p Inst by
   /// either using the operands of \p Inst or promoting \p Inst.
@@ -3348,7 +3402,7 @@ public:
                             SmallVectorImpl<Instruction *> *Truncs,
                             const TargetLowering &TLI);
 
-  /// Given a sign/zero extend instruction \p Ext, return the approriate
+  /// Given a sign/zero extend instruction \p Ext, return the appropriate
   /// action to promote the operand of \p Ext instead of using Ext.
   /// \return NULL if no promotable action is possible with the current
   /// sign extension.
@@ -3455,10 +3509,9 @@ bool TypePromotionHelper::canGetThrough(const Instruction *Inst,
   // I.e., check that trunc just drops extended bits of the same kind of
   // the extension.
   // #1 get the type of the operand and check the kind of the extended bits.
-  const Type *OpndType;
-  InstrToOrigTy::const_iterator It = PromotedInsts.find(Opnd);
-  if (It != PromotedInsts.end() && It->second.getInt() == IsSExt)
-    OpndType = It->second.getPointer();
+  const Type *OpndType = getOrigType(PromotedInsts, Opnd, IsSExt);
+  if (OpndType)
+    ;
   else if ((IsSExt && isa<SExtInst>(Opnd)) || (!IsSExt && isa<ZExtInst>(Opnd)))
     OpndType = Opnd->getOperand(0)->getType();
   else
@@ -3586,8 +3639,7 @@ Value *TypePromotionHelper::promoteOperandForOther(
 
   // Remember the original type of the instruction before promotion.
   // This is useful to know that the high bits are sign extended bits.
-  PromotedInsts.insert(std::pair<Instruction *, TypeIsSExt>(
-      ExtOpnd, TypeIsSExt(ExtOpnd->getType(), IsSExt)));
+  addPromotedInst(PromotedInsts, ExtOpnd, IsSExt);
   // Step #1.
   TPT.mutateType(ExtOpnd, Ext->getType());
   // Step #2.
@@ -3621,7 +3673,7 @@ Value *TypePromotionHelper::promoteOperandForOther(
       continue;
     }
 
-    // Otherwise we have to explicity sign extend the operand.
+    // Otherwise we have to explicitly sign extend the operand.
     // Check if Ext was reused to extend an operand.
     if (!ExtForOpnd) {
       // If yes, create a new one.
@@ -3713,8 +3765,7 @@ bool AddressingModeMatcher::matchOperationAddr(User *AddrInst, unsigned Opcode,
   case Instruction::BitCast:
     // BitCast is always a noop, and we can handle it as long as it is
     // int->int or pointer->pointer (we don't want int<->fp or something).
-    if ((AddrInst->getOperand(0)->getType()->isPointerTy() ||
-         AddrInst->getOperand(0)->getType()->isIntegerTy()) &&
+    if (AddrInst->getOperand(0)->getType()->isIntOrPtrTy() &&
         // Don't touch identity bitcasts.  These were probably put here by LSR,
         // and we don't want to mess around with them.  Assume it knows what it
         // is doing.
@@ -4866,7 +4917,7 @@ bool CodeGenPrepare::mergeSExts(Function &F) {
         }
         if (!DT.dominates(Pt, Inst))
           // Give up if we need to merge in a common dominator as the
-          // expermients show it is not profitable.
+          // experiments show it is not profitable.
           continue;
         Inst->replaceAllUsesWith(Pt);
         RemovedInsts.insert(Inst);
@@ -5339,8 +5390,7 @@ bool CodeGenPrepare::optimizeExtUses(Instruction *I) {
 //   x = phi x1', x2'
 //   y = and x, 0xff
 bool CodeGenPrepare::optimizeLoadExt(LoadInst *Load) {
-  if (!Load->isSimple() ||
-      !(Load->getType()->isIntegerTy() || Load->getType()->isPointerTy()))
+  if (!Load->isSimple() || !Load->getType()->isIntOrPtrTy())
     return false;
 
   // Skip loads we've already transformed.
@@ -6178,7 +6228,7 @@ bool CodeGenPrepare::optimizeExtractElementInst(Instruction *Inst) {
 
 /// For the instruction sequence of store below, F and I values
 /// are bundled together as an i64 value before being stored into memory.
-/// Sometimes it is more efficent to generate separate stores for F and I,
+/// Sometimes it is more efficient to generate separate stores for F and I,
 /// which can remove the bitwise instructions or sink them to colder places.
 ///
 ///   (store (or (zext (bitcast F to i32) to i64),
@@ -6756,8 +6806,8 @@ bool CodeGenPrepare::splitBranchCondition(Function &F) {
     Br1->setCondition(Cond1);
     LogicOp->eraseFromParent();
 
-    // Depending on the conditon we have to either replace the true or the false
-    // successor of the original branch instruction.
+    // Depending on the condition we have to either replace the true or the
+    // false successor of the original branch instruction.
     if (Opc == Instruction::And)
       Br1->setSuccessor(0, TmpBB);
     else
@@ -6810,8 +6860,8 @@ bool CodeGenPrepare::splitBranchCondition(Function &F) {
       // We have flexibility in setting Prob for BB1 and Prob for NewBB.
       // The requirement is that
       //   TrueProb for BB1 + (FalseProb for BB1 * TrueProb for TmpBB)
-      //     = TrueProb for orignal BB.
-      // Assuming the orignal weights are A and B, one choice is to set BB1's
+      //     = TrueProb for original BB.
+      // Assuming the original weights are A and B, one choice is to set BB1's
       // weights to A and A+2B, and set TmpBB's weights to A and 2B. This choice
       // assumes that
       //   TrueProb for BB1 == FalseProb for BB1 * TrueProb for TmpBB.
@@ -6845,8 +6895,8 @@ bool CodeGenPrepare::splitBranchCondition(Function &F) {
       // We have flexibility in setting Prob for BB1 and Prob for TmpBB.
       // The requirement is that
       //   FalseProb for BB1 + (TrueProb for BB1 * FalseProb for TmpBB)
-      //     = FalseProb for orignal BB.
-      // Assuming the orignal weights are A and B, one choice is to set BB1's
+      //     = FalseProb for original BB.
+      // Assuming the original weights are A and B, one choice is to set BB1's
       // weights to 2A+B and B, and set TmpBB's weights to 2A and B. This choice
       // assumes that
       //   FalseProb for BB1 == TrueProb for BB1 * FalseProb for TmpBB.

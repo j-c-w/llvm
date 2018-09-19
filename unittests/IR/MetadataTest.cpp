@@ -1051,7 +1051,7 @@ TEST_F(DITypeTest, clone) {
   EXPECT_EQ(N, MDNode::replaceWithUniqued(std::move(Temp)));
 }
 
-TEST_F(DITypeTest, setFlags) {
+TEST_F(DITypeTest, cloneWithFlags) {
   // void (void)
   Metadata *TypesOps[] = {nullptr};
   Metadata *Types = MDTuple::get(Context, TypesOps);
@@ -1059,17 +1059,15 @@ TEST_F(DITypeTest, setFlags) {
   DIType *D =
       DISubroutineType::getDistinct(Context, DINode::FlagZero, 0, Types);
   EXPECT_EQ(DINode::FlagZero, D->getFlags());
-  D->setFlags(DINode::FlagRValueReference);
-  EXPECT_EQ(DINode::FlagRValueReference, D->getFlags());
-  D->setFlags(DINode::FlagZero);
+  TempDIType D2 = D->cloneWithFlags(DINode::FlagRValueReference);
+  EXPECT_EQ(DINode::FlagRValueReference, D2->getFlags());
   EXPECT_EQ(DINode::FlagZero, D->getFlags());
 
   TempDIType T =
       DISubroutineType::getTemporary(Context, DINode::FlagZero, 0, Types);
   EXPECT_EQ(DINode::FlagZero, T->getFlags());
-  T->setFlags(DINode::FlagRValueReference);
-  EXPECT_EQ(DINode::FlagRValueReference, T->getFlags());
-  T->setFlags(DINode::FlagZero);
+  TempDIType T2 = T->cloneWithFlags(DINode::FlagRValueReference);
+  EXPECT_EQ(DINode::FlagRValueReference, T2->getFlags());
   EXPECT_EQ(DINode::FlagZero, T->getFlags());
 }
 
@@ -2113,14 +2111,20 @@ TEST_F(DIExpressionTest, get) {
   // Test DIExpression::prepend().
   uint64_t Elts0[] = {dwarf::DW_OP_LLVM_fragment, 0, 32};
   auto *N0 = DIExpression::get(Context, Elts0);
-  N0 = DIExpression::prepend(N0, true, 64, true, true);
+  auto *N0WithPrependedOps = DIExpression::prepend(N0, true, 64, true, true);
   uint64_t Elts1[] = {dwarf::DW_OP_deref,
                       dwarf::DW_OP_plus_uconst, 64,
                       dwarf::DW_OP_deref,
                       dwarf::DW_OP_stack_value,
                       dwarf::DW_OP_LLVM_fragment, 0, 32};
   auto *N1 = DIExpression::get(Context, Elts1);
-  EXPECT_EQ(N0, N1);
+  EXPECT_EQ(N0WithPrependedOps, N1);
+
+  // Test DIExpression::append().
+  uint64_t Elts2[] = {dwarf::DW_OP_deref, dwarf::DW_OP_plus_uconst, 64,
+                      dwarf::DW_OP_deref, dwarf::DW_OP_stack_value};
+  auto *N2 = DIExpression::append(N0, Elts2);
+  EXPECT_EQ(N0WithPrependedOps, N2);
 }
 
 TEST_F(DIExpressionTest, isValid) {
