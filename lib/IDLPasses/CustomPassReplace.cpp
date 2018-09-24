@@ -75,20 +75,19 @@ bool ResearchReplacer::runOnModule(Module& module)
                 for(auto& solution : GenerateAnalysis(idiom)(function, 100))
                 {
                     unsigned line_begin = 999;
-
                     if(auto precursor = dyn_cast_or_null<Instruction>((Value*)solution["precursor"]))
                         if(auto& debugloc = precursor->getDebugLoc())
                             line_begin = debugloc.getLine();
 
-                    ofs<<(first_hit1?"\n":", {\n");
+                    ofs<<(first_hit1?"{\n":", {\n");
                     ofs<<"    \"function\": \""<<(std::string)function.getName()<<"\",\n";
                     ofs<<"    \"line\": "<<line_begin<<",\n";
                     ofs<<"    \"type\": \""<<idiom<<"\",\n";
-                    ofs<<"    \"solution\":\n    ";
+                    ofs<<"    \"solution\":\n     ";
                     for(char c : solution.prune().print_json(slot_tracker))
                     {
                         ofs.put(c);
-                        if(c == '\n') ofs<<"    ";
+                        if(c == '\n') ofs<<"     ";
                     }
                     ofs<<"\n  }";
                     first_hit1 = false;
