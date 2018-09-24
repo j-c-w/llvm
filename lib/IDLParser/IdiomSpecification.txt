@@ -129,13 +129,16 @@ End
 # These are some buidling blocks for the toplevel constraints.
 
 Constraint ForNest
-( inherits For with {iterator[0]} as {iterator} at {loop[0]} and
-  inherits SameSESE with {loop[0]} as {other} and
-  ( inherits For with {iterator[i+1]} as {iterator} at {loop[i+1]} and
-    {loop[i].begin} strictly control flow dominates {loop[i+1].begin} and
-    all control flow from {loop[i+1].begin} to {loop[i+1].precursor} passes through {loop[i].begin} and
-    {loop[i].end} strictly control flow post dominates {loop[i+1].end}) for all i=0..N-1 and
-  inherits SameSESE with {loop[N-1].body} as {other} at {body})
+( inherits For with {iterator[0]} as {iterator} at {for[0]} and
+  {begin} is the same as {for[0].begin} and
+  {successor} is the same as {for[0].successor} and
+  ( inherits For with {iterator[i+1]} as {iterator} at {for[i+1]} and
+    {for[i].loop.begin} spans block to {blockend[i]} and
+    ( {blockend[i]} is the same as {for[i+1].begin} or
+      ( {blockend[i]} has control flow to {for[i+1].begin} and
+        {blockend[i]} control flow dominates {for[i+1].begin} and
+        {for[i+1].begin} strictly control flow post dominates {blockend[i]})) and
+    {for[i+1].successor} spans block to {for[i].loop.end}) for all i=0..N-1)
 End
 
 Constraint SameSESE
@@ -158,7 +161,7 @@ Constraint DotProductLoop
   inherits Addition with {scaled_reduc} as {input}
                      and {final_value}  as {value}
                      and {scaled_prev}  as {addend} and
-  inherits Multiplication with {raw_final2}    as {input}
+  inherits Multiplication with {raw_final2}   as {input}
                            and {scaled_reduc} as {value}
                            and {alpha}        as {multiplier} and
   inherits LocalConst with {alpha} as {value} and
@@ -174,7 +177,7 @@ End
 
 Constraint GeneralDotProduct
 ( inherits For and
-  {new_ind} reaches phi node {old_ind} from {end} and
+  inherits InductionVar and
   {new_ind} is fadd instruction and
   inherits ArgumentsPermuted with {new_ind}  as {dst}
                               and {old_ind}  as {src1}
@@ -203,50 +206,54 @@ Constraint ReadRange
 End
 
 Constraint For
-( inherits Loop at {body} and
-  {comparison} has data flow to {body.end} and
+( inherits Loop at {loop} and
+
+  inherits InductionVar with {iterator}  as {old_ind}
+                         and {increment} as {new_ind}
+                         and {loop.end}  as {end} and
+  {increment} has data flow to {comparison} and
+  {iterator} is phi instruction and
   {comparison} is icmp instruction and
-  inherits ArgumentsPermuted
-      with {comparison} as {dst}
-       and {increment}  as {src1}
-       and {iter_end}   as {src2} and
+  {comparison} has data flow to {loop.end} and
+  {increment} has data flow to {iterator} and
   {increment} is add instruction and
-  inherits ArgumentsPermuted
-      with {increment} as {dst}
-       and {iterator}  as {src1}
-       and {iter_step} as {src2} and
-  {increment} reaches
-     phi node {iterator}
-         from {body.end} and
-  {iter_begin} reaches
-      phi node {iterator}
-          from {body.precursor} and
-  inherits LocalConst
-      with {iter_end}   as {value}
-       and {body.begin} as {begin} and
-  inherits LocalConst
-      with {iter_begin} as {value}
-       and {body.begin} as {begin} and
-  inherits LocalConst
-      with {iter_step}  as {value}
-       and {body.begin} as {begin} and
+  {iterator} has data flow to {increment} and
+  {iter_end} has data flow to {comparison} and
+  inherits LocalConst with {iter_end}   as {value}
+                       and {loop.begin} as {begin} and
+  {iter_begin} has data flow to {iterator} and
+  inherits LocalConst with {iter_begin} as {value}
+                       and {loop.begin} as {begin} and
+  {iter_step} has data flow to {increment} and
+  inherits LocalConst with {iter_step}  as {value}
+                       and {loop.begin} as {begin} and
 
-  collect i 8
-  ( {preheader[i].precursor} has control flow to {body.successor}# and
-#    {preheader[i].precursor} control flow dominates {body.begin} and
-#    {preheader[i].precursor} has control flow to {preheader[i].begin} and
-#    {body.begin} control flow post dominates {preheader[i].begin} and
+  collect i 1
+  ( ( ( {loop.begin} control flow post dominates {loop.precursor} and
+        {optional.preheader[i]} spans block to {loop.precursor}) or
+      ( {loop.precursor} has control flow to {loop.begin} and
+        {optional.preheader[i]} is the same as {loop.begin})) and
+    {optional.condjump[i]} has control flow to {optional.preheader[i]} and
+    {optional.condjump[i]} strictly control flow dominates {optional.preheader[i]} and
+    {optional.condjump[i]} has control flow to {optional.condtarget[i]} and
+    {optional.comparison[i]} has data flow to {optional.condjump[i]} and
+    {optional.comparison[i]} is icmp instruction and
+    {iter_end} has data flow to {optional.comparison[i]} and
+    ( ( {optional.condtarget[i]} is the same as {loop.successor} and
+        {optional.innerend[i]} is unused) or
+      ( {loop.successor} spans block to {optional.innerend[i]} and
+        {optional.innerend[i]} has control flow to {optional.condtarget[i]}))) and
 
-#    {preheader[i].end} is the same as {body.precursor} and
-#    {preheader[i].successor} is the same as {body.begin} and
-
-
-#    {pretest[i]} has data flow to {preheader[i].precursor} and
-#    {preheader[i].begin} 
-#    {pretest[i]} is icmp instruction and
-#    {iter_end} has data flow to {pretest[i]} and
-#    {body.precursor} has control flow to {successor}
-))
+  ( ( {optional.condjump[0]} is unused and
+      {begin} is the same as {loop.begin}) or
+    ( {optional.condjump[0]} is branch instruction and
+      {begin} is the same as {optional.condjump[0]} and
+      {loop.begin} is instruction)) and
+  ( ( {optional.condtarget[0]} is unused and
+      {successor} is the same as {loop.successor}) or
+    ( {optional.condtarget[0]} is instruction and
+      {loop.successor} is instruction and
+      {successor} is the same as {optional.condtarget[0]})))
 End
 
 Constraint ConditionalReadModifyWrite
@@ -501,43 +508,29 @@ Constraint ForWithIteratorTest
                          and {increment} as {new_ind} and
   {increment} has data flow to {iterator} and
   {increment} is add instruction and
-  inherits ArgumentsPermuted
-      with {increment} as {dst}
-       and {iterator}  as {src1}
-       and {iter_step} as {src2} and
-  {iter_begin} reaches
-      phi node {iterator}
-          from {precursor} and
-  inherits LocalConst
-      with {iter_end} as {value}
-       and {begin}    as {begin} and
-  inherits LocalConst
-      with {iter_begin} as {value}
-       and {begin}      as {begin} and
-  inherits LocalConst
-      with {iter_step} as {value}
-       and {begin}     as {begin})
+  {iterator} has data flow to {increment} and
+  {iter_end} has data flow to {comparison} and
+  inherits LocalConst with {iter_end} as {value}
+                       and {begin}    as {begin} and
+  {iter_begin} has data flow to {iterator} and
+  inherits LocalConst with {iter_begin} as {value}
+                       and {begin}      as {begin} and
+  {iter_step} has data flow to {increment} and
+  inherits LocalConst with {iter_step} as {value}
+                       and {begin}     as {begin})
 End
 
 Constraint Loop
-( {end} is branch instruction and
-  ( ( {begin} is first successor of {end} and
-      {successor} is second successor of {end}) or
-    ( {begin} is second successor of {end} and
-      {successor} is first successor of {end})) and
-  {begin} control flow dominates {end} and
-  {end} control flow post dominates {begin} and
-  {successor} strictly control flow post dominates {end} and
-  {precursor} has control flow to {begin} and
-  {precursor} is branch instruction and
-  {precursor} strictly control flow dominates {begin} and
-  all control flow from {begin} to {precursor} passes through {end} and
-  all control flow from {successor} to {end} passes through {begin}# and
-#  {body.begin} is the same as {begin} and
-#  {body.end} is the same as {end} and
-#  {body.precursor} is the same as {precursor} and
-#  {body.successor} is the same as {successor}
-)
+( inherits SESE and
+  {body.begin} is the same as {begin} and
+  {body.end} is the same as {end} and
+  {body.precursor} is the same as {precursor} and
+  {body.successor} is the same as {successor} and
+  {end} has control flow to {begin})
+End
+
+Constraint InductionVar
+{new_ind} reaches phi node {old_ind} from {end}
 End
 
 Constraint LocalConst
@@ -546,4 +539,17 @@ Constraint LocalConst
   {value} strictly control flow dominates {begin} or
   ( {begin} is instruction and
     {value} is unused))
+End
+
+Constraint SESE
+( {precursor} is branch instruction and
+  {precursor} has control flow to {begin} and
+  {end} is branch instruction and
+  {end} has control flow to {successor} and
+  {begin} control flow dominates {end} and
+  {end} control flow post dominates {begin} and
+  {precursor} strictly control flow dominates {begin} and
+  {successor} strictly control flow post dominates {end} and
+  all control flow from {begin} to {precursor} passes through {end} and
+  all control flow from {successor} to {end} passes through {begin})
 End
