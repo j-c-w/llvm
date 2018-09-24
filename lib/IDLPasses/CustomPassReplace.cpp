@@ -63,53 +63,56 @@ bool ResearchReplacer::runOnModule(Module& module)
     std::stringstream sstr;
     sstr<<"replace-report-"<<filename<<".json";
     std::ofstream ofs(sstr.str().c_str());
-    ofs<<"{\"filename\": \""<<(std::string)module.getName()<<"\",\n \"detected\": [";
+    ofs<<"{ \"filename\": \""<<(std::string)module.getName()<<"\",\n \"detected\": [";
 
     char first_hit1 = true;
     for(Function& function : module.getFunctionList())
     {
-        for(auto& idiom : std::vector<std::string>{"GEMM", "SPMV_CSR", "SPMV_JDS", "VectorAdd", "VectorDot"})
+        if(!function.isDeclaration())
         {
-            for(auto& solution : GenerateAnalysis(idiom)(function, 100))
+            for(auto& idiom : std::vector<std::string>{"GEMM", "SPMV_CSR", "SPMV_JDS", "VectorAdd", "VectorDot"})
             {
-                unsigned line_begin = 999;
-
-                if(auto precursor = dyn_cast_or_null<Instruction>((Value*)solution["precursor"]))
-                    if(auto& debugloc = precursor->getDebugLoc())
-                        line_begin = debugloc.getLine();
-
-                ofs<<(first_hit1?"\n":",\n");
-                ofs<<"  {\"function\": \""<<(std::string)function.getName()<<"\",\n";
-                ofs<<"   \"line\": "<<line_begin<<",\n";
-                ofs<<"   \"type\": \""<<idiom<<"\",\n";
-                ofs<<"   \"solution\":\n    ";
-                for(char c : solution.prune().print_json(slot_tracker))
+                for(auto& solution : GenerateAnalysis(idiom)(function, 100))
                 {
-                    ofs.put(c);
-                    if(c == '\n') ofs<<"    ";
-                }
-                ofs<<"\n  }";
-                first_hit1 = false;
+                    unsigned line_begin = 999;
 
-                if(idiom == "GEMM")
-                {/*
-                    replace_idiom(function, solution, "gemm_harness", solution["precursor"],
-                                  {solution["loop"][0]["iter_end"],
-                                   solution["loop"][1]["iter_end"],
-                                   solution["loop"][2]["iter_end"],
-                                   solution["iter_begin_read"]["base_pointer"],
-                                   solution["idx_read"]["base_pointer"],
-                                   solution["iter_end"]}, {solution["output"]["store"]});*/
-                }
-                if(idiom == "SPMV_CSR")
-                {
-                    replace_idiom(function, solution, "spmv_csr_harness", solution["successor"],
-                                  {solution["output"]["base_pointer"],
-                                   solution["matrix_read"]["base_pointer"],
-                                   solution["vector_read"]["base_pointer"],
-                                   solution["iter_begin_read"]["base_pointer"],
-                                   solution["index_read"]["base_pointer"],
-                                   solution["iter_end"]}, {solution["output"]["store"]});
+                    if(auto precursor = dyn_cast_or_null<Instruction>((Value*)solution["precursor"]))
+                        if(auto& debugloc = precursor->getDebugLoc())
+                            line_begin = debugloc.getLine();
+
+                    ofs<<(first_hit1?"\n":", {\n");
+                    ofs<<"    \"function\": \""<<(std::string)function.getName()<<"\",\n";
+                    ofs<<"    \"line\": "<<line_begin<<",\n";
+                    ofs<<"    \"type\": \""<<idiom<<"\",\n";
+                    ofs<<"    \"solution\":\n    ";
+                    for(char c : solution.prune().print_json(slot_tracker))
+                    {
+                        ofs.put(c);
+                        if(c == '\n') ofs<<"    ";
+                    }
+                    ofs<<"\n  }";
+                    first_hit1 = false;
+
+                    if(idiom == "GEMM")
+                    {/*
+                        replace_idiom(function, solution, "gemm_harness", solution["precursor"],
+                                      {solution["loop"][0]["iter_end"],
+                                       solution["loop"][1]["iter_end"],
+                                       solution["loop"][2]["iter_end"],
+                                       solution["iter_begin_read"]["base_pointer"],
+                                       solution["idx_read"]["base_pointer"],
+                                       solution["iter_end"]}, {solution["output"]["store"]});*/
+                    }
+                    if(idiom == "SPMV_CSR")
+                    {
+                        replace_idiom(function, solution, "spmv_csr_harness", solution["successor"],
+                                      {solution["output"]["base_pointer"],
+                                       solution["matrix_read"]["base_pointer"],
+                                       solution["vector_read"]["base_pointer"],
+                                       solution["iter_begin_read"]["base_pointer"],
+                                       solution["index_read"]["base_pointer"],
+                                       solution["iter_end"]}, {solution["output"]["store"]});
+                    }
                 }
             }
         }
