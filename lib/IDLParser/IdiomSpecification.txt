@@ -15,7 +15,7 @@ Constraint GEMM
        and {iterator[2]} as {row}
        and {begin} as {begin} at {input2} and
   inherits DotProductLoop
-      with {loop[2]}        as {loop}
+      with {for[2]}         as {loop}
        and {input1.value}   as {src1}
        and {input2.value}   as {src2}
        and {output.address} as {update_address})
@@ -112,9 +112,9 @@ End
 Constraint Stencil
 ( inherits ForNest and
   inherits PermMultidStore
-      with {iterator} as {input} 
+      with {iterator} as {input}
        and {begin} as {begin} at {write} and
-  collect i 32 
+  collect i 32
   ( inherits StencilRead
         with {write.input_index} as {input}
          and {kernel.input[i]} as {value}
@@ -357,7 +357,6 @@ Constraint Addition
 ( ( {input} is the same as {value} and
     {addend} is unused) or
   ( ( {value} is add instruction or
-      {value} is bitor instruction or
       {value} is fadd instruction) and
     inherits ArgumentsPermuted with {value}  as {dst}
                                 and {input}  as {src1}
@@ -373,7 +372,6 @@ Constraint Multiplication
 ( ( {input} is the same as {value} and
     {multiplier} is unused) or
   ( ( {value} is mul instruction or
-      {value} is lshift instruction or
       {value} is fmul instruction) and
     inherits ArgumentsPermuted with {value}      as {dst}
                                 and {input}      as {src1}
