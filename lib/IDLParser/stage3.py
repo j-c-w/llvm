@@ -2,8 +2,10 @@
 
 
 blacklist = ["LocalFunctionCall", "ForNest", "SameSESE", "DotProductLoop",
-             "GeneralDotProduct", "ReadRange", "For", "MatrixStore",
-             "MatrixRead", "VectorStore", "VectorRead", "PermMultidStore",
+             "GeneralDotProduct", "ReadRange", "For",
+             "ConditionalReadModifyWrite", "MaxOnceInSESE", "MatrixStore",
+             "MatrixRead", "VectorStore", "VectorRead", "StencilRead",
+             "StencilAccess", "PermMultidStore",
              "PermMultidRead", "AffineAccess", "Addition", "Multiplication",
              "Permute", "Concat", "SumChain", "MulChain", "ArgumentsPermuted",
              "Loop", "InductionVar", "LocalConst"]
