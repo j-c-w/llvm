@@ -12,17 +12,22 @@
 
 using namespace llvm;
 
-class ResearchReplacer : public ModulePass
+class ResearchReplacerBase : public ModulePass
 {
 public:
+    using Pivot = std::function<Value*(const Solution&)>;
+
     static char ID;
 
-    ResearchReplacer() : ModulePass(ID) { }
+    ResearchReplacerBase(std::vector<std::tuple<std::string,Pivot>> i) : ModulePass(ID), idioms(i) { }
 
     bool runOnModule(Module& module) override;
+
+private:
+    std::vector<std::tuple<std::string,Pivot>> idioms;
 };
 
-bool ResearchReplacer::runOnModule(Module& module)
+bool ResearchReplacerBase::runOnModule(Module& module)
 {
     ModuleSlotTracker slot_tracker(&module);
 
@@ -32,26 +37,28 @@ bool ResearchReplacer::runOnModule(Module& module)
     std::stringstream sstr;
     sstr<<"replace-report-"<<filename<<".json";
     std::ofstream ofs(sstr.str().c_str());
-    ofs<<"{ \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"loops\": [";
+    ofs<<"{ \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"detected\": [";
 
     char first_hit1 = true;
     for(Function& function : module.getFunctionList())
     {
         if(!function.isDeclaration())
         {
-            for(auto& idiom : std::vector<std::string>{"For"/*"GEMM", "SPMV", "ComplexReduction", "Stencil"*/})
+            for(auto& idiom : idioms)
             {
-                for(auto& solution : GenerateAnalysis(idiom)(function, 100))
+                for(auto& solution : GenerateAnalysis(std::get<0>(idiom))(function, 99))
                 {
-                    unsigned line_begin = 999;
-                    if(auto precursor = dyn_cast_or_null<Instruction>((Value*)solution["comparison"]))
-                        if(auto& debugloc = precursor->getDebugLoc())
-                            line_begin = debugloc.getLine();
+                    int pivot_begin = -1;
+                    if(const auto& pivot_lookup = std::get<1>(idiom))
+                        if(auto pivot = dyn_cast_or_null<Instruction>(pivot_lookup(solution)))
+                            if(auto& debugloc = pivot->getDebugLoc())
+                                pivot_begin = debugloc.getLine();
 
                     ofs<<(first_hit1?"{\n":", {\n");
                     ofs<<"    \"function\": \""<<(std::string)function.getName()<<"\",\n";
-                    ofs<<"    \"line\": "<<line_begin<<",\n";
-                    ofs<<"    \"type\": \""<<idiom<<"\",\n";
+                    if(pivot_begin > 0)
+                        ofs<<"    \"line\": "<<pivot_begin<<",\n";
+                    ofs<<"    \"type\": \""<<std::get<0>(idiom)<<"\",\n";
                     ofs<<"    \"solution\":\n     ";
                     for(char c : solution.prune().print_json(slot_tracker))
                     {
@@ -70,7 +77,17 @@ bool ResearchReplacer::runOnModule(Module& module)
     return false;
 }
 
-char ResearchReplacer::ID = 0;
+char ResearchReplacerBase::ID = 0;
+
+class ResearchReplacer : public ResearchReplacerBase
+{
+public:
+    ResearchReplacer() : ResearchReplacerBase({
+    {"GEMM",             [](const Solution& s)->Value*{ return s["for"][0]["comparison"]; }}/*,
+    {"SPMV",             [](const Solution& s)->Value*{ return s["comparison"]; }},
+    {"ComplexReduction", [](const Solution& s)->Value*{ return s["comparison"]; }},
+    {"Stencil",          [](const Solution& s)->Value*{ return s["for"][0]["comparison"]; }}*/}) { }
+};
 
 static RegisterPass<ResearchReplacer> X("research-replacer", "Research replacer", false, false);
 
