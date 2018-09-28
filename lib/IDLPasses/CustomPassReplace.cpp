@@ -16,47 +16,18 @@ using namespace llvm;
 class ResearchReplacerBase : public ModulePass
 {
 public:
-    using Pivot = std::function<Value*(const Solution&)>;
+    using Pivot  = std::function<Value*(const Solution&)>;
+    using Action = std::function<void(Function&, Solution)>;
 
     static char ID;
 
-    ResearchReplacerBase(std::vector<std::tuple<std::string,Pivot>> i) : ModulePass(ID), idioms(i) { }
+    ResearchReplacerBase(std::vector<std::tuple<std::string,Pivot,Action>> i) : ModulePass(ID), idioms(i) { }
 
     bool runOnModule(Module& module) override;
 
 private:
-    std::vector<std::tuple<std::string,Pivot>> idioms;
+    std::vector<std::tuple<std::string,Pivot,Action>> idioms;
 };
-
-void replace_idiom(Function& function, Solution solution, std::string harness_name,
-                   Value* insertion, std::vector<Value*> variables, std::vector<Value*> removeeffects)
-{
-    Instruction* insertion_point = dyn_cast_or_null<Instruction>(insertion);
-
-    std::vector<Value*> variable_values;
-    std::vector<Type*>  variable_types;
-    for(auto value : variables)
-    {
-        if(value)
-        {
-            variable_values.push_back(value);
-            variable_types.push_back(value->getType());
-        }
-    }
-
-    FunctionType* func_type = FunctionType::get(Type::getVoidTy(function.getContext()), variable_types, false);
-    Constant*          func = function.getParent()->getOrInsertFunction(harness_name, func_type);
-
-    CallInst::Create(func, variable_values, "", insertion_point);
-
-    for(auto& value : removeeffects)
-    {
-        if(auto inst = dyn_cast_or_null<Instruction>(value))
-        {
-            inst->removeFromParent();
-        }
-    }
-}
 
 bool ResearchReplacerBase::runOnModule(Module& module)
 {
@@ -99,26 +70,8 @@ bool ResearchReplacerBase::runOnModule(Module& module)
                     ofs<<"\n  }";
                     first_hit1 = false;
 
-                    if(std::get<0>(idiom) == "GEMM")
-                    {/*
-                        replace_idiom(function, solution, "gemm_harness", solution["precursor"],
-                                      {solution["loop"][0]["iter_end"],
-                                       solution["loop"][1]["iter_end"],
-                                       solution["loop"][2]["iter_end"],
-                                       solution["iter_begin_read"]["base_pointer"],
-                                       solution["idx_read"]["base_pointer"],
-                                       solution["iter_end"]}, {solution["output"]["store"]});*/
-                    }
-                    if(std::get<0>(idiom) == "SPMV_CSR")
-                    {
-                        replace_idiom(function, solution, "spmv_csr_harness", solution["successor"],
-                                      {solution["output"]["base_pointer"],
-                                       solution["matrix_read"]["base_pointer"],
-                                       solution["vector_read"]["base_pointer"],
-                                       solution["iter_begin_read"]["base_pointer"],
-                                       solution["index_read"]["base_pointer"],
-                                       solution["iter_end"]}, {solution["output"]["store"]});
-                    }
+                    if(std::get<2>(idiom))
+                        std::get<2>(idiom)(function, solution);
                 }
             }
         }
@@ -130,15 +83,61 @@ bool ResearchReplacerBase::runOnModule(Module& module)
 
 char ResearchReplacerBase::ID = 0;
 
+void replace_idiom(Function& function, Solution solution, std::string harness_name,
+                   Value* insertion, std::vector<Value*> variables, std::vector<Value*> removeeffects)
+{
+    Instruction* insertion_point = dyn_cast_or_null<Instruction>(insertion);
+
+    std::vector<Value*> variable_values;
+    std::vector<Type*>  variable_types;
+    for(auto value : variables)
+    {
+        if(value)
+        {
+            variable_values.push_back(value);
+            variable_types.push_back(value->getType());
+        }
+    }
+
+    FunctionType* func_type = FunctionType::get(Type::getVoidTy(function.getContext()), variable_types, false);
+    Constant*          func = function.getParent()->getOrInsertFunction(harness_name, func_type);
+
+    CallInst::Create(func, variable_values, "", insertion_point);
+
+    for(auto& value : removeeffects)
+    {
+        if(auto inst = dyn_cast_or_null<Instruction>(value))
+        {
+            inst->removeFromParent();
+        }
+    }
+}
+
 class ResearchReplacer : public ResearchReplacerBase
 {
 public:
     ResearchReplacer() : ResearchReplacerBase({
-    {"GEMM",      [](const Solution& s)->Value*{ return s["precursor"]; }},
-    {"SPMV_CSR",  [](const Solution& s)->Value*{ return s["precursor"]; }},
-    {"SPMV_JDS",  [](const Solution& s)->Value*{ return s["precursor"]; }},
-    {"VectorAdd", [](const Solution& s)->Value*{ return s["precursor"]; }},
-    {"VectorDot", [](const Solution& s)->Value*{ return s["precursor"]; }}}) { }
+    {"GEMM", [](const Solution& s)->Value*{ return s["precursor"]; },
+    [](Function& function, Solution solution) {
+        replace_idiom(function, solution, "gemm_harness", solution["precursor"],
+                      {solution["loop"][0]["iter_end"],
+                       solution["loop"][1]["iter_end"],
+                       solution["loop"][2]["iter_end"],
+                       solution["iter_begin_read"]["base_pointer"],
+                       solution["idx_read"]["base_pointer"],
+                       solution["iter_end"]}, {solution["output"]["store"]}); }},
+    {"SPMV_CSR", [](const Solution& s)->Value*{ return s["precursor"]; },
+    [](Function& function, Solution solution) {
+        replace_idiom(function, solution, "spmv_csr_harness", solution["successor"],
+                      {solution["output"]["base_pointer"],
+                       solution["matrix_read"]["base_pointer"],
+                       solution["vector_read"]["base_pointer"],
+                       solution["iter_begin_read"]["base_pointer"],
+                       solution["index_read"]["base_pointer"],
+                       solution["iter_end"]}, {solution["output"]["store"]}); }},
+    {"SPMV_JDS",  [](const Solution& s)->Value*{ return s["precursor"]; }, nullptr},
+    {"VectorAdd", [](const Solution& s)->Value*{ return s["precursor"]; }, nullptr},
+    {"VectorDot", [](const Solution& s)->Value*{ return s["precursor"]; }, nullptr}}) { }
 };
 
 static RegisterPass<ResearchReplacer> X("research-replacer", "Research replacer", false, false);
