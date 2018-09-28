@@ -16,16 +16,17 @@ using namespace llvm;
 class ResearchReplacerBase : public ModulePass
 {
 public:
-    using Pivot = std::function<Value*(const Solution&)>;
+    using Pivot  = std::function<Value*(const Solution&)>;
+    using Action = std::function<void(Function&, Solution)>;
 
     static char ID;
 
-    ResearchReplacerBase(std::vector<std::tuple<std::string,Pivot>> i) : ModulePass(ID), idioms(i) { }
+    ResearchReplacerBase(std::vector<std::tuple<std::string,Pivot,Action>> i) : ModulePass(ID), idioms(i) { }
 
     bool runOnModule(Module& module) override;
 
 private:
-    std::vector<std::tuple<std::string,Pivot>> idioms;
+    std::vector<std::tuple<std::string,Pivot,Action>> idioms;
 };
 
 bool ResearchReplacerBase::runOnModule(Module& module)
@@ -71,6 +72,9 @@ bool ResearchReplacerBase::runOnModule(Module& module)
                     }
                     ofs<<"\n  }";
                     first_hit1 = false;
+
+                    if(std::get<2>(idiom))
+                        std::get<2>(idiom)(function, solution);
                 }
             }
         }
@@ -86,7 +90,7 @@ class ResearchReplacer : public ResearchReplacerBase
 {
 public:
     ResearchReplacer() : ResearchReplacerBase({
-    {"ListInsert",  [](const Solution& s)->Value*{ return s["store_new_next"]; }}}) { }
+    {"ListInsert",  [](const Solution& s)->Value*{ return s["store_new_next"]; }, nullptr}}) { }
 };
 
 static RegisterPass<ResearchReplacer> X("research-replacer", "Research replacer", false, false);
