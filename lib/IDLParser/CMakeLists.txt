@@ -1,5 +1,5 @@
 add_llvm_library(LLVMIDLParser
-  ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.s
+  ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
 
   DEPENDS
   intrinsics_gen
@@ -50,8 +50,3 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
                    COMMAND cat ${CMAKE_CURRENT_SOURCE_DIR}/Preprocessing.idl ${CMAKE_CURRENT_SOURCE_DIR}/Idioms.idl | ${CMAKE_CURRENT_BINARY_DIR}/IDLParser | pypy ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py > ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
                    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/IDLParser ${CMAKE_CURRENT_SOURCE_DIR}/Preprocessing.idl ${CMAKE_CURRENT_SOURCE_DIR}/Idioms.idl ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py
                    COMMENT "Generate idiom specifications C++ file")
-
-ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.s
-                   COMMAND ${CMAKE_CXX_COMPILER} -std=c++11 -fPIC -fno-rtti -fno-exceptions -S -O0 ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp -o ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.s -I ${CMAKE_CURRENT_SOURCE_DIR}/../../include/ -I ${CMAKE_CURRENT_BINARY_DIR}/../../include/
-                   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
-                   COMMENT "Generate idiom specifications assembly file")
