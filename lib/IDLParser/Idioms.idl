@@ -47,10 +47,6 @@ End
 
 Constraint Loop
 ( inherits SESE and
-  {body.begin} is the same as {begin} and
-  {body.end} is the same as {end} and
-  {body.precursor} is the same as {precursor} and
-  {body.successor} is the same as {successor} and
   {end} has control flow to {begin})
 End
 
