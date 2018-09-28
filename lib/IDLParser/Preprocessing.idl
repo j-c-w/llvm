@@ -1,0 +1,60 @@
+Constraint HoistSelect
+( {select} is select instruction and
+  {input1} is second argument of {select} and
+  {base} is first argument of {input1} and
+  {input2} is third argument of {select} and
+  {base} is first argument of {input2} and
+  {input1} is gep instruction and
+  {input2} is gep instruction)
+End
+
+Constraint ForWithIteratorTest
+( inherits Loop and
+  {comparison} has data flow to {end} and
+  {comparison} is icmp instruction and
+  {iterator} has data flow to {comparison} and
+  inherits InductionVar with {iterator}  as {old_ind}
+                         and {increment} as {new_ind} and
+  {increment} has data flow to {iterator} and
+  {increment} is add instruction and
+  {iterator} has data flow to {increment} and
+  {iter_end} has data flow to {comparison} and
+  inherits LocalConst with {iter_end} as {value}
+                       and {begin}    as {begin} and
+  {iter_begin} has data flow to {iterator} and
+  inherits LocalConst with {iter_begin} as {value}
+                       and {begin}      as {begin} and
+  {iter_step} has data flow to {increment} and
+  inherits LocalConst with {iter_step} as {value}
+                       and {begin}     as {begin})
+End
+
+Constraint Loop
+( inherits SESE and
+  {end} has control flow to {begin})
+End
+
+Constraint InductionVar
+{new_ind} reaches phi node {old_ind} from {end}
+End
+
+Constraint LocalConst
+( ( {begin} is instruction and
+    {value} is preexecution) or
+  {value} strictly control flow dominates {begin} or
+  ( {begin} is instruction and
+    {value} is unused))
+End
+
+Constraint SESE
+( {precursor} is branch instruction and
+  {precursor} has control flow to {begin} and
+  {end} is branch instruction and
+  {end} has control flow to {successor} and
+  {begin} control flow dominates {end} and
+  {end} control flow post dominates {begin} and
+  {precursor} strictly control flow dominates {begin} and
+  {successor} strictly control flow post dominates {end} and
+  all control flow from {begin} to {precursor} passes through {end} and
+  all control flow from {successor} to {end} passes through {begin})
+End
