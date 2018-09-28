@@ -1,5 +1,5 @@
 add_llvm_library(LLVMIDLParser
-  IdiomSpecifications.s
+  ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.s
 
   DEPENDS
   intrinsics_gen
@@ -11,8 +11,8 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/BNFParser
                    COMMENT "Generate IDL grammar parser")
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/GeneratedParser.hs
-                   COMMAND ${CMAKE_CURRENT_BINARY_DIR}/BNFParser < ${CMAKE_CURRENT_SOURCE_DIR}/GrammarSpecification.txt > ${CMAKE_CURRENT_BINARY_DIR}/GeneratedParser.hs
-                   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/BNFParser ${CMAKE_CURRENT_SOURCE_DIR}/GrammarSpecification.txt
+                   COMMAND ${CMAKE_CURRENT_BINARY_DIR}/BNFParser < ${CMAKE_CURRENT_SOURCE_DIR}/IDL.bnf > ${CMAKE_CURRENT_BINARY_DIR}/GeneratedParser.hs
+                   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/BNFParser ${CMAKE_CURRENT_SOURCE_DIR}/IDL.bnf
                    COMMENT "Parse IDL grammar")
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/IDLParser
@@ -21,8 +21,8 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/IDLParser
                    COMMENT "Generate IDL program parser")
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
-                   COMMAND ${CMAKE_CURRENT_BINARY_DIR}/IDLParser < ${CMAKE_CURRENT_SOURCE_DIR}/IdiomSpecification.txt | pypy ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py > ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
-                   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/IDLParser ${CMAKE_CURRENT_SOURCE_DIR}/IdiomSpecification.txt ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py
+                   COMMAND ${CMAKE_CURRENT_BINARY_DIR}/IDLParser < ${CMAKE_CURRENT_SOURCE_DIR}/Idioms.idl | pypy ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py > ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
+                   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/IDLParser ${CMAKE_CURRENT_SOURCE_DIR}/Idioms.idl ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py
                    COMMENT "Generate idiom specifications C++ file")
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.s
