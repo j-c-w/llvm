@@ -226,21 +226,21 @@ Constraint For
   inherits LocalConst with {iter_step}  as {value}
                        and {loop.begin} as {begin} and
 
-  collect i 1
+  collect k 1
   ( ( ( {loop.begin} control flow post dominates {loop.precursor} and
-        {optional.preheader[i]} spans block to {loop.precursor}) or
+        {optional.preheader[k]} spans block to {loop.precursor}) or
       ( {loop.precursor} has control flow to {loop.begin} and
-        {optional.preheader[i]} is the same as {loop.begin})) and
-    {optional.condjump[i]} has control flow to {optional.preheader[i]} and
-    {optional.condjump[i]} strictly control flow dominates {optional.preheader[i]} and
-    {optional.condjump[i]} has control flow to {optional.condtarget[i]} and
-    {optional.comparison[i]} has data flow to {optional.condjump[i]} and
-    {optional.comparison[i]} is icmp instruction and
-    {iter_end} has data flow to {optional.comparison[i]} and
-    ( ( {optional.condtarget[i]} is the same as {loop.successor} and
-        {optional.innerend[i]} is unused) or
-      ( {loop.successor} spans block to {optional.innerend[i]} and
-        {optional.innerend[i]} has control flow to {optional.condtarget[i]}))) and
+        {optional.preheader[k]} is the same as {loop.begin})) and
+    {optional.condjump[k]} has control flow to {optional.preheader[k]} and
+    {optional.condjump[k]} strictly control flow dominates {optional.preheader[k]} and
+    {optional.condjump[k]} has control flow to {optional.condtarget[k]} and
+    {optional.comparison[k]} has data flow to {optional.condjump[k]} and
+    {optional.comparison[k]} is icmp instruction and
+    {iter_end} has data flow to {optional.comparison[k]} and
+    ( ( {optional.condtarget[k]} is the same as {loop.successor} and
+        {optional.innerend[k]} is unused) or
+      ( {loop.successor} spans block to {optional.innerend[k]} and
+        {optional.innerend[k]} has control flow to {optional.condtarget[k]}))) and
 
   ( ( {optional.condjump[0]} is unused and
       {begin} is the same as {loop.begin}) or
@@ -466,10 +466,6 @@ End
 
 Constraint Loop
 ( inherits SESE and
-  {body.begin} is the same as {begin} and
-  {body.end} is the same as {end} and
-  {body.precursor} is the same as {precursor} and
-  {body.successor} is the same as {successor} and
   {end} has control flow to {begin})
 End
 
