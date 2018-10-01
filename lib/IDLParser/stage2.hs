@@ -101,43 +101,94 @@ reconfigVariables vars (PLiteral n:node:xs) = fmap nextstep $ reconfigVariables 
     where nextstep = case evaluateCalc vars node of {(Just i) -> Map.insert n i; Nothing -> id}
 reconfigVariables vars [] = Just Map.empty
 
-simplify::Map.Map String SyntaxType->Map.Map String Int->SyntaxType->Maybe SyntaxType
-simplify specs vars (PNode "specification" [PLiteral n, cont]) = do
-    recursion <- simplify specs vars cont
+simplify1::Map.Map String SyntaxType->Map.Map String Int->SyntaxType->Maybe SyntaxType
+simplify1 specs vars (PNode "specification" [PLiteral n, cont]) = do
+    recursion <- simplify1 specs vars cont
     return $ PNode "specification" [PLiteral n, recursion]
-simplify specs vars (PNode "inheritance" [PLiteral n]) = do
+simplify1 specs vars (PNode "inheritance" [PLiteral n]) = do
     spec <- Map.lookup n specs
-    simplify specs vars spec
-simplify specs vars (PNode "inheritance" (PLiteral n:xs)) = do
+    simplify1 specs vars spec
+simplify1 specs vars (PNode "inheritance" (PLiteral n:xs)) = do
     spec    <- Map.lookup n specs
     newvars <- reconfigVariables vars xs
-    simplify specs newvars spec
-simplify specs vars (PNode "forall" [cont, (PLiteral s), start, end]) = do
+    simplify1 specs newvars spec
+simplify1 specs vars (PNode "forall" [cont, (PLiteral s), start, end]) = do
     startindex <- (evaluateCalc vars start)
     endindex   <- (evaluateCalc vars end)
-    unrolled   <- sequence [simplify specs (Map.insert s i vars) cont | i<-[startindex..endindex-1]]
+    unrolled   <- sequence [simplify1 specs (Map.insert s i vars) cont | i<-[startindex..endindex-1]]
     return $ PNode "conjunction" unrolled
-simplify specs vars (PNode "forsome" [cont, (PLiteral s), start, end]) = do
+simplify1 specs vars (PNode "forsome" [cont, (PLiteral s), start, end]) = do
     startindex <- evaluateCalc vars start
     endindex   <- evaluateCalc vars end
-    unrolled   <- sequence [simplify specs (Map.insert s i vars) cont | i<-[startindex..endindex-1]]
+    unrolled   <- sequence [simplify1 specs (Map.insert s i vars) cont | i<-[startindex..endindex-1]]
     return $ PNode "disjunction" unrolled
-simplify specs vars (PNode "forone" [cont, (PLiteral s), start]) = do
+simplify1 specs vars (PNode "forone" [cont, (PLiteral s), start]) = do
     startindex <- evaluateCalc vars start
-    simplify specs (Map.insert s startindex vars) cont
-simplify specs vars (PNode "default" [cont, (PLiteral s), indexExp]) = do
+    simplify1 specs (Map.insert s startindex vars) cont
+simplify1 specs vars (PNode "default" [cont, (PLiteral s), indexExp]) = do
     i <- case (Map.lookup s vars) of {(Just i) -> (Just i); Nothing -> evaluateCalc vars indexExp}
-    simplify specs (Map.insert s i vars) cont
-simplify specs vars (PNode "if" [idx1, idx2, cont1, cont2]) = do
+    simplify1 specs (Map.insert s i vars) cont
+simplify1 specs vars (PNode "if" [idx1, idx2, cont1, cont2]) = do
     left  <- evaluateCalc vars idx1
     right <- evaluateCalc vars idx2
-    simplify specs vars $ if left == right then cont1 else cont2
-simplify specs vars (PNode "slotindex" [slot, idx]) = do
+    simplify1 specs vars $ if left == right then cont1 else cont2
+simplify1 specs vars (PNode "slotindex" [slot, idx]) = do
     return $ PNode "slotindex" [slot, simplifyCalc vars idx]
-simplify specs vars (PNode s c) = do
-    recurs <- sequence $ map (simplify specs vars) c
+simplify1 specs vars (PNode s c) = do
+    recurs <- sequence $ map (simplify1 specs vars) c
     return $ PNode s recurs
-simplify specs vars other = Just other
+simplify1 specs vars other = Just other
+
+applyRename::Map.Map SyntaxType SyntaxType->SyntaxType->Maybe SyntaxType
+applyRename dict (PNode "slotbase"   xs)     = Map.lookup (PNode "slotbase" xs) dict
+applyRename dict (PNode "slotmember" (x:xs)) =
+    case Map.lookup (PNode "slotmember" (x:xs)) dict of (Just n) -> Just n
+                                                        Nothing  -> case applyRename dict x of (Just n) -> Just (PNode "slotmember" (n:xs))
+                                                                                               Nothing  -> Nothing
+
+applyRename dict (PNode "slotindex" (x:xs)) =
+    case Map.lookup (PNode "slotindex" (x:xs)) dict of (Just n) -> Just n
+                                                       Nothing  -> case applyRename dict x of (Just n) -> Just (PNode "slotindex" (n:xs))
+                                                                                              Nothing  -> Nothing
+
+applyRename dict (PNode "slotrange" (x:xs)) =
+    case Map.lookup (PNode "slotrange" (x:xs)) dict of (Just n) -> Just n
+                                                       Nothing  -> case applyRename dict x of (Just n) -> Just (PNode "slotrange" (n:xs))
+                                                                                              Nothing  -> Nothing
+
+attachBase::Maybe SyntaxType->SyntaxType->SyntaxType
+attachBase Nothing                                 right   = right
+attachBase (Just left) (PNode "slotbase"          [right]) = PNode "slotmember" [left, right]
+attachBase (Just left) (PNode "slotmember" [middle,right]) = PNode "slotmember" [attachBase (Just left) middle, right]
+attachBase (Just left) (PNode "slotindex"  [middle,right]) = PNode "slotindex"  [attachBase (Just left) middle, right]
+attachBase (Just left) (PNode "slotrange"  [middle,r1,r2]) = PNode "slotrange"  [attachBase (Just left) middle, r1,r2]
+
+applySlotTransform::(Map.Map SyntaxType SyntaxType,Maybe SyntaxType)->SyntaxType->SyntaxType
+applySlotTransform (dict,base) (PNode "slotbase" const) = Maybe.fromMaybe notindict indict
+    where notindict = (attachBase base $ PNode "slotbase" const)
+          indict    = (applyRename dict (PNode "slotbase" const))
+applySlotTransform (dict,base) (PNode "slotmember" const) = Maybe.fromMaybe notindict indict
+    where notindict = (attachBase base $ PNode "slotmember" const)
+          indict    = (applyRename dict (PNode "slotmember" const))
+applySlotTransform (dict,base) (PNode "slotindex" const) = Maybe.fromMaybe notindict indict
+    where notindict = (attachBase base $ PNode "slotindex" const)
+          indict    = (applyRename dict (PNode "slotindex" const))
+applySlotTransform (dict,base) (PNode "slotrange" const) = Maybe.fromMaybe notindict indict
+    where notindict = (attachBase base $ PNode "slotrange" const)
+          indict    = (applyRename dict (PNode "slotrange" const))
+applySlotTransform dict (PNode str const) = (PNode str $ map (applySlotTransform dict) const)
+applySlotTransform dict other = other
+
+buildSlotTransformSet::[SyntaxType]->(Map.Map SyntaxType SyntaxType,Maybe SyntaxType)
+buildSlotTransformSet []       = (Map.empty, Nothing)
+buildSlotTransformSet [base]   = (Map.empty, Just base)
+buildSlotTransformSet (x:y:xs) = (Map.insert y x dict, base)
+    where (dict,base) = buildSlotTransformSet xs
+
+simplify2::SyntaxType->SyntaxType
+simplify2 (PNode "rename" (x:xs)) = applySlotTransform (buildSlotTransformSet xs) $ simplify2  x
+simplify2 (PNode str        cont) = (PNode str $ map simplify2 cont)
+simplify2 other = other
 
 prettyprint::SyntaxType->String
 prettyprint (PLiteral s)     = show s
@@ -148,5 +199,6 @@ main = do
     contents   <- getContents
     let parsed  = parse (tokenize $ classifyChars contents) [[PNode "#" []]]
     let cleaned = init $ removeInvisibles $ unbox $ parsed
-    let simpler = Maybe.mapMaybe (simplify (collectSpecifications cleaned) Map.empty) cleaned
-    putStrLn $ "("++intercalate ", " (map prettyprint simpler)++")"
+    let simpler1 = Maybe.mapMaybe (simplify1 (collectSpecifications cleaned) Map.empty) cleaned
+    let simpler2 = map simplify2 simpler1
+    putStrLn $ "("++intercalate ", " (map prettyprint simpler2)++")"
