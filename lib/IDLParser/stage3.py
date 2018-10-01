@@ -8,39 +8,6 @@ def partial_evaluator(syntax, handler, *extras):
         return handler_result
     return tuple(partial_evaluator(s, handler, *extras) if type(s) is tuple else s for s in syntax)
 
-def rebase(prefix, suffix):
-    if not prefix:
-        return suffix
-    elif suffix[0] == "slotrange":
-        return (suffix[0], rebase(prefix, suffix[1]), suffix[2], suffix[3])
-    elif suffix[0] in ["slotmember", "slotindex"]:
-        return (suffix[0], rebase(prefix, suffix[1]), suffix[2])
-    elif suffix[0] == "slotbase":
-        return ("slotmember", prefix, suffix[1])
-    raise Exception("Error, \"" + suffix[0] + "\" is not allowed in suffix.")
-
-def evaluate_remove_rename_rebase(syntax, renames={}, prefix=None):
-    if syntax[0] == "rename":
-        child      = syntax[1]
-        newprefix  = None       if len(syntax)%2==0 else syntax[-1]
-        renamevars = syntax[2:] if len(syntax)%2==0 else syntax[2:-1]
-        newrenames = dict(zip(renamevars[1::2], renamevars[0::2]))
-
-        return partial_evaluator(partial_evaluator(child, evaluate_remove_rename_rebase, newrenames, newprefix),
-                                                          evaluate_remove_rename_rebase, renames, prefix)
-
-    elif syntax[0] in ["slotmember", "slotindex"]:
-        if syntax in renames:
-            return renames[syntax]
-        else:
-            return (syntax[0], partial_evaluator(syntax[1], evaluate_remove_rename_rebase, renames, prefix), syntax[2])
-
-    elif syntax[0] == "slotbase":
-        if syntax in renames:
-            return renames[syntax]
-        else:
-            return rebase(prefix, syntax)
-
 def evaluate_remove_trivials(syntax):
     if syntax[0] in ["conjunction", "disjunction"]:
         is_trivial = False
@@ -418,8 +385,7 @@ def postprocess_add_loops(code):
     return "\n".join(line for group in grouped for line in group)
 
 def generate_fast_cpp_specification(syntax, specs):
-    constr = partial_evaluator(syntax[2], evaluate_remove_rename_rebase)
-    constr = partial_evaluator(constr,    evaluate_remove_trivials)
+    constr = partial_evaluator(syntax[2], evaluate_remove_trivials)
     constr = partial_evaluator(constr,    evaluate_flatten_connectives)
     constr = partial_evaluator(constr,    evaluate_bisect_connectives)
     constr = partial_evaluator(constr,    evaluate_remove_trivials)
