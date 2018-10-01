@@ -41,95 +41,6 @@ def evaluate_remove_rename_rebase(syntax, renames={}, prefix=None):
         else:
             return rebase(prefix, syntax)
 
-def evaluate_remove_for_with(syntax, specs, vardict={}, collectvars=[]):
-    if syntax[0] == "inheritance":
-        new_vardict = {}
-        for i in range(2,len(syntax),2):
-            rangevalue = partial_evaluator(syntax[i+1], evaluate_remove_for_with, specs, vardict, collectvars)
-
-            if rangevalue[0] == "baseconst":
-                new_vardict[syntax[i]] = rangevalue[1]
-            else:
-                raise Exception("Free variables remain in for assignment.")
-
-        if not new_vardict:
-            new_vardict = vardict
-
-        return partial_evaluator(specs[syntax[1]], evaluate_remove_for_with, specs, new_vardict, collectvars)
-
-    elif syntax[0] in ["forall", "forsome"]:
-        rangestart = partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, collectvars)
-        rangestop  = partial_evaluator(syntax[4], evaluate_remove_for_with, specs, vardict, collectvars)
-
-        if rangestart[0] == rangestop[0] == "baseconst":
-
-            branches = []
-
-            for i in range(rangestart[1],rangestop[1]):
-
-                new_vardict = dict(vardict)
-                new_vardict[syntax[2]] = i
-                branches.append(partial_evaluator(syntax[1], evaluate_remove_for_with, specs, new_vardict, collectvars))
-
-            return ("conjunction" if syntax[0] == "forall" else "disjunction",)+tuple(branches)
-        raise Exception("Free variables remain in for loop range start.")
-
-    elif syntax[0] == "forone":
-        rangevalue = partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, collectvars)
-
-        if rangevalue[0] == "baseconst":
-
-            new_vardict = dict(vardict)
-            new_vardict[syntax[2]] = rangevalue[1]
-            return partial_evaluator(syntax[1], evaluate_remove_for_with, specs, new_vardict, collectvars)
-        raise Exception("Free variables remain in for assignment.")
-
-    elif syntax[0] == "if":
-        leftvalue  = partial_evaluator(syntax[1], evaluate_remove_for_with, specs, vardict, collectvars)
-        rightvalue = partial_evaluator(syntax[2], evaluate_remove_for_with, specs, vardict, collectvars)
-
-        if leftvalue[0] == "baseconst" and rightvalue[0] == "baseconst":
-            if leftvalue[1] == rightvalue[1]:
-                return partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, collectvars)
-            else:
-                return partial_evaluator(syntax[4], evaluate_remove_for_with, specs,vardict, collectvars)
-        raise Exception("Free variables remain in conditional.")
-
-    elif syntax[0] == "default":
-        defaultvalue = partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, collectvars)
-
-        if syntax[2] in vardict or syntax[2] in collectvars:
-            return partial_evaluator(syntax[1], evaluate_remove_for_with, specs, vardict, collectvars)
-        elif defaultvalue[0] == "baseconst":
-            new_vardict = dict(vardict)
-            new_vardict[syntax[2]] = defaultvalue[1]
-            return partial_evaluator(syntax[1], evaluate_remove_for_with, specs, new_vardict, collectvars)
-        raise Exception("Free variables remain in default value.")
-
-    elif syntax[0] == "collect":
-        new_collectvars = collectvars[:] + [syntax[1]]
-        return syntax[:3] + (partial_evaluator(syntax[3], evaluate_remove_for_with, specs, vardict, new_collectvars),)
-
-    elif syntax[0] == "basevar":
-        if syntax[1] in vardict:
-            return ("baseconst", vardict[syntax[1]])
-        elif syntax[1] in collectvars:
-            return syntax
-        raise Exception("Free variable \""+syntax[1]+"\" remain in static calculation.")
-
-    elif syntax[0] in ["addvar", "subvar"]:
-        if syntax[2] in vardict:
-            return evaluate_remove_for_with((syntax[0][:3]+"const", syntax[1], vardict[syntax[2]]), specs, vardict)
-        raise Exception("Free variables remain in static calculation of "+syntax[0]+".")
-
-    elif syntax[0] in ["addconst", "subconst"]:
-        leftvalue = evaluate_remove_for_with(syntax[1], specs, vardict)
-
-        if leftvalue[0] == "baseconst":
-            return (leftvalue[0], leftvalue[1] + syntax[2] * {"add":+1,"sub":-1}[syntax[0][:-5]])
-        else:
-            raise Exception("Free variables remain in static calculation.")
-
 def evaluate_remove_trivials(syntax):
     if syntax[0] in ["conjunction", "disjunction"]:
         is_trivial = False
@@ -507,8 +418,7 @@ def postprocess_add_loops(code):
     return "\n".join(line for group in grouped for line in group)
 
 def generate_fast_cpp_specification(syntax, specs):
-    constr = partial_evaluator(syntax[2], evaluate_remove_for_with, specs)
-    constr = partial_evaluator(constr,    evaluate_remove_rename_rebase)
+    constr = partial_evaluator(syntax[2], evaluate_remove_rename_rebase)
     constr = partial_evaluator(constr,    evaluate_remove_trivials)
     constr = partial_evaluator(constr,    evaluate_flatten_connectives)
     constr = partial_evaluator(constr,    evaluate_bisect_connectives)
