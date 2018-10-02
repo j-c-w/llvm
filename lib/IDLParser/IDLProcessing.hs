@@ -1,4 +1,4 @@
-module IDLProcessing (simplify1,simplify2) where
+module IDLProcessing (simplify1,simplify2,simplify3) where
 
 import Data.Char
 import Data.List
@@ -141,3 +141,24 @@ simplify2::SyntaxType->SyntaxType
 simplify2 (PNode "rename" (x:xs)) = applySlotTransform (buildSlotTransformSet xs) $ simplify2  x
 simplify2 (PNode str        cont) = (PNode str $ map simplify2 cont)
 simplify2 other = other
+
+simplify3::SyntaxType->SyntaxType
+simplify3 (PNode "specification" [n,c]) =  (PNode "specification" [n,simplify3 c])
+simplify3 (PNode "collect" [a,c,b]) = (PNode "collect" [a,c,simplify3 b])
+simplify3 (PNode "conjunction" (x:xs)) = case concat2 of { [x] -> x; otherwise -> (PNode "conjunction" concat2) }
+    where recurs1 = simplify3 x
+          recurs2 = simplify3 (PNode "conjunction" xs)
+          part2   = case recurs2 of (PNode "conjunction" xs) -> xs
+                                    otherwise                -> [recurs2]
+          concat  = case recurs1 of (PNode "conjunction" xs) -> xs++part2
+                                    otherwise                -> recurs1:part2
+          concat2 = if elem (PNode "disjunction" []) concat then [(PNode "disjunction" [])] else concat
+simplify3 (PNode "disjunction" (x:xs)) = case concat2 of { [x] -> x; otherwise -> (PNode "disjunction" concat2) }
+    where recurs1 = simplify3 x
+          recurs2 = simplify3 (PNode "disjunction" xs)
+          part2   = case recurs2 of (PNode "disjunction" xs) -> xs
+                                    otherwise                -> [recurs2]
+          concat  = case recurs1 of (PNode "disjunction" xs) -> xs++part2
+                                    otherwise                -> recurs1:part2
+          concat2 = if elem (PNode "conjunction" []) concat then [(PNode "conjunction" [])] else concat
+simplify3 other = other

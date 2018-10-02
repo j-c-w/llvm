@@ -64,4 +64,5 @@ main = do
     let cleaned  = init $ removeInvisibles $ unbox $ parsed
     let simpler1 = Maybe.mapMaybe (simplify1 (collectSpecifications cleaned) Map.empty) cleaned
     let simpler2 = map simplify2 simpler1
-    putStrLn     $ "("++intercalate ", " (map prettyprint simpler2)++")"
+    let simpler3 = map simplify3 simpler2
+    putStrLn     $ "("++intercalate ", " (map prettyprint simpler3)++")"
