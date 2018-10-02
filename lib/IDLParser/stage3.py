@@ -8,46 +8,6 @@ def partial_evaluator(syntax, handler, *extras):
         return handler_result
     return tuple(partial_evaluator(s, handler, *extras) if type(s) is tuple else s for s in syntax)
 
-def evaluate_remove_trivials(syntax):
-    if syntax[0] in ["conjunction", "disjunction"]:
-        is_trivial = False
-        result     = syntax[:1]
-        for s in [partial_evaluator(s, evaluate_remove_trivials) for s in syntax[1:]]:
-            if s[0] == {"con":"false","dis":"true"}[syntax[0][:3]]:
-                is_trivial = True
-            elif s[0] != {"con":"true","dis":"false"}[syntax[0][:3]]:
-                result = result + (s,)
-        if is_trivial:
-            return ({"con":"false","dis":"true"}[syntax[0][:3]],)
-        elif len(result) == 1:
-            return ({"con":"true","dis":"false"}[syntax[0][:3]],)
-        else:
-            return result if len(result) > 2 else result[1]
-
-def evaluate_flatten_connectives(syntax):
-    if syntax[0] in ["conjunction", "disjunction"]:
-        result = syntax[:1]
-
-        for child in (partial_evaluator(s, evaluate_flatten_connectives) for s in syntax[1:]):
-            if child[0] == syntax[0]:
-                result = result + child[1:]
-            else:
-                result = result + (child,)
-        return result
-
-def evaluate_bisect_connectives(syntax):
-    if syntax[0] in ["conjunction", "disjunction"]:
-        if len(syntax[1:]) == 0:
-            return ({"con":"false","dis":"true"}[syntax[0][:3]],)
-        elif len(syntax[1:]) == 1:
-            return partial_evaluator(syntax[1], evaluate_bisect_connectives)
-        elif len(syntax[1:]) == 2:
-            return syntax[:1]+(partial_evaluator(syntax[1], evaluate_bisect_connectives),
-                               partial_evaluator(syntax[2], evaluate_bisect_connectives))
-        else:
-            return syntax[:1]+(partial_evaluator(syntax[1], evaluate_bisect_connectives),
-                               partial_evaluator(syntax[:1]+syntax[2:], evaluate_bisect_connectives))
-
 def replace_variables(syntax, replaces):
     if syntax[0] in ["slotbase", "slotmember", "slotindex"]:
         return replaces[syntax] if syntax in replaces else syntax
@@ -385,10 +345,7 @@ def postprocess_add_loops(code):
     return "\n".join(line for group in grouped for line in group)
 
 def generate_fast_cpp_specification(syntax, specs):
-    constr = partial_evaluator(syntax[2], evaluate_remove_trivials)
-    constr = partial_evaluator(constr,    evaluate_flatten_connectives)
-    constr = partial_evaluator(constr,    evaluate_bisect_connectives)
-    constr = partial_evaluator(constr,    evaluate_remove_trivials)
+    constr = syntax[2]
 
     atom_counter = {}
     slots, result, code = code_generation_core(constr, atom_counter)
