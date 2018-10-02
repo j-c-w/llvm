@@ -56,7 +56,7 @@ removeInvisibles []                          = []
 prettyprint::SyntaxType->String
 prettyprint (PLiteral s)     = show s
 prettyprint (PNumber  n)     = show $ (read::(String->Int)) n
-prettyprint (PNode str cont) = ("("++intercalate ", " (show str:map prettyprint cont)++")")
+prettyprint (PNode str cont) = ("("++intercalate ", " (show str:map prettyprint cont)++",)")
 
 main = do
     contents    <- getContents
