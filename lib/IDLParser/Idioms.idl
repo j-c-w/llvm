@@ -13,3 +13,16 @@ Constraint ListInsert
       {new_next} is first argument of {new_member_pointer}) or
     {new_next} is the same as {new_member_pointer}))
 End
+
+Constraint ListIterate
+( inherits Loop at {loop} and
+  inherits InductionVar with {new_pointer} as {new_ind}
+                         and {old_pointer} as {old_ind} at {loop} and
+  {new_pointer} is load instruction and
+  ( ( {old_pointer} is first argument of {new_pointer} and
+      {offsetcalc} is unused and
+      {offset} is unused) or
+    ( {offsetcalc} is first argument of {new_pointer} and
+      {old_pointer} is first argument of {offsetcalc} and
+      {offset} is second argument of {offsetcalc})))
+End
