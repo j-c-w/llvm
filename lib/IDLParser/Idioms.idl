@@ -156,7 +156,9 @@ Constraint DotProductLoop
     ( {loop.initial} is floating point zero and
       {update_address} is gep instruction)) and
   {old_ind} reaches phi node {raw_final} from {loop.end} and
-  {raw_final} reaches phi node {raw_final2} from {exit_break} and
+  ( ( {raw_final} is the same as {raw_final2} and
+      {exit_break} is unused) or
+    {raw_final} reaches phi node {raw_final2} from {exit_break}) and
   {final_value} is first argument of {output.store} and
   inherits Addition with {scaled_reduc} as {input}
                      and {final_value}  as {value}
