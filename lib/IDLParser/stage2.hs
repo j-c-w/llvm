@@ -62,7 +62,5 @@ main = do
     contents    <- getContents
     let parsed   = parse (tokenize $ classifyChars contents) [[PNode "#" []]]
     let cleaned  = init $ removeInvisibles $ unbox $ parsed
-    let simpler1 = Maybe.mapMaybe (simplify1 (collectSpecifications cleaned) Map.empty) cleaned
-    let simpler2 = map simplify2 simpler1
-    let simpler3 = map simplify3 simpler2
-    putStrLn     $ "("++intercalate ", " (map prettyprint simpler3)++")"
+    let simpler = Maybe.mapMaybe (simplify $ collectSpecifications cleaned) cleaned
+    putStrLn     $ "("++intercalate ", " (map prettyprint simpler)++")"

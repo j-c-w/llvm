@@ -1,4 +1,4 @@
-module IDLProcessing (simplify1,simplify2,simplify3) where
+module IDLProcessing (simplify) where
 
 import Data.Char
 import Data.List
@@ -162,3 +162,16 @@ simplify3 (PNode "disjunction" (x:xs)) = case concat2 of { [x] -> x; otherwise -
                                     otherwise                -> recurs1:part2
           concat2 = if elem (PNode "conjunction" []) concat then [(PNode "conjunction" [])] else concat
 simplify3 other = other
+
+simplify4::SyntaxType->SyntaxType
+simplify4 (PNode "slotrange" [base,(PNode "baseconst" [(PNumber a)]), (PNode "baseconst" [(PNumber b)])]) =
+    (PNode "slottuple" [(PNode "slotindex" [base, (PNode "baseconst" [(PNumber $ show i)])]) | i <- [(read::(String->Int))a..(read::(String->Int))b-1]])
+simplify4 (PNode "slotrange" _) = error "Strange slotrange"
+simplify4 (PLiteral n) = (PLiteral n)
+simplify4 (PNumber  n) = (PNumber  n)
+simplify4 (PNode str cont) = (PNode str $ map simplify4 cont)
+
+simplify::Map.Map String SyntaxType->SyntaxType->Maybe SyntaxType
+simplify specs syntax = do
+    temp <- simplify1 specs Map.empty syntax
+    return $ (simplify4.simplify3.simplify2) temp
