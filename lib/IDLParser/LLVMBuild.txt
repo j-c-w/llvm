@@ -20,3 +20,4 @@ type = Library
 name = IDLParser
 parent = Libraries
 required_libraries = IDLSolver
+dependencies = Lilac

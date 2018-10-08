@@ -5,32 +5,6 @@ add_llvm_library(LLVMIDLParser
   intrinsics_gen
 )
 
-add_library(spmv_naive SHARED
-    spmv_csr_naive.cc
-)
-
-add_library(mm_naive SHARED
-    mm_naive.cc
-)
-
-add_library(mm_openblas SHARED
-    mm_openblas.cc
-)
-target_link_libraries(mm_openblas openblas)
-
-
-ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/spmv_csr_naive.cc ${CMAKE_CURRENT_BINARY_DIR}/spmv_csr_mkl.cc ${CMAKE_CURRENT_BINARY_DIR}/spmv_csr_cuda.cc
-                   COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/stage0.py ${CMAKE_CURRENT_SOURCE_DIR}/abstract.txt
-                   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/stage0.py ${CMAKE_CURRENT_SOURCE_DIR}/abstract.txt
-                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                   COMMENT "Generate spmv harnesses")
-
-ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/mm_naive.cc ${CMAKE_CURRENT_BINARY_DIR}/mm_openblas.cc ${CMAKE_CURRENT_BINARY_DIR}/mm_cuda.cc
-                   COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/stage0.py ${CMAKE_CURRENT_SOURCE_DIR}/abstract2.txt
-                   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/stage0.py ${CMAKE_CURRENT_SOURCE_DIR}/abstract2.txt
-                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                   COMMENT "Generate mm harnesses")
-
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/BNFParser
                    COMMAND ghc ${CMAKE_CURRENT_SOURCE_DIR}/stage1.hs -hidir ${CMAKE_CURRENT_BINARY_DIR} -odir ${CMAKE_CURRENT_BINARY_DIR} -i${CMAKE_CURRENT_SOURCE_DIR} -o ${CMAKE_CURRENT_BINARY_DIR}/BNFParser
                    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/stage1.hs ${CMAKE_CURRENT_SOURCE_DIR}/BNFLower.hs ${CMAKE_CURRENT_SOURCE_DIR}/BNFOptimize.hs ${CMAKE_CURRENT_SOURCE_DIR}/BNFParser.hs ${CMAKE_CURRENT_SOURCE_DIR}/BNFPrefix.hs ${CMAKE_CURRENT_SOURCE_DIR}/GraphCalculations.hs

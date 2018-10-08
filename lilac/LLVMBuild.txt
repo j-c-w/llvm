@@ -1,4 +1,4 @@
-;===- ./LLVMBuild.txt ------------------------------------------*- Conf -*--===;
+;===- ./lib/lilac/LLVMBuild.txt --------------------------------*- Conf -*--===;
 ;
 ;                     The LLVM Compiler Infrastructure
 ;
@@ -15,10 +15,7 @@
 ;
 ;===------------------------------------------------------------------------===;
 
-[common]
-subdirectories = bindings docs examples lib lilac projects tools utils
-
 [component_0]
-type = Group
-name = Miscellaneous
+type = Library
+name = Lilac
 parent = $ROOT
