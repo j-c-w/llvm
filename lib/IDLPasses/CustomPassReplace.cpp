@@ -70,8 +70,8 @@ bool ResearchReplacerBase::runOnModule(Module& module)
                     ofs<<"\n  }";
                     first_hit1 = false;
 
-                    if(std::get<2>(idiom))
-                        std::get<2>(idiom)(function, solution);
+//                    if(std::get<2>(idiom))
+//                        std::get<2>(idiom)(function, solution);
                 }
             }
         }

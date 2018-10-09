@@ -41,7 +41,7 @@ def read_input(stream):
                                   "BODY": [], "OnDemandEvaluated" : [],
                                   "CppHeaderFiles" : [], "PersistentVariables" : [],
                                   "BeforeFirstExecution" : [], "AfterLastExecution" : []}
-                harnesses[splitline[1]] = currentobject
+                harnesses[splitline[1],splitline[3]] = currentobject
 
             elif len(splitline) == 1:
                 if ((currentmode in ["WRITEABLE", "READABLE", "HARNESS"]
@@ -399,6 +399,46 @@ def generate_interface(parsed):
            +[("double", s) for s in parts[2]]
            +[("int", s) for s in parts[3]])
 
+
+def generateIDL(parsed):
+    if parsed[0][0] == "loop":
+        return """Constraint GEMM 
+( inherits ForNest(N=3) and
+  inherits MatrixStore
+      with {iterator[0]} as {col}
+       and {iterator[1]} as {row}
+       and {begin} as {begin} at {output} and
+  inherits MatrixRead
+      with {iterator[0]} as {col}
+       and {iterator[2]} as {row}
+       and {begin} as {begin} at {input1} and
+  inherits MatrixRead
+      with {iterator[1]} as {col}
+       and {iterator[2]} as {row}
+       and {begin} as {begin} at {input2} and
+  inherits DotProductLoop
+      with {for[2]}         as {loop}
+       and {input1.value}   as {src1}
+       and {input2.value}   as {src2}
+       and {output.address} as {update_address})
+End
+"""
+    elif parsed[0][0] == "map":
+        return """Constraint SPMV_CSR
+( inherits SPMV_BASE and
+  {matrix_read.idx} is the same as {inner.iterator} and
+  {vector_read.idx} is the same as {index_read.value} and
+  {index_read.idx}  is the same as {inner.iterator} and
+  {output.idx}      is the same as {iterator} and
+  inherits ReadRange
+      with {iterator} as {idx}
+       and {inner.iter_begin} as {range_begin}
+       and {inner.iter_end}   as {range_end})
+End
+"""
+    else:
+        return ""
+
 if len(sys.argv) == 2:
     read_input(open(sys.argv[1]))
 
@@ -407,18 +447,23 @@ if len(sys.argv) == 2:
     for computation in computations:
         parsed = parse_computation(" ".join(computations[computation]["BODY"]).replace(" ", ""))
         program = generate_naive(parsed)
-        harnesses["naive"] = {"INTERFACE" : computation,
-                              "BODY": program, "OnDemandEvaluated" : [],
-                              "CppHeaderFiles" : [], "PersistentVariables" : [],
-                              "BeforeFirstExecution" : [], "AfterLastExecution" : []}
+        harnesses["naive",computation] = {"INTERFACE" : computation,
+                                          "BODY": program, "OnDemandEvaluated" : [],
+                                          "CppHeaderFiles" : [], "PersistentVariables" : [],
+                                          "BeforeFirstExecution" : [], "AfterLastExecution" : []}
         interfaces[computation]={"ARGUMENTS":generate_interface(parsed)}
 
-    for harnessname in harnesses:
-        idiomname = harnesses[harnessname]["INTERFACE"]
-        filename  = "{}_{}.cc".format(idiomname, harnessname)
-        outpath   = filename
-        stream    = open(outpath, "w")
-        print_to_stream(stream, harnesses[harnessname])
+        idloutpath = filename  = "{}.idl".format(computation)
+        idlstream  = open(idloutpath, "w")
+        idlstream.write(generateIDL(parsed))
+
+        for harnessname,comp in harnesses:
+            if computation == comp:
+                idiomname = harnesses[harnessname,comp]["INTERFACE"]
+                filename  = "{}_{}.cc".format(idiomname, harnessname)
+                outpath   = filename
+                stream    = open(outpath, "w")
+                print_to_stream(stream, harnesses[harnessname,comp])
 else:
     print("Usage: generator.py inputfile")
 

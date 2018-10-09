@@ -16,6 +16,6 @@
 ;===------------------------------------------------------------------------===;
 
 [component_0]
-type = Library
+type = Tool
 name = Lilac
 parent = $ROOT

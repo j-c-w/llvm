@@ -41,39 +41,6 @@ Constraint VectorDot
   {precursor} control flow dominates {begin})
 End
 
-Constraint GEMM 
-( inherits ForNest(N=3) and
-  inherits MatrixStore
-      with {iterator[0]} as {col}
-       and {iterator[1]} as {row}
-       and {begin} as {begin} at {output} and
-  inherits MatrixRead
-      with {iterator[0]} as {col}
-       and {iterator[2]} as {row}
-       and {begin} as {begin} at {input1} and
-  inherits MatrixRead
-      with {iterator[1]} as {col}
-       and {iterator[2]} as {row}
-       and {begin} as {begin} at {input2} and
-  inherits DotProductLoop
-      with {for[2]}         as {loop}
-       and {input1.value}   as {src1}
-       and {input2.value}   as {src2}
-       and {output.address} as {update_address})
-End
-
-Constraint SPMV_CSR
-( inherits SPMV_BASE and
-  {matrix_read.idx} is the same as {inner.iterator} and
-  {vector_read.idx} is the same as {index_read.value} and
-  {index_read.idx}  is the same as {inner.iterator} and
-  {output.idx}      is the same as {iterator} and
-  inherits ReadRange
-      with {iterator} as {idx}
-       and {inner.iter_begin} as {range_begin}
-       and {inner.iter_end}   as {range_end})
-End
-
 Constraint SPMV_JDS
 ( inherits SPMV_BASE and
   {matrix_read.idx} is the same as {j} and
