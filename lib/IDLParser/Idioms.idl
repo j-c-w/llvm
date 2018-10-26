@@ -51,54 +51,54 @@ End
 
 Constraint ComplexReduction
 ( inherits For and
-  collect i 32
+  collect k 32
   ( inherits VectorRead
         with {iterator} as {idx}
-         and {read_value[i]} as {value}
-         and {begin} as {begin} at {read[i]}) and
+         and {read_value[k]} as {value}
+         and {loop.begin} as {begin} at {read[k]}) and
   collect k 2
   ( inherits ConditionalReadModifyWrite
       with {histo[k].indexkernel.output} as {address}
-       and {body} as {body} at {histo[k].update} and
+       and {loop} as {loop} at {histo[k].update} and
     inherits KernelFunction
         with {begin} as {outer}
-         and {body.begin} as {inner} at {histo[k].kernel} and
+         and {loop.begin} as {inner} at {histo[k].kernel} and
     {histo[k].kernel.output} is the same as {histo[k].update.new_value} and
     inherits KernelFunction
         with {begin} as {outer}
          and {read_value} as {input}
-         and {body.begin} as {inner} at {histo[k].indexkernel} and
+         and {loop.begin} as {inner} at {histo[k].indexkernel} and
     ( {histo[k].indexkernel.output} is not the same as {read[i].address} for all i=0..32) and
     inherits Concat(N1=31,N2=1)
         with {read_value}                 as {in1}
          and {histo[k].update.old_value}  as {in2}
          and {histo[k].kernel.input}      as {out}) and
   collect k 2
-  ( {scalar[k].kernel.output} reaches phi node {scalar[k].old_value} from {end} and
-    {scalar[k].old_value} strictly control flow dominates {end} and
+  ( {scalar[k].kernel.output} reaches phi node {scalar[k].old_value} from {loop.end} and
+    {scalar[k].old_value} strictly control flow dominates {loop.end} and
     {scalar[k].old_value} is not the same as {iterator} and
-    {scalar[k].kernel.output} reaches phi node {scalar[k].final_value} from {end} and
-    {scalar[k].final_value} strictly control flow post dominates {end} and
+    {scalar[k].kernel.output} reaches phi node {scalar[k].final_value} from {loop.end} and
+    {scalar[k].final_value} strictly control flow post dominates {loop.end} and
     inherits KernelFunction
         with {begin}      as {outer}
-         and {body.begin} as {inner} at {scalar[k].kernel} and
+         and {loop.begin} as {inner} at {scalar[k].kernel} and
     inherits Concat(N1=31,N2=1)
         with {read_value}             as {in1}
          and {scalar[k].old_value}    as {in2}
          and {scalar[k].kernel.input} as {out}) and
-  {scalar[0].kernel.output} is not the same as {histo[0].kernel.output} and
-#  collect i 2
-#  ( {histo[i].update.store_instr} is store instruction and
-#    {begin} control flow dominates {histo[i].update.store_instr} and
-#    {end} control flow post dominates {histo[i].update.store_instr}) and
+  {scalar[0].kernel.output} is not the same as {histo[0].update.store_instr} and
+  collect i 2
+  ( {histo[i].update.store_instr} is store instruction and
+    {loop.begin} control flow dominates {histo[i].update.store_instr} and
+    {loop.end} control flow post dominates {histo[i].update.store_instr}) and
   collect i 32
   ( inherits LocalFunctionCall
         with {begin} as {begin}
-         and {end} as {end} at {call[i]}) and
+         and {loop.end} as {end} at {call[i]}) and
   collect i 32
   ( inherits LocalFunctionCall
         with {begin} as {begin}
-         and {end} as {end} at {call[i]} and
+         and {loop.end} as {end} at {call[i]} and
     {call[i].function} has attribute pure))
 End
 
@@ -262,7 +262,7 @@ Constraint ConditionalReadModifyWrite
 ( {store_instr} is store instruction and
   inherits MaxOnceInSESE
       with {store_instr} as {value}
-       and {store_instr_after} as {value_after} at {body} and
+       and {store_instr_after} as {value_after} at {loop} and
   {address} is second argument of {store_instr} and
   {address} is gep instruction and
   {address} is first argument of {old_value} and

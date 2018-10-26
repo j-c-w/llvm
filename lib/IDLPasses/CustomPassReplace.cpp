@@ -89,7 +89,7 @@ public:
     ResearchReplacer() : ResearchReplacerBase({
     {"GEMM",             [](const Solution& s)->Value*{ return s["for"][0]["comparison"]; }, nullptr},
     {"SPMV",             [](const Solution& s)->Value*{ return s["comparison"]; }, nullptr},
-//    {"ComplexReduction", [](const Solution& s)->Value*{ return s["comparison"]; }, nullptr},
+    {"ComplexReduction", [](const Solution& s)->Value*{ return s["comparison"]; }, nullptr},
     {"Stencil",          [](const Solution& s)->Value*{ return s["for"][0]["comparison"]; }, nullptr}}) { }
 };
 
