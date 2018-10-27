@@ -49,6 +49,40 @@ Constraint SPMV
        and {output.address}   as {update_address})
 End
 
+Constraint HistoPart
+( inherits ConditionalReadModifyWrite
+    with {indexkernel.output} as {address}
+     and {loop} as {loop} at {update} and
+  inherits KernelFunction
+      with {begin} as {outer}
+       and {loop.begin} as {inner} at {kernel} and
+  {kernel.output} is the same as {update.new_value} and
+  inherits KernelFunction
+      with {begin} as {outer}
+       and {read_value} as {input}
+       and {loop.begin} as {inner} at {indexkernel} and
+  ( {indexkernel.output} is not the same as {read[i].address} for all i=0..32) and
+  inherits Concat(N1=31,N2=1)
+      with {read_value}        as {in1}
+       and {update.old_value}  as {in2}
+       and {kernel.input}      as {out})
+End
+
+Constraint ScalarPart
+( {kernel.output} reaches phi node {old_value} from {loop.end} and
+  {old_value} strictly control flow dominates {loop.end} and
+  {old_value} is not the same as {iterator} and
+  {kernel.output} reaches phi node {final_value} from {loop.end} and
+  {final_value} strictly control flow post dominates {loop.end} and
+  inherits KernelFunction
+      with {begin}      as {outer}
+       and {loop.begin} as {inner} at {kernel} and
+  inherits Concat(N1=31,N2=1)
+      with {read_value}             as {in1}
+       and {old_value}    as {in2}
+       and {kernel.input} as {out})
+End
+
 Constraint ComplexReduction
 ( inherits For and
   collect k 32
@@ -57,35 +91,18 @@ Constraint ComplexReduction
          and {read_value[k]} as {value}
          and {loop.begin} as {begin} at {read[k]}) and
   collect k 2
-  ( inherits ConditionalReadModifyWrite
-      with {histo[k].indexkernel.output} as {address}
-       and {loop} as {loop} at {histo[k].update} and
-    inherits KernelFunction
-        with {begin} as {outer}
-         and {loop.begin} as {inner} at {histo[k].kernel} and
-    {histo[k].kernel.output} is the same as {histo[k].update.new_value} and
-    inherits KernelFunction
-        with {begin} as {outer}
-         and {read_value} as {input}
-         and {loop.begin} as {inner} at {histo[k].indexkernel} and
-    ( {histo[k].indexkernel.output} is not the same as {read[i].address} for all i=0..32) and
-    inherits Concat(N1=31,N2=1)
-        with {read_value}                 as {in1}
-         and {histo[k].update.old_value}  as {in2}
-         and {histo[k].kernel.input}      as {out}) and
+  ( inherits HistoPart
+        with {begin} as {begin}
+         and {read}  as {read}
+         and {loop}  as {loop}
+         and {read_value} as {read_value} at {histo[k]}) and
   collect k 2
-  ( {scalar[k].kernel.output} reaches phi node {scalar[k].old_value} from {loop.end} and
-    {scalar[k].old_value} strictly control flow dominates {loop.end} and
-    {scalar[k].old_value} is not the same as {iterator} and
-    {scalar[k].kernel.output} reaches phi node {scalar[k].final_value} from {loop.end} and
-    {scalar[k].final_value} strictly control flow post dominates {loop.end} and
-    inherits KernelFunction
-        with {begin}      as {outer}
-         and {loop.begin} as {inner} at {scalar[k].kernel} and
-    inherits Concat(N1=31,N2=1)
-        with {read_value}             as {in1}
-         and {scalar[k].old_value}    as {in2}
-         and {scalar[k].kernel.input} as {out}) and
+  ( inherits ScalarPart
+        with {begin}      as {begin}
+         and {iterator}   as {iterator}
+         and {loop}       as {loop}
+         and {read_value} as {read_value}
+          at {scalar[k]}) and
   {scalar[0].kernel.output} is not the same as {histo[0].update.store_instr} and
   collect i 2
   ( {histo[i].update.store_instr} is store instruction and
@@ -110,20 +127,21 @@ Constraint LocalFunctionCall
 End
 
 Constraint Stencil
-( inherits ForNest and
-  inherits PermMultidStore
-      with {iterator} as {input}
-       and {begin} as {begin} at {write} and
-  collect i 32
-  ( inherits StencilRead
-        with {write.input_index} as {input}
-         and {kernel.input[i]} as {value}
-         and {begin} as {begin}  at {reads[i]}) and
-  {kernel.output} is first argument of {write.store} and
-  inherits KernelFunction
-      with {begin}      as {outer}
-       and {body.begin} as {inner} at {kernel})
-for N=3 if not otherwise specified
+( inherits For)
+#  inherits ForNest and
+#  inherits PermMultidStore
+#      with {iterator} as {input}
+#       and {begin} as {begin} at {write} and
+#  collect i 32
+#  ( inherits StencilRead
+#        with {write.input_index} as {input}
+#         and {kernel.input[i]} as {value}
+#         and {begin} as {begin}  at {reads[i]}) and
+#  {kernel.output} is first argument of {write.store} and
+#  inherits KernelFunction
+#      with {begin}      as {outer}
+#       and {body.begin} as {inner} at {kernel})
+#for N=3 if not otherwise specified
 End
 
 # These are some buidling blocks for the toplevel constraints.
