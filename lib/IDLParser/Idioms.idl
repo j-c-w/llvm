@@ -26,3 +26,39 @@ Constraint ListIterate
       {old_pointer} is first argument of {offsetcalc} and
       {offset} is second argument of {offsetcalc})))
 End
+
+Constraint Generated
+( {AG2} is gep instruction and
+  {ABa} is first argument of {AG2} and
+  {BFiter} is second argument of {AG2} and
+  {AH3} is load instruction and
+  {AG2} is first argument of {AH3} and
+  {AI4} is gep instruction and
+  {ACb} is first argument of {AI4} and
+  {BFiter} is second argument of {AI4} and
+  {AJ5} is load instruction and
+  {AI4} is first argument of {AJ5} and
+  {BA6} is fmul instruction and
+  ( ( {AH3} is first argument of {BA6} and
+      {AJ5} is second argument of {BA6}) or
+    ( {AH3} is second argument of {BA6} and
+      {AJ5} is first argument of {BA6})) and
+  {BB7} is fadd instruction and
+  ( ( {BE10} is first argument of {BB7} and
+      {BA6} is second argument of {BB7}) or
+    ( {BE10} is second argument of {BB7} and
+      {BA6} is first argument of {BB7})) and
+  {BFiter} is phi instruction and
+  ( ( {BGnextiter} is first argument of {BFiter} and
+      {CC0} is second argument of {BFiter}) or
+    ( {BGnextiter} is second argument of {BFiter} and
+      {CC0} is first argument of {BFiter})) and
+  {BGnextiter} is add instruction and
+  ( ( {BFiter} is first argument of {BGnextiter} and
+      {CD1} is second argument of {BGnextiter}) or
+    ( {BFiter} is second argument of {BGnextiter} and
+      {CD1} is first argument of {BGnextiter})) and
+  {BH11} is icmp instruction and
+  ( ( {AAn} is first argument of {BH11}) or
+    ( {AAn} is second argument of {BH11})))
+End

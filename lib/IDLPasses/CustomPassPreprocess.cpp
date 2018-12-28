@@ -138,6 +138,7 @@ public:
 
 bool ResearchPreprocessor::runOnFunction(Function& function)
 {
+    return false;
     DataLayout data_layout(function.getParent());
 
     for(BasicBlock& block : function.getBasicBlockList())

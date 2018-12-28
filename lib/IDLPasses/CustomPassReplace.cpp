@@ -91,7 +91,8 @@ class ResearchReplacer : public ResearchReplacerBase
 public:
     ResearchReplacer() : ResearchReplacerBase({
     {"ListInsert",  [](const Solution& s)->Value*{ return s["store_new_next"]; }, nullptr},
-    {"ListIterate",  [](const Solution& s)->Value*{ return s["new_pointer"]; }, nullptr}}) { }
+    {"ListIterate",  [](const Solution& s)->Value*{ return s["new_pointer"]; }, nullptr},
+    {"Generated",  [](const Solution& s)->Value*{ return s["_15_iter"]; }, nullptr}}) { }
 };
 
 static RegisterPass<ResearchReplacer> X("research-replacer", "Research replacer", false, false);
