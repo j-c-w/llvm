@@ -1,33 +1,236 @@
-Constraint ListInsert
-( {store_old_next} is store instruction and
-  {old_next} is first argument of {store_old_next} and
-  {old_next} is load instruction and
-  {old_member_pointer} is first argument of {old_next} and
-  {old_member_pointer} is second argument of {store_new_next} and
-  {store_new_next} is store instruction and
-  {new_next} is first argument of {store_new_next} and
-
-  {new_member_pointer} is second argument of {store_old_next} and
-
-  ( ( {new_member_pointer} is gep instruction and
-      {new_next} is first argument of {new_member_pointer}) or
-    {new_next} is the same as {new_member_pointer}))
+Constraint generated_asum
+( ( {AE1} is add instruction or
+    {AE1} is phi instruction) and
+  {AD0} is first argument of {AE1} and
+  {BG0} is second argument of {AE1} and
+  {AF2} is gep instruction and
+  {ABx} is first argument of {AF2} and
+  {AE1} is second argument of {AF2} and
+  {AG3} is load instruction and
+  {AF2} is first argument of {AG3} and
+  {AH4} is call instruction and
+  {AG3} is first argument of {AH4} and
+  {AJ6} is fadd instruction and
+  ( ( {BA7} is first argument of {AJ6} and
+      {AH4} is second argument of {AJ6}) or
+    ( {BA7} is second argument of {AJ6} and
+      {AH4} is first argument of {AJ6})) and
+  {BA7} is phi instruction and
+  ( ( {BH00} is first argument of {BA7} and
+      {AJ6} is second argument of {BA7}) or
+    ( {BH00} is second argument of {BA7} and
+      {AJ6} is first argument of {BA7})) and
+  {BD8} is icmp instruction and
+  ( ( {BBiter} is first argument of {BD8} and
+      {AAn} is second argument of {BD8}) or
+    ( {BBiter} is second argument of {BD8} and
+      {AAn} is first argument of {BD8})))
 End
 
-Constraint ListIterate
-( inherits Loop at {loop} and
-  inherits InductionVar with {new_pointer} as {new_ind}
-                         and {old_pointer} as {old_ind} at {loop} and
-  {new_pointer} is load instruction and
-  ( ( {old_pointer} is first argument of {new_pointer} and
-      {offsetcalc} is unused and
-      {offset} is unused) or
-    ( {offsetcalc} is first argument of {new_pointer} and
-      {old_pointer} is first argument of {offsetcalc} and
-      {offset} is second argument of {offsetcalc})))
+Constraint generated_axpy
+( {AF0} is gep instruction and
+  {ACx} is first argument of {AF0} and
+  {BFiter} is second argument of {AF0} and
+  {AG1} is load instruction and
+  {AF0} is first argument of {AG1} and
+  {AH2} is gep instruction and
+  {ADy} is first argument of {AH2} and
+  {BFiter} is second argument of {AH2} and
+  {AI3} is load instruction and
+  {AH2} is first argument of {AI3} and
+  {AJ4} is fadd instruction and
+  ( ( {BE8} is first argument of {AJ4} and
+      {AG1} is second argument of {AJ4}) or
+    ( {BE8} is second argument of {AJ4} and
+      {AG1} is first argument of {AJ4})) and
+  {BA5} is fmul instruction and
+  ( ( {AG1} is first argument of {BA5} and
+      {ABa} is second argument of {BA5}) or
+    ( {AG1} is second argument of {BA5} and
+      {ABa} is first argument of {BA5})) and
+  {BB6} is fadd instruction and
+  ( ( {AI3} is first argument of {BB6} and
+      {BA5} is second argument of {BB6}) or
+    ( {AI3} is second argument of {BB6} and
+      {BA5} is first argument of {BB6})) and
+  {BC7} is gep instruction and
+  {ADy} is first argument of {BC7} and
+  {BFiter} is second argument of {BC7} and
+  {BD} is store instruction and
+  {BB6} is first argument of {BD} and
+  {BC7} is second argument of {BD} and
+  {BE8} is phi instruction and
+  ( ( {CA00} is first argument of {BE8} and
+      {AJ4} is second argument of {BE8}) or
+    ( {CA00} is second argument of {BE8} and
+      {AJ4} is first argument of {BE8})) and
+  {BFiter} is phi instruction and
+  ( ( {CB0} is first argument of {BFiter} and
+      {BGnextiter} is second argument of {BFiter}) or
+    ( {CB0} is second argument of {BFiter} and
+      {BGnextiter} is first argument of {BFiter})) and
+  {BGnextiter} is add instruction and
+  ( ( {BFiter} is first argument of {BGnextiter} and
+      {CC1} is second argument of {BGnextiter}) or
+    ( {BFiter} is second argument of {BGnextiter} and
+      {CC1} is first argument of {BGnextiter})) and
+  {BH9} is icmp instruction and
+  ( ( {BFiter} is first argument of {BH9} and
+      {AAn} is second argument of {BH9}) or
+    ( {BFiter} is second argument of {BH9} and
+      {AAn} is first argument of {BH9})))
 End
 
-Constraint Generated
+Constraint generated_conv
+( {AG0} is mul instruction and
+  ( ( {BHiter} is first argument of {AG0} and
+      {EC1} is second argument of {AG0}) or
+    ( {BHiter} is second argument of {AG0} and
+      {EC1} is first argument of {AG0})) and
+  {AH1} is add instruction and
+  ( ( {AG0} is first argument of {AH1} and
+      {ED0} is second argument of {AH1}) or
+    ( {AG0} is second argument of {AH1} and
+      {ED0} is first argument of {AH1})) and
+  {AI2} is gep instruction and
+  {ACin} is first argument of {AI2} and
+  {AH1} is second argument of {AI2} and
+  {AJ3} is load instruction and
+  {AI2} is first argument of {AJ3} and
+  {BC6} is gep instruction and
+  {BHiter} is second argument of {BC6} and
+  {BD7} is fmul instruction and
+  ( ( {BG9} is first argument of {BD7}) or
+    ( {BG9} is second argument of {BD7})) and
+  {BE8} is fmul instruction and
+  ( ( {DC21} is first argument of {BE8} and
+      {BG9} is second argument of {BE8}) or
+    ( {DC21} is second argument of {BE8} and
+      {BG9} is first argument of {BE8})) and
+  {BF} is store instruction and
+  {DC21} is first argument of {BF} and
+  {BC6} is second argument of {BF} and
+  {BJ10} is icmp instruction and
+  ( ( {BHiter} is first argument of {BJ10} and
+      {AAM} is second argument of {BJ10}) or
+    ( {BHiter} is second argument of {BJ10} and
+      {AAM} is first argument of {BJ10})) and
+  {CF15} is sub instruction and
+  {BHiter} is first argument of {CF15} and
+  {DDiter6} is second argument of {CF15} and
+  {CI18} is fadd instruction and
+  ( ( {BA4} is second argument of {CI18}) or
+    ( {BA4} is first argument of {CI18})) and
+  {EA26} is phi instruction and
+  ( ( {EE00} is second argument of {EA26}) or
+    ( {EE00} is first argument of {EA26})) and
+  {FDwidetripcount} is zext instruction and
+  {IBto} is first argument of {FDwidetripcount})
+End
+
+Constraint generated_determinant
+( {AE0} is mul instruction and
+  ( ( {CHiter} is first argument of {AE0} and
+      {DC1} is second argument of {AE0}) or
+    ( {CHiter} is second argument of {AE0} and
+      {DC1} is first argument of {AE0})) and
+  {AF1} is add instruction and
+  ( ( {AE0} is first argument of {AF1} and
+      {DD0} is second argument of {AF1}) or
+    ( {AE0} is second argument of {AF1} and
+      {DD0} is first argument of {AF1})) and
+  {AG2} is gep instruction and
+  {ABo} is first argument of {AG2} and
+  {AF1} is second argument of {AG2} and
+  {AH3} is load instruction and
+  {AG2} is first argument of {AH3} and
+  {AI4} is mul instruction and
+  ( ( {CHiter} is first argument of {AI4} and
+      {DE4} is second argument of {AI4}) or
+    ( {CHiter} is second argument of {AI4} and
+      {DE4} is first argument of {AI4})) and
+  {AJ5} is add instruction and
+  ( ( {AI4} is first argument of {AJ5} and
+      {DD0} is second argument of {AJ5}) or
+    ( {AI4} is second argument of {AJ5} and
+      {DD0} is first argument of {AJ5})) and
+  {BA6} is gep instruction and
+  {ACms} is first argument of {BA6} and
+  {AJ5} is second argument of {BA6} and
+  {BB7} is load instruction and
+  {BA6} is first argument of {BB7} and
+  {BC8} is add instruction and
+  ( ( {AI4} is first argument of {BC8} and
+      {DC1} is second argument of {BC8}) or
+    ( {AI4} is second argument of {BC8} and
+      {DC1} is first argument of {BC8})) and
+  {BD9} is gep instruction and
+  {ACms} is first argument of {BD9} and
+  {BC8} is second argument of {BD9} and
+  {BE10} is load instruction and
+  {BD9} is first argument of {BE10} and
+  {BF11} is add instruction and
+  ( ( {AI4} is first argument of {BF11} and
+      {DF2} is second argument of {BF11}) or
+    ( {AI4} is second argument of {BF11} and
+      {DF2} is first argument of {BF11})) and
+  {BG12} is gep instruction and
+  {ACms} is first argument of {BG12} and
+  {BF11} is second argument of {BG12} and
+  {BH13} is load instruction and
+  {BG12} is first argument of {BH13} and
+  {BI14} is add instruction and
+  ( ( {AI4} is first argument of {BI14} and
+      {DG3} is second argument of {BI14}) or
+    ( {AI4} is second argument of {BI14} and
+      {DG3} is first argument of {BI14})) and
+  {BJ15} is gep instruction and
+  {ACms} is first argument of {BJ15} and
+  {BI14} is second argument of {BJ15} and
+  {CA16} is load instruction and
+  {BJ15} is first argument of {CA16} and
+  {CB17} is fmul instruction and
+  ( ( {BB7} is first argument of {CB17} and
+      {CA16} is second argument of {CB17}) or
+    ( {BB7} is second argument of {CB17} and
+      {CA16} is first argument of {CB17})) and
+  {CC18} is fmul instruction and
+  ( ( {BE10} is first argument of {CC18} and
+      {BH13} is second argument of {CC18}) or
+    ( {BE10} is second argument of {CC18} and
+      {BH13} is first argument of {CC18})) and
+  {CD19} is fsub instruction and
+  {CB17} is first argument of {CD19} and
+  {CC18} is second argument of {CD19} and
+  {CE20} is gep instruction and
+  {ABo} is first argument of {CE20} and
+  {CHiter} is second argument of {CE20} and
+  {CF} is store instruction and
+  {CD19} is first argument of {CF} and
+  {CE20} is second argument of {CF} and
+  {CG21} is phi instruction and
+  ( ( {DH00} is first argument of {CG21} and
+      {CB17} is second argument of {CG21}) or
+    ( {DH00} is second argument of {CG21} and
+      {CB17} is first argument of {CG21})) and
+  {CHiter} is phi instruction and
+  ( ( {DD0} is first argument of {CHiter} and
+      {CInextiter} is second argument of {CHiter}) or
+    ( {DD0} is second argument of {CHiter} and
+      {CInextiter} is first argument of {CHiter})) and
+  {CInextiter} is add instruction and
+  ( ( {CHiter} is first argument of {CInextiter} and
+      {DC1} is second argument of {CInextiter}) or
+    ( {CHiter} is second argument of {CInextiter} and
+      {DC1} is first argument of {CInextiter})) and
+  {CJ22} is icmp instruction and
+  ( ( {CHiter} is first argument of {CJ22} and
+      {AAn} is second argument of {CJ22}) or
+    ( {CHiter} is second argument of {CJ22} and
+      {AAn} is first argument of {CJ22})))
+End
+
+Constraint generated_dot_product
 ( {AG2} is gep instruction and
   {ABa} is first argument of {AG2} and
   {BFiter} is second argument of {AG2} and
@@ -38,27 +241,291 @@ Constraint Generated
   {BFiter} is second argument of {AI4} and
   {AJ5} is load instruction and
   {AI4} is first argument of {AJ5} and
-  {BA6} is fmul instruction and
-  ( ( {AH3} is first argument of {BA6} and
-      {AJ5} is second argument of {BA6}) or
-    ( {AH3} is second argument of {BA6} and
-      {AJ5} is first argument of {BA6})) and
-  {BB7} is fadd instruction and
-  ( ( {BE10} is first argument of {BB7} and
-      {BA6} is second argument of {BB7}) or
-    ( {BE10} is second argument of {BB7} and
-      {BA6} is first argument of {BB7})) and
   {BFiter} is phi instruction and
-  ( ( {BGnextiter} is first argument of {BFiter} and
-      {CC0} is second argument of {BFiter}) or
-    ( {BGnextiter} is second argument of {BFiter} and
-      {CC0} is first argument of {BFiter})) and
+  ( ( {CC0} is first argument of {BFiter} and
+      {BGnextiter} is second argument of {BFiter}) or
+    ( {CC0} is second argument of {BFiter} and
+      {BGnextiter} is first argument of {BFiter})) and
   {BGnextiter} is add instruction and
   ( ( {BFiter} is first argument of {BGnextiter} and
       {CD1} is second argument of {BGnextiter}) or
     ( {BFiter} is second argument of {BGnextiter} and
-      {CD1} is first argument of {BGnextiter})) and
-  {BH11} is icmp instruction and
-  ( ( {AAn} is first argument of {BH11}) or
-    ( {AAn} is second argument of {BH11})))
+      {CD1} is first argument of {BGnextiter})))
+End
+
+Constraint generated_gemv
+( {BA2} is fmul instruction and
+  ( ( {AFbeta} is first argument of {BA2} and
+      {AJ1} is second argument of {BA2}) or
+    ( {AFbeta} is second argument of {BA2} and
+      {AJ1} is first argument of {BA2})) and
+  {BC4} is fmul instruction and
+  ( ( {BB3} is first argument of {BC4} and
+      {BI9} is second argument of {BC4}) or
+    ( {BB3} is second argument of {BC4} and
+      {BI9} is first argument of {BC4})) and
+  {BD5} is gep instruction and
+  {AGy} is first argument of {BD5} and
+  {BG8} is fmul instruction and
+  ( ( {BB3} is first argument of {BG8}) or
+    ( {BB3} is second argument of {BG8})) and
+  {BH} is store instruction and
+  {DC20} is first argument of {BH} and
+  {BD5} is second argument of {BH} and
+  ( {BI9} is phi instruction or
+    {BI9} is load instruction) and
+  {ACalpha} is first argument of {BI9} and
+  {CAnextiter} is add instruction and
+  ( ( {BJiter} is first argument of {CAnextiter} and
+      {DJ1} is second argument of {CAnextiter}) or
+    ( {BJiter} is second argument of {CAnextiter} and
+      {DJ1} is first argument of {CAnextiter})) and
+  {CB10} is icmp instruction and
+  ( ( {BJiter} is first argument of {CB10} and
+      {AAM} is second argument of {CB10}) or
+    ( {BJiter} is second argument of {CB10} and
+      {AAM} is first argument of {CB10})) and
+  {CD11} is gep instruction and
+  {AEx} is first argument of {CD11} and
+  {DDiter6} is second argument of {CD11} and
+  {CE12} is load instruction and
+  {CD11} is first argument of {CE12} and
+  ( {CF13} is mul instruction or
+    {CF13} is trunc instruction) and
+  {BJiter} is first argument of {CF13} and
+  {DC20} is phi instruction and
+  ( ( {BA2} is first argument of {DC20} and
+      {DB19} is second argument of {DC20}) or
+    ( {BA2} is second argument of {DC20} and
+      {DB19} is first argument of {DC20})) and
+  {FAwidetripcount} is zext instruction and
+  {IBto} is first argument of {FAwidetripcount} and
+  {FCindvarsiv7} is phi instruction and
+  ( ( {IA0} is first argument of {FCindvarsiv7} and
+      {GCindvarsivnext} is second argument of {FCindvarsiv7}) or
+    ( {IA0} is second argument of {FCindvarsiv7} and
+      {GCindvarsivnext} is first argument of {FCindvarsiv7})) and
+  {GCindvarsivnext} is add instruction and
+  ( ( {FCindvarsiv7} is first argument of {GCindvarsivnext} and
+      {ID1} is second argument of {GCindvarsivnext}) or
+    ( {FCindvarsiv7} is second argument of {GCindvarsivnext} and
+      {ID1} is first argument of {GCindvarsivnext})))
+End
+
+Constraint generated_ger
+( {AJ3} is fadd instruction and
+  ( ( {BC6} is first argument of {AJ3} and
+      {AI2} is second argument of {AJ3}) or
+    ( {BC6} is second argument of {AJ3} and
+      {AI2} is first argument of {AJ3})) and
+  {BEnextiter} is add instruction and
+  ( ( {BDiter} is first argument of {BEnextiter} and
+      {DF1} is second argument of {BEnextiter}) or
+    ( {BDiter} is second argument of {BEnextiter} and
+      {DF1} is first argument of {BEnextiter})) and
+  {BF7} is icmp instruction and
+  ( ( {BDiter} is first argument of {BF7} and
+      {AAm} is second argument of {BF7}) or
+    ( {BDiter} is second argument of {BF7} and
+      {AAm} is first argument of {BF7})) and
+  {BH8} is gep instruction and
+  {ADy} is first argument of {BH8} and
+  {BI9} is load instruction and
+  {BH8} is first argument of {BI9} and
+  {CC13} is load instruction and
+  {CD14} is fmul instruction and
+  ( ( {BI9} is first argument of {CD14} and
+      {AH1} is second argument of {CD14}) or
+    ( {BI9} is second argument of {CD14} and
+      {AH1} is first argument of {CD14})) and
+  {CE15} is fadd instruction and
+  ( ( {CD14} is first argument of {CE15} and
+      {CC13} is second argument of {CE15}) or
+    ( {CD14} is second argument of {CE15} and
+      {CC13} is first argument of {CE15})) and
+  {CF16} is gep instruction and
+  {AEa} is first argument of {CF16} and
+  {CA11} is second argument of {CF16} and
+  {CG} is store instruction and
+  {CE15} is first argument of {CG} and
+  {CF16} is second argument of {CG} and
+  {EEwidetripcount} is zext instruction and
+  {HBto} is first argument of {EEwidetripcount} and
+  {EGindvarsiv6} is phi instruction and
+  ( ( {HA0} is first argument of {EGindvarsiv6} and
+      {FEindvarsivnext} is second argument of {EGindvarsiv6}) or
+    ( {HA0} is second argument of {EGindvarsiv6} and
+      {FEindvarsivnext} is first argument of {EGindvarsiv6})) and
+  {FEindvarsivnext} is add instruction and
+  ( ( {EGindvarsiv6} is first argument of {FEindvarsivnext} and
+      {HD1} is second argument of {FEindvarsivnext}) or
+    ( {EGindvarsiv6} is second argument of {FEindvarsivnext} and
+      {HD1} is first argument of {FEindvarsivnext})))
+End
+
+Constraint generated_mag
+( {AG2} is gep instruction and
+  {AF1} is second argument of {AG2} and
+  {AH3} is load instruction and
+  {AJ5} is add instruction and
+  ( ( {AI4} is first argument of {AJ5} and
+      {CI0} is second argument of {AJ5}) or
+    ( {AI4} is second argument of {AJ5} and
+      {CI0} is first argument of {AJ5})) and
+  {BA6} is gep instruction and
+  {ACms} is first argument of {BA6} and
+  {AJ5} is second argument of {BA6} and
+  {BB7} is load instruction and
+  {BF11} is fmul instruction and
+  ( ( {AH3} is first argument of {BF11} and
+      {AH3} is second argument of {BF11}) or
+    ( {AH3} is second argument of {BF11} and
+      {AH3} is first argument of {BF11})) and
+  {BG12} is fmul instruction and
+  ( ( {BB7} is first argument of {BG12} and
+      {BB7} is second argument of {BG12}) or
+    ( {BB7} is second argument of {BG12} and
+      {BB7} is first argument of {BG12})) and
+  {BH13} is fadd instruction and
+  ( ( {BF11} is first argument of {BH13} and
+      {BG12} is second argument of {BH13}) or
+    ( {BF11} is second argument of {BH13} and
+      {BG12} is first argument of {BH13})) and
+  {BI14} is call instruction and
+  {BH13} is first argument of {BI14} and
+  {BJ15} is gep instruction and
+  {ABo} is first argument of {BJ15} and
+  {CCiter} is second argument of {BJ15} and
+  {CA} is store instruction and
+  {BI14} is first argument of {CA} and
+  {BJ15} is second argument of {CA} and
+  {CE17} is icmp instruction and
+  ( ( {CCiter} is first argument of {CE17} and
+      {AAn} is second argument of {CE17}) or
+    ( {CCiter} is second argument of {CE17} and
+      {AAn} is first argument of {CE17})))
+End
+
+Constraint generated_relu
+( {AE0} is mul instruction and
+  ( ( {BJiter} is first argument of {AE0} and
+      {CE1} is second argument of {AE0}) or
+    ( {BJiter} is second argument of {AE0} and
+      {CE1} is first argument of {AE0})) and
+  {AF1} is add instruction and
+  ( ( {AE0} is first argument of {AF1} and
+      {CF0} is second argument of {AF1}) or
+    ( {AE0} is second argument of {AF1} and
+      {CF0} is first argument of {AF1})) and
+  {AG2} is gep instruction and
+  {ABin} is first argument of {AG2} and
+  {AH3} is load instruction and
+  {AG2} is first argument of {AH3} and
+  {BE10} is fcmp instruction and
+  {AH3} is first argument of {BE10} and
+  {CG00} is second argument of {BE10} and
+  {BF11} is select instruction and
+  {BE10} is first argument of {BF11} and
+  {CG00} is second argument of {BF11} and
+  {AH3} is third argument of {BF11} and
+  {BG12} is gep instruction and
+  {ACo} is first argument of {BG12} and
+  {BJiter} is second argument of {BG12} and
+  {BH} is store instruction and
+  {BF11} is first argument of {BH} and
+  {BG12} is second argument of {BH} and
+  {CB14} is icmp instruction and
+  ( ( {BJiter} is first argument of {CB14} and
+      {AAn} is second argument of {CB14}) or
+    ( {BJiter} is second argument of {CB14} and
+      {AAn} is first argument of {CB14})))
+End
+
+Constraint generated_scalar_add
+( {AF0} is gep instruction and
+  {ABx} is first argument of {AF0} and
+  {BHiter} is second argument of {AF0} and
+  {AG1} is load instruction and
+  {AF0} is first argument of {AG1} and
+  {AJ4} is gep instruction and
+  {BHiter} is second argument of {AJ4} and
+  {BA5} is load instruction and
+  {AJ4} is first argument of {BA5} and
+  {BB6} is fadd instruction and
+  ( ( {AG1} is second argument of {BB6}) or
+    ( {AG1} is first argument of {BB6})) and
+  {BE9} is gep instruction and
+  {ADo} is first argument of {BE9} and
+  {BHiter} is second argument of {BE9} and
+  {BF} is store instruction and
+  {BB6} is first argument of {BF} and
+  {BE9} is second argument of {BF} and
+  {BHiter} is phi instruction and
+  ( ( {CD0} is first argument of {BHiter} and
+      {BInextiter} is second argument of {BHiter}) or
+    ( {CD0} is second argument of {BHiter} and
+      {BInextiter} is first argument of {BHiter})) and
+  {BInextiter} is add instruction and
+  ( ( {BHiter} is first argument of {BInextiter} and
+      {CE1} is second argument of {BInextiter}) or
+    ( {BHiter} is second argument of {BInextiter} and
+      {CE1} is first argument of {BInextiter})) and
+  {BJ11} is icmp instruction and
+  ( ( {AAn} is second argument of {BJ11}) or
+    ( {AAn} is first argument of {BJ11})))
+End
+
+Constraint generated_softmax
+( {AC0} is mul instruction and
+  ( ( {BCiter} is first argument of {AC0} and
+      {DB1} is second argument of {AC0}) or
+    ( {BCiter} is second argument of {AC0} and
+      {DB1} is first argument of {AC0})) and
+  {AD1} is add instruction and
+  ( ( {AC0} is first argument of {AD1} and
+      {DC0} is second argument of {AD1}) or
+    ( {AC0} is second argument of {AD1} and
+      {DC0} is first argument of {AD1})) and
+  {AE2} is gep instruction and
+  {AD1} is second argument of {AE2} and
+  {AF3} is load instruction and
+  {AG4} is call instruction and
+  {AF3} is first argument of {AG4} and
+  {AJ7} is gep instruction and
+  {ABin} is first argument of {AJ7} and
+  {BCiter} is second argument of {AJ7} and
+  {BA} is store instruction and
+  {AG4} is first argument of {BA} and
+  {AJ7} is second argument of {BA} and
+  {BCiter} is phi instruction and
+  ( ( {DC0} is first argument of {BCiter} and
+      {BDnextiter} is second argument of {BCiter}) or
+    ( {DC0} is second argument of {BCiter} and
+      {BDnextiter} is first argument of {BCiter})) and
+  {BDnextiter} is add instruction and
+  ( ( {BCiter} is first argument of {BDnextiter} and
+      {DB1} is second argument of {BDnextiter}) or
+    ( {BCiter} is second argument of {BDnextiter} and
+      {DB1} is first argument of {BDnextiter})) and
+  {BE9} is icmp instruction and
+  ( ( {BCiter} is first argument of {BE9} and
+      {AAn} is second argument of {BE9}) or
+    ( {BCiter} is second argument of {BE9} and
+      {AAn} is first argument of {BE9})) and
+  {CA13} is load instruction and
+  {CC15} is fdiv instruction and
+  {CA13} is first argument of {CC15} and
+  {BB8} is second argument of {CC15} and
+  {DJwidetripcount6} is zext instruction and
+  {GCto} is first argument of {DJwidetripcount6} and
+  {EAindvarsiv4} is phi instruction and
+  ( ( {GB0} is first argument of {EAindvarsiv4} and
+      {ECindvarsivnext5} is second argument of {EAindvarsiv4}) or
+    ( {GB0} is second argument of {EAindvarsiv4} and
+      {ECindvarsivnext5} is first argument of {EAindvarsiv4})) and
+  {ECindvarsivnext5} is add instruction and
+  ( ( {EAindvarsiv4} is first argument of {ECindvarsivnext5} and
+      {GE1} is second argument of {ECindvarsivnext5}) or
+    ( {EAindvarsiv4} is second argument of {ECindvarsivnext5} and
+      {GE1} is first argument of {ECindvarsivnext5})))
 End

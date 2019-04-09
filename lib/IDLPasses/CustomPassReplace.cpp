@@ -90,9 +90,17 @@ class ResearchReplacer : public ResearchReplacerBase
 {
 public:
     ResearchReplacer() : ResearchReplacerBase({
-    {"ListInsert",  [](const Solution& s)->Value*{ return s["store_new_next"]; }, nullptr},
-    {"ListIterate",  [](const Solution& s)->Value*{ return s["new_pointer"]; }, nullptr},
-    {"Generated",  [](const Solution& s)->Value*{ return s["_15_iter"]; }, nullptr}}) { }
+    {"generated_asum",        [](const Solution& s)->Value*{ return s["AE1"]; }, nullptr},
+    {"generated_axpy",        [](const Solution& s)->Value*{ return s["AF0"]; }, nullptr},
+    {"generated_conv",        [](const Solution& s)->Value*{ return s["AG0"]; }, nullptr},
+    {"generated_determinant", [](const Solution& s)->Value*{ return s["AE0"]; }, nullptr},
+    {"generated_dot_product", [](const Solution& s)->Value*{ return s["AG2"]; }, nullptr},
+    {"generated_gemv",        [](const Solution& s)->Value*{ return s["BA2"]; }, nullptr},
+    {"generated_ger",         [](const Solution& s)->Value*{ return s["AJ3"]; }, nullptr},
+    {"generated_mag",         [](const Solution& s)->Value*{ return s["AG2"]; }, nullptr},
+    {"generated_relu",        [](const Solution& s)->Value*{ return s["AE0"]; }, nullptr},
+    {"generated_scalar_add",  [](const Solution& s)->Value*{ return s["AF0"]; }, nullptr},
+    {"generated_softmax",     [](const Solution& s)->Value*{ return s["AC0"]; }, nullptr}}) { }
 };
 
 static RegisterPass<ResearchReplacer> X("research-replacer", "Research replacer", false, false);
