@@ -225,28 +225,44 @@ Constraint ReadRange
                        and {begin} as {begin} at {iter_end_read})
 End
 
+Constraint OffsetAdd
+( {value} is add instruction and
+  inherits ArgumentsPermuted
+      with {value}  as {dst}
+       and {base}   as {src1}
+       and {offset} as {src2} and
+  inherits LocalConst
+      with {offset} as {value})
+End
+
+Constraint RangeCheck
+( {value} is icmp instruction and
+  inherits ArgumentsPermuted
+      with {value} as {dst}
+       and {input} as {src1}
+       and {limit} as {src2} and
+  inherits LocalConst
+      with {limit} as {value})
+End
+
 Constraint For
 ( inherits Loop at {loop} and
-
-  inherits InductionVar with {iterator}  as {old_ind}
-                         and {increment} as {new_ind}
-                         and {loop.end}  as {end} and
-  {increment} has data flow to {comparison} and
-  {iterator} is phi instruction and
-  {comparison} is icmp instruction and
-  {comparison} has data flow to {loop.end} and
-  {increment} has data flow to {iterator} and
-  {increment} is add instruction and
-  {iterator} has data flow to {increment} and
-  {iter_end} has data flow to {comparison} and
-  inherits LocalConst with {iter_end}   as {value}
-                       and {loop.begin} as {begin} and
+  inherits InductionVar
+      with {iterator}  as {old_ind}
+       and {increment} as {new_ind} at {loop} and
   {iter_begin} has data flow to {iterator} and
-  inherits LocalConst with {iter_begin} as {value}
-                       and {loop.begin} as {begin} and
-  {iter_step} has data flow to {increment} and
-  inherits LocalConst with {iter_step}  as {value}
-                       and {loop.begin} as {begin} and
+  inherits LocalConst
+      with {iter_begin} as {value}
+       and {loop.begin} as {begin} and
+  inherits OffsetAdd
+      with {increment} as {value}
+       and {iterator}  as {base}
+       and {iter_step} as {offset} at {loop} and
+  {comparison} is first argument of {loop.end} and
+  inherits RangeCheck
+      with {comparison} as {value}
+       and {increment}  as {input}
+       and {iter_end}   as {limit} at {loop} and
 
   collect k 1
   ( ( ( {loop.begin} control flow post dominates {loop.precursor} and
