@@ -1,30 +1,48 @@
 #include "llvm/IDL/BackendSpecializations.hpp"
+#include <unordered_map>
 
-template<unsigned ... constants>
-BackendConstantValue<constants...>::BackendConstantValue(const FunctionWrap& wrap)
-                                  : BackendSingle(std::vector<unsigned>{constants...}) { }
+BackendConstantValue::BackendConstantValue(const FunctionWrap& wrap, unsigned c)
+                    : BackendSingle(std::vector<unsigned>{c}) { }
 
-template<typename Type>
-BackendLLVMSingle<Type>::BackendLLVMSingle(const FunctionWrap& wrap, std::function<bool(Type&)> pred)
-                       : BackendSingle(compute_hits(wrap, pred)) { }
+BackendLLVMSingleBase::BackendLLVMSingleBase(const FunctionWrap& wrap, std::function<bool(llvm::Value&)> pred)
+                     : BackendSingle(compute_hits(wrap, pred)) { }
 
-template<typename Type>
-std::vector<unsigned> BackendLLVMSingle<Type>::compute_hits(const FunctionWrap& wrap, std::function<bool(Type&)> pred)
+std::vector<unsigned> BackendLLVMSingleBase::compute_hits(const FunctionWrap& wrap, std::function<bool(llvm::Value&)> pred)
 {
-    std::vector<unsigned> hits;
-
-    for(unsigned i = 0; i < wrap.size(); i++)
+    std::vector<unsigned> inst_hits;
+    std::vector<unsigned> val_hits;
+    unsigned inst_it = 0;
+    unsigned vals_it = 0;
+    
+    std::unordered_map<llvm::Instruction*,unsigned> instr_hash;
+    std::unordered_map<llvm::Value*,unsigned>       value_hash;
+    for(auto& block : wrap.function.getBasicBlockList())
     {
-        if(auto value = llvm::dyn_cast<Type>(wrap[i]))
+        for(auto& instruction : block)
         {
-            if(pred == nullptr || pred(*value))
+            if(pred == nullptr || pred(instruction)) inst_hits.push_back(inst_it);
+
+            instr_hash[&instruction] = inst_it++;
+
+            for(auto& operand : instruction.operands())
             {
-                hits.push_back(i);
+                if(llvm::isa<llvm::Constant>(operand.get()) ||
+                   llvm::isa<llvm::Argument>(operand.get()))
+                {
+                    if(value_hash.find(operand.get()) == value_hash.end())
+                    {
+                        if(pred == nullptr || pred(*operand.get())) val_hits.push_back(vals_it);
+                        value_hash[operand.get()] = vals_it++;
+                    }
+                }
             }
         }
     }
 
-    return hits;
+    for(auto hit : inst_hits) {
+        val_hits.push_back(hit + vals_it);
+    }
+    return val_hits;
 }
 
 BackendNotNumericConstant::BackendNotNumericConstant(const FunctionWrap& wrap)
@@ -72,18 +90,27 @@ BackendFunctionAttribute::BackendFunctionAttribute(const FunctionWrap& wrap)
 BackendArgument::BackendArgument(const FunctionWrap& wrap)
                : BackendLLVMSingle<llvm::Argument>(wrap, nullptr) { }
 
-BackendInstruction::BackendInstruction(const FunctionWrap& wrap)
-                  : BackendLLVMSingle<llvm::Instruction>(wrap, nullptr) { }
-
 BackendFloatZero::BackendFloatZero(const FunctionWrap& wrap)
                 : BackendLLVMSingle<llvm::ConstantFP>(wrap, [](llvm::ConstantFP& value) { return value.isZero(); }) { }
 
 BackendIntZero::BackendIntZero(const FunctionWrap& wrap)
               : BackendLLVMSingle<llvm::ConstantInt>(wrap, [](llvm::ConstantInt& value) { return value.isZero(); }) { }
 
-template<unsigned op>
-BackendOpcode<op>::BackendOpcode(const FunctionWrap& wrap)
-      : BackendLLVMSingle<llvm::Instruction>(wrap, [](llvm::Instruction& inst) { return inst.getOpcode() == op; }) { }
+BackendOpcode::BackendOpcode(const FunctionWrap& wrap)
+      : BackendLLVMSingleBase(wrap, [](llvm::Value& val)
+{
+    if(llvm::isa<llvm::Instruction>(&val) )
+        return true;
+    else return false;
+}) { }
+
+BackendOpcode::BackendOpcode(const FunctionWrap& wrap, unsigned op)
+      : BackendLLVMSingleBase(wrap, [op](llvm::Value& val)
+{
+    if(auto inst = llvm::dyn_cast<llvm::Instruction>(&val) )
+        return inst->getOpcode() == op;
+    else return false;
+}) { }
 
 template<bool(llvm::Type::*predicate)() const>
 BackendLLVMType<predicate>::BackendLLVMType(const FunctionWrap& wrap)
@@ -179,37 +206,11 @@ std::vector<unsigned> BackendLLVMDominate<inverted,unstrict,origin_calc,forw_gra
     return origins;
 }
 
-template class BackendConstantValue<UINT_MAX-1>;
 
 template class BackendLLVMType<&llvm::Type::isIntegerTy>;
 template class BackendLLVMType<&llvm::Type::isFloatTy>;
 template class BackendLLVMType<&llvm::Type::isVectorTy>;
 template class BackendLLVMType<&llvm::Type::isPointerTy>;
-
-template class BackendOpcode<llvm::Instruction::PHI>;
-template class BackendOpcode<llvm::Instruction::Store>;
-template class BackendOpcode<llvm::Instruction::Load>;
-template class BackendOpcode<llvm::Instruction::Ret>;
-template class BackendOpcode<llvm::Instruction::Br>;
-template class BackendOpcode<llvm::Instruction::Add>;
-template class BackendOpcode<llvm::Instruction::Sub>;
-template class BackendOpcode<llvm::Instruction::Mul>;
-template class BackendOpcode<llvm::Instruction::FAdd>;
-template class BackendOpcode<llvm::Instruction::FSub>;
-template class BackendOpcode<llvm::Instruction::FMul>;
-template class BackendOpcode<llvm::Instruction::FDiv>;
-template class BackendOpcode<llvm::Instruction::Or>;
-template class BackendOpcode<llvm::Instruction::And>;
-template class BackendOpcode<llvm::Instruction::Shl>;
-template class BackendOpcode<llvm::Instruction::Select>;
-template class BackendOpcode<llvm::Instruction::BitCast>;
-template class BackendOpcode<llvm::Instruction::SExt>;
-template class BackendOpcode<llvm::Instruction::ZExt>;
-template class BackendOpcode<llvm::Instruction::GetElementPtr>;
-template class BackendOpcode<llvm::Instruction::ICmp>;
-template class BackendOpcode<llvm::Instruction::Call>;
-template class BackendOpcode<llvm::Instruction::ShuffleVector>;
-template class BackendOpcode<llvm::Instruction::InsertElement>;
 
 template class BackendOrderWrap<false,true,false>;
 template class BackendOrderWrap<true,false,true>;

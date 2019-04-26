@@ -134,8 +134,9 @@ def code_generation_core(syntax, counter):
 
     elif syntax[0] == "ConstraintOpcode":
         opcode = syntax[2][:1].upper()+syntax[2][1:]
-        if opcode[:3] == "Gep": opcode = "GEP"+opcode[3:]
+        if opcode[:3] == "Gep": opcode = "GetElementPtr"+opcode[3:]
         if opcode[:3] == "Phi": opcode = "PHI"+opcode[3:]
+        if opcode[:6] == "Branch": opcode = "Br"+opcode[6:]
         if opcode[-2:] == "or": opcode = opcode[:-2]+"Or"
         if opcode[-3:] == "and": opcode = opcode[:-3]+"And"
         if opcode[-3:] == "add": opcode = opcode[:-3]+"Add"
@@ -149,14 +150,10 @@ def code_generation_core(syntax, counter):
         if opcode[-6:] == "vector": opcode = opcode[:-6]+"Vector"
         if opcode[-7:] == "element": opcode = opcode[:-7]+"Element"
 
-        classname = "Backend{}Inst".format(opcode)
+        classname = "BackendOpcode"
 
-        if classname not in counter:
-            atom = getatom(counter, classname)
-            code = "{} = {{wrap}};\n".format(atom)
-        else:
-            atom = "atom{}_[0]".format(counter[classname][0])
-            code = ""
+        atom = getatom(counter, classname)
+        code = "{} = {{wrap, llvm::Instruction::{}}};\n".format(atom, opcode)
 
         slots = [generate_cpp_slot(s) for s in syntax[1:2]]
 
