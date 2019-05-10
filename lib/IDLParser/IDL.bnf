@@ -60,6 +60,8 @@ atom ::= <ConstraintIntegerType> | <ConstraintFloatType> | <ConstraintVectorType
        | <ConstraintDFGBlocked> | <ConstraintCFGBlocked> | <ConstraintPDGBlocked>
        | <ConstraintFunctionAttribute>
 
+ConstraintOpcode ::= <@slot> is <s> instruction
+
 ConstraintIntegerType ::= <@slot> is an integer
 ConstraintFloatType   ::= <@slot> is a float
 ConstraintVectorType  ::= <@slot> is a vector
@@ -77,8 +79,6 @@ ConstraintInstruction        ::= <@slot> is instruction
 
 ConstraintIndirOpcode1 ::= <@slot> is <@slot> instruction
 ConstraintIndirOpcode2 ::= <@slot> is <s> opcode
-
-ConstraintOpcode ::= <@slot> is <s> instruction
 
 ConstraintSame     ::= <@slot> is the same as <@slot>
 ConstraintDistinct ::= <@slot> is not the same as <@slot>
