@@ -27,10 +27,13 @@ bool ResearchReplacer::runOnModule(Module& module)
 {
     ModuleSlotTracker slot_tracker(&module);
 
+    std::string filename = module.getName();
+    for(char& c : filename) if(c == '/') c = '_';
+
     std::stringstream sstr;
-    sstr<<"replace-report-"<<(std::string)module.getName()<<".json";
+    sstr<<"replace-report-"<<filename<<".json";
     std::ofstream ofs(sstr.str().c_str());
-    ofs<<"{\n  \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"loops\": [";
+    ofs<<"{ \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"detected\": [";
 
     char first_hit1 = true;
     for(Function& function : module.getFunctionList())
