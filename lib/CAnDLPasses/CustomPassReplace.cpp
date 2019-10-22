@@ -13,17 +13,24 @@
 
 using namespace llvm;
 
-class ResearchReplacer : public ModulePass
+class ResearchReplacerBase : public ModulePass
 {
 public:
+    using Pivot  = std::function<Value*(const Solution&)>;
+    using Action = std::function<void(Function&, Solution)>;
+
     static char ID;
 
-    ResearchReplacer() : ModulePass(ID) { }
+    ResearchReplacerBase(std::vector<std::tuple<std::string,Pivot,Action>> i)
+      : ModulePass(ID), idioms(i) { }
 
     bool runOnModule(Module& module) override;
+
+private:
+    std::vector<std::tuple<std::string,Pivot,Action>> idioms;
 };
 
-bool ResearchReplacer::runOnModule(Module& module)
+bool ResearchReplacerBase::runOnModule(Module& module)
 {
     ModuleSlotTracker slot_tracker(&module);
 
@@ -40,60 +47,32 @@ bool ResearchReplacer::runOnModule(Module& module)
     {
         if(!function.isDeclaration())
         {
-            for(const auto& solution : GenerateAnalysis("SCoP")(function, 100))
+            for(auto& idiom : idioms)
             {
-                Instruction* precursor = dyn_cast<Instruction>((Value*)solution.get("precursor"));
-
-                unsigned line_begin = UINT_MAX;
-                if(precursor && precursor->getDebugLoc())
-                    line_begin = precursor->getDebugLoc().getLine();
-
-                ofs<<(first_hit1?"\n":",\n");
-                ofs<<"    {\n      \"function\": \""<<(std::string)function.getName()<<"\",\n";
-                if(line_begin != UINT_MAX)
-                    ofs<<"      \"line\": "<<line_begin<<",\n";
-                else
-                    ofs<<"      \"line\": \"???\",\n";
-                ofs<<"      \"idioms\": [\n";
-                ofs<<"\n    {\n      \"type\": \"SCoP\",\n";
-                ofs<<"      \"solution\":\n        ";
-                for(char c : solution.prune().print_json(slot_tracker))
+                for(auto& solution : GenerateAnalysis(std::get<0>(idiom))(function, 99))
                 {
-                    ofs.put(c);
-                    if(c == '\n') ofs<<"        ";
-                }
-                ofs<<"\n    }";
-                ofs<<"]";
-                ofs<<"\n    }";
-                first_hit1 = false;
-            }
-        }
-    }
+                    int pivot_begin = -1;
+                    if(const auto& pivot_lookup = std::get<1>(idiom))
+                        if(auto pivot = dyn_cast_or_null<Instruction>(pivot_lookup(solution)))
+                            if(auto& debugloc = pivot->getDebugLoc())
+                                pivot_begin = debugloc.getLine();
 
-    ofs<<"],\n  \"transformations\": [";
-
-    char first_hit = true;
-    for(Function& function : module.getFunctionList())
-    {
-        if(!function.isDeclaration())
-        {
-            auto solutions = GenerateAnalysis("Experiment")(function, UINT_MAX);
-
-            if(!solutions.empty())
-            {
-                for(auto& solution : solutions)
-                {
-                    ofs<<(first_hit?"\n":",\n");
-                    ofs<<"    {\n      \"function\": \""<<(std::string)function.getName()<<"\",\n";
-                    ofs<<"      \"type\": \"Experiment\",\n";
-                    ofs<<"      \"solution\":\n        ";
+                    ofs<<(first_hit1?"{\n":", {\n");
+                    ofs<<"    \"function\": \""<<(std::string)function.getName()<<"\",\n";
+                    if(pivot_begin > 0)
+                        ofs<<"    \"line\": "<<pivot_begin<<",\n";
+                    ofs<<"    \"type\": \""<<std::get<0>(idiom)<<"\",\n";
+                    ofs<<"    \"solution\":\n     ";
                     for(char c : solution.prune().print_json(slot_tracker))
                     {
                         ofs.put(c);
-                        if(c == '\n') ofs<<"        ";
+                        if(c == '\n') ofs<<"     ";
                     }
-                    ofs<<"\n    }";
-                    first_hit = false;
+                    ofs<<"\n  }";
+                    first_hit1 = false;
+
+                    if(std::get<2>(idiom))
+                        std::get<2>(idiom)(function, solution);
                 }
             }
         }
@@ -104,7 +83,14 @@ bool ResearchReplacer::runOnModule(Module& module)
     return false;
 }
 
-char ResearchReplacer::ID = 0;
+char ResearchReplacerBase::ID = 0;
+
+class ResearchReplacer : public ResearchReplacerBase
+{
+public:
+    ResearchReplacer() : ResearchReplacerBase({
+    {"SCoP", [](const Solution& s)->Value*{ return s["comparison"]; }, nullptr}}) { }
+};
 
 static RegisterPass<ResearchReplacer> X("research-replacer", "Research replacer", false, false);
 
