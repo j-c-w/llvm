@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <iostream>
 
 using namespace llvm;
 
@@ -294,11 +295,20 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
     {
         auto comparison = dyn_cast<Instruction>((Value*)solution["comparison"]);
         auto increment  = dyn_cast<Instruction>((Value*)solution["increment"]);
+        auto iterator   = dyn_cast<Instruction>((Value*)solution["iterator"]);
 
-        comparison->setOperand(0, increment);
-        comparison->setOperand(1, BinaryOperator::Create(Instruction::Add,
-                                      comparison->getOperand(1),
-                                      increment->getOperand(1), "", comparison));
+        if(comparison->getOperand(0) == iterator) {
+            comparison->setOperand(0, increment);
+            comparison->setOperand(1, BinaryOperator::Create(Instruction::Add,
+                                          comparison->getOperand(1),
+                                          increment->getOperand(1), "", comparison));
+        }
+        else if(comparison->getOperand(1) == iterator) {
+            comparison->setOperand(1, increment);
+            comparison->setOperand(0, BinaryOperator::Create(Instruction::Add,
+                                          comparison->getOperand(0),
+                                          increment->getOperand(1), "", comparison));
+        }
     }
 
     std::unordered_set<Value*> removed_instructions;
