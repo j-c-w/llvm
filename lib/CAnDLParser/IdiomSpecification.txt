@@ -57,7 +57,7 @@ End
 
 Constraint For
 ( include Loop
-∧ {increment} reaches phi node {iterator} from {body.end}
+∧ {increment} -> {iterator} Φ {body.end}
 ∧ {increment} ∈ {comparison}.args
 ∧ opcode{comparison} = icmp
 ∧ {comparison} ∈ {end}.args
@@ -219,7 +219,7 @@ End
 
 Constraint ForWithIteratorTest
 ( include Loop
-∧ {increment} reaches phi node {iterator} from {body.end}
+∧ {increment} -> {iterator} Φ {body.end}
 ∧ {iterator} ∈ {comparison}.args
 ∧ opcode{comparison} = icmp
 ∧ {comparison} ∈ {end}.args
@@ -244,7 +244,7 @@ Constraint Loop
 End
 
 Constraint InductionVar
-{new_ind} reaches phi node {old_ind} from {end}
+{new_ind} -> {old_ind} Φ {end}
 End
 
 Constraint LocalConst
