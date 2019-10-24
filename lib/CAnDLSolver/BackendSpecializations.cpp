@@ -206,7 +206,7 @@ template class BackendOrderWrap<true,false,true>;
 template class BackendOrderWrap<true,false,false>;
 
 template class BackendLLVMEdge<&FunctionWrap::dfg, &FunctionWrap::rdfg>;
-template class BackendLLVMEdge<&FunctionWrap::cfg, &FunctionWrap::rcfg>;
+template class BackendLLVMEdge<&FunctionWrap::rcfg, &FunctionWrap::cfg>;
 template class BackendLLVMEdge<&FunctionWrap::cdg, &FunctionWrap::rcdg>;
 template class BackendLLVMEdge<&FunctionWrap::pdg, &FunctionWrap::rpdg>;
 

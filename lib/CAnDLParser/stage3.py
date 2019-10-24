@@ -274,7 +274,10 @@ def code_generation_core(syntax, counter):
                 atom = "atom{}_[0]".format(counter[classname][0])
                 code = ""
 
-        slots = [generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
+        if classname == "BackendIncomingValue":
+            slots = [generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:1]]
+        else:
+            slots = [generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
 
         if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
             result = {slot:("MultiVectorSelector<Backend{},{}>".format(syntax[1][0][10:], i+1), "{}, <[0]>".format(atom)) for i,slot in enumerate(slots)}
