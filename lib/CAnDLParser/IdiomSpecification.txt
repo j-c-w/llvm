@@ -3,50 +3,49 @@ Constraint Experiment
 End
 
 Constraint SCoP
-( include For
-∧ include StructuredControlFlowPart({body.begin}->{begin},
-                                      {body.end}->{end})
-                                 @ {constraint_control}
-∧ include SideEffectFreePart({begin}->{begin},
-                               {end}->{end})
-                     @ {constraint_effects}
-∧ {constraint_memory.input[0]} = {iterator}
+( include For @ {loop}
+∧ include SideEffectFreePart({loop}->{scope})
+                      @ {constraint_effects}
+∧ include StructuredControlFlowPart({loop}->{scope})
+                             @ {constraint_control}
+∧ {constraint_memory.input[0]} = {loop.iterator}
 ∧ {constraint_memory.input[i+1]} =
-      {constraint_control.loop[i].iterator} foreach i=0..7
-∧ include AffineMemoryAccessPart({begin}->{begin},
-                                   {end}->{end})
-                          @ {constraint_memory}
+      {constraint_control.forloop[i].iterator} foreach i=0..7
+∧ include AffineMemoryAccessPart({loop}->{scope})
+                           @ {constraint_memory}
 ∧ include AffineControlFlowPart({body.begin}->{begin},
                    {constraint_memory.input}->{input})
                                @ {constraint_control})
 End
 
-Constraint StructuredControlFlowPart
-( collect i 16 ( opcode{branch[i].value} = branch
-               ∧ {branch[i].dummy} =
-                     {branch[i].value}.successors[1]
-               ∧ include LocalValue(
-                          {branch[i].value}->{value}))
-∧ collect i  8 ( include For @ {loop[i]}
-               ∧ domination({begin}, {loop[i].begin})
-               ∧ post_domination({end}, {loop[i].end}))
-∧ collect i  8 ( include IfBlock @ {conditional[i]}
-               ∧ domination({begin},
-                            {conditional[i].precursor})
-               ∧ post_domination({end},
-                                 {conditional[i].successor}))
-∧ {loop[0..8].end,conditional[0..8].precursor}
-      is the same set as {branch[0..16].value})
-End
-
 Constraint SideEffectFreePart
-( collect i 32 ( include LocalFunctionCall({begin}->{begin},
-                                             {end}->{end})
-                                              @ {call[i]}) 
-∧ collect i 32 ( include LocalFunctionCall({begin}->{begin},
-                                             {end}->{end})
+( collect i 32 ( include LocalFunctionCall({scope}->{scope})
+                                                @ {call[i]})
+∧ collect i 32 ( include LocalFunctionCall({scope}->{scope})
                                               @ {call[i]}
                ∧ {call[i].function} has attribute pure))
+End
+
+Constraint StructuredControlFlowPart
+( collect i 32 ( opcode{branch[i].value} = branch
+               ∧ {branch[i].target1} =
+                     {branch[i].value}.successors[0]
+               ∧ {branch[i].target2} =
+                     {branch[i].value}.successors[1]
+               ∧ include LocalValue({scope}->{scope},
+                          {branch[i].value}->{value}))
+∧ collect i 16 ( include For @ {forloop[i]}
+               ∧ domination({scope.begin},
+                            {forloop[i].begin})
+               ∧ strict_post_domination({scope.end},
+                                        {forloop[i].end}))
+∧ collect i 16 ( include IfBlock @ {ifblock[i]}
+               ∧ domination({scope.begin},
+                            {ifblock[i].precursor})
+               ∧ strict_post_domination({scope.end},
+                                        {ifblock[i].successor}))
+∧ {forloop[0..16].end,ifblock[0..16].precursor}
+      is the same set as {branch[0..32].value})
 End
 
 Constraint AffineMemoryAccessPart
@@ -90,23 +89,6 @@ Constraint AffineControlFlowPart
                       {input}->{input},
                       {begin}->{begin})
                  @{loop_affine_end[i]} foreach i=0..8)
-End
-
-Constraint For
-( include Loop
-∧ {increment} -> {body.end} Φ {iterator}
-∧ {increment} ∈ {comparison}.args
-∧ opcode{comparison} = icmp
-∧ {comparison} ∈ {end}.args
-∧ {increment} ∈ {iterator}.args
-∧ opcode{increment} = add
-∧ {iterator} ∈ {increment}.args
-∧ {iter_end} ∈ {comparison}.args
-∧ include LocalConst({iter_end}->{value},{begin}->{begin})
-∧ {iter_begin} ∈ {iterator}.args
-∧ include LocalConst({iter_begin}->{value},{begin}->{begin})
-∧ {iter_step} ∈ {increment}.args
-∧ include LocalConst({iter_step}->{value},{begin}->{begin}))
 End
 
 Constraint MemoryAccess
@@ -192,8 +174,8 @@ Constraint PotentialSESE
 End
 
 Constraint LocalValue
-( domination({begin}, {value})
-∧ post_domination({end}, {value}))
+( domination({scope.begin}, {value})
+∧ strict_post_domination({scope.end}, {value}))
 End
 
 Constraint Distributive
@@ -264,6 +246,23 @@ Constraint HoistSelect
 ∧ opcode{input2} = gep)
 End
 
+Constraint For
+( include Loop
+∧ {increment} -> {body.end} Φ {iterator}
+∧ {increment} ∈ {comparison}.args
+∧ opcode{comparison} = icmp
+∧ {comparison} ∈ {end}.args
+∧ {increment} ∈ {iterator}.args
+∧ opcode{increment} = add
+∧ {iterator} ∈ {increment}.args
+∧ {iter_end} ∈ {comparison}.args
+∧ include LocalConst({iter_end}->{value},{begin}->{begin})
+∧ {iter_begin} ∈ {iterator}.args
+∧ include LocalConst({iter_begin}->{value},{begin}->{begin})
+∧ {iter_step} ∈ {increment}.args
+∧ include LocalConst({iter_step}->{value},{begin}->{begin}))
+End
+
 Constraint ForWithIteratorTest
 ( include Loop
 ∧ {increment} -> {body.end} Φ {iterator}
@@ -283,23 +282,18 @@ End
 
 Constraint Loop
 ( include SESE
-∧ {body.begin} = {begin}
-∧ {body.end} = {end}
-∧ {body.precursor} = {precursor}
-∧ {body.successor} = {successor}
 ∧ {begin} ∈ {end}.successors)
 End
 
 Constraint InductionVar
-{new_ind} -> {end} Φ {old_ind}
+( {new_ind} -> {loop.end} Φ {old_ind}
+∧ include LocalValue({loop}->{scope},{old_ind}->{value}))
 End
 
 Constraint LocalConst
 ( ( ir_type{begin} = instruction
   ∧ ir_type{value} = preexecution)
-∨ strict_domination({value}, {begin})
-∨ ( ir_type{begin} = instruction
-  ∧ {value} is unused))
+∨ strict_domination({value}, {begin}))
 End
 
 Constraint SESE
@@ -312,7 +306,7 @@ Constraint SESE
 ∧ strict_domination({precursor}, {begin})
 ∧ strict_post_domination({successor}, {end})
 ∧ all control flow from {begin} to {precursor}
-                    passes through {end}
+         passes through {end}
 ∧ all control flow from {successor} to {end}
-                        passes through {begin})
+         passes through {begin})
 End
