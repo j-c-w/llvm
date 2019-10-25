@@ -291,6 +291,38 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
         }
     }
 
+    for(BasicBlock& block : function.getBasicBlockList())
+    {
+        for(Instruction& instruction : block.getInstList())
+        {
+            BranchInst*     branch_inst;
+            BinaryOperator* binary_inst;
+
+            if((branch_inst = dyn_cast<BranchInst>(&instruction)) &&
+               branch_inst->isConditional() &&
+               (binary_inst = dyn_cast<BinaryOperator>(branch_inst->getCondition())) &&
+               binary_inst->getOpcode() == Instruction::And) {
+                std::cerr<<"FOUND ONE OF THOSE!\n";
+                BasicBlock* true_block  = branch_inst->getSuccessor(0);
+                BasicBlock* false_block = branch_inst->getSuccessor(1);
+                BasicBlock* new_block   = BasicBlock::Create(true_block->getContext(),
+                                                             "", &function, true_block);
+                BranchInst::Create(true_block, false_block,
+                                   binary_inst->getOperand(1), new_block);
+                branch_inst->setCondition(binary_inst->getOperand(0));
+                branch_inst->setSuccessor(0, new_block);
+
+                for(PHINode& phi_node : true_block->phis()) {
+                    for(unsigned i = 0; i < phi_node.getNumIncomingValues(); i++) {
+                        if(phi_node.getIncomingBlock(i) == &block) {
+                            phi_node.setIncomingBlock(i, new_block);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     for(auto solution : GenerateAnalysis("ForWithIteratorTest")(function, UINT_MAX))
     {
         auto comparison = dyn_cast<Instruction>((Value*)solution["comparison"]);
@@ -442,7 +474,7 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
         }
     }
 
-    return false;
+    return true;
 }
 
 char ResearchPreprocessor::ID = 0;
