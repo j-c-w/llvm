@@ -10,7 +10,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <iostream>
 
 using namespace llvm;
 
@@ -302,7 +301,6 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
                branch_inst->isConditional() &&
                (binary_inst = dyn_cast<BinaryOperator>(branch_inst->getCondition())) &&
                binary_inst->getOpcode() == Instruction::And) {
-                std::cerr<<"FOUND ONE OF THOSE!\n";
                 BasicBlock* true_block  = branch_inst->getSuccessor(0);
                 BasicBlock* false_block = branch_inst->getSuccessor(1);
                 BasicBlock* new_block   = BasicBlock::Create(true_block->getContext(),
