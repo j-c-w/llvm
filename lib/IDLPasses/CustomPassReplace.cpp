@@ -77,6 +77,16 @@ bool ResearchReplacerBase::runOnModule(Module& module)
     }
 
     ofs<<"]\n}\n";
+    ofs.close();
+
+    std::stringstream sstr2;
+    sstr2<<"replace-source-"<<filename<<".ll";
+    std::ofstream ofs2(sstr2.str().c_str());
+    std::string string_value;
+    llvm::raw_string_ostream out_stream(string_value);
+    out_stream<<module;
+    ofs2<<string_value;
+    ofs2.close();
 
     return false;
 }
