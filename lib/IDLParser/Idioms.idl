@@ -19,7 +19,7 @@ Constraint ComplexReductionsAndHistograms
          and {loop}          as {loop}
          and {read_value}    as {read_value}
                              at {scalar[k]}) and
-  {scalar[0].kernel.output} is not the
+  {scalar[0].kernel.result} is not the
       same as {histo[0].update.store_instr} and
   collect i 2
   ( {histo[i].update.store_instr}
@@ -40,14 +40,14 @@ Constraint ComplexReductionsAndHistograms
 End
 
 Constraint ScalarPart
-( {kernel.output} reaches phi node
+( {kernel.result} reaches phi node
       {old_value} from {loop.end} and
   {loop.begin} control flow
       dominates {old_value} and
   {loop.end} strictly control flow
       post dominates {old_value} and
   {old_value} is not the same as {loop.iterator} and
-  {kernel.output} reaches phi node
+  {kernel.result} reaches phi node
       {final_value} from {loop.end} and
   {final_value} strictly control flow
       post dominates {loop.end} and
@@ -61,15 +61,15 @@ End
 
 Constraint HistoPart
 ( inherits ConditionalReadModifyWrite
-      with {indexkernel.output} as {address}
+      with {indexkernel.result} as {address}
        and {loop}               as {loop} at {update} and
   inherits KernelFunction
       with {loop} as {scope} at {kernel} and
-  {kernel.output} is the same as {update.new_value} and
+  {kernel.result} is the same as {update.new_value} and
   inherits KernelFunction
       with {loop}       as {scope}
        and {read_value} as {input} at {indexkernel} and
-  ( {indexkernel.output} is not the same as
+  ( {indexkernel.result} is not the same as
         {read[i].address} for all i=0..32) and
   inherits Concat(N1=31,N2=1)
       with {read_value}        as {in1}
@@ -167,7 +167,7 @@ Constraint VectorRead
 End
 
 Constraint KernelFunction
-( collect i  4 ( {origins[i]} has control
+( collect i  4 ( {entries[i]} has control
                      flow to {scope.begin}) and
   collect i 24 ( inherits LocalConst
                      with {scope} as {scope}
@@ -183,10 +183,9 @@ Constraint KernelFunction
                      from {scope.end} and
                  {scope.begin} control flow
                      dominates {loop_carried[i].value}) and
-
   all flow from {loop_carried[0..8].value} or any origin
-      to any of {output} passes through at least one of
-      {origins[0..4],constants[0..24].value,input[0..32]})
+      to any of {result} passes through at least one of
+      {input[0..32],entries[0..4],constants[0..24].value})
 End
 
 Constraint Concat
