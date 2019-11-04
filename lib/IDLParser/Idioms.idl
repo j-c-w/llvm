@@ -2,23 +2,23 @@ Constraint ComplexReductionsAndHistograms
 ( inherits For at {loop} and
   collect k 32
   ( inherits VectorRead
-        with {loop.iterator} as {input_index}
-         and {read_value[k]} as {value}
-         and {loop}          as {scope}
-                             at {read[k]}) and
+        with {loop.iterator}  as {input_index}
+         and {read_values[k]} as {value}
+         and {loop}           as {scope}
+                              at {read[k]}) and
   collect k 2
   ( inherits HistoPart
-        with {loop.begin} as {begin}
-         and {read}       as {read}
-         and {loop}       as {loop}
-         and {read_value} as {read_value}
-                          at {histo[k]}) and
+        with {loop.begin}  as {begin}
+         and {read}        as {read}
+         and {loop}        as {loop}
+         and {read_values} as {read_values}
+                           at {histo[k]}) and
   collect k 2
   ( inherits ScalarPart
-        with {loop.begin}    as {begin}
-         and {loop}          as {loop}
-         and {read_value}    as {read_value}
-                             at {scalar[k]}) and
+        with {loop.begin}  as {begin}
+         and {loop}        as {loop}
+         and {read_values} as {read_values}
+                           at {scalar[k]}) and
   {scalar[0].kernel.result} is not the
       same as {histo[0].update.store_instr} and
   collect i 2
@@ -54,7 +54,7 @@ Constraint ScalarPart
   inherits KernelFunction
       with {loop} as {scope} at {kernel} and
   inherits Concat(N1=31,N2=1)
-      with {read_value}    as {in1}
+      with {read_values}   as {in1}
        and {old_value}     as {in2}
        and {kernel.inputs} as {out})
 End
@@ -67,12 +67,12 @@ Constraint HistoPart
       with {loop} as {scope} at {kernel} and
   {kernel.result} is the same as {update.new_value} and
   inherits KernelFunction
-      with {loop}       as {scope}
-       and {read_value} as {inputs} at {indexkernel} and
+      with {loop}        as {scope}
+       and {read_values} as {inputs} at {indexkernel} and
   ( {indexkernel.result} is not the same as
         {read[i].address} for all i=0..32) and
   inherits Concat(N1=31,N2=1)
-      with {read_value}       as {in1}
+      with {read_values}      as {in1}
        and {update.old_value} as {in2}
        and {kernel.inputs}    as {out})
 End
