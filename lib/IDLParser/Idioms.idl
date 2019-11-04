@@ -54,9 +54,9 @@ Constraint ScalarPart
   inherits KernelFunction
       with {loop} as {scope} at {kernel} and
   inherits Concat(N1=31,N2=1)
-      with {read_value}   as {in1}
-       and {old_value}    as {in2}
-       and {kernel.input} as {out})
+      with {read_value}    as {in1}
+       and {old_value}     as {in2}
+       and {kernel.inputs} as {out})
 End
 
 Constraint HistoPart
@@ -68,13 +68,13 @@ Constraint HistoPart
   {kernel.result} is the same as {update.new_value} and
   inherits KernelFunction
       with {loop}       as {scope}
-       and {read_value} as {input} at {indexkernel} and
+       and {read_value} as {inputs} at {indexkernel} and
   ( {indexkernel.result} is not the same as
         {read[i].address} for all i=0..32) and
   inherits Concat(N1=31,N2=1)
-      with {read_value}        as {in1}
-       and {update.old_value}  as {in2}
-       and {kernel.input}      as {out})
+      with {read_value}       as {in1}
+       and {update.old_value} as {in2}
+       and {kernel.inputs}    as {out})
 End
 
 Constraint ConditionalReadModifyWrite
@@ -171,13 +171,13 @@ Constraint KernelFunction
                      flow to {scope.begin}) and
   collect i 24 ( inherits LocalConst
                      with {scope} as {scope}
-                                  at {constants[i]} and
-                 {constants[i].value}
+                                  at {outside[i]} and
+                 {outside[i].value}
                      is not a numeric constant and
-                 {constants[i].value} has data
-                     flow to {constants[i].use} and
+                 {outside[i].value} has data
+                     flow to {outside[i].use} and
                  {scope.begin} control flow
-                     dominates {constants[i].use}) and
+                     dominates {outside[i].use}) and
   collect i  8 ( {loop_carried[i].update} reaches
                      phi node {loop_carried[i].value}
                      from {scope.end} and
@@ -185,7 +185,7 @@ Constraint KernelFunction
                      dominates {loop_carried[i].value}) and
   all flow from {loop_carried[0..8].value} or any origin
       to any of {result} passes through at least one of
-      {input[0..32],entries[0..4],constants[0..24].value})
+      {inputs[0..32],entries[0..4],outside[0..24].value})
 End
 
 Constraint Concat
