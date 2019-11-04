@@ -2,9 +2,9 @@ Constraint ComplexReduction
 ( inherits For at {loop} and
   collect k 32
   ( inherits VectorRead
-        with {loop.iterator} as {idx}
+        with {loop.iterator} as {input_index}
          and {read_value[k]} as {value}
-         and {loop.begin}    as {begin}
+         and {loop}          as {scope}
                              at {read[k]}) and
   collect k 2
   ( inherits HistoPart
@@ -52,8 +52,7 @@ Constraint ScalarPart
   {final_value} strictly control flow
       post dominates {loop.end} and
   inherits KernelFunction
-      with {loop} as {scope}
-                  at {kernel} and
+      with {loop} as {scope} at {kernel} and
   inherits Concat(N1=31,N2=1)
       with {read_value}   as {in1}
        and {old_value}    as {in2}
@@ -62,15 +61,16 @@ End
 
 Constraint HistoPart
 ( inherits ConditionalReadModifyWrite
-    with {indexkernel.output} as {address}
-     and {loop} as {loop} at {update} and
+      with {indexkernel.output} as {address}
+       and {loop}               as {loop} at {update} and
   inherits KernelFunction
       with {loop} as {scope} at {kernel} and
   {kernel.output} is the same as {update.new_value} and
   inherits KernelFunction
       with {loop}       as {scope}
        and {read_value} as {input} at {indexkernel} and
-  ( {indexkernel.output} is not the same as {read[i].address} for all i=0..32) and
+  ( {indexkernel.output} is not the same as
+        {read[i].address} for all i=0..32) and
   inherits Concat(N1=31,N2=1)
       with {read_value}        as {in1}
        and {update.old_value}  as {in2}
@@ -79,7 +79,7 @@ End
 
 Constraint ConditionalReadModifyWrite
 ( {store_instr} is store instruction and
-  inherits MaxOnceInSESE
+  inherits MaxOnceInScope
       with {store_instr} as {value}
        and {store_instr_after} as {value_after} at {loop} and
   {address} is second argument of {store_instr} and
@@ -89,12 +89,14 @@ Constraint ConditionalReadModifyWrite
   {new_value} is first argument of {store_instr})
 End
 
-Constraint MaxOnceInSESE
+Constraint MaxOnceInScope
 ( {begin} control flow dominates {value} and
   {end} control flow post dominates {value} and
   {value} has control flow to {value_after} and
-  all control flow from {value_after} to {value} passes through {end} and
-  all control flow from {value_after} to {value} passes through {begin})
+  all control flow from {value_after} to
+      {value} passes through {end} and
+  all control flow from {value_after} to
+      {value} passes through {begin})
 End
 
 Constraint LocalFunctionCall
@@ -115,126 +117,76 @@ Constraint For
   {iterator} has data flow to {increment} and
   {iter_end} has data flow to {increment} and
   inherits LocalConst
-      with {iter_end} as {value} and
+      with {begin}    as {scope.begin}
+       and {iter_end} as {value} and
   {iter_begin} has data flow to {increment} and
   inherits LocalConst
-      with {iter_begin} as {value} and
+      with {begin}      as {scope.begin}
+       and {iter_begin} as {value} and
   {iter_step} has data flow to {increment} and
   inherits LocalConst
-      with {iter_step} as {value})
-End
-
-Constraint VectorStore
-  inherits PermMultidStore(N=1) with {idx} as {input[0]}
+      with {begin}     as {scope.begin}
+       and {iter_step} as {value})
 End
 
 Constraint VectorRead
-  inherits PermMultidRead(N=1) with {idx} as {input[0]}
-End
-
-Constraint PermMultidStore
-( {store} is store instruction and
-  {address} is second argument of {store} and
-  inherits AffineAccess and
-  inherits Permute with {input_index} as {output})
-End
-
-Constraint PermMultidRead
 ( {value} is load instruction and
   {address} is first argument of {value} and
-  inherits AffineAccess and
-  inherits Permute with {input_index} as {output})
-End
-
-Constraint AffineAccess
-( {address} is gep instruction and
   {base_pointer} is first argument of {address} and
-  inherits LocalConst with {base_pointer} as {value}
-                            and {begin}       as {begin} and
-  {output_index} is second argument of {address} and
-  {offset_add.value} is the same as {output_index} and
-  inherits Addition at {offset_add} and
-  inherits LocalConst with {offset_add.addend} as {value} and
-  ( {stride_mul[N-i-1].value} is the same as {index_add[N-i].input} and
-    inherits Multiplication at {stride_mul[N-i-1]} and
-    inherits LocalConst with {stride_mul[N-i-1].multiplier} as {value} and
-    {index_add[N-i-1].value} is the same as {stride_mul[N-i-1].input} and
-    inherits Addition at {index_add[N-i-1]} and
-    {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
-    ( ( {add_input[N-i-1]} is not the same as {input_index[N-i]} and
-        {input_index[N-i-1]} is an integer) or
-      ( {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
-        {input_index[N-i]} is an integer))) for all i=0..N
-                                           with {offset_add.input} as {index_add[N].input}
-                                            and {offset_add.value} as {input_index[N]}
-                                            and {index_add[0].input}  as {add_input[0]}
-                                            and {index_add[1].addend} as {add_input[1]}
-                                            and {index_add[2].addend} as {add_input[2]}
-                                            and {index_add[3].addend} as {add_input[3]} and
-  {base_index} is the same as {index_add[0].addend} and
-  inherits LocalConst with {base_index} as {value})
-End
-
-Constraint Addition
-( ( {input} is the same as {value} and
-    {addend} is unused) or
-  ( ( {value} is add instruction or
-      {value} is fadd instruction) and
-    inherits ArgumentsPermuted with {value}  as {dst}
-                                and {input}  as {src1}
-                                and {addend} as {src2}) or
-  ( ( {value} is sub instruction or
-      {value} is fsub instruction) and
-    inherits ArgumentsPermuted with {value}  as {dst}
-                                and {input}  as {src1}
-                                and {addend} as {src2}))
-End
-
-Constraint Multiplication
-( ( {input} is the same as {value} and
-    {multiplier} is unused) or
-  ( ( {value} is mul instruction or
-      {value} is fmul instruction) and
-    inherits ArgumentsPermuted with {value}      as {dst}
-                                and {input}      as {src1}
-                                and {multiplier} as {src2}) or
-  ( {value} is fdiv instruction and
-    inherits ArgumentsPermuted with {value} as {dst}
-                                and {input} as {src1}
-                                and {multiplier} as {src2}))
+  inherits LocalConst
+      with {base_pointer} as {value} and
+  {final_index} is second argument of {address} and
+  ( ( {final_index} is add instruction and
+      inherits ArgumentsPermuted
+          with {final_index}   as {dst}
+           and {strided_index} as {src1}
+           and {offset}        as {src2} and
+      inherits LocalConst
+          with {offset} as {value} and
+      {strided_index} is mul instruction and
+      inherits ArgumentsPermuted
+          with {strided_index} as {dst}
+           and {input_index}   as {src1}
+           and {stride}        as {src2} and
+      inherits LocalConst
+          with {stride} as {value}) or 
+    ( {final_index} is mul instruction and
+      inherits ArgumentsPermuted
+          with {final_index} as {dst}
+           and {input_index} as {src1}
+           and {stride}      as {src2} and
+      inherits LocalConst
+          with {stride} as {value} and
+      {strided_index} is the same as {final_index} and
+      {offset} is unused) or 
+    ( {final_index} is the same as {input_index} and
+      {strided_index} is the same as {final_index} and
+      {offset} is unused and
+      {stride} is unused and
+      {scope.begin} is instruction)))
 End
 
 Constraint KernelFunction
-( collect i  4 ( {origin[i]} has control
+( collect i  4 ( {origins[i]} has control
                      flow to {scope.begin}) and
   collect i 24 ( inherits LocalConst
-                     with {scope.begin} as {begin}
-                                        at {constants[i]} and
+                     with {scope} as {scope}
+                                  at {constants[i]} and
                  {constants[i].value}
                      is not a numeric constant and
                  {constants[i].value} has data
                      flow to {constants[i].use} and
                  {scope.begin} control flow
                      dominates {constants[i].use}) and
-  collect i  8 ( {restrictions[i].update} reaches phi node
-                     {restrictions[i].value} from {scope.end} and
+  collect i  8 ( {loop_carried[i].update} reaches
+                     phi node {loop_carried[i].value}
+                     from {scope.end} and
                  {scope.begin} control flow
-                     dominates {restrictions[i].value}) and
+                     dominates {loop_carried[i].value}) and
 
-  all flow from {restrictions[0..8].value} or any origin to any of
-      {output} passes through at least one of
-      {origin[0..4],constants[0..24].value,input[0..32]})
-End
-
-Constraint Permute
-if M+1=N then
-  {input[M]} is the same as {output[M]}
-else
-  ( {input[M]} is the same as {output[n]} and
-    inherits Permute(N=N,M=M+1) with {output[M]} as {output[n]}
-                                and {output[n]} as {output[M]}) for some n=M..N
-endif
-for M=0 if not otherwise specified
+  all flow from {loop_carried[0..8].value} or any origin
+      to any of {output} passes through at least one of
+      {origins[0..4],constants[0..24].value,input[0..32]})
 End
 
 Constraint Concat

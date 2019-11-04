@@ -78,13 +78,13 @@ Constraint ForWithIteratorTest
   {iterator} has data flow to {increment} and
   {iter_end} has data flow to {comparison} and
   inherits LocalConst with {iter_end} as {value}
-                       and {begin}    as {begin} and
+                       and {begin}    as {scope.begin} and
   {iter_begin} has data flow to {iterator} and
   inherits LocalConst with {iter_begin} as {value}
-                       and {begin}      as {begin} and
+                       and {begin}      as {scope.begin} and
   {iter_step} has data flow to {increment} and
   inherits LocalConst with {iter_step} as {value}
-                       and {begin}     as {begin})
+                       and {begin}     as {scope.begin})
 End
 
 Constraint Loop
@@ -97,10 +97,10 @@ Constraint InductionVar
 End
 
 Constraint LocalConst
-( ( {begin} is instruction and
+( ( {scope.begin} is instruction and
     {value} is preexecution) or
-  {value} strictly control flow dominates {begin} or
-  ( {begin} is instruction and
+  {value} strictly control flow dominates {scope.begin} or
+  ( {scope.begin} is instruction and
     {value} is unused))
 End
 
