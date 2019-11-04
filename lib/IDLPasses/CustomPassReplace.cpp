@@ -97,7 +97,7 @@ class ResearchReplacer : public ResearchReplacerBase
 {
 public:
     ResearchReplacer() : ResearchReplacerBase({
-   {"ComplexReduction", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}}) { }
+   {"ComplexReductionsAndHistograms", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}}) { }
 };
 
 static RegisterPass<ResearchReplacer> X("research-replacer", "Research replacer", false, false);

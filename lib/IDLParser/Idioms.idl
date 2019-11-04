@@ -1,4 +1,4 @@
-Constraint ComplexReduction
+Constraint ComplexReductionsAndHistograms
 ( inherits For at {loop} and
   collect k 32
   ( inherits VectorRead
