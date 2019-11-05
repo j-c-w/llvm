@@ -46,7 +46,6 @@ Constraint ScalarPart
       dominates {old_value} and
   {loop.end} strictly control flow
       post dominates {old_value} and
-  {old_value} is not the same as {loop.iterator} and
   {kernel.result} reaches phi node
       {final_value} from {loop.end} and
   {final_value} strictly control flow
@@ -61,27 +60,26 @@ End
 
 Constraint HistoPart
 ( inherits ConditionalReadModifyWrite
-      with {indexkernel.result} as {address}
-       and {loop}               as {loop} at {update} and
-  inherits KernelFunction
-      with {loop} as {scope} at {kernel} and
-  {kernel.result} is the same as {update.new_value} and
+      with {loop}              as {scope}
+       and {idx_kernel.result} as {address}
+       and {val_kernel.result} as {new_value}
+                               at {update} and
   inherits KernelFunction
       with {loop}        as {scope}
-       and {read_values} as {inputs} at {indexkernel} and
-  ( {indexkernel.result} is not the same as
-        {read[i].address} for all i=0..32) and
+       and {read_values} as {inputs} at {idx_kernel} and
+  inherits KernelFunction
+      with {loop} as {scope} at {val_kernel} and
   inherits Concat(N1=31,N2=1)
       with {read_values}      as {in1}
        and {update.old_value} as {in2}
-       and {kernel.inputs}    as {out})
+       and {val_kernel.inputs}    as {out})
 End
 
 Constraint ConditionalReadModifyWrite
 ( {store_instr} is store instruction and
   inherits MaxOnceInScope
-      with {store_instr} as {value}
-       and {store_instr_after} as {value_after} at {loop} and
+      with {scope}       as {scope}
+       and {store_instr} as {value} at {maxonce} and
   {address} is second argument of {store_instr} and
   {address} is gep instruction and
   {address} is first argument of {old_value} and
@@ -90,13 +88,13 @@ Constraint ConditionalReadModifyWrite
 End
 
 Constraint MaxOnceInScope
-( {begin} control flow dominates {value} and
-  {end} control flow post dominates {value} and
+( {scope.begin} control flow dominates {value} and
+  {scope.end} control flow post dominates {value} and
   {value} has control flow to {value_after} and
   all control flow from {value_after} to
-      {value} passes through {end} and
+      {value} passes through {scope.end} and
   all control flow from {value_after} to
-      {value} passes through {begin})
+      {value} passes through {scope.begin})
 End
 
 Constraint LocalFunctionCall
