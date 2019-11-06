@@ -5,7 +5,7 @@ specification ::= Constraint <s> <@constraint> End
 @constraint ::= <@nested> | <conjunction> | <disjunction>
               | <rename> | <if> | <default> | <collect>
               | <ConstraintOpcode> | <GeneralizedDominance>
-              | <atom> | <GeneralizedSame> | <ConstraintBlock>
+              | <atom> | <GeneralizedSame>
 
 @nested ::= '(' <@constraint> ')'
 
@@ -55,7 +55,7 @@ atom ::= <ConstraintIntegerType>   | <ConstraintFloatType>
        | <ConstraintCFGPostdom>    | <ConstraintCFGPostdomStrict>
        | <ConstraintIncomingValue> | <ConstraintDFGBlocked>
        | <ConstraintCFGBlocked>    | <ConstraintPDGBlocked>
-       | <ConstraintFunctionAttribute>
+       | <ConstraintFunctionAttribute> | <ConstraintBlock>
 
 ConstraintIntegerType ::= <@slot> is an integer
 ConstraintFloatType   ::= <@slot> is a float
@@ -76,7 +76,6 @@ ConstraintInstruction        ::= <@slot> is instruction
 
 ConstraintSame     ::= <@slot> is the same as <@slot>
 ConstraintDistinct ::= <@slot> is not the same as <@slot>
-ConstraintBlock    ::= <@slot> spans block to <@slot>
 
 ConstraintDFGEdge ::= <@slot> has data flow to <@slot>
 ConstraintCFGEdge ::= <@slot> has control flow to <@slot>
