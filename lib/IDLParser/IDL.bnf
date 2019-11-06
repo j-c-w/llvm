@@ -93,47 +93,34 @@ ConstraintSecondSuccessor ::= <@slot> is second successor of <@slot>
 ConstraintThirdSuccessor  ::= <@slot> is third successor of <@slot>
 ConstraintFourthSuccessor ::= <@slot> is fourth successor of <@slot>
 
-ConstraintDFGDominate       ::= <@slot> data flow dominates <@slot>
-ConstraintDFGPostdom        ::= <@slot> data flow post dominates <@slot>
-ConstraintDFGDominateStrict ::= <@slot> strictly data flow dominates <@slot>
-ConstraintDFGPostdomStrict  ::= <@slot> strictly data flow post dominates <@slot>
+ConstraintCFGDominate       ::= <@slot> control flow
+                                dominates <@slot>
+ConstraintCFGPostdom        ::= <@slot> control flow
+                                post dominates <@slot>
+ConstraintCFGDominateStrict ::= <@slot> strictly control flow
+                                dominates <@slot>
+ConstraintCFGPostdomStrict  ::= <@slot> strictly control flow
+                                post dominates <@slot>
 
-ConstraintCFGDominate       ::= <@slot> control flow dominates <@slot>
-ConstraintCFGPostdom        ::= <@slot> control flow post dominates <@slot>
-ConstraintCFGDominateStrict ::= <@slot> strictly control flow dominates <@slot>
-ConstraintCFGPostdomStrict  ::= <@slot> strictly control flow post dominates <@slot>
+ConstraintIncomingValue ::= <@slot> reaches phi node
+                            <@slot> from <@slot>
 
-ConstraintPDGDominate       ::= <@slot> dominates <@slot>
-ConstraintPDGPostdom        ::= <@slot> post dominates <@slot>
-ConstraintPDGDominateStrict ::= <@slot> strictly dominates <@slot>
-ConstraintPDGPostdomStrict  ::= <@slot> strictly post dominates <@slot>
+ConstraintDFGBlocked ::= all data flow from <@slot> to <@slot>
+                                        passes through <@slot>
 
-ConstraintDFGNotDominate       ::= <@slot> does not data flow dominate <@slot>
-ConstraintDFGNotPostdom        ::= <@slot> does not data flow post dominate <@slot>
-ConstraintDFGNotDominateStrict ::= <@slot> does not strictly data flow dominate <@slot>
-ConstraintDFGNotPostdomStrict  ::= <@slot> does not strictly data flow post dominate <@slot>
+ConstraintCFGBlocked ::= all control flow from <@slot> to <@slot>
+                                           passes through <@slot>
 
-ConstraintCFGNotDominate       ::= <@slot> does not control flow dominate <@slot>
-ConstraintCFGNotPostdom        ::= <@slot> does not control flow post dominate <@slot>
-ConstraintCFGNotDominateStrict ::= <@slot> does not strictly control flow dominate <@slot>
-ConstraintCFGNotPostdomStrict  ::= <@slot> does not strictly control flow post dominate <@slot>
-
-ConstraintPDGNotDominate       ::= <@slot> does not dominate <@slot>
-ConstraintPDGNotPostdom        ::= <@slot> does not post dominate <@slot>
-ConstraintPDGNotDominateStrict ::= <@slot> does not strictly dominate <@slot>
-ConstraintPDGNotPostdomStrict  ::= <@slot> does not strictly post dominate <@slot>
-
-ConstraintIncomingValue ::= <@slot> reaches phi node <@slot> from <@slot>
-
-ConstraintDFGBlocked ::= all data flow from <@slot> to <@slot> passes through <@slot>
-ConstraintCFGBlocked ::= all control flow from <@slot> to <@slot> passes through <@slot>
-ConstraintPDGBlocked ::= all flow from <@slot> to <@slot> passes through <@slot>
+ConstraintPDGBlocked ::= all flow from <@slot> to <@slot>
+                                   passes through <@slot>
 
 ConstraintFunctionAttribute ::= <@slot> has attribute pure
 
 GeneralizedSame  ::= <@slot> is the same set as <@slot>
 
-GeneralizedDominance ::= all flow from <@slot> or any origin to any of <@slot> passes through at least one of <@slot>
+GeneralizedDominance ::= all flow from <@slot> or any origin
+                         to any of <@slot> passes through
+                         at least one of <@slot>
 
 @slot ::= <slottuple> | '{' <@openslot> '}'
 
