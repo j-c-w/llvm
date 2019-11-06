@@ -76,6 +76,7 @@ ConstraintInstruction        ::= <@slot> is instruction
 
 ConstraintSame     ::= <@slot> is the same as <@slot>
 ConstraintDistinct ::= <@slot> is not the same as <@slot>
+ConstraintBlock    ::= <@slot> spans block to <@slot>
 
 ConstraintDFGEdge ::= <@slot> has data flow to <@slot>
 ConstraintCFGEdge ::= <@slot> has control flow to <@slot>
