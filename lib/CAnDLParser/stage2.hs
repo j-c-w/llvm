@@ -1,7 +1,11 @@
-import GeneratedParser
-
 import Data.Char
 import Data.List
+import Debug.Trace
+import qualified Data.Map as Map
+import qualified Data.Maybe as Maybe
+
+import GeneratedParser
+import CAnDLProcessing
 
 data CharType = Digit Char | Whitespace Char | Normal Char | Special Char
 
@@ -38,16 +42,25 @@ parse (x:xs) ys = parse xs [z|y<-ys,z<-match (x:y)]
 unbox::[[SyntaxType]]->[SyntaxType]
 unbox [x] = x
 
-prettyprint::[SyntaxType]->[String]
-prettyprint ((PLiteral s):xs)           = [show s]++prettyprint xs
-prettyprint ((PNumber  n):xs)           = [show $ (read::(String->Int)) n]++prettyprint xs
-prettyprint ((PNode ('@':str) cont):xs) = prettyprint cont++prettyprint xs
-prettyprint ((PNode "#" cont):xs) = prettyprint cont++prettyprint xs
-prettyprint ((PNode str cont):xs)       = ("("++intercalate ", " (show str:prettyprint cont)++")"):prettyprint xs
-prettyprint [] = []
+collectSpecifications::[SyntaxType]->Map.Map String SyntaxType
+collectSpecifications ((PNode "specification" [PLiteral n, c]):xs) = Map.insert n c $ collectSpecifications xs
+collectSpecifications [] = Map.empty
 
-program ="Constraint Permute if M+1=N then   {input[M]} is the same as {output[M]} else ( {input[M]} is the same as {output[n]} and include Permute(N=N,M=M+1) with {output[M]} as {output[n]} and {output[n]} as {output[M]}) for some n=M..N endif for M=0 if not otherwise specified End"
+removeInvisibles::[SyntaxType]->[SyntaxType]
+removeInvisibles ((PNode "#" [cont]):xs)     = removeInvisibles [cont] ++ removeInvisibles xs
+removeInvisibles ((PNode ('@':str) cont):xs) = removeInvisibles cont ++ removeInvisibles xs
+removeInvisibles ((PNode      str  cont):xs) = (PNode str $ removeInvisibles cont):removeInvisibles xs
+removeInvisibles (x:xs)                      = x:removeInvisibles xs
+removeInvisibles []                          = []
+
+prettyprint::SyntaxType->String
+prettyprint (PLiteral s)     = show s
+prettyprint (PNumber  n)     = show $ (read::(String->Int)) n
+prettyprint (PNode str cont) = ("("++intercalate ", " (show str:map prettyprint cont)++",)")
 
 main = do
-    contents <- getContents
-    putStrLn $ "("++intercalate ", " (prettyprint $ unbox $ parse (tokenize $ classifyChars contents) [[PNode "#" []]])++")"
+    contents    <- getContents
+    let parsed   = parse (tokenize $ classifyChars contents) [[PNode "#" []]]
+    let cleaned  = init $ removeInvisibles $ unbox $ parsed
+    let simpler = Maybe.mapMaybe (simplify $ collectSpecifications cleaned) cleaned
+    putStrLn     $ "("++intercalate ", " (map prettyprint simpler)++")"
