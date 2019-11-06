@@ -1,3 +1,4 @@
+Export
 Constraint Distributive
 ( {value} is add instruction and
   {sum1.value} is first argument of {value} and
@@ -56,6 +57,7 @@ Constraint ArgumentsPermuted
     {src1} is second argument of {dst}))
 End
 
+Export
 Constraint HoistSelect
 ( {select} is select instruction and
   {input1} is second argument of {select} and
@@ -66,6 +68,7 @@ Constraint HoistSelect
   {input2} is gep instruction)
 End
 
+Export
 Constraint ForWithIteratorTest
 ( inherits Loop and
   {comparison} has data flow to {end} and

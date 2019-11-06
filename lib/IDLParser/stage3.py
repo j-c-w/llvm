@@ -1,15 +1,5 @@
 #!/usr/bin/pypy
 
-
-blacklist = ["LocalFunctionCall", "ForNest", "SameSESE", "DotProductLoop",
-             "GeneralDotProduct", "ReadRange", "For",
-             "ConditionalReadModifyWrite", "MaxOnceInSESE", "MatrixStore",
-             "MatrixRead", "VectorStore", "VectorRead", "StencilRead",
-             "StencilAccess", "PermMultidStore",
-             "PermMultidRead", "AffineAccess", "Addition", "Multiplication",
-             "Permute", "Concat", "SumChain", "MulChain", "ArgumentsPermuted",
-             "Loop", "InductionVar", "LocalConst"]
-
 def partial_evaluator(syntax, handler, *extras):
     handler_result = handler(syntax, *extras)
     if handler_result:
@@ -396,10 +386,10 @@ def generate_cpp_code(syntax_list):
                     +["    my_shared_ptr<T>& operator=(T t) { shared_ptr<T>::operator=(make_shared<T>(move(t))); return *this; }"]
                     +["    my_shared_ptr<T>& operator=(const my_shared_ptr<T>& t) { return *this = *t; }"]
                     +["};"]
-                    +[generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list if syntax[1] not in blacklist]
+                    +[generate_fast_cpp_specification(syntax, specs) for syntax in syntax_list]
                     +["IdiomSpecification(*GenerateAnalysis(std::string name))(llvm::Function&, unsigned)"]
                     +["{"]
-                    +["    if(name == \""+syntax[1]+"\") return Detect"+syntax[1]+";" for syntax in syntax_list if syntax[1] not in blacklist]
+                    +["    if(name == \""+syntax[1]+"\") return Detect"+syntax[1]+";" for syntax in syntax_list]
                     +["    return nullptr;"]
                     +["}"])
 

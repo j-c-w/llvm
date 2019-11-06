@@ -1,5 +1,6 @@
 # These are the toplevel constraint specifications.
 
+Export
 Constraint GEMM 
 ( inherits ForNest(N=3) and
   inherits MatrixStore
@@ -21,6 +22,7 @@ Constraint GEMM
        and {output.address} as {update_address})
 End
 
+Export
 Constraint SPMV
 ( inherits For and
   inherits VectorStore
@@ -83,6 +85,7 @@ Constraint ScalarPart
        and {kernel.input} as {out})
 End
 
+Export
 Constraint ComplexReduction
 ( inherits For and
   collect k 32
