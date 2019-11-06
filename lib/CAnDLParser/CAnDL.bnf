@@ -3,9 +3,9 @@
 specification ::= Constraint <s> <@constraint> End
 
 @constraint ::= <@nested> | <conjunction> | <disjunction>
-              | <rename> | <if> | <default> | <collect> | <atom>
+              | <rename> | <if> | <default> | <collect>
               | <ConstraintOpcode> | <GeneralizedDominance>
-              | <GeneralizedSame>
+              | <atom> | <GeneralizedSame>
 
 @nested ::= '(' <@constraint> ')'
 
