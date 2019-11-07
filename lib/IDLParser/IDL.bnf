@@ -5,9 +5,7 @@ export ::= Export
 specification ::= Constraint <s> <@formula> End
 
 @formula ::= <atom> | <conjunction> | <disjunction>
- | <rename> | <if> | <default> | <collect> | <@nested>
-
-@nested ::= '(' <@formula> ')'
+ | <rename> | <collect> | <if> | <default> | <@nested>
 
 conjunction ::= '(' <@formula> and <@formula>
                              { and <@formula> } ')'
@@ -23,9 +21,11 @@ rename ::= ( <conRange> | <disRange> | <include> | <for> )
 include ::= inherits <s> [ '(' <s> = <@index>
                          {  ,  <s> = <@index> } ')' ]
 
-for      ::= <@formula> for      <s> = <@index>
 conRange ::= <@formula> for all  <s> = <@index> .. <@index>
 disRange ::= <@formula> for some <s> = <@index> .. <@index>
+for      ::= <@formula> for      <s> = <@index>
+
+collect ::= collect <s> <n> <@formula>
 
 if ::= if <@index> = <@index> then <@formula>
                               else <@formula> endif
@@ -33,13 +33,13 @@ if ::= if <@index> = <@index> then <@formula>
 default ::= <@formula> for <s> = <@index>
             if not otherwise specified
 
-collect ::= collect <s> <n> <@formula>
+@nested ::= '(' <@formula> ')'
 
 atom ::= <IntegerType> | <FloatType>
  | <VectorType> | <PointerType>
  | <Unused> | <IntZero> | <FloatZero>
- | <Constant> | <Preexecution> | <Argument> | <Instruction>
- | <Same> | <Distinct>
+ | <Constant> | <Preexecution> | <Argument>
+ | <Instruction> | <Same> | <Distinct>
  | <DFGEdge> | <CFGEdge> | <CDGEdge> | <PDGEdge>
  | <FirstOperand> | <SecondOperand>
  | <ThirdOperand> | <FourthOperand>
