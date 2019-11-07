@@ -48,7 +48,7 @@ atom ::= <IntegerType> | <FloatType>
  | <Dominate> | <DominateStrict>
  | <Postdom> | <PostdomStrict> | <Blocked>
  | <IncomingValue> | <FunctionAttribute>
- | <Opcode> | <GeneralizedSame>
+ | <Opcode> | <SameSets>
 
 IntegerType ::= data_type <@variable> = integer
 FloatType   ::= data_type <@variable> = float
@@ -107,7 +107,7 @@ Blocked ::= all control flow from <@variable> to <@variable>
 
 FunctionAttribute ::= <@variable> has attribute pure
 
-GeneralizedSame ::= <@variable> is the same set as <@variable>
+SameSets ::= <@variable> is the same set as <@variable>
 
 @variable ::= <slottuple> | '{' <@openslot> '}'
 
