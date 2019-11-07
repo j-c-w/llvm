@@ -15,26 +15,25 @@ conjunction ::= '(' <@formula> and <@formula>
 disjunction ::= '(' <@formula> or <@formula>
                              { or <@formula> } ')'
 
-rename ::= ( <inherit> | <forone> | <forall> | <forsome> )
+rename ::= ( <conRange> | <disRange> | <include> | <for> )
            [ with <@variable> as <@variable>
            {  and <@variable> as <@variable> } ]
            [ at <@variable> ]
 
-inherit ::= inherits <s> [ '(' <s> '=' <@index>
-                         { ',' <s> '=' <@index> } ')' ]
+include ::= inherits <s> [ '(' <s> = <@index>
+                         { ',' <s> = <@index> } ')' ]
 
-forone  ::= <@formula> for      <s> '=' <@index>
-forall  ::= <@formula> for all  <s> '=' <@index> '..' <@index>
-forsome ::= <@formula> for some <s> '=' <@index> '..' <@index>
+for      ::= <@formula> for      <s> = <@index>
+conRange ::= <@formula> for all  <s> = <@index> '..' <@index>
+disRange ::= <@formula> for some <s> = <@index> '..' <@index>
 
-if ::= if <@index> '=' <@index> then <@formula>
-                                else <@formula> endif
+if ::= if <@index> = <@index> then <@formula>
+                              else <@formula> endif
 
-default ::= <@formula> for <s> '=' <@index>
+default ::= <@formula> for <s> = <@index>
             if not otherwise specified
 
 collect ::= collect <s> <n> <@formula>
-
 
 atom ::= <IntegerType> | <FloatType>
  | <VectorType> | <PointerType>
@@ -63,11 +62,11 @@ Opcode ::= <@variable> is <s> instruction
 IntZero   ::= <@variable> is integer zero
 FloatZero ::= <@variable> is floating point zero
 
-NotNumericConstant ::= <@variable> is not a numeric constant
 Constant           ::= <@variable> is a constant
 Preexecution       ::= <@variable> is preexecution
 Argument           ::= <@variable> is an argument
 Instruction        ::= <@variable> is instruction
+NotNumericConstant ::= <@variable> is not a numeric constant
 
 Same     ::= <@variable> is the same as <@variable>
 Distinct ::= <@variable> is not the same as <@variable>
@@ -113,7 +112,7 @@ Blocked ::= all control flow from <@variable> to <@variable>
 
 FunctionAttribute ::= <@variable> has attribute pure
 
-GeneralizedSame  ::= <@variable> is the same set as <@variable>
+GeneralizedSame ::= <@variable> is the same set as <@variable>
 
 GeneralizedDominance ::= all flow from <@variable> or any origin
                          to any of <@variable> passes through
