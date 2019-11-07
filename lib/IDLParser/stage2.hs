@@ -26,6 +26,7 @@ classifyChars (x:xs)
 tokenize::[CharType]->[SyntaxType]
 tokenize [] = []
 tokenize (Special '.':Special '.':xs) = PLiteral "..":tokenize xs
+tokenize (Special '-':Special '>':xs) = PLiteral "->":tokenize xs
 tokenize (Special a:xs)               = PLiteral [a] :tokenize xs
 tokenize (Whitespace _:xs)            = tokenize xs
 tokenize (Digit a:Digit b:xs)         = case tokenize (Digit b:xs) of (PNumber n:ns) -> PNumber (a:n):ns
