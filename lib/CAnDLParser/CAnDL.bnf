@@ -5,7 +5,7 @@ export ::= Export
 specification ::= Constraint <s> <@formula> End
 
 @formula ::= <atom> | <conjunction> | <disjunction>
- | <rename> | <if> | <default> | <collect> | <@nested>
+ | <rename> | <collect> | <if> | <default> | <@nested>
 
 conjunction ::= '(' <@formula> ∧ <@formula>
                              { ∧ <@formula> } ')'
@@ -25,13 +25,13 @@ conRange ::= <@formula> foreach <s> = <@index> .. <@index>
 disRange ::= <@formula> forany  <s> = <@index> .. <@index>
 for      ::= <@formula> for     <s> = <@index>
 
+collect ::= collect <s> <n> <@formula>
+
 if ::= if <@index> = <@index> then <@formula>
                               else <@formula> endif
 
 default ::= <@formula> for <s> = <@index>
             if not otherwise specified
-
-collect ::= collect <s> <n> <@formula>
 
 @nested ::= '(' <@formula> ')'
 
