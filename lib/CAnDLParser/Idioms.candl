@@ -1,91 +1,89 @@
 Export
-Constraint Experiment
-( {begin} ∈ {precursor}.successors )
-End
-
-Export
 Constraint SCoP
 ( include For @ {loop}
-∧ include SideEffectFreePart({loop}->{scope})
-                      @ {constraint_effects}
-∧ include StructuredControlFlowPart({loop}->{scope})
-                             @ {constraint_control}
-∧ {constraint_memory.input[0]} = {loop.iterator}
-∧ {constraint_memory.input[i+1]} =
-      {constraint_control.forloop[i].iterator} foreach i=0..7
-∧ include AffineMemoryAccessPart({loop}->{scope})
-                           @ {constraint_memory}
-∧ include AffineControlFlowPart({loop}->{scope},
-             {constraint_memory.input}->{input})
-                         @ {constraint_control})
+∧ include StructuredControlFlow({loop}->{scope}) @ {control}
+∧ {inputs[0]} = {loop.iterator}
+∧ {inputs[i]} = {control.loop[i-1].iterator} foreach i=1..10
+∧ include AffineControlFlow({loop}->{scope},
+                          {inputs}->{inputs}) @ {control}
+∧ include AffineMemAccesses({loop}->{scope},
+                          {inputs}->{inputs}) @ {accesses}
+∧ include SideEffectFreeCalls({loop}->{scope}) @ {effects})
 End
 
-Constraint SideEffectFreePart
-( collect i 32 ( include LocalFunctionCall({scope}->{scope})
-                                                @ {call[i]})
-∧ collect i 32 ( include LocalFunctionCall({scope}->{scope})
-                                                @ {call[i]}
-               ∧ {call[i].function} has attribute pure))
-End
-
-Constraint StructuredControlFlowPart
-( collect i 32 ( opcode{branch[i].value} = branch
+Constraint StructuredControlFlow
+( collect i 20 ( opcode{branch[i].value} = branch
                ∧ {branch[i].target1} =
                      {branch[i].value}.successors[0]
                ∧ {branch[i].target2} =
                      {branch[i].value}.successors[1]
                ∧ include LocalValue({scope}->{scope},
                           {branch[i].value}->{value}))
-∧ collect i 16 ( include For @ {forloop[i]}
+∧ collect i 10 ( include For @ {loop[i]}
                ∧ domination({scope.begin},
-                            {forloop[i].begin})
+                          {loop[i].begin})
                ∧ strict_post_domination({scope.end},
-                                        {forloop[i].end}))
-∧ collect i 16 ( include IfBlock @ {ifblock[i]}
+                                      {loop[i].end}))
+∧ collect i  10 ( include IfBlock @ {ifblock[i]}
                ∧ domination({scope.begin},
-                            {ifblock[i].precursor})
+                       {ifblock[i].precursor})
                ∧ strict_post_domination({scope.end},
-                                        {ifblock[i].successor}))
-∧ {forloop[0..16].end,ifblock[0..16].precursor}
-      is the same set as {branch[0..32].value})
+                                   {ifblock[i].successor}))
+∧ {loop[0..10].end,ifblock[0..10].precursor}
+      is the same set as {branch[0..20].value})
 End
 
-Constraint AffineMemoryAccessPart
-( collect x 24 ( include MemoryAccess({scope}->{scope})
+Constraint AffineControlFlow
+( include AffineCalc[M=10,N=1](
+                           {scope}->{scope},
+              {loop[i].iter_begin}->{value},
+                          {inputs}->{input})
+                @ {forloop_affine_begin[i]} foreach i=0..10
+∧ include AffineCalc[M=10,N=1](
+                           {scope}->{scope},
+                {loop[i].iter_end}->{value},
+                          {inputs}->{input})
+                  @ {forloop_affine_end[i]} foreach i=0..10
+∧ include AffineCalc[M=10,N=1](
+                           {scope}->{scope},
+         {ifblock[i].compare_left}->{value},
+                          {inputs}->{input})
+                 @ {ifblock_affine_left[i]} foreach i=0..10
+∧ include AffineCalc[M=10,N=1](
+                           {scope}->{scope},
+        {ifblock[i].compare_right}->{value},
+                          {inputs}->{input})
+                @ {ifblock_affine_right[i]} foreach i=0..10)
+End
+
+Constraint AffineMemAccesses
+( collect x 20 ( include MemoryAccess({scope}->{scope})
                                       @ {newaccess[x]}
                ∧ opcode{newaccess[x].pointer} = gep
-               ∧ domination({scope.begin}, {newaccess[x].pointer})
+               ∧ domination({scope.begin},
+                     {newaccess[x].pointer})
                ∧ {newaffine[x].value} =
                      {newaccess[x].pointer}.args[1])
-∧ collect x 24 ( include MemoryAccess({scope}->{scope})
+∧ collect x 20 ( include MemoryAccess({scope}->{scope})
                                       @ {newaccess[x]}
                ∧ opcode{newaccess[x].pointer} = gep
-               ∧ domination({scope.begin}, {newaccess[x].pointer})
+               ∧ domination({scope.begin},
+                     {newaccess[x].pointer})
                ∧ {newaffine[x].value} =
                      {newaccess[x].pointer}.args[1]
-               ∧ include AffineCalculation[M=8,N=6](
-                          {scope}->{scope},
-                          {input}->{input}) @ {newaffine[x]}
-))
+               ∧ include AffineCalc[M=10,N=6](
+                                          {scope}->{scope},
+                                         {inputs}->{input})
+                                          @ {newaffine[x]}))
 End
 
-Constraint AffineControlFlowPart
-( include AffineCalculation[M=8,N=1]({scope}->{scope},
-                   {ifblock[i].compare_left}->{value},
-                                     {input}->{input})
-                            @{ifblock_affine_left[i]} foreach i=0..16
-∧ include AffineCalculation[M=8,N=1]({scope}->{scope},
-                  {ifblock[i].compare_right}->{value},
-                                     {input}->{input})
-                           @{ifblock_affine_right[i]} foreach i=0..16
-∧ include AffineCalculation[M=8,N=1]({scope}->{scope},
-                     {forloop[i].iter_begin}->{value},
-                                     {input}->{input})
-                           @{forloop_affine_begin[i]} foreach i=0..16
-∧ include AffineCalculation[M=8,N=1]({scope}->{scope},
-                       {forloop[i].iter_end}->{value},
-                                     {input}->{input})
-                             @{forloop_affine_end[i]} foreach i=0..16)
+Constraint SideEffectFreeCalls
+( collect i 20 ( opcode{callsite[i]} = call
+               ∧ include LocalValue({callsite[i]}->{value}))
+∧ collect i 20 ( opcode{callsite[i]} = call
+               ∧ include LocalValue({callsite[i]}->{value})
+               ∧ {function[i]} = {callsite[i]}.args[0]
+               ∧ {function[i]} has attribute pure))
 End
 
 Constraint MemoryAccess
@@ -97,17 +95,20 @@ Constraint MemoryAccess
 ∧ post_domination({scope.end}, {access}))
 End
 
-Constraint AffineCalculation
+Constraint AffineCalc
 if N=0 then
-( ( include LocalConst
+( ( ( include LocalConst
+    ∨ ( {value} is unused
+      ∧ ir_type{scope.begin} = instruction))
   ∧ ( data_type{input[j]} = integer
     ∨ {input[j]} is unused) foreach j=0..M)
 ∨ ( ( {value} = {input[i]}
     ∧ ir_type{scope.begin} = instruction
     ∧ ( data_type{input[j]} = integer
-      ∨ {input[j]} is unused) foreach j=0..M) forany i=0..M))
+      ∨ {input[j]} is unused) foreach j=0..M)
+                              forany  i=0..M))
 else
-( ( ( include AffineCalculation[M=M,N=0]
+( ( ( include AffineCalc[M=M,N=0]
     ∧ {l.value} is unused
     ∧ {r.value} is unused)
   ∨ ( ( ( ( opcode{value} = add
@@ -127,17 +128,11 @@ else
     ∧ domination({scope.begin}, {value})
     ∧ ( data_type{input[j]} = integer
       ∨ {input[j]} is unused) foreach j=0..M))
-∧ include AffineCalculation[M=M,N=N-1]({input}->{input},
-                                       {scope}->{scope}) @ {l}
-∧ include AffineCalculation[M=M,N=N-1]({input}->{input},
-                                       {scope}->{scope}) @ {r})
+∧ include AffineCalc[M=M,N=N-1]({input}->{input},
+                                {scope}->{scope}) @ {l}
+∧ include AffineCalc[M=M,N=N-1]({input}->{input},
+                                {scope}->{scope}) @ {r})
 endif
-End
-
-Constraint LocalFunctionCall
-( opcode{callsite} = call
-∧ {function} = {callsite}.args[0]
-∧ include LocalValue({callsite}->{value}))
 End
 
 Constraint IfBlock
@@ -291,18 +286,10 @@ Constraint Loop
 ∧ {begin} ∈ {end}.successors)
 End
 
-Constraint InductionVar
-( {new_ind} -> {loop.end} Φ {old_ind}
-∧ include LocalValue({loop}->{scope},
-                  {old_ind}->{value}))
-End
-
 Constraint LocalConst
 ( ( ir_type{scope.begin} = instruction
   ∧ ir_type{value} = preexecution)
-∨ strict_domination({value}, {scope.begin})
-∨ ( {value} is unused
-  ∧ ir_type{scope.begin} = instruction))
+∨ strict_domination({value}, {scope.begin}))
 End
 
 Constraint SESE

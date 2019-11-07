@@ -7,7 +7,6 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 #include <unordered_set>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -23,7 +22,6 @@ public:
 
     bool runOnFunction(Function& function) override;
 };
-
 
 class SmartIRBuilder : public IRBuilder<>
 {
@@ -62,7 +60,6 @@ public:
         }
         return IRBuilder<>::CreateAdd(a, b);
     }
-
 
     Value* CreateAdd(Value* a, Value* b)
     {
@@ -154,7 +151,7 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
             {
                 auto previous = dyn_cast<Instruction>(phi->getOperand(0));
 
-                for(int i = 1; i < phi->getNumOperands() && previous; i++)
+                for(unsigned i = 1; i < phi->getNumOperands() && previous; i++)
                 {
                     auto next = dyn_cast<Instruction>(phi->getOperand(i));
                     if(next && previous->isIdenticalTo(next))
@@ -404,6 +401,7 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
             PHINode*        phi_inst;
             ConstantInt*    const_income;
             BinaryOperator* other_income;
+            bool            inverted;
         };
 
         BasicBlock*  const_block = phis[0].const_block;
@@ -414,9 +412,16 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
 
         for(const auto& phi : phis) {
             if(phi.const_block == const_block &&
-               phi.other_block == other_block &&
-               phi.increment->getSExtValue() == increment->getSExtValue()) {
-                phis2.push_back({phi.phi_inst, phi.const_income, phi.other_income});
+               phi.other_block == other_block)
+            {
+                if(phi.increment->getSExtValue() == increment->getSExtValue())
+                {
+                    phis2.push_back({phi.phi_inst, phi.const_income, phi.other_income, false});
+                }
+                else if(phi.increment->getSExtValue() == -increment->getSExtValue())
+                {
+                    phis2.push_back({phi.phi_inst, phi.const_income, phi.other_income, true});
+                }
             }
         }
 
@@ -425,18 +430,35 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
         BasicBlock::iterator iter(block.getFirstNonPHI());
         SmartIRBuilder builder(&block, iter);
 
-        for(int i = 1; i < phis2.size(); i++) {
+        for(unsigned i = 1; i < phis2.size(); i++) {
             BasicBlock::iterator phi_iter(phis2[i].phi_inst);
-            ReplaceInstWithValue(block.getInstList(), phi_iter,
-                builder.CreateAdd(
-                    builder.CreateIntCast(
-                        phis2[0].phi_inst,
-                        phis2[i].phi_inst->getType(), true),
-                    builder.CreateSub(
-                        phis2[i].const_income,
+
+            if(phis2[i].inverted == false)
+            {
+                ReplaceInstWithValue(block.getInstList(), phi_iter,
+                    builder.CreateAdd(
                         builder.CreateIntCast(
-                            phis2[0].const_income,
-                            phis2[i].const_income->getType(), true))));
+                            phis2[0].phi_inst,
+                            phis2[i].phi_inst->getType(), true),
+                        builder.CreateSub(
+                            phis2[i].const_income,
+                            builder.CreateIntCast(
+                                phis2[0].const_income,
+                                phis2[i].const_income->getType(), true))));
+            }
+            else
+            {
+                ReplaceInstWithValue(block.getInstList(), phi_iter,
+                    builder.CreateSub(
+                        builder.CreateAdd(
+                            phis2[i].const_income,
+                            builder.CreateIntCast(
+                                phis2[0].const_income,
+                                phis2[i].const_income->getType(), true)),
+                        builder.CreateIntCast(
+                            phis2[0].phi_inst,
+                            phis2[i].phi_inst->getType(), true)));
+            }
         }
     }
 
