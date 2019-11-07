@@ -21,11 +21,11 @@ rename ::= ( <conRange> | <disRange> | <include> | <for> )
            [ at <@variable> ]
 
 include ::= inherits <s> [ '(' <s> = <@index>
-                         { ',' <s> = <@index> } ')' ]
+                         {  ,  <s> = <@index> } ')' ]
 
 for      ::= <@formula> for      <s> = <@index>
-conRange ::= <@formula> for all  <s> = <@index> '..' <@index>
-disRange ::= <@formula> for some <s> = <@index> '..' <@index>
+conRange ::= <@formula> for all  <s> = <@index> .. <@index>
+disRange ::= <@formula> for some <s> = <@index> .. <@index>
 
 if ::= if <@index> = <@index> then <@formula>
                               else <@formula> endif
@@ -114,29 +114,29 @@ FunctionAttribute ::= <@variable> has attribute pure
 
 GeneralizedSame ::= <@variable> is the same set as <@variable>
 
-GeneralizedDominance ::= all flow from <@variable> or any origin
-                         to any of <@variable> passes through
-                         at least one of <@variable>
+GeneralizedDominance ::= all flow from <@variable> or any
+                         origin to any of <@variable> passes
+                         through at least one of <@variable>
 
 @variable ::= <slottuple> | '{' <@openslot> '}'
 
-slottuple ::= '{' <@openslot> ',' <@openslot>
-                            { ',' <@openslot> } '}'
+slottuple ::= '{' <@openslot> , <@openslot>
+                            { , <@openslot> } '}'
 
 @openslot ::= <slotmember> | <slotindex> | <slotrange>
             | <slottuple>  | <slotbase>
 
 slotbase   ::= <s>
-slotmember ::= <@openslot> '.' <s>
+slotmember ::= <@openslot> . <s>
 slotindex  ::= <@openslot> '[' <@index> ']'
-slotrange  ::= <@openslot> '[' <@index> '..' <@index> ']'
+slotrange  ::= <@openslot> '[' <@index> .. <@index> ']'
 
 @index ::= <basevar> | <baseconst>
  | <addvar> | <addconst> | <subvar> | <subconst>
 
 basevar   ::= <s>
 baseconst ::= <n>
-addvar    ::= <@index> '+' <s>
-addconst  ::= <@index> '+' <n>
-subvar    ::= <@index> '-' <s>
-subconst  ::= <@index> '-' <n>
+addvar    ::= <@index> + <s>
+addconst  ::= <@index> + <n>
+subvar    ::= <@index> - <s>
+subconst  ::= <@index> - <n>
