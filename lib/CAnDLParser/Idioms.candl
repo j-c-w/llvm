@@ -136,10 +136,12 @@ endif
 End
 
 Constraint IfBlock
-( include PotentialSESE({truebegin}->{begin},{trueend}->{end})
+( include PotentialSESE({truebegin}->{begin},
+                          {trueend}->{end})
 ∧ {truebegin} = {precursor}.successors[0]
 ∧ {falsebegin} = {precursor}.successors[1]
-∧ include PotentialSESE({falsebegin}->{begin},{falseend}->{end})
+∧ include PotentialSESE({falsebegin}->{begin},
+                          {falseend}->{end})
 ∧ {trueend} ≠ {falseend}
 ∧ {condition} = {precursor}.args[0]
 ∧ opcode{condition} = icmp
