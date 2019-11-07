@@ -128,7 +128,7 @@ def code_generation_core(syntax, counter):
                        for j,slotlist in enumerate(slotlists) for i,slot in enumerate(slotlist)}
         return slots,result,code
 
-    elif syntax[0] == "atom" and syntax[1][0] == "GeneralizedSame":
+    elif syntax[0] == "atom" and syntax[1][0] == "SameSets":
         atom        = getatom(counter, "my_shared_ptr<BackendSameSets>")
         slotlists   = [generate_cpp_slotlist(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
         code        = "{} = {{{{{}}}}};\n".format(atom, len(slotlists[0]))
