@@ -1,7 +1,9 @@
+Export
 Constraint Experiment
-( opcode{value} = store )
+( {begin} ∈ {precursor}.successors )
 End
 
+Export
 Constraint SCoP
 ( include For @ {loop}
 ∧ include SideEffectFreePart({loop}->{scope})
@@ -173,6 +175,7 @@ Constraint LocalValue
 ∧ strict_post_domination({scope.end}, {value}))
 End
 
+Export
 Constraint Distributive
 ( opcode{value} = add
 ∧ {sum1.value} = {value}.args[0]
@@ -231,6 +234,7 @@ Constraint ArgumentsPermuted
   ∧ {src1} = {dst}.args[1]))
 End
 
+Export
 Constraint HoistSelect
 ( opcode{select} = select
 ∧ {input1} = {select}.args[1]
@@ -261,6 +265,7 @@ Constraint For
                  {iter_step}->{value}))
 End
 
+Export
 Constraint ForWithIteratorTest
 ( include Loop
 ∧ {increment} -> {body.end} Φ {iterator}

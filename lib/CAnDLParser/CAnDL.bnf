@@ -1,4 +1,6 @@
-# ::= <specification>
+# ::= <specification> | <export>
+
+export ::= Export
 
 specification ::= Constraint <s> <@constraint> End
 

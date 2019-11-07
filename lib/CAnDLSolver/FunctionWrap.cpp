@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <vector>
+#include <iostream>
 
 namespace {
 std::vector<std::vector<unsigned>> reverse_graph(const std::vector<std::vector<unsigned>>& graph)
@@ -216,7 +217,7 @@ std::vector<std::vector<unsigned>> construct_rdfg(std::unordered_map<llvm::Instr
 
 double FunctionWrap::stopped_time = 0.0;
 
-FunctionWrap::FunctionWrap(llvm::Function& llvm_function)
+FunctionWrap::FunctionWrap(llvm::Function& llvm_function) : function(llvm_function)
 {
     std::unordered_map<llvm::Instruction*,unsigned> instr_hash;
     std::unordered_map<llvm::Value*,unsigned>       value_hash;
@@ -244,6 +245,15 @@ FunctionWrap::FunctionWrap(llvm::Function& llvm_function)
     }
 
     insert(end(), instructions.begin(), instructions.end());
+
+    blocks.resize(size());
+
+    for(auto& block : llvm_function.getBasicBlockList())
+    {
+        blocks[value_hash.size()+instr_hash[&*block.begin()]].push_back(
+               value_hash.size()+instr_hash[&*block.rbegin()]);
+    }
+    rblocks = reverse_graph(blocks);
 
     cdg   = sort_graph(construct_cdg(instr_hash, value_hash));
     rcdg  = reverse_graph(cdg);
