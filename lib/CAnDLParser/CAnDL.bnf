@@ -74,14 +74,15 @@ CFGEdge ::= <@variable> ∈ <@variable> . successors
 CDGEdge ::= <@variable> has control dominance to <@variable>
 PDGEdge ::= <@variable> has dependence edge to <@variable>
 
-FirstOperand    ::= <@variable> =
-                    <@variable> . args '[' 0 ']'
-SecondOperand   ::= <@variable> =
-                    <@variable> . args '[' 1 ']'
-ThirdOperand    ::= <@variable> =
-                    <@variable> . args '[' 2 ']'
-FourthOperand   ::= <@variable> =
-                    <@variable> . args '[' 3 ']'
+FirstOperand  ::= <@variable> =
+                  <@variable> . args '[' 0 ']'
+SecondOperand ::= <@variable> =
+                  <@variable> . args '[' 1 ']'
+ThirdOperand  ::= <@variable> =
+                  <@variable> . args '[' 2 ']'
+FourthOperand ::= <@variable> =
+                  <@variable> . args '[' 3 ']'
+
 FirstSuccessor  ::= <@variable> =
                     <@variable> . successors '[' 0 ']'
 SecondSuccessor ::= <@variable> =
