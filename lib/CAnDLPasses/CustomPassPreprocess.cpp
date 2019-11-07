@@ -7,6 +7,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 #include <unordered_set>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -360,6 +361,82 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
                     }
                 }
             }
+        }
+    }
+
+    for(BasicBlock& block : function.getBasicBlockList())
+    {
+        struct SuitablePhi {
+            PHINode*        phi_inst;
+            ConstantInt*    const_income;
+            BinaryOperator* other_income;
+            BasicBlock*     const_block;
+            BasicBlock*     other_block;
+            ConstantInt*    increment;
+        };
+
+        std::vector<SuitablePhi> phis;
+
+        for(Instruction& instruction : block.getInstList())
+        {
+            SuitablePhi new_phi;
+
+            if((new_phi.phi_inst = dyn_cast<PHINode>(&instruction)) &&
+               new_phi.phi_inst->getNumIncomingValues() == 2 &&
+               ( ( (new_phi.const_income = dyn_cast<ConstantInt>(new_phi.phi_inst->getIncomingValue(0))) &&
+                   (new_phi.other_income = dyn_cast<BinaryOperator>(new_phi.phi_inst->getIncomingValue(1))) &&
+                   (new_phi.const_block  = new_phi.phi_inst->getIncomingBlock(0)) &&
+                   (new_phi.other_block  = new_phi.phi_inst->getIncomingBlock(1))) ||
+                 ( (new_phi.const_income = dyn_cast<ConstantInt>(new_phi.phi_inst->getIncomingValue(1))) &&
+                   (new_phi.other_income = dyn_cast<BinaryOperator>(new_phi.phi_inst->getIncomingValue(0))) &&
+                   (new_phi.const_block  = new_phi.phi_inst->getIncomingBlock(1)) &&
+                   (new_phi.other_block  = new_phi.phi_inst->getIncomingBlock(0)))) &&
+               new_phi.other_income->getOpcode() == Instruction::Add &&
+               new_phi.other_income->getOperand(0) == new_phi.phi_inst &&
+               (new_phi.increment = dyn_cast<ConstantInt>(new_phi.other_income->getOperand(1)))) {
+                phis.push_back(new_phi);
+            }
+        }
+
+        if(phis.size() <= 1) continue;
+
+        struct SuitablePhi2 {
+            PHINode*        phi_inst;
+            ConstantInt*    const_income;
+            BinaryOperator* other_income;
+        };
+
+        BasicBlock*  const_block = phis[0].const_block;
+        BasicBlock*  other_block = phis[0].other_block;
+        ConstantInt* increment   = phis[0].increment;
+
+        std::vector<SuitablePhi2> phis2;
+
+        for(const auto& phi : phis) {
+            if(phi.const_block == const_block &&
+               phi.other_block == other_block &&
+               phi.increment->getSExtValue() == increment->getSExtValue()) {
+                phis2.push_back({phi.phi_inst, phi.const_income, phi.other_income});
+            }
+        }
+
+        if(phis2.size() <= 1) continue;
+
+        BasicBlock::iterator iter(block.getFirstNonPHI());
+        SmartIRBuilder builder(&block, iter);
+
+        for(int i = 1; i < phis2.size(); i++) {
+            BasicBlock::iterator phi_iter(phis2[i].phi_inst);
+            ReplaceInstWithValue(block.getInstList(), phi_iter,
+                builder.CreateAdd(
+                    builder.CreateIntCast(
+                        phis2[0].phi_inst,
+                        phis2[i].phi_inst->getType(), true),
+                    builder.CreateSub(
+                        phis2[i].const_income,
+                        builder.CreateIntCast(
+                            phis2[0].const_income,
+                            phis2[i].const_income->getType(), true))));
         }
     }
 
