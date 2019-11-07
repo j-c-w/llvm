@@ -7,8 +7,6 @@ specification ::= Constraint <s> <@formula> End
 @formula ::= <atom> | <conjunction> | <disjunction>
  | <rename> | <if> | <default> | <collect> | <@nested>
 
-@nested ::= '(' <@formula> ')'
-
 conjunction ::= '(' <@formula> ∧ <@formula>
                              { ∧ <@formula> } ')'
 
@@ -23,9 +21,9 @@ rename ::= ( <conRange> | <disRange> | <include> | <for> )
 include ::= include <s> [ '[' <s> = <@index>
                         {  , <s> = <@index> } ']' ]
 
-for      ::= <@formula> for     <s> = <@index>
 conRange ::= <@formula> foreach <s> = <@index> .. <@index>
 disRange ::= <@formula> forany  <s> = <@index> .. <@index>
+for      ::= <@formula> for     <s> = <@index>
 
 if ::= if <@index> = <@index> then <@formula>
                               else <@formula> endif
@@ -34,6 +32,8 @@ default ::= <@formula> for <s> = <@index>
             if not otherwise specified
 
 collect ::= collect <s> <n> <@formula>
+
+@nested ::= '(' <@formula> ')'
 
 atom ::= <IntegerType> | <FloatType>
  | <VectorType> | <PointerType>
