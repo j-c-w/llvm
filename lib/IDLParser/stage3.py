@@ -90,40 +90,8 @@ def unique_list(inlist):
     return templist
 
 def code_generation_core(syntax, counter):
-    if syntax[0] == "atom":
-        classname = "Backend{}".format(syntax[1][0][10:])
-        if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
-            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
-            code = "{} = {{{{0,1,1}}, wrap}};\n".format(atom)
-        elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
-            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
-            code = "{} = {{{{1,1,1}}, wrap}};\n".format(atom)
-        elif len(syntax[1]) > 2:
-            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
-            code = "{} = {{wrap}};\n".format(atom)
-        else:
-            if classname not in counter:
-                atom = getatom(counter, classname)
-                code = "{} = {{wrap}};\n".format(atom)
-            else:
-                atom = "atom{}_[0]".format(counter[classname][0])
-                code = ""
-
-        slots = [generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
-
-        if syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] in ["Dominat","Postdom"]:
-            result = {slot:("MultiVectorSelector<Backend{},{}>".format(syntax[1][0][10:], i+1), "{}, <[0]>".format(atom)) for i,slot in enumerate(slots)}
-        elif syntax[1][0][10:13] in ["DFG","CFG","PDG"] and syntax[1][0][13:20] == "Blocked":
-            result = {slot:("MultiVectorSelector<Backend{},{}>".format(syntax[1][0][10:], i), "{}, <[0]>".format(atom)) for i,slot in enumerate(slots)}
-        elif len(syntax[1]) == 2:
-            result = {slot:("Backend{}".format(syntax[1][0][10:]), atom) for i,slot in enumerate(slots)}
-        else:
-            result = {slot:("ScalarSelector<Backend{},{}>".format(syntax[1][0][10:], i), atom) for i,slot in enumerate(slots)}
-
-        return slots,result,code
-
-    elif syntax[0] == "ConstraintOpcode":
-        opcode = syntax[2][:1].upper()+syntax[2][1:]
+    if syntax[0] == "atom" and syntax[1][0] == "Opcode":
+        opcode = syntax[1][2][:1].upper()+syntax[1][2][1:]
         if opcode[:3] == "Gep": opcode = "GetElementPtr"+opcode[3:]
         if opcode[:3] == "Phi": opcode = "PHI"+opcode[3:]
         if opcode[:6] == "Branch": opcode = "Br"+opcode[6:]
@@ -145,28 +113,64 @@ def code_generation_core(syntax, counter):
         atom = getatom(counter, classname)
         code = "{} = {{wrap, llvm::Instruction::{}}};\n".format(atom, opcode)
 
-        slots = [generate_cpp_slot(s) for s in syntax[1:2]]
+        slots = [generate_cpp_slot(s) for s in syntax[1][1:2]]
 
         result = {slot:(classname, atom) for i,slot in enumerate(slots)}
 
         return slots,result,code
 
-    elif syntax[0] == "GeneralizedDominance":
+    elif syntax[0] == "atom" and syntax[1][0] == "GeneralizedDominance":
         atom        = getatom(counter, "my_shared_ptr<BackendPDGDominate>")
-        slotlists   = [generate_cpp_slotlist(s) for s in syntax[1:2]+syntax[3:1:-1]]
+        slotlists   = [generate_cpp_slotlist(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
         code        = "{} = {{{{{},{},{}}}, wrap}};\n".format(atom, len(slotlists[0]), len(slotlists[1]), len(slotlists[2]))
         slots       = unique_list([slot for slotlist in slotlists for slot in slotlist])
         result      = {slot:("MultiVectorSelector<BackendPDGDominate,{}>".format(j), "{}, <[{}]>".format(atom, i))
                        for j,slotlist in enumerate(slotlists) for i,slot in enumerate(slotlist)}
         return slots,result,code
 
-    elif syntax[0] == "GeneralizedSame":
+    elif syntax[0] == "atom" and syntax[1][0] == "GeneralizedSame":
         atom        = getatom(counter, "my_shared_ptr<BackendSameSets>")
-        slotlists   = [generate_cpp_slotlist(s) for s in syntax[1:2]+syntax[3:1:-1]]
+        slotlists   = [generate_cpp_slotlist(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
         code        = "{} = {{{{{}}}}};\n".format(atom, len(slotlists[0]))
         slots       = unique_list([slot for slotlist in slotlists for slot in slotlist])
         result      = {slot:("MultiVectorSelector<BackendSameSets,{}>".format(j), "{}, <[{}]>".format(atom, i))
                        for j,slotlist in enumerate(slotlists) for i,slot in enumerate(slotlist)}
+        return slots,result,code
+
+    elif syntax[0] == "atom":
+        if syntax[1][0] in ["Dominate", "Postdom", "DominateStrict", "PostdomStrict", "Blocked"]:
+            classname = "BackendCFG{}".format(syntax[1][0])
+        else:
+            classname = "Backend{}".format(syntax[1][0])
+
+        if syntax[1][0][:7] in ["Dominat","Postdom"]:
+            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
+            code = "{} = {{{{0,1,1}}, wrap}};\n".format(atom)
+        elif syntax[1][0][0:7] == "Blocked":
+            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
+            code = "{} = {{{{1,1,1}}, wrap}};\n".format(atom)
+        elif len(syntax[1]) > 2:
+            atom = getatom(counter, "my_shared_ptr<{}>".format(classname))
+            code = "{} = {{wrap}};\n".format(atom)
+        else:
+            if classname not in counter:
+                atom = getatom(counter, classname)
+                code = "{} = {{wrap}};\n".format(atom)
+            else:
+                atom = "atom{}_[0]".format(counter[classname][0])
+                code = ""
+
+        slots = [generate_cpp_slot(s) for s in syntax[1][1:2]+syntax[1][3:1:-1]]
+
+        if syntax[1][0] in ["Dominate", "Postdom", "DominateStrict", "PostdomStrict"]:
+            result = {slot:("MultiVectorSelector<BackendCFG{},{}>".format(syntax[1][0], i+1), "{}, <[0]>".format(atom)) for i,slot in enumerate(slots)}
+        elif syntax[1][0] == "Blocked":
+            result = {slot:("MultiVectorSelector<BackendCFG{},{}>".format(syntax[1][0], i), "{}, <[0]>".format(atom)) for i,slot in enumerate(slots)}
+        elif len(syntax[1]) == 2:
+            result = {slot:("Backend{}".format(syntax[1][0]), atom) for i,slot in enumerate(slots)}
+        else:
+            result = {slot:("ScalarSelector<Backend{},{}>".format(syntax[1][0], i), atom) for i,slot in enumerate(slots)}
+
         return slots,result,code
 
     elif syntax[0] in ["conjunction", "disjunction"]:
