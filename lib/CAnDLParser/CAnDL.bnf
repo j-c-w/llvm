@@ -15,22 +15,22 @@ conjunction ::= '(' <@formula> '∧' <@formula>
 disjunction ::= '(' <@formula> '∨' <@formula>
                              { '∨' <@formula> } ')'
 
-rename ::= ( <forone> | <forall> | <forsome> | <inherit> )
+rename ::= ( <conRange> | <disRange> | <include> | <for> )
            [ '(' <@variable> '->' <@variable>
            { ',' <@variable> '->' <@variable> } ')' ]
            [ '@' <@variable> ]
 
-inherit ::= include <s> [ '[' <s> '=' <@index>
-                        { ',' <s> '=' <@index> } ']' ]
+include ::= include <s> [ '[' <s> = <@index>
+                        { ',' <s> = <@index> } ']' ]
 
-forone  ::= <@formula> for     <s> '=' <@index>
-forall  ::= <@formula> foreach <s> '=' <@index> '..' <@index>
-forsome ::= <@formula> forany  <s> '=' <@index> '..' <@index>
+for      ::= <@formula> for     <s> = <@index>
+conRange ::= <@formula> foreach <s> = <@index> '..' <@index>
+disRange ::= <@formula> forany  <s> = <@index> '..' <@index>
 
-if ::= if <@index> '=' <@index> then <@formula>
+if ::= if <@index> = <@index> then <@formula>
                                 else <@formula> endif
 
-default ::= <@formula> for <s> '=' <@index>
+default ::= <@formula> for <s> = <@index>
             if not otherwise specified
 
 collect ::= collect <s> <n> <@formula>
@@ -50,23 +50,23 @@ atom ::= <IntegerType> | <FloatType>
  | <IncomingValue> | <FunctionAttribute>
  | <Opcode> | <GeneralizedSame>
 
-IntegerType ::= data_type <@variable> '=' integer
-FloatType   ::= data_type <@variable> '=' float
-VectorType  ::= data_type <@variable> '=' vector
-PointerType ::= data_type <@variable> '=' pointer
+IntegerType ::= data_type <@variable> = integer
+FloatType   ::= data_type <@variable> = float
+VectorType  ::= data_type <@variable> = vector
+PointerType ::= data_type <@variable> = pointer
 
 Unused ::= <@variable> is unused
-Opcode ::= opcode <@variable> '=' <s>
+Opcode ::= opcode <@variable> = <s>
 
 IntZero   ::= <@variable> is integer zero
 FloatZero ::= <@variable> is floating point zero
 
-Constant     ::= ir_type <@variable> '=' constant
-Preexecution ::= ir_type <@variable> '=' preexecution
-Argument     ::= ir_type <@variable> '=' argument
-Instruction  ::= ir_type <@variable> '=' instruction
+Constant     ::= ir_type <@variable> = constant
+Preexecution ::= ir_type <@variable> = preexecution
+Argument     ::= ir_type <@variable> = argument
+Instruction  ::= ir_type <@variable> = instruction
 
-Same     ::= <@variable> '=' <@variable>
+Same     ::= <@variable> = <@variable>
 Distinct ::= <@variable> '≠' <@variable>
 
 DFGEdge ::= <@variable> '∈' <@variable> '.' args
@@ -74,31 +74,31 @@ CFGEdge ::= <@variable> '∈' <@variable> '.' successors
 CDGEdge ::= <@variable> has control dominance to <@variable>
 PDGEdge ::= <@variable> has dependence edge to <@variable>
 
-FirstOperand    ::= <@variable> '='
+FirstOperand    ::= <@variable> =
                     <@variable> '.' args '[' 0 ']'
-SecondOperand   ::= <@variable> '='
+SecondOperand   ::= <@variable> =
                     <@variable> '.' args '[' 1 ']'
-ThirdOperand    ::= <@variable> '='
+ThirdOperand    ::= <@variable> =
                     <@variable> '.' args '[' 2 ']'
-FourthOperand   ::= <@variable> '='
+FourthOperand   ::= <@variable> =
                     <@variable> '.' args '[' 3 ']'
-FirstSuccessor  ::= <@variable> '='
+FirstSuccessor  ::= <@variable> =
                     <@variable> '.' successors '[' 0 ']'
-SecondSuccessor ::= <@variable> '='
+SecondSuccessor ::= <@variable> =
                     <@variable> '.' successors '[' 1 ']'
-ThirdSuccessor  ::= <@variable> '='
+ThirdSuccessor  ::= <@variable> =
                     <@variable> '.' successors '[' 2 ']'
-FourthSuccessor ::= <@variable> '='
+FourthSuccessor ::= <@variable> =
                     <@variable> '.' successors '[' 3 ']'
 
 Dominate       ::= domination
-                      '(' <@variable> ',' <@variable> ')'
+                   '(' <@variable> ',' <@variable> ')'
 Postdom        ::= post_domination
-                      '(' <@variable> ',' <@variable> ')'
+                   '(' <@variable> ',' <@variable> ')'
 DominateStrict ::= strict_domination
-                      '(' <@variable> ',' <@variable> ')'
+                   '(' <@variable> ',' <@variable> ')'
 PostdomStrict  ::= strict_post_domination
-                      '(' <@variable> ',' <@variable> ')'
+                   '(' <@variable> ',' <@variable> ')'
 
 IncomingValue ::= <@variable> '->' <@variable> 'Φ' <@variable>
 
