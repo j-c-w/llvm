@@ -152,6 +152,7 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
             SmartIRBuilder builder(&block, iter);
 
             Instruction* mul_inst;
+            Instruction* xor_inst;
             ConstantInt* intconst;
             int64_t      or_const;
             int64_t      mul_const;
@@ -184,6 +185,18 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
 
                 instruction.replaceAllUsesWith(
                     builder.CreateAdd(instruction.getOperand(0), instruction.getOperand(1)));
+            }
+            else if(instruction.getOpcode() == Instruction::Add &&
+                    (xor_inst = dyn_cast<Instruction>(instruction.getOperand(1))) &&
+                    xor_inst->getOpcode() == Instruction::Xor &&
+                    (intconst = dyn_cast<ConstantInt>(xor_inst->getOperand(1))) &&
+                    intconst->getSExtValue() == -1) {
+                instruction.replaceAllUsesWith(
+                    builder.CreateSub(
+                        builder.CreateSub(
+                            instruction.getOperand(0),
+                            xor_inst->getOperand(0)),
+                        ConstantInt::get(intconst->getType(), 1)));
             }
             else if(auto gep_inst = dyn_cast<GetElementPtrInst>(&instruction))
             {
