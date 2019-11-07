@@ -2,133 +2,114 @@
 
 export ::= Export
 
-specification ::= Constraint <s> <@constraint> End
+specification ::= Constraint <s> <@formula> End
 
-@constraint ::= <@nested> | <conjunction> | <disjunction>
-              | <rename> | <if> | <default> | <collect>
-              | <ConstraintOpcode> | <GeneralizedDominance>
-              | <atom> | <GeneralizedSame>
+@formula ::= <atom> | <conjunction> | <disjunction>
+ | <rename> | <if> | <default> | <collect> | <@nested>
 
-@nested ::= '(' <@constraint> ')'
+@nested ::= '(' <@formula> ')'
 
-conjunction ::= '(' <@constraint> '∧' <@constraint>
-                                { '∧' <@constraint> } ')'
+conjunction ::= '(' <@formula> '∧' <@formula>
+                             { '∧' <@formula> } ')'
 
-disjunction ::= '(' <@constraint> '∨' <@constraint>
-                                { '∨' <@constraint> } ')'
+disjunction ::= '(' <@formula> '∨' <@formula>
+                             { '∨' <@formula> } ')'
 
-rename ::= ( <inheritance> | <forone> | <forall> | <forsome> )
-           [ '(' <@slot> '-' '>' <@slot>
-           { ',' <@slot> '-' '>' <@slot> } ')' ] [ '@' <@slot> ]
+rename ::= ( <forone> | <forall> | <forsome> | <inherit> )
+           [ '(' <@variable> '->' <@variable>
+           { ',' <@variable> '->' <@variable> } ')' ]
+           [ '@' <@variable> ]
 
-inheritance ::= include <s> [ '[' <s> '=' <@calculation>
-                            { ',' <s> '=' <@calculation> } ']' ]
+inherit ::= include <s> [ '[' <s> '=' <@index>
+                        { ',' <s> '=' <@index> } ']' ]
 
-forone ::= <@constraint> for <s> '=' <@calculation>
+forone  ::= <@formula> for     <s> '=' <@index>
+forall  ::= <@formula> foreach <s> '=' <@index> '..' <@index>
+forsome ::= <@formula> forany  <s> '=' <@index> '..' <@index>
 
-forall ::= <@constraint> foreach <s> '=' <@calculation>
-                                    '..' <@calculation>
+if ::= if <@index> '=' <@index> then <@formula>
+                                else <@formula> endif
 
-forsome ::= <@constraint> forany <s> '=' <@calculation>
-                                    '..' <@calculation>
-
-if ::= if <@calculation> '=' <@calculation>
-     then <@constraint> else <@constraint> endif
-
-default ::= <@constraint> for <s> '=' <@calculation>
+default ::= <@formula> for <s> '=' <@index>
             if not otherwise specified
 
-collect ::= collect <s> <n> <@constraint>
+collect ::= collect <s> <n> <@formula>
 
-atom ::= <ConstraintIntegerType>   | <ConstraintFloatType>
-       | <ConstraintVectorType>    | <ConstraintPointerType>
-       | <ConstraintUnused>
-       | <ConstraintIntZero>       | <ConstraintFloatZero>
-       | <ConstraintConstant>      | <ConstraintPreexecution>
-       | <ConstraintArgument>      | <ConstraintInstruction>
-       | <ConstraintSame>          | <ConstraintDistinct>
-       | <ConstraintDFGEdge>       | <ConstraintCFGEdge>
-       | <ConstraintCDGEdge>       | <ConstraintPDGEdge>
-       | <ConstraintFirstOperand>  | <ConstraintSecondOperand>
-       | <ConstraintThirdOperand>  | <ConstraintFourthOperand>
-       | <ConstraintFirstSuccessor> | <ConstraintSecondSuccessor>
-       | <ConstraintThirdSuccessor> | <ConstraintFourthSuccessor>
-       | <ConstraintCFGDominate>   | <ConstraintCFGDominateStrict>
-       | <ConstraintCFGPostdom>    | <ConstraintCFGPostdomStrict>
-       | <ConstraintIncomingValue> | <ConstraintDFGBlocked>
-       | <ConstraintCFGBlocked>    | <ConstraintPDGBlocked>
-       | <ConstraintFunctionAttribute>
+atom ::= <IntegerType> | <FloatType>
+ | <VectorType> | <PointerType>
+ | <Unused> | <IntZero> | <FloatZero>
+ | <Constant> | <Preexecution> | <Argument> | <Instruction>
+ | <Same> | <Distinct>
+ | <DFGEdge> | <CFGEdge> | <CDGEdge> | <PDGEdge>
+ | <FirstOperand> | <SecondOperand>
+ | <ThirdOperand> | <FourthOperand>
+ | <FirstSuccessor> | <SecondSuccessor>
+ | <ThirdSuccessor> | <FourthSuccessor>
+ | <Dominate> | <DominateStrict>
+ | <Postdom> | <PostdomStrict> | <Blocked>
+ | <IncomingValue> | <FunctionAttribute>
+ | <Opcode> | <GeneralizedSame>
 
-ConstraintIntegerType ::= data_type <@slot> '=' integer
-ConstraintFloatType   ::= data_type <@slot> '=' float
-ConstraintVectorType  ::= data_type <@slot> '=' vector
-ConstraintPointerType ::= data_type <@slot> '=' pointer
+IntegerType ::= data_type <@variable> '=' integer
+FloatType   ::= data_type <@variable> '=' float
+VectorType  ::= data_type <@variable> '=' vector
+PointerType ::= data_type <@variable> '=' pointer
 
-ConstraintUnused ::= <@slot> is unused
-ConstraintOpcode ::= opcode <@slot> = <s>
+Unused ::= <@variable> is unused
+Opcode ::= opcode <@variable> '=' <s>
 
-ConstraintIntZero   ::= <@slot> is integer zero
-ConstraintFloatZero ::= <@slot> is floating point zero
+IntZero   ::= <@variable> is integer zero
+FloatZero ::= <@variable> is floating point zero
 
-ConstraintConstant     ::= ir_type <@slot> '=' constant
-ConstraintPreexecution ::= ir_type <@slot> '=' preexecution
-ConstraintArgument     ::= ir_type <@slot> '=' argument
-ConstraintInstruction  ::= ir_type <@slot> '=' instruction
+Constant     ::= ir_type <@variable> '=' constant
+Preexecution ::= ir_type <@variable> '=' preexecution
+Argument     ::= ir_type <@variable> '=' argument
+Instruction  ::= ir_type <@variable> '=' instruction
 
-ConstraintSame     ::= <@slot> '=' <@slot>
-ConstraintDistinct ::= <@slot> '≠' <@slot>
+Same     ::= <@variable> '=' <@variable>
+Distinct ::= <@variable> '≠' <@variable>
 
-ConstraintDFGEdge ::= <@slot> '∈' <@slot> '.' args
-ConstraintCFGEdge ::= <@slot> '∈' <@slot> '.' successors
-ConstraintCDGEdge ::= <@slot> has control dominance to <@slot>
-ConstraintPDGEdge ::= <@slot> has dependence edge to <@slot>
+DFGEdge ::= <@variable> '∈' <@variable> '.' args
+CFGEdge ::= <@variable> '∈' <@variable> '.' successors
+CDGEdge ::= <@variable> has control dominance to <@variable>
+PDGEdge ::= <@variable> has dependence edge to <@variable>
 
-ConstraintFirstOperand    ::= <@slot> '='
-                              <@slot> '.' args '[' 0 ']'
-ConstraintSecondOperand   ::= <@slot> '='
-                              <@slot> '.' args '[' 1 ']'
-ConstraintThirdOperand    ::= <@slot> '='
-                              <@slot> '.' args '[' 2 ']'
-ConstraintFourthOperand   ::= <@slot> '='
-                              <@slot> '.' args '[' 3 ']'
-ConstraintFirstSuccessor  ::= <@slot> '='
-                              <@slot> '.' successors '[' 0 ']'
-ConstraintSecondSuccessor ::= <@slot> '='
-                              <@slot> '.' successors '[' 1 ']'
-ConstraintThirdSuccessor  ::= <@slot> '='
-                              <@slot> '.' successors '[' 2 ']'
-ConstraintFourthSuccessor ::= <@slot> '='
-                              <@slot> '.' successors '[' 3 ']'
+FirstOperand    ::= <@variable> '='
+                    <@variable> '.' args '[' 0 ']'
+SecondOperand   ::= <@variable> '='
+                    <@variable> '.' args '[' 1 ']'
+ThirdOperand    ::= <@variable> '='
+                    <@variable> '.' args '[' 2 ']'
+FourthOperand   ::= <@variable> '='
+                    <@variable> '.' args '[' 3 ']'
+FirstSuccessor  ::= <@variable> '='
+                    <@variable> '.' successors '[' 0 ']'
+SecondSuccessor ::= <@variable> '='
+                    <@variable> '.' successors '[' 1 ']'
+ThirdSuccessor  ::= <@variable> '='
+                    <@variable> '.' successors '[' 2 ']'
+FourthSuccessor ::= <@variable> '='
+                    <@variable> '.' successors '[' 3 ']'
 
-ConstraintCFGDominate       ::= domination            
-                                '(' <@slot> ',' <@slot> ')'
-ConstraintCFGPostdom        ::= post_domination
-                                '(' <@slot> ',' <@slot> ')'
-ConstraintCFGDominateStrict ::= strict_domination
-                                '(' <@slot> ',' <@slot> ')'
-ConstraintCFGPostdomStrict  ::= strict_post_domination
-                                '(' <@slot> ',' <@slot> ')'
+Dominate       ::= domination
+                      '(' <@variable> ',' <@variable> ')'
+Postdom        ::= post_domination
+                      '(' <@variable> ',' <@variable> ')'
+DominateStrict ::= strict_domination
+                      '(' <@variable> ',' <@variable> ')'
+PostdomStrict  ::= strict_post_domination
+                      '(' <@variable> ',' <@variable> ')'
 
-ConstraintIncomingValue ::= <@slot> '-' '>' <@slot> 'Φ' <@slot>
+IncomingValue ::= <@variable> '->' <@variable> 'Φ' <@variable>
 
-ConstraintDFGBlocked ::= all data flow from <@slot> to <@slot>
-                                        passes through <@slot>
+Blocked ::= all control flow from <@variable> to <@variable>
+            passes through <@variable>
 
-ConstraintCFGBlocked ::= all control flow from <@slot> to <@slot>
-                                           passes through <@slot>
+FunctionAttribute ::= <@variable> has attribute pure
 
-ConstraintPDGBlocked ::= all flow from <@slot> to <@slot>
-                                   passes through <@slot>
+GeneralizedSame ::= <@variable> is the same set as <@variable>
 
-ConstraintFunctionAttribute ::= <@slot> has attribute pure
-
-GeneralizedSame  ::= <@slot> is the same set as <@slot>
-
-GeneralizedDominance ::= calculated_from '(' <@slot>
-                                         ',' <@slot>
-                                         ',' <@slot> ')'
-
-@slot ::= <slottuple> | '{' <@openslot> '}'
+@variable ::= <slottuple> | '{' <@openslot> '}'
 
 slottuple ::= '{' <@openslot> ',' <@openslot>
                             { ',' <@openslot> } '}'
@@ -136,26 +117,17 @@ slottuple ::= '{' <@openslot> ',' <@openslot>
 @openslot ::= <slotmember> | <slotindex> | <slotrange>
             | <slottuple>  | <slotbase>
 
+slotbase   ::= <s>
 slotmember ::= <@openslot> '.' <s>
+slotindex  ::= <@openslot> '[' <@index> ']'
+slotrange  ::= <@openslot> '[' <@index> '..' <@index> ']'
 
-slotindex ::= <@openslot> '[' <@calculation> ']'
+@index ::= <basevar> | <baseconst>
+ | <addvar> | <addconst> | <subvar> | <subconst>
 
-slotrange ::= <@openslot> '[' <@calculation>
-                         '..' <@calculation> ']'
-
-slotbase ::= <s>
-
-@calculation ::= <addvar>   | <addconst> | <subvar>
-               | <subconst> | <basevar>  | <baseconst>
-
-addvar ::= <@calculation> '+' <s>
-
-addconst ::= <@calculation> '+' <n>
-
-subvar ::= <@calculation> '-' <s>
-
-subconst ::= <@calculation> '-' <n>
-
-basevar ::= <s>
-
+basevar   ::= <s>
 baseconst ::= <n>
+addvar    ::= <@index> '+' <s>
+addconst  ::= <@index> '+' <n>
+subvar    ::= <@index> '-' <s>
+subconst  ::= <@index> '-' <n>

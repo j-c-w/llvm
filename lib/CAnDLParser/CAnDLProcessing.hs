@@ -57,10 +57,10 @@ simplify1::Map.Map String SyntaxType->Map.Map String Int->SyntaxType->Maybe Synt
 simplify1 specs vars (PNode "specification" [PLiteral n, cont]) = do
     recursion <- simplify1 specs vars cont
     return $ PNode "specification" [PLiteral n, recursion]
-simplify1 specs vars (PNode "inheritance" [PLiteral n]) = do
+simplify1 specs vars (PNode "inherit" [PLiteral n]) = do
     spec <- Map.lookup n specs
     simplify1 specs vars spec
-simplify1 specs vars (PNode "inheritance" (PLiteral n:xs)) = do
+simplify1 specs vars (PNode "inherit" (PLiteral n:xs)) = do
     spec    <- Map.lookup n specs
     newvars <- reconfigVariables vars xs
     simplify1 specs newvars spec
