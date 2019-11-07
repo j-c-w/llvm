@@ -47,10 +47,9 @@ Constraint ScalarPart
       dominates {old_value} and
   {loop.end} strictly control flow
       post dominates {old_value} and
-  {kernel.result} reaches phi node
-      {final_value} from {loop.end} and
-  {final_value} strictly control flow
-      post dominates {loop.end} and
+  {kernel.result} has data flow to {final_value} and
+  {loop.end} strictly control flow
+      dominates {final_value} and
   inherits KernelFunction
       with {loop} as {scope} at {kernel} and
   inherits Concat(N1=31,N2=1)
