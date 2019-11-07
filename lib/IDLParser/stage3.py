@@ -373,7 +373,6 @@ def generate_fast_cpp_specification(syntax, specs):
                     +["}"])
 
 def generate_cpp_code(syntax_list):
-    sys.stderr.write("syntax_list = "+str(syntax_list)+"\n")
     includes  = ["BackendSpecializations", "BackendDirectClasses", "BackendSelectors"]
     specs     = {spec[1] : spec[2] for spec in syntax_list}
 
