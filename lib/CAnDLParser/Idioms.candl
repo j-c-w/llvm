@@ -1,5 +1,4 @@
-Export
-Constraint SCoP
+Export Constraint SCoP
 ( include For @ {loop}
 ∧ include StructuredControlFlow({loop}->{scope}) @ {control}
 ∧ {inputs[0]} = {loop.iterator}
@@ -17,7 +16,7 @@ Constraint StructuredControlFlow
                      {branch[i].value}.successors[0]
                ∧ {branch[i].target2} =
                      {branch[i].value}.successors[1]
-               ∧ include LocalValue({scope}->{scope},
+               ∧ include ScopeValue({scope}->{scope},
                           {branch[i].value}->{value}))
 ∧ collect i 10 ( include For @ {loop[i]}
                ∧ domination({scope.begin},
@@ -79,20 +78,65 @@ End
 
 Constraint SideEffectFreeCalls
 ( collect i 20 ( opcode{callsite[i]} = call
-               ∧ include LocalValue({callsite[i]}->{value}))
+               ∧ include ScopeValue({callsite[i]}->{value}))
 ∧ collect i 20 ( opcode{callsite[i]} = call
-               ∧ include LocalValue({callsite[i]}->{value})
+               ∧ include ScopeValue({callsite[i]}->{value})
                ∧ {function[i]} = {callsite[i]}.args[0]
                ∧ {function[i]} has attribute pure))
 End
 
-Constraint MemoryAccess
-( ( ( opcode{access} = store
-    ∧ {pointer} = {access}.args[1])
-  ∨ ( opcode{access} = load
-    ∧ {pointer} = {access}.args[0]))
-∧ domination({scope.begin}, {access})
-∧ post_domination({scope.end}, {access}))
+Constraint For
+( include Loop
+∧ {increment} -> {body.end} Φ {iterator}
+∧ {increment} ∈ {comparison}.args
+∧ opcode{comparison} = icmp
+∧ {comparison} ∈ {end}.args
+∧ {increment} ∈ {iterator}.args
+∧ opcode{increment} = add
+∧ {iterator} ∈ {increment}.args
+∧ {iter_end} ∈ {comparison}.args
+∧ include LocalConst({begin}->{scope.begin},
+                  {iter_end}->{value})
+∧ {iter_begin} ∈ {iterator}.args
+∧ include LocalConst({begin}->{scope.begin},
+                {iter_begin}->{value})
+∧ {iter_step} ∈ {increment}.args
+∧ include LocalConst({begin}->{scope.begin},
+                 {iter_step}->{value}))
+End
+
+Constraint Loop
+( include SESE
+∧ {begin} ∈ {end}.successors)
+End
+
+Constraint SESE
+( opcode{precursor} = branch
+∧ {begin} ∈ {precursor}.successors
+∧ opcode{end} = branch
+∧ {successor} ∈ {end}.successors
+∧ domination({begin}, {end})
+∧ post_domination({end}, {begin})
+∧ strict_domination({precursor}, {begin})
+∧ strict_post_domination({successor}, {end})
+∧ all control flow from {begin} to {precursor}
+         passes through {end}
+∧ all control flow from {successor} to {end}
+         passes through {begin})
+End
+
+Constraint IfBlock
+( include PotentialSESE({truebegin}->{begin},
+                          {trueend}->{end})
+∧ {truebegin} = {precursor}.successors[0]
+∧ {falsebegin} = {precursor}.successors[1]
+∧ include PotentialSESE({falsebegin}->{begin},
+                          {falseend}->{end})
+∧ {trueend} ≠ {falseend}
+∧ {condition} = {precursor}.args[0]
+∧ opcode{condition} = icmp
+∧ {compare_left} = {condition}.args[0]
+∧ {compare_right} = {condition}.args[1])
 End
 
 Constraint AffineCalc
@@ -135,18 +179,31 @@ else
 endif
 End
 
-Constraint IfBlock
-( include PotentialSESE({truebegin}->{begin},
-                          {trueend}->{end})
-∧ {truebegin} = {precursor}.successors[0]
-∧ {falsebegin} = {precursor}.successors[1]
-∧ include PotentialSESE({falsebegin}->{begin},
-                          {falseend}->{end})
-∧ {trueend} ≠ {falseend}
-∧ {condition} = {precursor}.args[0]
-∧ opcode{condition} = icmp
-∧ {compare_left} = {condition}.args[0]
-∧ {compare_right} = {condition}.args[1])
+Constraint ArgumentsPermuted
+( ( {src1} = {dst}.args[0]
+  ∧ {src2} = {dst}.args[1])
+∨ ( {src2} = {dst}.args[0]
+  ∧ {src1} = {dst}.args[1]))
+End
+
+Constraint LocalConst
+( ( ir_type{scope.begin} = instruction
+  ∧ ir_type{value} = preexecution)
+∨ strict_domination({value}, {scope.begin}))
+End
+
+Constraint MemoryAccess
+( ( ( opcode{access} = store
+    ∧ {pointer} = {access}.args[1])
+  ∨ ( opcode{access} = load
+    ∧ {pointer} = {access}.args[0]))
+∧ domination({scope.begin}, {access})
+∧ post_domination({scope.end}, {access}))
+End
+
+Constraint ScopeValue
+( domination({scope.begin}, {value})
+∧ strict_post_domination({scope.end}, {value}))
 End
 
 Constraint PotentialSESE
@@ -167,13 +224,7 @@ Constraint PotentialSESE
     ∧ {begin} = {successor})))
 End
 
-Constraint LocalValue
-( domination({scope.begin}, {value})
-∧ strict_post_domination({scope.end}, {value}))
-End
-
-Export
-Constraint Distributive
+Export Constraint Distributive
 ( opcode{value} = add
 ∧ {sum1.value} = {value}.args[0]
 ∧ {sum2.value} = {value}.args[1]
@@ -224,15 +275,7 @@ Constraint MulChain
 for N=4 if not otherwise specified
 End
 
-Constraint ArgumentsPermuted
-( ( {src1} = {dst}.args[0]
-  ∧ {src2} = {dst}.args[1])
-∨ ( {src2} = {dst}.args[0]
-  ∧ {src1} = {dst}.args[1]))
-End
-
-Export
-Constraint HoistSelect
+Export Constraint HoistSelect
 ( opcode{select} = select
 ∧ {input1} = {select}.args[1]
 ∧ {base} = {input1}.args[0]
@@ -242,28 +285,7 @@ Constraint HoistSelect
 ∧ opcode{input2} = gep)
 End
 
-Constraint For
-( include Loop
-∧ {increment} -> {body.end} Φ {iterator}
-∧ {increment} ∈ {comparison}.args
-∧ opcode{comparison} = icmp
-∧ {comparison} ∈ {end}.args
-∧ {increment} ∈ {iterator}.args
-∧ opcode{increment} = add
-∧ {iterator} ∈ {increment}.args
-∧ {iter_end} ∈ {comparison}.args
-∧ include LocalConst({begin}->{scope.begin},
-                  {iter_end}->{value})
-∧ {iter_begin} ∈ {iterator}.args
-∧ include LocalConst({begin}->{scope.begin},
-                {iter_begin}->{value})
-∧ {iter_step} ∈ {increment}.args
-∧ include LocalConst({begin}->{scope.begin},
-                 {iter_step}->{value}))
-End
-
-Export
-Constraint ForWithIteratorTest
+Export Constraint ForWithIteratorTest
 ( include Loop
 ∧ {increment} -> {body.end} Φ {iterator}
 ∧ {iterator} ∈ {comparison}.args
@@ -281,30 +303,4 @@ Constraint ForWithIteratorTest
 ∧ {iter_step} ∈ {increment}.args
 ∧ include LocalConst({begin}->{scope.scope},
                  {iter_step}->{value}))
-End
-
-Constraint Loop
-( include SESE
-∧ {begin} ∈ {end}.successors)
-End
-
-Constraint LocalConst
-( ( ir_type{scope.begin} = instruction
-  ∧ ir_type{value} = preexecution)
-∨ strict_domination({value}, {scope.begin}))
-End
-
-Constraint SESE
-( opcode{precursor} = branch
-∧ {begin} ∈ {precursor}.successors
-∧ opcode{end} = branch
-∧ {successor} ∈ {end}.successors
-∧ domination({begin}, {end})
-∧ post_domination({end}, {begin})
-∧ strict_domination({precursor}, {begin})
-∧ strict_post_domination({successor}, {end})
-∧ all control flow from {begin} to {precursor}
-         passes through {end}
-∧ all control flow from {successor} to {end}
-         passes through {begin})
 End
