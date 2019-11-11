@@ -98,7 +98,8 @@ class ResearchReplacer : public ResearchReplacerBase
 public:
     ResearchReplacer() : ResearchReplacerBase({
     {"GEMM",             [](const Solution& s)->Value*{ return s["for"][0]["comparison"]; }, nullptr},
-    {"SPMV",             [](const Solution& s)->Value*{ return s["outer_loop"]["comparison"]; }, nullptr}}) { }
+    {"SPMV_CSR",         [](const Solution& s)->Value*{ return s["outer_loop"]["comparison"]; }, nullptr},
+    {"SPMV_JDS",         [](const Solution& s)->Value*{ return s["outer_loop"]["comparison"]; }, nullptr}}) { }
 };
 
 static RegisterPass<ResearchReplacer> X("research-replacer", "Research replacer", false, false);

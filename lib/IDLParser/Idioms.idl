@@ -23,19 +23,19 @@ Constraint GEMM
 End
 
 Export
-Constraint SPMV
+Constraint SPMV_CSR
 ( inherits For2 at {outer_loop} and
   inherits DotProductFor at {inner_loop} and
   {outer_loop.begin} strictly
       control flow dominates {inner_loop.begin} and
   {outer_loop.end} strictly
       control flow post dominates {inner_loop.end} and
-#  inherits ReadRanges
-#     with {outer_loop}            as {scope}
-#      and {inner_loop.iter_begin} as {range_begin}
-#      and {inner_loop.iter_end}   as {range_end}
-#      and {outer_loop.iterator}   as {idx}
-#                                  at {read_range} and
+  inherits ReadRanges
+     with {outer_loop}            as {scope}
+      and {inner_loop.iter_begin} as {range_begin}
+      and {inner_loop.iter_end}   as {range_end}
+      and {outer_loop.iterator}   as {input_index}
+                                  at {read_range} and
   inherits VectorStore
       with {outer_loop}          as {scope}
        and {outer_loop.iterator} as {input_index} 
@@ -56,6 +56,65 @@ Constraint SPMV
                                  at {col_ind})
 End
 
+Export
+Constraint SPMV_JDS
+( inherits For2 at {outer_loop} and
+  inherits DotProductFor at {inner_loop} and
+  {outer_loop.begin} strictly
+      control flow dominates {inner_loop.begin} and
+  {outer_loop.end} strictly
+      control flow post dominates {inner_loop.end} and
+  inherits ReadZeroRanges
+     with {outer_loop}            as {scope}
+      and {inner_loop.iter_begin} as {range_begin}
+      and {inner_loop.iter_end}   as {range_end}
+      and {outer_loop.iterator}   as {input_index}
+                                  at {read_range} and
+  inherits VectorStore
+      with {outer_loop} as {scope}
+       and {perm.value} as {input_index} 
+                        at {output} and
+  inherits VectorRead
+      with {outer_loop}          as {scope}
+       and {outer_loop.iterator} as {input_index} 
+                                 at {perm} and
+  inherits VectorRead
+      with {outer_loop}      as {scope}
+       and {inner_loop.src1} as {value}
+       and {tmp1.value}      as {input_index} 
+                             at {val} and
+  inherits Addition
+      with {jd_ptr.value}        as {input}
+       and {outer_loop.iterator} as {addend}
+                                 at {tmp1} and
+  inherits VectorRead
+      with {outer_loop}          as {scope}
+       and {inner_loop.iterator} as {input_index} 
+                                 at {jd_ptr} and
+  inherits VectorRead
+      with {outer_loop}      as {scope}
+       and {inner_loop.src2} as {value}
+       and {col_ind.value}   as {input_index} 
+                             at {vector} and
+  inherits VectorRead
+      with {outer_loop} as {scope}
+       and {tmp1.value} as {input_index} 
+                        at {col_ind})
+End
+
+Constraint ReadZeroRanges
+( {range_begin} is integer zero and
+  {range_end} is load instruction)
+#and
+#  inherits VectorRead
+#      with {input_index} as {input_index}
+#       and {scope}       as {scope} at {iter_begin_read} and
+#  inherits VectorRead
+#      with {input_index} as {input_index}
+#       and {scope} as {scope} at {iter_end_read})
+End
+
+
 Constraint ReadRanges
 ( ( ( {range_end} is load instruction and
       {range_end} reaches phi node {range_begin} from {scope.end} and
@@ -66,12 +125,14 @@ Constraint ReadRanges
       {range_end} is load instruction and
       {range_begin} is the same as {iter_begin_read.value} and 
       {range_end} is the same as {iter_end_read.value} and
-      {range_begin} strictly control flow dominates {scope.end})) and
-
-  inherits VectorRead with {idx} as {idx}
-                       and {scope} as {scope} at {iter_begin_read} and
-  inherits VectorRead with {idx} as {idx}
-                       and {scope} as {scope} at {iter_end_read})
+      {range_begin} strictly control flow dominates {scope.end})))
+#and
+#  inherits VectorRead
+#      with {input_index} as {input_index}
+#       and {scope}       as {scope} at {iter_begin_read} and
+#  inherits VectorRead
+#      with {input_index} as {input_index}
+#       and {scope} as {scope} at {iter_end_read})
 End
 
 # These are some buidling blocks for the toplevel constraints.
@@ -233,8 +294,7 @@ Constraint For2
   inherits LocalConst
       with {begin}    as {scope.begin}
        and {iter_end} as {value} and
-  {iter_begin} reaches phi node
-      {iterator} from {precursor} and
+  {iter_begin} has data flow to {iterator} and
   inherits LocalConst
       with {begin}      as {scope.begin}
        and {iter_begin} as {value} and
