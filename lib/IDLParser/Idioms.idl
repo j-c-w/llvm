@@ -149,7 +149,8 @@ Constraint For
   inherits LocalConst
       with {begin}    as {scope.begin}
        and {iter_end} as {value} and
-  {iter_begin} reaches phi node {iterator} from {precursor} and
+  {iter_begin} reaches phi node
+      {iterator} from {precursor} and
   inherits LocalConst
       with {begin}      as {scope.begin}
        and {iter_begin} as {value} and
