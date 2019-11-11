@@ -15,7 +15,7 @@ Constraint GEMM
       with {iterator[1]} as {col}
        and {iterator[2]} as {row}
        and {begin} as {begin} at {input2} and
-  inherits DotProductLoop
+  inherits DotProductLoopAlphaBeta
       with {for[2]}         as {loop}
        and {input1.value}   as {src1}
        and {input2.value}   as {src2}
@@ -24,31 +24,54 @@ End
 
 Export
 Constraint SPMV
-( inherits For and
+( inherits For2 at {outer_loop} and
+  inherits DotProductFor at {inner_loop} and
+  {outer_loop.begin} strictly
+      control flow dominates {inner_loop.begin} and
+  {outer_loop.end} strictly
+      control flow post dominates {inner_loop.end} and
+#  inherits ReadRanges
+#     with {outer_loop}            as {scope}
+#      and {inner_loop.iter_begin} as {range_begin}
+#      and {inner_loop.iter_end}   as {range_end}
+#      and {outer_loop.iterator}   as {idx}
+#                                  at {read_range} and
   inherits VectorStore
-      with {iterator} as {idx}
-       and {begin} as {begin} at {output} and
-  inherits For at {inner} and
-  {body.begin} control flow dominates {inner.begin} and
-  {body.end} control flow post dominates {inner.end} and
-  inherits ReadRange
-      with {iterator} as {idx}
-       and {inner.iter_begin} as {range_begin}
-       and {inner.iter_end}   as {range_end} and
+      with {outer_loop}          as {scope}
+       and {outer_loop.iterator} as {input_index} 
+                                 at {output} and
   inherits VectorRead
-      with {inner.iterator} as {idx}
-       and {begin} as {begin} at {idx_read} and
+      with {outer_loop}          as {scope}
+       and {inner_loop.src1}     as {value}
+       and {inner_loop.iterator} as {input_index} 
+                                 at {val} and
   inherits VectorRead
-      with {idx_read.value} as {idx}
-       and {begin} as {begin} at {indir_read} and
+      with {outer_loop}      as {scope}
+       and {inner_loop.src2} as {value}
+       and {col_ind.value}   as {input_index} 
+                             at {vector} and
   inherits VectorRead
-      with {inner.iterator} as {idx}
-       and {begin} as {begin} at {seq_read} and
-  inherits DotProductLoop
-      with {inner}            as {loop}
-       and {indir_read.value} as {src1}
-       and {seq_read.value}   as {src2}
-       and {output.address}   as {update_address})
+      with {outer_loop}          as {scope}
+       and {inner_loop.iterator} as {input_index} 
+                                 at {col_ind})
+End
+
+Constraint ReadRanges
+( ( ( {range_end} is load instruction and
+      {range_end} reaches phi node {range_begin} from {scope.end} and
+      {range_end} is the same as {iter_end_read.value} and
+      {iter_begin_read.value} is the same as {iter_end_read.value} and
+      {range_begin} strictly control flow dominates {scope.end}) or
+    ( {range_begin} is load instruction and
+      {range_end} is load instruction and
+      {range_begin} is the same as {iter_begin_read.value} and 
+      {range_end} is the same as {iter_end_read.value} and
+      {range_begin} strictly control flow dominates {scope.end})) and
+
+  inherits VectorRead with {idx} as {idx}
+                       and {scope} as {scope} at {iter_begin_read} and
+  inherits VectorRead with {idx} as {idx}
+                       and {scope} as {scope} at {iter_end_read})
 End
 
 # These are some buidling blocks for the toplevel constraints.
@@ -67,8 +90,8 @@ Constraint ForNest
 End
 
 
-Constraint DotProductLoop
-( inherits GeneralDotProduct with {src1} as {src1}
+Constraint DotProductLoopAlphaBeta
+( inherits DotProductLoop with {src1} as {src1}
                               and {src2} as {src2} at {loop} and
   ( ( {loop.initial} is load instruction and
       {update_address} has data flow to {loop.initial}) or
@@ -85,7 +108,9 @@ Constraint DotProductLoop
   inherits Multiplication with {raw_final2}   as {input}
                            and {scaled_reduc} as {value}
                            and {alpha}        as {multiplier} and
-  inherits LocalConst with {alpha} as {value} and
+  inherits LocalConst
+      with {begin} as {scope.begin}
+       and {alpha} as {value} and
   inherits Multiplication with {prev}        as {input}
                            and {scaled_prev} as {value}
                            and {beta}        as {multiplier} and
@@ -93,10 +118,12 @@ Constraint DotProductLoop
       {update_address} is gep instruction) or
     ( {prev} is load instruction and
       {update_address} is first argument of {prev})) and
-  inherits LocalConst with {beta} as {value})
+  inherits LocalConst
+      with {begin} as {scope.begin}
+       and {beta}  as {value})
 End
 
-Constraint GeneralDotProduct
+Constraint DotProductLoop
 ( inherits For and
   inherits InductionVar and
   {new_ind} is fadd instruction and
@@ -108,22 +135,21 @@ Constraint GeneralDotProduct
   {initial} reaches phi node {old_ind} from {precursor})
 End
 
-Constraint ReadRange
-( ( ( {range_end} is load instruction and
-      {range_end} reaches phi node {range_begin} from {end} and
-      {iter_begin_read.value} is the same as {iter_end_read.value} and
-      {range_end} is the same as {iter_end_read.value} and
-      {range_begin} strictly control flow dominates {end}) or
-    ( {range_begin} is load instruction and
-      {range_end} is load instruction and
-      {range_begin} is the same as {iter_begin_read.value} and 
-      {range_end} is the same as {iter_end_read.value} and
-      {range_begin} strictly control flow dominates {end})) and
 
-  inherits VectorRead with {idx} as {idx}
-                       and {begin} as {begin} at {iter_begin_read} and
-  inherits VectorRead with {idx} as {idx}
-                       and {begin} as {begin} at {iter_end_read})
+Constraint DotProductFor
+( inherits For2 and
+  {dotvalue} reaches phi node {prev_dotvalue} from {end} and
+  {dotvalue} is fadd instruction and
+  inherits ArgumentsPermuted
+      with {dotvalue}      as {dst}
+       and {prev_dotvalue} as {src1}
+       and {dot_addend}    as {src2} and
+  {dot_addend} is fmul instruction and
+  inherits ArgumentsPermuted with {dot_addend} as {dst} and
+  {initial} reaches phi node
+      {prev_dotvalue} from {precursor} and
+  {dotvalue} has data flow to {use_dotvalue} and
+  {successor} control flow dominates {use_dotvalue})
 End
 
 Constraint OffsetAdd
@@ -133,7 +159,8 @@ Constraint OffsetAdd
        and {base}   as {src1}
        and {offset} as {src2} and
   inherits LocalConst
-      with {offset} as {value})
+      with {begin} as {scope.begin}
+       and {offset} as {value})
 End
 
 Constraint RangeCheck
@@ -143,7 +170,8 @@ Constraint RangeCheck
        and {input} as {src1}
        and {limit} as {src2} and
   inherits LocalConst
-      with {limit} as {value})
+      with {begin} as {scope.begin}
+       and {limit} as {value})
 End
 
 Constraint For
@@ -154,7 +182,7 @@ Constraint For
   {iter_begin} has data flow to {iterator} and
   inherits LocalConst
       with {iter_begin} as {value}
-       and {loop.begin} as {begin} and
+       and {loop}       as {scope} and
   inherits OffsetAdd
       with {increment} as {value}
        and {iterator}  as {base}
@@ -193,6 +221,29 @@ Constraint For
       {successor} is the same as {optional.condtarget[0]})))
 End
 
+Constraint For2
+( inherits Loop and
+  {increment} reaches phi node {iterator} from {end} and
+  {increment} has data flow to {comparison} and
+  {comparison} is icmp instruction and
+  {comparison} has data flow to {end} and
+  {increment} has data flow to {iterator} and
+  {increment} is add instruction and
+  {iterator} has data flow to {increment} and
+  {iter_end} has data flow to {comparison} and
+  inherits LocalConst
+      with {begin}    as {scope.begin}
+       and {iter_end} as {value} and
+  {iter_begin} has data flow to {increment} and
+  inherits LocalConst
+      with {begin}      as {scope.begin}
+       and {iter_begin} as {value} and
+  {iter_step} has data flow to {increment} and
+  inherits LocalConst
+      with {begin}     as {scope.begin}
+       and {iter_step} as {value})
+End
+
 Constraint MatrixStore
   inherits PermMultidStore(N=2) with {col} as {input[0]} and {row} as {input[1]}
 End
@@ -201,12 +252,78 @@ Constraint MatrixRead
   inherits PermMultidRead(N=2) with {col} as {input[0]} and {row} as {input[1]}
 End
 
-Constraint VectorStore
-  inherits PermMultidStore(N=1) with {idx} as {input[0]}
+Constraint VectorRead
+( {value} is load instruction and
+  {address} is first argument of {value} and
+  {base_pointer} is first argument of {address} and
+  inherits LocalConst
+      with {base_pointer} as {value} and
+  {final_index} is second argument of {address} and
+  ( ( {final_index} is add instruction and
+      inherits ArgumentsPermuted
+          with {final_index}   as {dst}
+           and {strided_index} as {src1}
+           and {offset}        as {src2} and
+      inherits LocalConst
+          with {offset} as {value} and
+      {strided_index} is mul instruction and
+      inherits ArgumentsPermuted
+          with {strided_index} as {dst}
+           and {input_index}   as {src1}
+           and {stride}        as {src2} and
+      inherits LocalConst
+          with {stride} as {value}) or 
+    ( {final_index} is mul instruction and
+      inherits ArgumentsPermuted
+          with {final_index} as {dst}
+           and {input_index} as {src1}
+           and {stride}      as {src2} and
+      inherits LocalConst
+          with {stride} as {value} and
+      {strided_index} is the same as {final_index} and
+      {offset} is unused) or 
+    ( {final_index} is the same as {input_index} and
+      {strided_index} is the same as {final_index} and
+      {offset} is unused and
+      {stride} is unused and
+      {scope.begin} is instruction)))
 End
 
-Constraint VectorRead
-  inherits PermMultidRead(N=1) with {idx} as {input[0]}
+Constraint VectorStore
+( {store} is store instruction and
+  {address} is second argument of {store} and
+  {base_pointer} is first argument of {address} and
+  inherits LocalConst
+      with {base_pointer} as {value} and
+  {final_index} is second argument of {address} and
+  ( ( {final_index} is add instruction and
+      inherits ArgumentsPermuted
+          with {final_index}   as {dst}
+           and {strided_index} as {src1}
+           and {offset}        as {src2} and
+      inherits LocalConst
+          with {offset} as {value} and
+      {strided_index} is mul instruction and
+      inherits ArgumentsPermuted
+          with {strided_index} as {dst}
+           and {input_index}   as {src1}
+           and {stride}        as {src2} and
+      inherits LocalConst
+          with {stride} as {value}) or 
+    ( {final_index} is mul instruction and
+      inherits ArgumentsPermuted
+          with {final_index} as {dst}
+           and {input_index} as {src1}
+           and {stride}      as {src2} and
+      inherits LocalConst
+          with {stride} as {value} and
+      {strided_index} is the same as {final_index} and
+      {offset} is unused) or 
+    ( {final_index} is the same as {input_index} and
+      {strided_index} is the same as {final_index} and
+      {offset} is unused and
+      {stride} is unused and
+      {scope.begin} is instruction)))
 End
 
 Constraint StencilRead
@@ -245,14 +362,14 @@ Constraint AffineAccess
 ( {address} is gep instruction and
   {base_pointer} is first argument of {address} and
   inherits LocalConst with {base_pointer} as {value}
-                            and {begin}       as {begin} and
+                            and {begin}   as {scope.begin} and
   {output_index} is second argument of {address} and
   {offset_add.value} is the same as {output_index} and
   inherits Addition at {offset_add} and
-  inherits LocalConst with {offset_add.addend} as {value} and
+  inherits LocalConst with {begin} as {scope.begin} and {offset_add.addend} as {value} and
   ( {stride_mul[N-i-1].value} is the same as {index_add[N-i].input} and
     inherits Multiplication at {stride_mul[N-i-1]} and
-    inherits LocalConst with {stride_mul[N-i-1].multiplier} as {value} and
+    inherits LocalConst with {begin} as {scope.begin} and {stride_mul[N-i-1].multiplier} as {value} and
     {index_add[N-i-1].value} is the same as {stride_mul[N-i-1].input} and
     inherits Addition at {index_add[N-i-1]} and
     {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
@@ -267,7 +384,7 @@ Constraint AffineAccess
                                             and {index_add[2].addend} as {add_input[2]}
                                             and {index_add[3].addend} as {add_input[3]} and
   {base_index} is the same as {index_add[0].addend} and
-  inherits LocalConst with {base_index} as {value})
+  inherits LocalConst with {begin} as {scope.begin} and {base_index} as {value})
 End
 
 Constraint Addition
@@ -335,10 +452,10 @@ Constraint SESE
 End
 
 Constraint LocalConst
-( ( {begin} is instruction and
+( ( {scope.begin} is instruction and
     {value} is preexecution) or
-  {value} strictly control flow dominates {begin} or
-  ( {begin} is instruction and
+  {value} strictly control flow dominates {scope.begin} or
+  ( {scope.begin} is instruction and
     {value} is unused))
 End
 
