@@ -381,6 +381,7 @@ def generate_cpp_code(syntax_list):
                     +["using namespace std;"]
                     +["#pragma GCC optimize (\"O0\")"]
                     +["#pragma clang optimize off"]
+                    +["namespace llvm { int EnableABIBreakingChecks; }"]
                     +["using IdiomSpecification = vector<Solution>;"]
                     +["template<typename T>"]
                     +["class my_shared_ptr : public shared_ptr<T>"]
