@@ -6,6 +6,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 #include <sstream>
+#include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -36,8 +37,9 @@ bool ResearchReplacerBase::runOnModule(Module& module)
     for(char& c : filename) if(c == '/') c = '_';
 
     std::stringstream sstr;
-    sstr<<"replace-report-"<<filename<<".json";
-    std::ofstream ofs(sstr.str().c_str());
+    std::streambuf * cout_strbuf = std::cout.rdbuf();
+    std::ostream ofs(cout_strbuf);
+    ofs<<"****IDL Match Report for :replace-report-"<<filename<<".json\n";
     ofs<<"{ \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"detected\": [";
 
     char first_hit1 = true;
@@ -79,16 +81,16 @@ bool ResearchReplacerBase::runOnModule(Module& module)
     }
 
     ofs<<"]\n}\n";
-    ofs.close();
+    ofs<<"****IDL Match Report End\n";
 
-    std::stringstream sstr2;
-    sstr2<<"replace-source-"<<filename<<".ll";
-    std::ofstream ofs2(sstr2.str().c_str());
+    ofs<<"****IDL Replace Source Report: replace-source-"<<filename<<".ll\n";
     std::string string_value;
     llvm::raw_string_ostream out_stream(string_value);
     out_stream<<module;
-    ofs2<<string_value;
-    ofs2.close();
+    ofs<<string_value;
+    ofs<<"****IDL Replace Source Report End\n";
+    // JW: I think we don't have to do this to cout.
+    // ofs.close();
 
     return false;
 }
