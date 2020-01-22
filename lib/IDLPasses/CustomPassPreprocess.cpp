@@ -331,7 +331,8 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
         }
     }
 
-    for(auto solution : GenerateAnalysis("ForWithIteratorTest")(function, UINT_MAX))
+    // JW: I don't know what this does, or what to replace it with for my own programs.
+    /* for(auto solution : GenerateAnalysis("ForWithIteratorTest")(function, UINT_MAX))
     {
         auto comparison = dyn_cast<Instruction>((Value*)solution["comparison"]);
         auto increment  = dyn_cast<Instruction>((Value*)solution["increment"]);
@@ -374,7 +375,7 @@ bool ResearchPreprocessor::runOnFunction(Function& function)
 
             removed_instructions.insert(select_inst);
         }
-    }
+    } */
 
 /*  THIS IS ONLY FOR STENCILS AND TENDS TO MESS THINGS UP
     for(auto solution : GenerateAnalysis("Distributive")(function, UINT_MAX))
