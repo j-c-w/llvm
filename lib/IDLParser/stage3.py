@@ -374,6 +374,8 @@ def generate_fast_cpp_specification(syntax, specs):
 
 def generate_cpp_code(syntax_list):
     includes  = ["BackendSpecializations", "BackendDirectClasses", "BackendSelectors"]
+    if syntax_list[0] == 'specification':
+        syntax_list = (syntax_list,)
     specs     = {spec[1] : spec[2] for spec in syntax_list}
 
     return "\n".join(["#include \"llvm/IDL/{}.hpp\"".format(s) for s in includes]
