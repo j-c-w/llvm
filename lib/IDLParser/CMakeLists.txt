@@ -5,6 +5,8 @@ add_llvm_library(LLVMIDLParser
   intrinsics_gen
 )
 
+FILE(GLOB IDL_SOURCES *.idl)
+
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/BNFParser
                    COMMAND ghc ${CMAKE_CURRENT_SOURCE_DIR}/stage1.hs -hidir ${CMAKE_CURRENT_BINARY_DIR} -odir ${CMAKE_CURRENT_BINARY_DIR} -i${CMAKE_CURRENT_SOURCE_DIR} -o ${CMAKE_CURRENT_BINARY_DIR}/BNFParser
                    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/stage1.hs ${CMAKE_CURRENT_SOURCE_DIR}/BNFLower.hs ${CMAKE_CURRENT_SOURCE_DIR}/BNFOptimize.hs ${CMAKE_CURRENT_SOURCE_DIR}/BNFParser.hs ${CMAKE_CURRENT_SOURCE_DIR}/BNFPrefix.hs ${CMAKE_CURRENT_SOURCE_DIR}/GraphCalculations.hs
@@ -21,6 +23,6 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/IDLParser
                    COMMENT "Generate IDL program parser")
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
-                   COMMAND cat ${CMAKE_CURRENT_SOURCE_DIR}/Idioms.idl | ${CMAKE_CURRENT_BINARY_DIR}/IDLParser | pypy ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py > ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
-                   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/IDLParser ${CMAKE_CURRENT_SOURCE_DIR}/Idioms.idl ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py
+                   COMMAND cat ${CMAKE_CURRENT_SOURCE_DIR}/Idioms.idl | pypy ${CMAKE_CURRENT_SOURCE_DIR}/preprocess.py -d ${CMAKE_CURRENT_SOURCE_DIR}| ${CMAKE_CURRENT_BINARY_DIR}/IDLParser | pypy ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py > ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
+                   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/IDLParser ${CMAKE_CURRENT_SOURCE_DIR}/Idioms.idl ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py ${CMAKE_CURRENT_SOURCE_DIR}/preprocess.py "${IDL_SOURCES}"
                    COMMENT "Generate idiom specifications C++ file")
