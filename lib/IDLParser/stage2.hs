@@ -43,8 +43,13 @@ parse (x:xs) ys = parse xs [z|y<-ys,z<-match (x:y)]
 unbox::[[SyntaxType]]->[SyntaxType]
 unbox [x] = x
 
+getOrThrow::Maybe SyntaxType -> String -> SyntaxType
+getOrThrow Nothing n = error ("Couldn't find definition " ++ (n))
+getOrThrow (Just x) n = x
+mapLookup map n = getOrThrow (Map.lookup n map) n
+
 filterExports::Map.Map String SyntaxType->[SyntaxType]->[SyntaxType]
-filterExports map ((PNode "specification" [PLiteral n, c]):(PNode "export" []):xs) = ((PNode "specification" [PLiteral n, (Maybe.fromJust $ Map.lookup n map)]):(filterExports map xs))
+filterExports map ((PNode "specification" [PLiteral n, c]):(PNode "export" []):xs) = ((PNode "specification" [PLiteral n, (mapLookup map n)]):(filterExports map xs))
 filterExports map ((PNode "specification" x):xs) = filterExports map xs
 filterExports map [] = []
 
