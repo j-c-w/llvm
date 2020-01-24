@@ -1,3 +1,5 @@
+Include VectorOps.idl
+
 Export
 Constraint GEMM
 ( inherits ForNest(N=3) and
@@ -206,43 +208,6 @@ all control flow from {begin} to {precursor}
 passes through {end} and
 all control flow from {successor} to {end}
 passes through {begin})
-End
-
-Constraint VectorRead
-( {value} is load instruction and
-  {address} is first argument of {value} and
-  {base_pointer} is first argument of {address} and
-  inherits LocalConst
-      with {base_pointer} as {value} and
-  {final_index} is second argument of {address} and
-  ( ( {final_index} is add instruction and
-      inherits ArgumentsPermuted
-          with {final_index}   as {dst}
-           and {strided_index} as {src1}
-           and {offset}        as {src2} and
-      inherits LocalConst
-          with {offset} as {value} and
-      {strided_index} is mul instruction and
-      inherits ArgumentsPermuted
-          with {strided_index} as {dst}
-           and {input_index}   as {src1}
-           and {stride}        as {src2} and
-      inherits LocalConst
-          with {stride} as {value}) or
-    ( {final_index} is mul instruction and
-      inherits ArgumentsPermuted
-          with {final_index} as {dst}
-           and {input_index} as {src1}
-           and {stride}      as {src2} and
-      inherits LocalConst
-          with {stride} as {value} and
-      {strided_index} is the same as {final_index} and
-      {offset} is unused) or
-    ( {final_index} is the same as {input_index} and
-      {strided_index} is the same as {final_index} and
-      {offset} is unused and
-      {stride} is unused and
-      {scope.begin} is instruction)))
 End
 
 Constraint ForNest
@@ -492,43 +457,6 @@ End
 
 Constraint InductionVar
   {new_ind} reaches phi node {old_ind} from {end}
-End
-
-Constraint VectorStore
-( {store} is store instruction and
-  {address} is second argument of {store} and
-  {base_pointer} is first argument of {address} and
-  inherits LocalConst
-      with {base_pointer} as {value} and
-  {final_index} is second argument of {address} and
-  ( ( {final_index} is add instruction and
-      inherits ArgumentsPermuted
-          with {final_index}   as {dst}
-           and {strided_index} as {src1}
-           and {offset}        as {src2} and
-      inherits LocalConst
-          with {offset} as {value} and
-      {strided_index} is mul instruction and
-      inherits ArgumentsPermuted
-          with {strided_index} as {dst}
-           and {input_index}   as {src1}
-           and {stride}        as {src2} and
-      inherits LocalConst
-          with {stride} as {value}) or 
-    ( {final_index} is mul instruction and
-      inherits ArgumentsPermuted
-          with {final_index} as {dst}
-           and {input_index} as {src1}
-           and {stride}      as {src2} and
-      inherits LocalConst
-          with {stride} as {value} and
-      {strided_index} is the same as {final_index} and
-      {offset} is unused) or 
-    ( {final_index} is the same as {input_index} and
-      {strided_index} is the same as {final_index} and
-      {offset} is unused and
-      {stride} is unused and
-      {scope.begin} is instruction)))
 End
 
 Constraint DotProductFor
