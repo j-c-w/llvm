@@ -102,7 +102,7 @@ class ResearchReplacer : public ResearchReplacerBase
 public:
     ResearchReplacer() : ResearchReplacerBase({
    {"GEMM", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   {"SPMV", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   /* {"SPMV", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
    {"SPMV_CSR", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
    {"SPMV_JDS", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr} }) { }
 };
