@@ -1,0 +1,53 @@
+Include LocalConst.idl
+Include Arithmetic.idl
+
+Constraint MatrixStore
+  inherits PermMultidStore(N=2) with {col} as {input[0]} and {row} as {input[1]}
+End
+
+Constraint MatrixRead
+  inherits PermMultidRead(N=2) with {col} as {input[0]} and {row} as {input[1]}
+End
+
+Constraint PermMultidStore
+( {store} is store instruction and
+  {address} is second argument of {store} and
+  inherits AffineAccess and
+  inherits Permute with {input_index} as {output})
+End
+
+Constraint PermMultidRead
+( {value} is load instruction and
+  {address} is first argument of {value} and
+  inherits AffineAccess and
+  inherits Permute with {input_index} as {output})
+End
+
+Constraint AffineAccess
+( {address} is gep instruction and
+  {base_pointer} is first argument of {address} and
+  inherits LocalConst with {base_pointer} as {value}
+                            and {begin}   as {scope.begin} and
+  {output_index} is second argument of {address} and
+  {offset_add.value} is the same as {output_index} and
+  inherits Addition at {offset_add} and
+  inherits LocalConst with {begin} as {scope.begin} and {offset_add.addend} as {value} and
+  ( {stride_mul[N-i-1].value} is the same as {index_add[N-i].input} and
+    inherits Multiplication at {stride_mul[N-i-1]} and
+    inherits LocalConst with {begin} as {scope.begin} and {stride_mul[N-i-1].multiplier} as {value} and
+    {index_add[N-i-1].value} is the same as {stride_mul[N-i-1].input} and
+    inherits Addition at {index_add[N-i-1]} and
+    {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
+    ( ( {add_input[N-i-1]} is not the same as {input_index[N-i]} and
+        {input_index[N-i-1]} is an integer) or
+      ( {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
+        {input_index[N-i]} is an integer))) for all i=0..N
+                                           with {offset_add.input} as {index_add[N].input}
+                                            and {offset_add.value} as {input_index[N]}
+                                            and {index_add[0].input}  as {add_input[0]}
+                                            and {index_add[1].addend} as {add_input[1]}
+                                            and {index_add[2].addend} as {add_input[2]}
+                                            and {index_add[3].addend} as {add_input[3]} and
+  {base_index} is the same as {index_add[0].addend} and
+  inherits LocalConst with {begin} as {scope.begin} and {base_index} as {value})
+End

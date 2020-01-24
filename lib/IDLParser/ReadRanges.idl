@@ -1,0 +1,24 @@
+Constraint ReadRanges
+( ( ( {range_end} is load instruction and
+      {range_end} reaches phi node {range_begin} from {scope.end} and
+      {range_end} is the same as {iter_end_read.value} and
+      {iter_begin_read.value} is the same as {iter_end_read.value} and
+      {range_begin} strictly control flow dominates {scope.end}) or
+    ( {range_begin} is load instruction and
+      {range_end} is load instruction and
+      {range_begin} is the same as {iter_begin_read.value} and
+      {range_end} is the same as {iter_end_read.value} and
+      {range_begin} strictly control flow dominates {scope.end})))
+End
+
+Constraint ReadZeroRanges
+( {range_begin} is integer zero and
+  {range_end} is load instruction)
+#and
+#  inherits VectorRead
+#      with {input_index} as {input_index}
+#       and {scope}       as {scope} at {iter_begin_read} and
+#  inherits VectorRead
+#      with {input_index} as {input_index}
+#       and {scope} as {scope} at {iter_end_read})
+End

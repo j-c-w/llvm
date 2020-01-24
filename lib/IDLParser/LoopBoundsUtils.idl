@@ -1,0 +1,29 @@
+Include LocalConst.idl
+Include ArgumentsPermuted.idl
+
+Constraint OffsetAdd
+( {value} is add instruction and
+  inherits ArgumentsPermuted
+      with {value}  as {dst}
+       and {base}   as {src1}
+       and {offset} as {src2} and
+  inherits LocalConst
+      with {begin} as {scope.begin}
+       and {offset} as {value})
+End
+
+Constraint RangeCheck
+( {value} is icmp instruction and
+  inherits ArgumentsPermuted
+      with {value} as {dst}
+       and {input} as {src1}
+       and {limit} as {src2} and
+  inherits LocalConst
+      with {begin} as {scope.begin}
+       and {limit} as {value})
+End
+
+Constraint InductionVar
+  {new_ind} reaches phi node {old_ind} from {end}
+End
+

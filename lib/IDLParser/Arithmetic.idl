@@ -1,0 +1,31 @@
+Include ArgumentsPermuted.idl
+
+Constraint Addition
+( ( {input} is the same as {value} and
+    {addend} is unused) or
+  ( ( {value} is add instruction or
+      {value} is fadd instruction) and
+    inherits ArgumentsPermuted with {value}  as {dst}
+                                and {input}  as {src1}
+                                and {addend} as {src2}) or
+  ( ( {value} is sub instruction or
+      {value} is fsub instruction) and
+    inherits ArgumentsPermuted with {value}  as {dst}
+                                and {input}  as {src1}
+                                and {addend} as {src2}))
+End
+
+Constraint Multiplication
+( ( {input} is the same as {value} and
+    {multiplier} is unused) or
+  ( ( {value} is mul instruction or
+      {value} is fmul instruction) and
+    inherits ArgumentsPermuted with {value}      as {dst}
+                                and {input}      as {src1}
+                                and {multiplier} as {src2}) or
+  ( {value} is fdiv instruction and
+    inherits ArgumentsPermuted with {value} as {dst}
+                                and {input} as {src1}
+                                and {multiplier} as {src2}))
+End
+

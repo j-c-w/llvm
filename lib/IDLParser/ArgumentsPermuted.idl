@@ -1,0 +1,17 @@
+Constraint ArgumentsPermuted
+( ( {src1} is first  argument of {dst} and
+    {src2} is second argument of {dst}) or
+  ( {src2} is first  argument of {dst} and
+    {src1} is second argument of {dst}))
+End
+
+Constraint Permute
+if M+1=N then
+  {input[M]} is the same as {output[M]}
+else
+  ( {input[M]} is the same as {output[n]} and
+    inherits Permute(N=N,M=M+1) with {output[M]} as {output[n]}
+                                and {output[n]} as {output[M]}) for some n=M..N
+endif
+for M=0 if not otherwise specified
+End

@@ -1,0 +1,5 @@
+Constraint LocalConst
+( ( {scope.begin} is instruction and
+    {value} is preexecution) or
+  {value} strictly control flow dominates {scope.begin})
+End
