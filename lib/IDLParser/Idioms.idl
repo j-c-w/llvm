@@ -1,36 +1,502 @@
-Export Constraint ComplexReductionsAndHistograms
-( inherits For at {loop} and
-  collect k 32 ( inherits VectorRead
-                     with {loop.iterator}  as {input_index}
-                      and {read_values[k]} as {value}
-                      and {loop}           as {scope}
-                                           at {read[k]}) and
-  collect k  2 ( inherits HistoPart
-                     with {loop.begin}  as {begin}
-                      and {read}        as {read}
-                      and {loop}        as {loop}
-                      and {read_values} as {read_values}
-                                        at {histo[k]}) and
-  collect k  2 ( inherits ScalarPart
-                     with {loop.begin}  as {begin}
-                      and {loop}        as {loop}
-                      and {read_values} as {read_values}
-                                        at {scalar[k]}) and
-  collect i  2 ( {stores[i]} is store instruction and
-                 inherits ScopeValue
-                     with {loop}      as {scope}
-                      and {stores[i]} as {value}) and
-  {stores[0..2]} is the same set as
-      {histo[0..2].update.store_instr} and
-  {scalar[0].kernel.result} is not the
-      same as {histo[0].update.store_instr} and
-  inherits SideEffectFreeCalls
-      with {loop} as {scope})
+Export
+Constraint GEMM
+( inherits ForNest(N=3) and
+  inherits MatrixStore
+      with {iterator[0]} as {col}
+       and {iterator[1]} as {row}
+       and {begin} as {begin} at {output} and
+  inherits MatrixRead
+      with {iterator[0]} as {col}
+       and {iterator[2]} as {row}
+       and {begin} as {begin} at {input1} and
+  inherits MatrixRead
+      with {iterator[1]} as {col}
+       and {iterator[2]} as {row}
+       and {begin} as {begin} at {input2} and
+  inherits DotProductLoopAlphaBeta
+      with {for[2]}         as {loop}
+       and {input1.value}   as {src1}
+       and {input2.value}   as {src2}
+       and {output.address} as {update_address})
+End
+
+Export
+Constraint SPMV
+( inherits ForComplicated and
+inherits VectorStore
+with {iterator} as {idx}
+and {begin} as {begin} at {output} and
+inherits ReadRanges
+with {iterator} as {idx}
+and {inner.iter_begin} as {range_begin}
+and {inner.iter_end} as {range_end} and
+inherits For at {inner} and
+inherits VectorRead
+with {inner.iterator} as {idx}
+and {begin} as {begin} at {idx_read} and
+inherits VectorRead
+with {idx_read.value} as {idx}
+and {begin} as {begin} at {indir_read} and
+inherits VectorRead
+with {inner.iterator} as {idx}
+and {begin} as {begin} at {seq_read} and
+inherits DotProductLoop
+with {inner} as {loop}
+and {indir_read.value} as {src1}
+and {seq_read.value} as {src2}
+and {output.address} as {update_address})
+End
+
+Export
+Constraint SPMV_CSR
+( inherits For at {outer_loop} and
+  inherits DotProductFor at {inner_loop} and
+  {outer_loop.begin} strictly
+      control flow dominates {inner_loop.begin} and
+  {outer_loop.end} strictly
+      control flow post dominates {inner_loop.end} and
+  inherits ReadRanges
+     with {outer_loop}            as {scope}
+      and {inner_loop.iter_begin} as {range_begin}
+      and {inner_loop.iter_end}   as {range_end}
+      and {outer_loop.iterator}   as {input_index}
+                                  at {read_range} and
+  inherits VectorStore
+      with {outer_loop}          as {scope}
+       and {outer_loop.iterator} as {input_index}
+                                 at {output} and
+  inherits VectorRead
+      with {outer_loop}          as {scope}
+       and {inner_loop.src1}     as {value}
+       and {inner_loop.iterator} as {input_index}
+                                 at {val} and
+  inherits VectorRead
+      with {outer_loop}      as {scope}
+       and {inner_loop.src2} as {value}
+       and {col_ind.value}   as {input_index}
+                             at {vector} and
+  inherits VectorRead
+      with {outer_loop}          as {scope}
+       and {inner_loop.iterator} as {input_index}
+                                 at {col_ind})
+End
+
+Export
+Constraint SPMV_JDS
+( inherits For at {outer_loop} and
+  inherits DotProductFor at {inner_loop} and
+  {outer_loop.begin} strictly
+      control flow dominates {inner_loop.begin} and
+  {outer_loop.end} strictly
+      control flow post dominates {inner_loop.end} and
+  inherits ReadZeroRanges
+     with {outer_loop}            as {scope}
+      and {inner_loop.iter_begin} as {range_begin}
+      and {inner_loop.iter_end}   as {range_end}
+      and {outer_loop.iterator}   as {input_index}
+                                  at {read_range} and
+  inherits VectorStore
+      with {outer_loop} as {scope}
+       and {perm.value} as {input_index}
+                        at {output} and
+  inherits VectorRead
+      with {outer_loop}          as {scope}
+       and {outer_loop.iterator} as {input_index}
+                                 at {perm} and
+  inherits VectorRead
+      with {outer_loop}      as {scope}
+       and {inner_loop.src1} as {value}
+       and {tmp1.value}      as {input_index}
+                             at {val} and
+  inherits Addition
+      with {jd_ptr.value}        as {input}
+       and {outer_loop.iterator} as {addend}
+                                 at {tmp1} and
+  inherits VectorRead
+      with {outer_loop}          as {scope}
+       and {inner_loop.iterator} as {input_index}
+                                 at {jd_ptr} and
+  inherits VectorRead
+      with {outer_loop}      as {scope}
+       and {inner_loop.src2} as {value}
+       and {col_ind.value}   as {input_index}
+                             at {vector} and
+  inherits VectorRead
+      with {outer_loop} as {scope}
+       and {tmp1.value} as {input_index}
+                        at {col_ind})
+End
+
+Constraint ReadZeroRanges
+( {range_begin} is integer zero and
+  {range_end} is load instruction)
+#and
+#  inherits VectorRead
+#      with {input_index} as {input_index}
+#       and {scope}       as {scope} at {iter_begin_read} and
+#  inherits VectorRead
+#      with {input_index} as {input_index}
+#       and {scope} as {scope} at {iter_end_read})
+End
+
+Constraint MatrixStore
+  inherits PermMultidStore(N=2) with {col} as {input[0]} and {row} as {input[1]}
+End
+
+Constraint MatrixRead
+  inherits PermMultidRead(N=2) with {col} as {input[0]} and {row} as {input[1]}
+End
+
+Constraint PermMultidStore
+( {store} is store instruction and
+  {address} is second argument of {store} and
+  inherits AffineAccess and
+  inherits Permute with {input_index} as {output})
+End
+
+Constraint PermMultidRead
+( {value} is load instruction and
+  {address} is first argument of {value} and
+  inherits AffineAccess and
+  inherits Permute with {input_index} as {output})
+End
+
+Constraint AffineAccess
+( {address} is gep instruction and
+  {base_pointer} is first argument of {address} and
+  inherits LocalConst with {base_pointer} as {value}
+                            and {begin}   as {scope.begin} and
+  {output_index} is second argument of {address} and
+  {offset_add.value} is the same as {output_index} and
+  inherits Addition at {offset_add} and
+  inherits LocalConst with {begin} as {scope.begin} and {offset_add.addend} as {value} and
+  ( {stride_mul[N-i-1].value} is the same as {index_add[N-i].input} and
+    inherits Multiplication at {stride_mul[N-i-1]} and
+    inherits LocalConst with {begin} as {scope.begin} and {stride_mul[N-i-1].multiplier} as {value} and
+    {index_add[N-i-1].value} is the same as {stride_mul[N-i-1].input} and
+    inherits Addition at {index_add[N-i-1]} and
+    {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
+    ( ( {add_input[N-i-1]} is not the same as {input_index[N-i]} and
+        {input_index[N-i-1]} is an integer) or
+      ( {input_index[N-i-1]} is the same as {add_input[N-i-1]} and
+        {input_index[N-i]} is an integer))) for all i=0..N
+                                           with {offset_add.input} as {index_add[N].input}
+                                            and {offset_add.value} as {input_index[N]}
+                                            and {index_add[0].input}  as {add_input[0]}
+                                            and {index_add[1].addend} as {add_input[1]}
+                                            and {index_add[2].addend} as {add_input[2]}
+                                            and {index_add[3].addend} as {add_input[3]} and
+  {base_index} is the same as {index_add[0].addend} and
+  inherits LocalConst with {begin} as {scope.begin} and {base_index} as {value})
+End
+
+
+Constraint SESE
+( {precursor} is branch instruction and
+{precursor} has control flow to {begin} and
+{end} is branch instruction and
+{end} has control flow to {successor} and
+{begin} control flow dominates {end} and
+{end} control flow post dominates {begin} and
+{precursor} strictly control flow dominates
+{begin} and
+{successor} strictly control flow post dominates
+{end} and
+all control flow from {begin} to {precursor}
+passes through {end} and
+all control flow from {successor} to {end}
+passes through {begin})
 End
 
 Constraint VectorRead
 ( {value} is load instruction and
   {address} is first argument of {value} and
+  {base_pointer} is first argument of {address} and
+  inherits LocalConst
+      with {base_pointer} as {value} and
+  {final_index} is second argument of {address} and
+  ( ( {final_index} is add instruction and
+      inherits ArgumentsPermuted
+          with {final_index}   as {dst}
+           and {strided_index} as {src1}
+           and {offset}        as {src2} and
+      inherits LocalConst
+          with {offset} as {value} and
+      {strided_index} is mul instruction and
+      inherits ArgumentsPermuted
+          with {strided_index} as {dst}
+           and {input_index}   as {src1}
+           and {stride}        as {src2} and
+      inherits LocalConst
+          with {stride} as {value}) or
+    ( {final_index} is mul instruction and
+      inherits ArgumentsPermuted
+          with {final_index} as {dst}
+           and {input_index} as {src1}
+           and {stride}      as {src2} and
+      inherits LocalConst
+          with {stride} as {value} and
+      {strided_index} is the same as {final_index} and
+      {offset} is unused) or
+    ( {final_index} is the same as {input_index} and
+      {strided_index} is the same as {final_index} and
+      {offset} is unused and
+      {stride} is unused and
+      {scope.begin} is instruction)))
+End
+
+Constraint ForNest
+( inherits ForComplicated with {iterator[0]} as {iterator} at {for[0]} and
+  {begin} is the same as {for[0].begin} and
+  {successor} is the same as {for[0].successor} and
+  ( inherits ForComplicated with {iterator[i+1]} as {iterator} at {for[i+1]} and
+    {for[i].loop.begin} spans block to {blockend[i]} and
+    ( {blockend[i]} is the same as {for[i+1].begin} or
+      ( {blockend[i]} has control flow to {for[i+1].begin} and
+        {blockend[i]} control flow dominates {for[i+1].begin} and
+        {for[i+1].begin} strictly control flow post dominates {blockend[i]})) and
+    {for[i+1].successor} spans block to {for[i].loop.end}) for all i=0..N-1)
+End
+
+Constraint ForComplicated
+( inherits Loop and
+  {increment} reaches phi node {iterator} from {end} and
+  {increment} is first argument of {comparison} and
+  {comparison} is icmp instruction and
+  {comparison} is first argument of {end} and
+  {increment} is add instruction and
+  {iterator} is first argument of {increment} and
+  {iter_end} is second argument of {comparison} and
+  inherits LocalConst
+      with {begin}    as {scope.begin}
+       and {iter_end} as {value} and
+  {iter_begin} has data flow to {iterator} and
+  inherits LocalConst
+      with {begin}      as {scope.begin}
+       and {iter_begin} as {value} and
+  {iter_step} is second argument of {increment} and
+  inherits LocalConst
+      with {begin}     as {scope.begin}
+       and {iter_step} as {value})
+End
+
+Constraint For
+( inherits Loop and
+  {increment} reaches phi node {iterator} from {end} and
+  {increment} is first argument of {comparison} and
+  {comparison} is icmp instruction and
+  {comparison} is first argument of {end} and
+  {increment} is add instruction and
+  {iterator} is first argument of {increment} and
+  {iter_end} is second argument of {comparison} and
+  inherits LocalConst
+      with {begin}    as {scope.begin}
+       and {iter_end} as {value} and
+  {iter_begin} reaches phi node
+      {iterator} from {precursor} and
+  inherits LocalConst
+      with {begin}      as {scope.begin}
+       and {iter_begin} as {value} and
+  {iter_step} is second argument of {increment} and
+  inherits LocalConst
+      with {begin}     as {scope.begin}
+       and {iter_step} as {value})
+End
+
+Constraint OffsetAdd
+( {value} is add instruction and
+  inherits ArgumentsPermuted
+      with {value}  as {dst}
+       and {base}   as {src1}
+       and {offset} as {src2} and
+  inherits LocalConst
+      with {begin} as {scope.begin}
+       and {offset} as {value})
+End
+
+Constraint RangeCheck
+( {value} is icmp instruction and
+  inherits ArgumentsPermuted
+      with {value} as {dst}
+       and {input} as {src1}
+       and {limit} as {src2} and
+  inherits LocalConst
+      with {begin} as {scope.begin}
+       and {limit} as {value})
+End
+
+Constraint For
+( inherits Loop at {loop} and
+  inherits InductionVar
+      with {iterator}  as {old_ind}
+       and {increment} as {new_ind} at {loop} and
+  {iter_begin} has data flow to {iterator} and
+  inherits LocalConst
+      with {iter_begin} as {value}
+       and {loop}       as {scope} and
+  inherits OffsetAdd
+      with {increment} as {value}
+       and {iterator}  as {base}
+       and {iter_step} as {offset} at {loop} and
+  {comparison} is first argument of {loop.end} and
+  inherits RangeCheck
+      with {comparison} as {value}
+       and {increment}  as {input}
+       and {iter_end}   as {limit} at {loop} and
+
+  collect k 1
+  ( ( ( {loop.begin} control flow post dominates {loop.precursor} and
+        {optional.preheader[k]} spans block to {loop.precursor}) or
+      ( {loop.precursor} has control flow to {loop.begin} and
+        {optional.preheader[k]} is the same as {loop.begin})) and
+    {optional.condjump[k]} has control flow to {optional.preheader[k]} and
+    {optional.condjump[k]} strictly control flow dominates {optional.preheader[k]} and
+    {optional.condjump[k]} has control flow to {optional.condtarget[k]} and
+    {optional.comparison[k]} has data flow to {optional.condjump[k]} and
+    {optional.comparison[k]} is icmp instruction and
+    {iter_end} has data flow to {optional.comparison[k]} and
+    ( ( {optional.condtarget[k]} is the same as {loop.successor} and
+        {optional.innerend[k]} is unused) or
+      ( {loop.successor} spans block to {optional.innerend[k]} and
+        {optional.innerend[k]} has control flow to {optional.condtarget[k]}))) and
+
+  ( ( {optional.condjump[0]} is unused and
+      {begin} is the same as {loop.begin}) or
+    ( {optional.condjump[0]} is branch instruction and
+      {begin} is the same as {optional.condjump[0]} and
+      {loop.begin} is instruction)) and
+  ( ( {optional.condtarget[0]} is unused and
+      {successor} is the same as {loop.successor}) or
+    ( {optional.condtarget[0]} is instruction and
+      {loop.successor} is instruction and
+      {successor} is the same as {optional.condtarget[0]})))
+End
+
+Constraint Loop
+( {end} has control flow to {begin} and
+  inherits SESE)
+End
+
+Constraint ReadRanges
+( ( ( {range_end} is load instruction and
+      {range_end} reaches phi node {range_begin} from {scope.end} and
+      {range_end} is the same as {iter_end_read.value} and
+      {iter_begin_read.value} is the same as {iter_end_read.value} and
+      {range_begin} strictly control flow dominates {scope.end}) or
+    ( {range_begin} is load instruction and
+      {range_end} is load instruction and
+      {range_begin} is the same as {iter_begin_read.value} and
+      {range_end} is the same as {iter_end_read.value} and
+      {range_begin} strictly control flow dominates {scope.end})))
+End
+
+
+Constraint LocalConst
+( ( {scope.begin} is instruction and
+    {value} is preexecution) or
+  {value} strictly control flow dominates {scope.begin})
+End
+
+Constraint ArgumentsPermuted
+( ( {src1} is first  argument of {dst} and
+    {src2} is second argument of {dst}) or
+  ( {src2} is first  argument of {dst} and
+    {src1} is second argument of {dst}))
+End
+
+Constraint DotProductLoopAlphaBeta
+( inherits DotProductLoop with {src1} as {src1}
+                              and {src2} as {src2} at {loop} and
+  ( ( {loop.initial} is load instruction and
+      {update_address} has data flow to {loop.initial}) or
+    ( {loop.initial} is floating point zero and
+      {update_address} is gep instruction)) and
+  {old_ind} reaches phi node {raw_final} from {loop.end} and
+  ( ( {raw_final} is the same as {raw_final2} and
+      {exit_break} is unused) or
+    {raw_final} reaches phi node {raw_final2} from {exit_break}) and
+  {final_value} is first argument of {output.store} and
+  inherits Addition with {scaled_reduc} as {input}
+                     and {final_value}  as {value}
+                     and {scaled_prev}  as {addend} and
+  inherits Multiplication with {raw_final2}   as {input}
+                           and {scaled_reduc} as {value}
+                           and {alpha}        as {multiplier} and
+  inherits LocalConst
+      with {begin} as {scope.begin}
+       and {alpha} as {value} and
+  inherits Multiplication with {prev}        as {input}
+                           and {scaled_prev} as {value}
+                           and {beta}        as {multiplier} and
+  ( ( {prev} is unused and
+      {update_address} is gep instruction) or
+    ( {prev} is load instruction and
+      {update_address} is first argument of {prev})) and
+  inherits LocalConst
+      with {begin} as {scope.begin}
+       and {beta}  as {value})
+End
+
+Constraint DotProductLoop
+( inherits For and
+  inherits InductionVar and
+  {new_ind} is fadd instruction and
+  inherits ArgumentsPermuted with {new_ind}  as {dst}
+                              and {old_ind}  as {src1}
+                              and {dotvalue} as {src2} and
+  {dotvalue} is fmul instruction and
+  inherits ArgumentsPermuted with {dotvalue} as {dst} and
+  {initial} reaches phi node {old_ind} from {precursor})
+End
+
+Constraint Addition
+( ( {input} is the same as {value} and
+    {addend} is unused) or
+  ( ( {value} is add instruction or
+      {value} is fadd instruction) and
+    inherits ArgumentsPermuted with {value}  as {dst}
+                                and {input}  as {src1}
+                                and {addend} as {src2}) or
+  ( ( {value} is sub instruction or
+      {value} is fsub instruction) and
+    inherits ArgumentsPermuted with {value}  as {dst}
+                                and {input}  as {src1}
+                                and {addend} as {src2}))
+End
+
+Constraint Multiplication
+( ( {input} is the same as {value} and
+    {multiplier} is unused) or
+  ( ( {value} is mul instruction or
+      {value} is fmul instruction) and
+    inherits ArgumentsPermuted with {value}      as {dst}
+                                and {input}      as {src1}
+                                and {multiplier} as {src2}) or
+  ( {value} is fdiv instruction and
+    inherits ArgumentsPermuted with {value} as {dst}
+                                and {input} as {src1}
+                                and {multiplier} as {src2}))
+End
+
+Constraint Permute
+if M+1=N then
+  {input[M]} is the same as {output[M]}
+else
+  ( {input[M]} is the same as {output[n]} and
+    inherits Permute(N=N,M=M+1) with {output[M]} as {output[n]}
+                                and {output[n]} as {output[M]}) for some n=M..N
+endif
+for M=0 if not otherwise specified
+End
+
+
+Constraint InductionVar
+  {new_ind} reaches phi node {old_ind} from {end}
+End
+
+Constraint VectorStore
+( {store} is store instruction and
+  {address} is second argument of {store} and
   {base_pointer} is first argument of {address} and
   inherits LocalConst
       with {base_pointer} as {value} and
@@ -65,256 +531,18 @@ Constraint VectorRead
       {scope.begin} is instruction)))
 End
 
-Constraint ScalarPart
-( {kernel.result} reaches phi node
-      {old_value} from {loop.end} and
-  inherits ScopeValue
-      with {loop}      as {scope}
-       and {old_value} as {value} and 
-  {kernel.result} has data flow to {final_value} and
-  {loop.end} strictly control flow
-      dominates {final_value} and
-  inherits KernelFunction
-      with {loop} as {scope} at {kernel} and
-  inherits Concat(N1=31,N2=1)
-      with {read_values}   as {in1}
-       and {old_value}     as {in2}
-       and {kernel.inputs} as {out})
-End
-
-Constraint HistoPart
-( inherits ConditionalReadModifyWrite
-      with {loop}              as {scope}
-       and {idx_kernel.result} as {address}
-       and {val_kernel.result} as {new_value}
-                               at {update} and
-  inherits KernelFunction
-      with {loop}        as {scope}
-       and {read_values} as {inputs} at {idx_kernel} and
-  inherits KernelFunction
-      with {loop} as {scope} at {val_kernel} and
-  inherits Concat(N1=31,N2=1)
-      with {read_values}       as {in1}
-       and {update.old_value}  as {in2}
-       and {val_kernel.inputs} as {out})
-End
-
-Constraint ConditionalReadModifyWrite
-( {store_instr} is store instruction and
-  inherits MaxOnceInScope
-      with {scope}       as {scope}
-       and {store_instr} as {value} at {maxonce} and
-  {address} is second argument of {store_instr} and
-  {address} is gep instruction and
-  {address} is first argument of {old_value} and
-  {old_value} is load instruction and
-  {new_value} is first argument of {store_instr})
-End
-
-Constraint MaxOnceInScope
-( inherits ScopeValue and
-  {value} has control flow to {value_after} and
-  all control flow from {value_after} to
-      {value} passes through {scope.end} and
-  all control flow from {value_after} to
-      {value} passes through {scope.begin})
-End
-
-Constraint ScopeValue
-( {scope.begin} control flow dominates {value} and
-  {scope.end} strictly control flow post dominates {value})
-End
-
-Constraint SideEffectFreeCalls
-( collect i 20 ( {callsite[i]} is call instruction and
-                 inherits ScopeValue
-                     with {callsite[i]} as {value}) and
-  collect i 20 ( {callsite[i]} is call instruction and
-                 inherits ScopeValue
-                     with {callsite[i]} as {value} and
-                 {function[i]} is first
-                     argument of {callsite[i]} and
-                 {function[i]} has attribute pure))
-End
-
-Constraint For
-( inherits Loop and
-  {increment} reaches phi node {iterator} from {end} and
-  {increment} is first argument of {comparison} and
-  {comparison} is icmp instruction and
-  {comparison} is first argument of {end} and
-  {increment} is add instruction and
-  {iterator} is first argument of {increment} and
-  {iter_end} is second argument of {comparison} and
-  inherits LocalConst
-      with {begin}    as {scope.begin}
-       and {iter_end} as {value} and
-  {iter_begin} reaches phi node
-      {iterator} from {precursor} and
-  inherits LocalConst
-      with {begin}      as {scope.begin}
-       and {iter_begin} as {value} and
-  {iter_step} is second argument of {increment} and
-  inherits LocalConst
-      with {begin}     as {scope.begin}
-       and {iter_step} as {value})
-End
-
-Constraint Loop
-( {end} has control flow to {begin} and
-  inherits SESE)
-End
-
-Constraint SESE
-( {precursor} is branch instruction and
-  {precursor} has control flow to {begin} and
-  {end} is branch instruction and
-  {end} has control flow to {successor} and
-  {begin} control flow dominates {end} and
-  {end} control flow post dominates {begin} and
-  {precursor} strictly control flow dominates {begin} and
-  {successor} strictly control flow post dominates {end} and
-  all control flow from {begin} to {precursor}
-         passes through {end} and
-  all control flow from {successor} to {end}
-         passes through {begin})
-End
-
-Constraint LocalConst
-( ( {scope.begin} is instruction and
-    {value} is preexecution) or
-  {value} strictly control flow dominates {scope.begin})
-End
-
-Constraint KernelFunction
-( collect i  4 ( {entries[i]} has control
-                     flow to {scope.begin}) and
-  collect i 24 ( inherits LocalConst
-                     with {scope} as {scope}
-                                  at {outside[i]} and
-                 {outside[i].value}
-                     is not a numeric constant and
-                 {outside[i].value} has data
-                     flow to {outside[i].use} and
-                 {scope.begin} control flow
-                     dominates {outside[i].use}) and
-  collect i  8 ( {loop_carried[i].update} reaches
-                     phi node {loop_carried[i].value}
-                     from {scope.end} and
-                 {scope.begin} control flow
-                     dominates {loop_carried[i].value}) and
-  all flow from {loop_carried[0..8].value} or any origin
-      to any of {result} passes through at least one of
-      {inputs[0..32],entries[0..4],outside[0..24].value})
-End
-
-Constraint ArgumentsPermuted
-( ( {src1} is first  argument of {dst} and
-    {src2} is second argument of {dst}) or
-  ( {src2} is first  argument of {dst} and
-    {src1} is second argument of {dst}))
-End
-
-Constraint Concat
-( if N1=1 then
-    {out[0]} is the same as {in1}
-  else
-    {out[i]} is the same as {in1[i]} for all i=0..N1
-  endif and
-  if N2=1 then
-    {out[N1+0]} is the same as {in2}
-  else
-    {out[N1+i]} is the same as {in2[i]} for all i=0..N1
-  endif and
-  if N3=1 then
-    {out[N1+N2+0]} is the same as {in3}
-  else
-    {out[N1+N2+i]} is the same as {in3[i]} for all i=0..N3
-  endif)
-for N2=0 if not otherwise specified
-for N3=0 if not otherwise specified
-End
-
-Export
-Constraint Distributive
-( {value} is add instruction and
-  {sum1.value} is first argument of {value} and
-  {sum2.value} is second argument of {value} and
-  inherits SumChain at {sum1} and
-  {product1.value} is the same as {sum1.last_factor} and
-  inherits MulChain at {product1} and
-  {product1.last_factor} is the same as {product2.last_factor} and
-  inherits SumChain at {sum2} and
-  {product2.value} is the same as {sum2.last_factor} and
-  inherits MulChain at {product2})
-End
-
-Constraint SumChain
-( {value} is an integer and
-  {value} is the same as {results[0]} and
-  ( ( {results[i]} is add instruction and
-      inherits ArgumentsPermuted with {results[i]}   as {dst}
-                                  and {results[i+1]} as {src1}
-                                  and {factors[i]}   as {src2} and
-      {last_factor} is an integer) or
-    ( ( ( {results[i]} is an integer and
-          {last_factor} is the same as {factors[i]}) or
-        ( {results[i]} is unused and
-          {factors[i]} is unused and
-          {last_factor} is an integer)) and
-      {results[i]} is the same as {factors[i]} and
-      {results[i+1]} is unused)) for all i=0..N and
-  {factors[N]} is unused)
-for N=4 if not otherwise specified
-End
-
-Constraint MulChain
-( {value} is an integer and
-  {value} is the same as {results[0]} and
-  ( ( {results[i]} is mul instruction and
-      inherits ArgumentsPermuted with {results[i]}   as {dst}
-                                  and {results[i+1]} as {src1}
-                                  and {factors[i]}   as {src2} and
-      {last_factor} is an integer) or
-    ( ( ( {results[i]} is an integer and
-          {last_factor} is the same as {factors[i]}) or
-        ( {results[i]} is unused and
-          {factors[i]} is unused and
-          {last_factor} is an integer)) and
-      {results[i]} is the same as {factors[i]} and
-      {results[i+1]} is unused)) for all i=0..N and
-  {factors[N]} is unused)
-for N=4 if not otherwise specified
-End
-
-Export
-Constraint HoistSelect
-( {select} is select instruction and
-  {input1} is second argument of {select} and
-  {base} is first argument of {input1} and
-  {input2} is third argument of {select} and
-  {base} is first argument of {input2} and
-  {input1} is gep instruction and
-  {input2} is gep instruction)
-End
-
-Export
-Constraint ForWithIteratorTest
-( inherits Loop and
-  {comparison} has data flow to {end} and
-  {comparison} is icmp instruction and
-  {iterator} has data flow to {comparison} and
-  {increment} reaches phi node {iterator} from {end} and
-  {increment} has data flow to {iterator} and
-  {increment} is add instruction and
-  {iterator} has data flow to {increment} and
-  {iter_end} has data flow to {comparison} and
-  inherits LocalConst with {iter_end} as {value}
-                       and {begin}    as {scope.begin} and
-  {iter_begin} has data flow to {iterator} and
-  inherits LocalConst with {iter_begin} as {value}
-                       and {begin}      as {scope.begin} and
-  {iter_step} has data flow to {increment} and
-  inherits LocalConst with {iter_step} as {value}
-                       and {begin}     as {scope.begin})
+Constraint DotProductFor
+( inherits For and
+  {dotvalue} reaches phi node {prev_dotvalue} from {end} and
+  {dotvalue} is fadd instruction and
+  inherits ArgumentsPermuted
+      with {dotvalue}      as {dst}
+       and {prev_dotvalue} as {src1}
+       and {dot_addend}    as {src2} and
+  {dot_addend} is fmul instruction and
+  inherits ArgumentsPermuted with {dot_addend} as {dst} and
+  {initial} reaches phi node
+      {prev_dotvalue} from {precursor} and
+  {dotvalue} has data flow to {use_dotvalue} and
+  {successor} control flow dominates {use_dotvalue})
 End
