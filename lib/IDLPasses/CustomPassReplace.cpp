@@ -43,6 +43,10 @@ bool ResearchReplacerBase::runOnModule(Module& module)
     ofs<<"{ \"filename\": \""<<(std::string)module.getName()<<"\",\n  \"detected\": [";
 
     char first_hit1 = true;
+    std::map<std::string, int> Solutions;
+    for (auto& idiom : idioms) {
+      Solutions[std::get<0>(idiom)] = 0;
+    }
     for(Function& function : module.getFunctionList())
     {
         if(!function.isDeclaration())
@@ -72,6 +76,7 @@ bool ResearchReplacerBase::runOnModule(Module& module)
                     }
                     ofs<<"\n  }";
                     first_hit1 = false;
+                    Solutions[std::get<0>(idiom)] ++;
 
                     if(std::get<2>(idiom))
                         std::get<2>(idiom)(function, solution);
@@ -82,6 +87,9 @@ bool ResearchReplacerBase::runOnModule(Module& module)
 
     ofs<<"]\n}\n";
     ofs<<"****IDL Match Report End\n";
+    for (auto& idiom: idioms) {
+      ofs<<"****IDL Match Count is "<< Solutions[std::get<0>(idiom)] << " for Idiom '" << std::get<0>(idiom) << "'"  << " (in file '" << (std::string)module.getName()<< "')\n";
+    }
     ofs<<"****IDL Match Report was for file " << filename << "\n";
 
     // JCW -- This is way way too much text.
