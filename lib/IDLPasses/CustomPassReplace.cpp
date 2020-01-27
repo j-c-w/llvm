@@ -82,13 +82,15 @@ bool ResearchReplacerBase::runOnModule(Module& module)
 
     ofs<<"]\n}\n";
     ofs<<"****IDL Match Report End\n";
+    ofs<<"****IDL Match Report was for file " << filename << "\n";
 
-    ofs<<"****IDL Replace Source Report: replace-source-"<<filename<<".ll\n";
-    std::string string_value;
-    llvm::raw_string_ostream out_stream(string_value);
-    out_stream<<module;
-    ofs<<string_value;
-    ofs<<"****IDL Replace Source Report End\n";
+    // JCW -- This is way way too much text.
+    /* ofs<<"****IDL Replace Source Report: replace-source-"<<filename<<".ll\n"; */
+    /* std::string string_value; */
+    /* llvm::raw_string_ostream out_stream(string_value); */
+    /* out_stream<<module; */
+    /* ofs<<string_value; */
+    /* ofs<<"****IDL Replace Source Report End\n"; */
     // JW: I think we don't have to do this to cout.
     // ofs.close();
 
