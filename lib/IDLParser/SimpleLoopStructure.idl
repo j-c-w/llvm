@@ -1,23 +1,17 @@
-Import SESE.idl
+Include SESE.idl
 
 Export
 Constraint IfThenElseBranch
-# Not sure I need the first two
   ( {condjump} strictly control flow dominates {then.end} and
   {condjump} strictly control flow dominates {else.end} and
 # Make sure the start is actually the start and not the instructions
 # before it.
-  {condjump} has control flow to {then.start} and
-  {condjump} has control flow to {else.start} and
-# Make sure that we don't get the same branch reported twice.
-  {then.start} is not the same as {else.start} and
+  {then.start} is first successor of {condjump} and
+  {else.start} is second successor of {condjump} and
 # Not sure I need this.
   {then.start} spans block to {then.end} and
   {else.start} spans block to {else.end} and
-# Not sure I need this.
-  {then.end} is instruction and
-  {else.end} is instruction and
-# Make sure these the the end of the loop? (Might duplicate the above)
+# Make sure these are the end of the branch? (Might duplicate the above)
   {then.end} has control flow to {endif} and 
   {else.end} has control flow to {endif}
   )
