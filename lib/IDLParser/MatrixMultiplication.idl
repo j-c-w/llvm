@@ -1,0 +1,108 @@
+Include VectorOps.idl
+Include ArgumentsPermuted.idl
+Include Loops.idl
+Include Matrix.idl
+Include ReadRanges.idl
+
+Export
+Constraint GEMM
+( inherits ForNest(N=3) and
+  inherits MatrixStore
+      with {iterator[0]} as {col}
+       and {iterator[1]} as {row}
+       and {begin} as {begin} at {output} and
+  inherits MatrixRead
+      with {iterator[0]} as {col}
+       and {iterator[2]} as {row}
+       and {begin} as {begin} at {input1} and
+  inherits MatrixRead
+      with {iterator[1]} as {col}
+       and {iterator[2]} as {row}
+       and {begin} as {begin} at {input2} and
+  inherits DotProductLoopAlphaBeta
+      with {for[2]}         as {loop}
+       and {input1.value}   as {src1}
+       and {input2.value}   as {src2}
+       and {output.address} as {update_address})
+End
+
+Export
+Constraint SPMV_CSR
+( inherits For at {outer_loop} and
+  inherits DotProductFor at {inner_loop} and
+  {outer_loop.begin} strictly
+      control flow dominates {inner_loop.begin} and
+  {outer_loop.end} strictly
+      control flow post dominates {inner_loop.end} and
+  inherits ReadRanges
+     with {outer_loop}            as {scope}
+      and {inner_loop.iter_begin} as {range_begin}
+      and {inner_loop.iter_end}   as {range_end}
+      and {outer_loop.iterator}   as {input_index}
+                                  at {read_range} and
+  inherits VectorStore
+      with {outer_loop}          as {scope}
+       and {outer_loop.iterator} as {input_index}
+                                 at {output} and
+  inherits VectorRead
+      with {outer_loop}          as {scope}
+       and {inner_loop.src1}     as {value}
+       and {inner_loop.iterator} as {input_index}
+                                 at {val} and
+  inherits VectorRead
+      with {outer_loop}      as {scope}
+       and {inner_loop.src2} as {value}
+       and {col_ind.value}   as {input_index}
+                             at {vector} and
+  inherits VectorRead
+      with {outer_loop}          as {scope}
+       and {inner_loop.iterator} as {input_index}
+                                 at {col_ind})
+End
+
+Export
+Constraint SPMV_JDS
+( inherits For at {outer_loop} and
+  inherits DotProductFor at {inner_loop} and
+  {outer_loop.begin} strictly
+      control flow dominates {inner_loop.begin} and
+  {outer_loop.end} strictly
+      control flow post dominates {inner_loop.end} and
+  inherits ReadZeroRanges
+     with {outer_loop}            as {scope}
+      and {inner_loop.iter_begin} as {range_begin}
+      and {inner_loop.iter_end}   as {range_end}
+      and {outer_loop.iterator}   as {input_index}
+                                  at {read_range} and
+  inherits VectorStore
+      with {outer_loop} as {scope}
+       and {perm.value} as {input_index}
+                        at {output} and
+  inherits VectorRead
+      with {outer_loop}          as {scope}
+       and {outer_loop.iterator} as {input_index}
+                                 at {perm} and
+  inherits VectorRead
+      with {outer_loop}      as {scope}
+       and {inner_loop.src1} as {value}
+       and {tmp1.value}      as {input_index}
+                             at {val} and
+  inherits Addition
+      with {jd_ptr.value}        as {input}
+       and {outer_loop.iterator} as {addend}
+                                 at {tmp1} and
+  inherits VectorRead
+      with {outer_loop}          as {scope}
+       and {inner_loop.iterator} as {input_index}
+                                 at {jd_ptr} and
+  inherits VectorRead
+      with {outer_loop}      as {scope}
+       and {inner_loop.src2} as {value}
+       and {col_ind.value}   as {input_index}
+                             at {vector} and
+  inherits VectorRead
+      with {outer_loop} as {scope}
+       and {tmp1.value} as {input_index}
+                        at {col_ind})
+End
+
