@@ -1,4 +1,5 @@
 Include LocalConst.idl
+Include SESE.idl
 Include LoopBoundsUtils.idl
 Include ArgumentsPermuted.idl
 
@@ -87,21 +88,6 @@ End
 Constraint Loop
 ( {end} has control flow to {begin} and
   inherits SESE)
-End
-
-Constraint SESE
-( {precursor} is branch instruction and
-  {precursor} has control flow to {begin} and
-  {end} is branch instruction and
-  {end} has control flow to {successor} and
-  {begin} control flow dominates {end} and
-  {end} control flow post dominates {begin} and
-  {precursor} strictly control flow dominates {begin} and
-  {successor} strictly control flow post dominates {end} and
-  all control flow from {begin} to {precursor}
-         passes through {end} and
-  all control flow from {successor} to {end}
-         passes through {begin})
 End
 
 Constraint For
