@@ -25,11 +25,11 @@ add_custom_command(
 add_custom_command(
   OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
   COMMAND idl_parser ${CMAKE_CURRENT_SOURCE_DIR}/IDL.bnf
-                     ${CMAKE_CURRENT_SOURCE_DIR}/PreprocessedIDL.idl
+                     ${CMAKE_CURRENT_BINARY_DIR}/PreprocessedIDL.idl
               | pypy ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py
                    > ${CMAKE_CURRENT_BINARY_DIR}/IdiomSpecifications.cpp
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/IDL.bnf
-          ${CMAKE_CURRENT_SOURCE_DIR}/PreprocessedIDL.idl
+          ${CMAKE_CURRENT_BINARY_DIR}/PreprocessedIDL.idl
           ${CMAKE_CURRENT_SOURCE_DIR}/stage3.py
           idl_parser
   COMMENT "Generate idiom specifications C++ file"

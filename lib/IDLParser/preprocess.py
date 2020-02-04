@@ -26,7 +26,7 @@ def preprocess(file, dir=None):
                 include_file = line.split(' ')[1].strip()
                 preprocess(include_file, dir=dir)
             else:
-              print(line)
+              sys.stdout.write(line)
     finally:
         if file is not None:
             if f:
