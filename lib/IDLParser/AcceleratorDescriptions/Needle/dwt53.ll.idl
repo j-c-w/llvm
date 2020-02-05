@@ -1,0 +1,225 @@
+Export Constraint dwt
+(
+  #  %2 = mul i64 %indvars.iv3.in, 2
+  {_2_} is mul instruction and
+  {indvars_iv3_in} is first argument of {_2_} and
+  {_2} is second argument of {_2_} and
+  {_3} is first successor of {_2_} and
+
+  #  %3 = add nsw i64 %2, %vr.0, !UID !1
+  {_3} is add instruction and
+  {_2_} is first argument of {_3} and
+  {vr_0} is second argument of {_3} and
+  {_4_} is first successor of {_3} and
+
+  #  %4 = mul i64 %3, 4
+  {_4_} is mul instruction and
+  {_3} is first argument of {_4_} and
+  {_4} is second argument of {_4_} and
+  {_5} is first successor of {_4_} and
+
+  #  %5 = bitcast i32* %data.in to i8*
+  {_5} is BitCast instruction and
+  {_6} is first successor of {_5} and
+
+  #  %6 = getelementptr i8, i8* %5, i64 %4
+  {_6} is gep instruction and
+  {data_in} is first argument of {_6} and
+  {_4_} is second argument of {_6} and
+  {_7} is first successor of {_6} and
+
+  #  %7 = bitcast i8* %6 to i32*
+  {_7} is BitCast instruction and
+  {_8} is first successor of {_7} and
+
+  #  %8 = load i32, i32* %7, align 4, !UID !2
+  {_8} is load instruction and
+  {_6} is first argument of {_8} and
+  {_9} is first successor of {_8} and
+
+  #  %9 = mul nsw i64 %vr.1, %indvars.iv3.in, !UID !3
+  {_9} is mul instruction and
+  {vr_1} is first argument of {_9} and
+  {indvars_iv3_in} is second argument of {_9} and
+  {_10} is first successor of {_9} and
+
+  #  %10 = add nsw i64 %9, %indvars.iv17.in, !UID !4
+  {_10} is add instruction and
+  {_9} is first argument of {_10} and
+  {indvars_iv17_in} is second argument of {_10} and
+  {_11} is first successor of {_10} and
+
+  #  %11 = mul i64 %10, 4
+  {_11} is mul instruction and
+  {_10} is first argument of {_11} and
+  {_4} is second argument of {_11} and
+  {_12} is first successor of {_11} and
+
+  #  %12 = bitcast i32* %data2.in to i8*
+  {_12} is BitCast instruction and
+  {_13} is first successor of {_12} and
+
+  #  %13 = getelementptr i8, i8* %12, i64 %11
+  {_13} is gep instruction and
+  {data2_in} is first argument of {_13} and
+  {_11} is second argument of {_13} and
+  {_14} is first successor of {_13} and
+
+  #  %14 = bitcast i8* %13 to i32*
+  {_14} is BitCast instruction and
+  {anonymous[0]} is first successor of {_14} and
+
+  #  store i32 %8, i32* %14, align 4, !UID !5
+  {anonymous[0]} is store instruction and
+  {_8} is first argument of {anonymous[0]} and
+  {_13} is second argument of {anonymous[0]} and
+  {_15} is first successor of {anonymous[0]} and
+
+  #  %15 = add i64 %2, %vr.2, !UID !6
+  {_15} is add instruction and
+  {_2_} is first argument of {_15} and
+  {vr_2} is second argument of {_15} and
+  {_16} is first successor of {_15} and
+
+  #  %16 = shl i64 %15, 32, !UID !7
+  {_16} is shl instruction and
+  {_15} is first argument of {_16} and
+  {_32} is second argument of {_16} and
+  {_17} is first successor of {_16} and
+
+  #  %17 = ashr exact i64 %16, 32, !UID !8
+  {_17} is AShr instruction and
+  {_16} is first argument of {_17} and
+  {_32} is second argument of {_17} and
+  {_18} is first successor of {_17} and
+
+  #  %18 = mul i64 %17, 4
+  {_18} is mul instruction and
+  {_17} is first argument of {_18} and
+  {_4} is second argument of {_18} and
+  {_19} is first successor of {_18} and
+
+  #  %19 = getelementptr i8, i8* %5, i64 %18
+  {_19} is gep instruction and
+  {data_in} is first argument of {_19} and
+  {_18} is second argument of {_19} and
+  {_20} is first successor of {_19} and
+
+  #  %20 = bitcast i8* %19 to i32*
+  {_20} is BitCast instruction and
+  {_21} is first successor of {_20} and
+
+  #  %21 = load i32, i32* %20, align 4, !UID !9
+  {_21} is load instruction and
+  {_19} is first argument of {_21} and
+  {_22} is first successor of {_21} and
+
+  #  %22 = add nsw i64 %vr.3, %indvars.iv3.in, !UID !10
+  {_22} is add instruction and
+  {vr_3} is first argument of {_22} and
+  {indvars_iv3_in} is second argument of {_22} and
+  {_23} is first successor of {_22} and
+
+  #  %23 = mul nsw i64 %22, %vr.1, !UID !11
+  {_23} is mul instruction and
+  {_22} is first argument of {_23} and
+  {vr_1} is second argument of {_23} and
+  {_24} is first successor of {_23} and
+
+  #  %24 = add nsw i64 %23, %vr.4, !UID !12
+  {_24} is add instruction and
+  {_23} is first argument of {_24} and
+  {vr_4} is second argument of {_24} and
+  {_25} is first successor of {_24} and
+
+  #  %25 = mul i64 %24, 4
+  {_25} is mul instruction and
+  {_24} is first argument of {_25} and
+  {_4} is second argument of {_25} and
+  {_26} is first successor of {_25} and
+
+  #  %26 = getelementptr i8, i8* %12, i64 %25
+  {_26} is gep instruction and
+  {data2_in} is first argument of {_26} and
+  {_25} is second argument of {_26} and
+  {_27} is first successor of {_26} and
+
+  #  %27 = bitcast i8* %26 to i32*
+  {_27} is BitCast instruction and
+  {anonymous[1]} is first successor of {_27} and
+
+  #  store i32 %21, i32* %27, align 4, !UID !13
+  {anonymous[1]} is store instruction and
+  {_21} is first argument of {anonymous[1]} and
+  {_26} is second argument of {anonymous[1]} and
+  {_28} is first successor of {anonymous[1]} and
+
+  #  %28 = add nuw nsw i64 %indvars.iv3.in, 1, !UID !14
+  {_28} is add instruction and
+  {indvars_iv3_in} is first argument of {_28} and
+  {_1} is second argument of {_28} and
+  {_29} is first successor of {_28} and
+
+  #  %29 = bitcast <{ i64 }>* %1 to i8*
+  {_29} is BitCast instruction and
+  {_30} is first successor of {_29} and
+
+  #  %30 = bitcast i8* %29 to i64*
+  {_30} is BitCast instruction and
+  {anonymous[2]} is first successor of {_30} and
+
+  #  store i64 %28, i64* %30, align 8, !UID !15, !LO !16
+  {anonymous[2]} is store instruction and
+  {_28} is first argument of {anonymous[2]} and
+  {_1_} is second argument of {anonymous[2]} and
+  {anonymous[3]} is first successor of {anonymous[2]} and
+
+  #  ret i1 true, !UID !17, !BB_UID !18
+  # {anonymous[3]} is ret instruction and
+  # {true} is first argument of {anonymous[3]} and
+ #i64 %indvars.iv3.in
+  # {indvars_iv3_in} is an argument and
+
+  #i64 2
+  {_2} is a constant and
+
+  #i64 %vr.0
+  # {vr_0} is an argument and
+
+  #i64 4
+  {_4} is a constant and
+
+  #i32* %data.in
+  # {data_in} is an argument and
+
+  #i64 %vr.1
+  # {vr_1} is an argument and
+
+  #i64 %indvars.iv17.in
+  # {indvars_iv17_in} is an argument and
+
+  #i32* %data2.in
+  # {data2_in} is an argument and
+
+  #i64 %vr.2
+  # {vr_2} is an argument and
+
+  #i64 32
+  {_32} is a constant and
+
+  #i64 %vr.3
+  # {vr_3} is an argument and
+
+  #i64 %vr.4
+  # {vr_4} is an argument and
+
+  #i64 1
+  {_1} is a constant and
+
+  #<{ i64 }>* %1
+  # {_1_} is an argument and
+
+  #i1 true
+  {true} is a constant and
+  {dummy} is unused)
+End

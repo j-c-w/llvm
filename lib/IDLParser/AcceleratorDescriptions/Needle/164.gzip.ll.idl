@@ -1,0 +1,63 @@
+Export Constraint gzip
+(
+  #  %2 = getelementptr i8, i8* %scan.1.in, i64 8
+  {_2} is gep instruction and
+  {scan_1_in} is first argument of {_2} and
+  {_8} is second argument of {_2} and
+  {_3} is first successor of {_2} and
+
+  #  %3 = getelementptr i8, i8* %match.0.in, i64 8
+  {_3} is gep instruction and
+  {match_0_in} is first argument of {_3} and
+  {_8} is second argument of {_3} and
+  {_4} is first successor of {_3} and
+
+  #  %4 = bitcast <{ i8*, i8* }>* %1 to i8*
+  {_4} is BitCast instruction and
+  {_5} is first successor of {_4} and
+
+  #  %5 = bitcast i8* %4 to i8**
+  {_5} is BitCast instruction and
+  {anonymous[0]} is first successor of {_5} and
+
+  #  store i8* %2, i8** %5, align 8, !UID !1, !LO !2
+  {anonymous[0]} is store instruction and
+  {_2} is first argument of {anonymous[0]} and
+  {_1} is second argument of {anonymous[0]} and
+  {_6} is first successor of {anonymous[0]} and
+
+  #  %6 = getelementptr i8, i8* %4, i64 8
+  {_6} is gep instruction and
+  {_1} is first argument of {_6} and
+  {_8} is second argument of {_6} and
+  {_7} is first successor of {_6} and
+
+  #  %7 = bitcast i8* %6 to i8**
+  {_7} is BitCast instruction and
+  {anonymous[1]} is first successor of {_7} and
+
+  #  store i8* %3, i8** %7, align 8, !UID !3, !LO !2
+  {anonymous[1]} is store instruction and
+  {_3} is first argument of {anonymous[1]} and
+  {_6} is second argument of {anonymous[1]} and
+  {anonymous[2]} is first successor of {anonymous[1]} and
+
+  #  ret i1 true, !UID !4, !BB_UID !5
+  # {anonymous[2]} is ret instruction and
+  # {true} is first argument of {anonymous[2]} and
+ #i8* %scan.1.in
+  # {scan_1_in} is an argument and
+
+  #i64 8
+  {_8} is a constant and
+
+  #i8* %match.0.in
+  # {match_0_in} is an argument and
+
+  #<{ i8*, i8* }>* %1
+  # {_1} is an argument and
+
+  #i1 true
+  {true} is a constant and
+  {dummy} is unused)
+End

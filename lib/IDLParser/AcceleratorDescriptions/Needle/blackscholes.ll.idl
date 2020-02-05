@@ -1,0 +1,113 @@
+Export Constraint blackscholes
+(
+  #  %2 = mul i32 %ix.348.in.i.i.in, 2
+  {_2_} is mul instruction and
+  {ix_348_in_i_i_in} is first argument of {_2_} and
+  {_2} is second argument of {_2_} and
+  {_3} is first successor of {_2_} and
+
+  #  %3 = lshr i32 %r.047.i.i.in, 1, !UID !1
+  {_3} is LShr instruction and
+  {r_047_i_i_in} is first argument of {_3} and
+  {_1} is second argument of {_3} and
+  {_4_} is first successor of {_3} and
+
+  #  %4 = bitcast <{ i32, i32, i32, i32 }>* %1 to i8*
+  {_4_} is BitCast instruction and
+  {_5} is first successor of {_4_} and
+
+  #  %5 = bitcast i8* %4 to i32*
+  {_5} is BitCast instruction and
+  {anonymous[0]} is first successor of {_5} and
+
+  #  store i32 %2, i32* %5, align 4, !UID !2, !LO !3
+  {anonymous[0]} is store instruction and
+  {_2_} is first argument of {anonymous[0]} and
+  {_1_} is second argument of {anonymous[0]} and
+  {_6} is first successor of {anonymous[0]} and
+
+  #  %6 = getelementptr i8, i8* %4, i64 4
+  {_6} is gep instruction and
+  {_1_} is first argument of {_6} and
+  {_4} is second argument of {_6} and
+  {_7} is first successor of {_6} and
+
+  #  %7 = bitcast i8* %6 to i32*
+  {_7} is BitCast instruction and
+  {anonymous[1]} is first successor of {_7} and
+
+  #  store i32 %s.045.i.i.in, i32* %7, align 4, !UID !4, !LO !3
+  {anonymous[1]} is store instruction and
+  {s_045_i_i_in} is first argument of {anonymous[1]} and
+  {_6} is second argument of {anonymous[1]} and
+  {_8_} is first successor of {anonymous[1]} and
+
+  #  %8 = getelementptr i8, i8* %4, i64 8
+  {_8_} is gep instruction and
+  {_1_} is first argument of {_8_} and
+  {_8} is second argument of {_8_} and
+  {_9} is first successor of {_8_} and
+
+  #  %9 = bitcast i8* %8 to i32*
+  {_9} is BitCast instruction and
+  {anonymous[2]} is first successor of {_9} and
+
+  #  store i32 %q.046.i.i.in, i32* %9, align 4, !UID !5, !LO !3
+  {anonymous[2]} is store instruction and
+  {q_046_i_i_in} is first argument of {anonymous[2]} and
+  {_8_} is second argument of {anonymous[2]} and
+  {_10} is first successor of {anonymous[2]} and
+
+  #  %10 = getelementptr i8, i8* %4, i64 12
+  {_10} is gep instruction and
+  {_1_} is first argument of {_10} and
+  {_12} is second argument of {_10} and
+  {_11} is first successor of {_10} and
+
+  #  %11 = bitcast i8* %10 to i32*
+  {_11} is BitCast instruction and
+  {anonymous[3]} is first successor of {_11} and
+
+  #  store i32 %3, i32* %11, align 4, !UID !6, !LO !3
+  {anonymous[3]} is store instruction and
+  {_3} is first argument of {anonymous[3]} and
+  {_10} is second argument of {anonymous[3]} and
+  {anonymous[4]} is first successor of {anonymous[3]} and
+
+  #  ret i1 true, !UID !7, !BB_UID !8
+  # {anonymous[4]} is ret instruction and
+  # {true} is first argument of {anonymous[4]} and
+ #i32 %ix.348.in.i.i.in
+  # {ix_348_in_i_i_in} is an argument and
+
+  #i32 2
+  {_2} is a constant and
+
+  #i32 %r.047.i.i.in
+  # {r_047_i_i_in} is an argument and
+
+  #i32 1
+  {_1} is a constant and
+
+  #<{ i32, i32, i32, i32 }>* %1
+  # {_1_} is an argument and
+
+  #i64 4
+  {_4} is a constant and
+
+  #i32 %s.045.i.i.in
+  # {s_045_i_i_in} is an argument and
+
+  #i64 8
+  {_8} is a constant and
+
+  #i32 %q.046.i.i.in
+  # {q_046_i_i_in} is an argument and
+
+  #i64 12
+  {_12} is a constant and
+
+  #i1 true
+  {true} is a constant and
+  {dummy} is unused)
+End

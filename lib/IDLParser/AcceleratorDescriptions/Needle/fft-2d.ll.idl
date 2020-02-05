@@ -1,0 +1,296 @@
+Export Constraint fft2d
+(
+  #  %2 = add i32 %a.05.in, %b.02.in, !UID !1
+  {_2_} is add instruction and
+  {a_05_in} is first argument of {_2_} and
+  {b_02_in} is second argument of {_2_} and
+  {_3} is first successor of {_2_} and
+
+  #  %3 = add i32 %2, %transform_length.09.in, !UID !2
+  {_3} is add instruction and
+  {_2_} is first argument of {_3} and
+  {transform_length_09_in} is second argument of {_3} and
+  {_4_} is first successor of {_3} and
+
+  #  %4 = mul i32 %3, 2
+  {_4_} is mul instruction and
+  {_3} is first argument of {_4_} and
+  {_2} is second argument of {_4_} and
+  {_5} is first successor of {_4_} and
+
+  #  %5 = zext i32 %4 to i64, !UID !3
+  {_5} is zext instruction and
+  {_6} is first successor of {_5} and
+
+  #  %6 = mul i64 %5, 4
+  {_6} is mul instruction and
+  {_4_} is first argument of {_6} and
+  {_4} is second argument of {_6} and
+  {_7} is first successor of {_6} and
+
+  #  %7 = bitcast float* %data.in to i8*
+  {_7} is BitCast instruction and
+  {_8} is first successor of {_7} and
+
+  #  %8 = getelementptr i8, i8* %7, i64 %6
+  {_8} is gep instruction and
+  {data_in} is first argument of {_8} and
+  {_6} is second argument of {_8} and
+  {_9} is first successor of {_8} and
+
+  #  %9 = bitcast i8* %8 to float*
+  {_9} is BitCast instruction and
+  {_10} is first successor of {_9} and
+
+  #  %10 = load float, float* %9, align 4, !UID !4
+  {_10} is load instruction and
+  {_8} is first argument of {_10} and
+  {_11} is first successor of {_10} and
+
+  #  %11 = add i32 %4, 1
+  {_11} is add instruction and
+  {_4_} is first argument of {_11} and
+  {_1} is second argument of {_11} and
+  {_12} is first successor of {_11} and
+
+  #  %12 = zext i32 %11 to i64, !UID !5
+  {_12} is zext instruction and
+  {_13} is first successor of {_12} and
+
+  #  %13 = mul i64 %12, 4
+  {_13} is mul instruction and
+  {_11} is first argument of {_13} and
+  {_4} is second argument of {_13} and
+  {_14} is first successor of {_13} and
+
+  #  %14 = getelementptr i8, i8* %7, i64 %13
+  {_14} is gep instruction and
+  {data_in} is first argument of {_14} and
+  {_13} is second argument of {_14} and
+  {_15} is first successor of {_14} and
+
+  #  %15 = bitcast i8* %14 to float*
+  {_15} is BitCast instruction and
+  {_16} is first successor of {_15} and
+
+  #  %16 = load float, float* %15, align 4, !UID !6
+  {_16} is load instruction and
+  {_14} is first argument of {_16} and
+  {_17} is first successor of {_16} and
+
+  #  %17 = fmul float %10, %w_real.03.in, !UID !7
+  {_17} is fmul instruction and
+  {_10} is first argument of {_17} and
+  {w_real_03_in} is second argument of {_17} and
+  {_18} is first successor of {_17} and
+
+  #  %18 = fmul float %16, %w_imag.04.in, !UID !8
+  {_18} is fmul instruction and
+  {_16} is first argument of {_18} and
+  {w_imag_04_in} is second argument of {_18} and
+  {_19} is first successor of {_18} and
+
+  #  %19 = fsub float %17, %18, !UID !9
+  {_19} is fsub instruction and
+  {_17} is first argument of {_19} and
+  {_18} is second argument of {_19} and
+  {_20} is first successor of {_19} and
+
+  #  %20 = fmul float %16, %w_real.03.in, !UID !10
+  {_20} is fmul instruction and
+  {_16} is first argument of {_20} and
+  {w_real_03_in} is second argument of {_20} and
+  {_21} is first successor of {_20} and
+
+  #  %21 = fmul float %10, %w_imag.04.in, !UID !11
+  {_21} is fmul instruction and
+  {_10} is first argument of {_21} and
+  {w_imag_04_in} is second argument of {_21} and
+  {_22} is first successor of {_21} and
+
+  #  %22 = fadd float %21, %20, !UID !12
+  {_22} is fadd instruction and
+  {_21} is first argument of {_22} and
+  {_20} is second argument of {_22} and
+  {_23} is first successor of {_22} and
+
+  #  %23 = mul i32 %2, 2
+  {_23} is mul instruction and
+  {_2_} is first argument of {_23} and
+  {_2} is second argument of {_23} and
+  {_24} is first successor of {_23} and
+
+  #  %24 = zext i32 %23 to i64, !UID !13
+  {_24} is zext instruction and
+  {_25} is first successor of {_24} and
+
+  #  %25 = mul i64 %24, 4
+  {_25} is mul instruction and
+  {_23} is first argument of {_25} and
+  {_4} is second argument of {_25} and
+  {_26} is first successor of {_25} and
+
+  #  %26 = getelementptr i8, i8* %7, i64 %25
+  {_26} is gep instruction and
+  {data_in} is first argument of {_26} and
+  {_25} is second argument of {_26} and
+  {_27} is first successor of {_26} and
+
+  #  %27 = bitcast i8* %26 to float*
+  {_27} is BitCast instruction and
+  {_28} is first successor of {_27} and
+
+  #  %28 = load float, float* %27, align 4, !UID !14
+  {_28} is load instruction and
+  {_26} is first argument of {_28} and
+  {_29} is first successor of {_28} and
+
+  #  %29 = fsub float %28, %19, !UID !15
+  {_29} is fsub instruction and
+  {_28} is first argument of {_29} and
+  {_19} is second argument of {_29} and
+  {anonymous[0]} is first successor of {_29} and
+
+  #  store float %29, float* %9, align 4, !UID !16
+  {anonymous[0]} is store instruction and
+  {_29} is first argument of {anonymous[0]} and
+  {_8} is second argument of {anonymous[0]} and
+  {_30} is first successor of {anonymous[0]} and
+
+  #  %30 = add i32 %23, 1
+  {_30} is add instruction and
+  {_23} is first argument of {_30} and
+  {_1} is second argument of {_30} and
+  {_31} is first successor of {_30} and
+
+  #  %31 = zext i32 %30 to i64, !UID !17
+  {_31} is zext instruction and
+  {_32} is first successor of {_31} and
+
+  #  %32 = mul i64 %31, 4
+  {_32} is mul instruction and
+  {_30} is first argument of {_32} and
+  {_4} is second argument of {_32} and
+  {_33} is first successor of {_32} and
+
+  #  %33 = getelementptr i8, i8* %7, i64 %32
+  {_33} is gep instruction and
+  {data_in} is first argument of {_33} and
+  {_32} is second argument of {_33} and
+  {_34} is first successor of {_33} and
+
+  #  %34 = bitcast i8* %33 to float*
+  {_34} is BitCast instruction and
+  {_35} is first successor of {_34} and
+
+  #  %35 = load float, float* %34, align 4, !UID !18
+  {_35} is load instruction and
+  {_33} is first argument of {_35} and
+  {_36} is first successor of {_35} and
+
+  #  %36 = fsub float %35, %22, !UID !19
+  {_36} is fsub instruction and
+  {_35} is first argument of {_36} and
+  {_22} is second argument of {_36} and
+  {anonymous[1]} is first successor of {_36} and
+
+  #  store float %36, float* %15, align 4, !UID !20
+  {anonymous[1]} is store instruction and
+  {_36} is first argument of {anonymous[1]} and
+  {_14} is second argument of {anonymous[1]} and
+  {_37} is first successor of {anonymous[1]} and
+
+  #  %37 = load float, float* %27, align 4, !UID !21
+  {_37} is load instruction and
+  {_26} is first argument of {_37} and
+  {_38} is first successor of {_37} and
+
+  #  %38 = fadd float %19, %37, !UID !22
+  {_38} is fadd instruction and
+  {_19} is first argument of {_38} and
+  {_37} is second argument of {_38} and
+  {anonymous[2]} is first successor of {_38} and
+
+  #  store float %38, float* %27, align 4, !UID !23
+  {anonymous[2]} is store instruction and
+  {_38} is first argument of {anonymous[2]} and
+  {_26} is second argument of {anonymous[2]} and
+  {_39} is first successor of {anonymous[2]} and
+
+  #  %39 = load float, float* %34, align 4, !UID !24
+  {_39} is load instruction and
+  {_33} is first argument of {_39} and
+  {_40} is first successor of {_39} and
+
+  #  %40 = fadd float %22, %39, !UID !25
+  {_40} is fadd instruction and
+  {_22} is first argument of {_40} and
+  {_39} is second argument of {_40} and
+  {anonymous[3]} is first successor of {_40} and
+
+  #  store float %40, float* %34, align 4, !UID !26
+  {anonymous[3]} is store instruction and
+  {_40} is first argument of {anonymous[3]} and
+  {_33} is second argument of {anonymous[3]} and
+  {_41} is first successor of {anonymous[3]} and
+
+  #  %41 = add i32 %vr.0, %b.02.in, !UID !27
+  {_41} is add instruction and
+  {vr_0} is first argument of {_41} and
+  {b_02_in} is second argument of {_41} and
+  {_42} is first successor of {_41} and
+
+  #  %42 = bitcast <{ i32 }>* %1 to i8*
+  {_42} is BitCast instruction and
+  {_43} is first successor of {_42} and
+
+  #  %43 = bitcast i8* %42 to i32*
+  {_43} is BitCast instruction and
+  {anonymous[4]} is first successor of {_43} and
+
+  #  store i32 %41, i32* %43, align 4, !UID !28, !LO !29
+  {anonymous[4]} is store instruction and
+  {_41} is first argument of {anonymous[4]} and
+  {_1_} is second argument of {anonymous[4]} and
+  {anonymous[5]} is first successor of {anonymous[4]} and
+
+  #  ret i1 true, !UID !30, !BB_UID !31
+  # {anonymous[5]} is ret instruction and
+  # {true} is first argument of {anonymous[5]} and
+ #i32 %a.05.in
+  # {a_05_in} is an argument and
+
+  #i32 %b.02.in
+  # {b_02_in} is an argument and
+
+  #i32 %transform_length.09.in
+  # {transform_length_09_in} is an argument and
+
+  #i32 2
+  {_2} is a constant and
+
+  #i64 4
+  {_4} is a constant and
+
+  #float* %data.in
+  # {data_in} is an argument and
+
+  #i32 1
+  {_1} is a constant and
+
+  #float %w_real.03.in
+  # {w_real_03_in} is an argument and
+
+  #float %w_imag.04.in
+  # {w_imag_04_in} is an argument and
+
+  #i32 %vr.0
+  # {vr_0} is an argument and
+
+  #<{ i32 }>* %1
+  # {_1_} is an argument and
+
+  #i1 true
+  {true} is a constant and
+  {dummy} is unused)
+End

@@ -1,0 +1,257 @@
+Export Constraint bodytrack
+(
+  #  %2 = fmul float %delta2.02.in, %vr.4, !UID !1
+  {_2} is fmul instruction and
+  {delta2_02_in} is first argument of {_2} and
+  {vr_4} is second argument of {_2} and
+  {_3} is first successor of {_2} and
+
+  #  %3 = fadd float %2, %vr.5, !UID !2
+  {_3} is fadd instruction and
+  {_2} is first argument of {_3} and
+  {vr_5} is second argument of {_3} and
+  {_4_} is first successor of {_3} and
+
+  #  %4 = fmul float %delta2.02.in, %vr.6, !UID !3
+  {_4_} is fmul instruction and
+  {delta2_02_in} is first argument of {_4_} and
+  {vr_6} is second argument of {_4_} and
+  {_5} is first successor of {_4_} and
+
+  #  %5 = fadd float %4, %vr.7, !UID !4
+  {_5} is fadd instruction and
+  {_4_} is first argument of {_5} and
+  {vr_7} is second argument of {_5} and
+  {_6} is first successor of {_5} and
+
+  #  %6 = fadd float %3, 5.000000e-01, !UID !5
+  {_6} is fadd instruction and
+  {_3} is first argument of {_6} and
+  {_5_000000e_01} is second argument of {_6} and
+  {_7_} is first successor of {_6} and
+
+  #  %7 = fptosi float %6 to i32, !UID !6
+  {_7_} is FPToSI instruction and
+  {_6} is first argument of {_7_} and
+  {_8_} is first successor of {_7_} and
+
+  #  %8 = fadd float %5, 5.000000e-01, !UID !7
+  {_8_} is fadd instruction and
+  {_5} is first argument of {_8_} and
+  {_5_000000e_01} is second argument of {_8_} and
+  {_9} is first successor of {_8_} and
+
+  #  %9 = fptosi float %8 to i32, !UID !8
+  {_9} is FPToSI instruction and
+  {_8_} is first argument of {_9} and
+  {_10} is first successor of {_9} and
+
+  #  %10 = load i64, i64* %vr.3, align 8, !UID !9
+  {_10} is load instruction and
+  {vr_3} is first argument of {_10} and
+  {_11} is first successor of {_10} and
+
+  #  %11 = trunc i64 %10 to i32, !UID !10
+  {_11} is trunc instruction and
+  {_12} is first successor of {_11} and
+
+  #  %12 = mul nsw i32 %11, %9, !UID !11
+  {_12} is mul instruction and
+  {_10} is first argument of {_12} and
+  {_9} is second argument of {_12} and
+  {_13} is first successor of {_12} and
+
+  #  %13 = add nsw i32 %12, %7, !UID !12
+  {_13} is add instruction and
+  {_12} is first argument of {_13} and
+  {_7_} is second argument of {_13} and
+  {_14} is first successor of {_13} and
+
+  #  %14 = sdiv i32 %13, 8, !UID !13
+  {_14} is sdiv instruction and
+  {_13} is first argument of {_14} and
+  {_8} is second argument of {_14} and
+  {_15} is first successor of {_14} and
+
+  #  %15 = sext i32 %14 to i64, !UID !14
+  {_15} is sext instruction and
+  {_16} is first successor of {_15} and
+
+  #  %16 = load i8*, i8** %vr.2, align 8, !UID !15
+  {_16} is load instruction and
+  {vr_2} is first argument of {_16} and
+  {_17} is first successor of {_16} and
+
+  #  %17 = getelementptr i8, i8* %16, i64 %15
+  {_17} is gep instruction and
+  {_16} is first argument of {_17} and
+  {_14} is second argument of {_17} and
+  {_18} is first successor of {_17} and
+
+  #  %18 = load i8, i8* %17, align 1, !UID !16
+  {_18} is load instruction and
+  {_17} is first argument of {_18} and
+  {_19} is first successor of {_18} and
+
+  #  %19 = zext i8 %18 to i32, !UID !17
+  {_19} is zext instruction and
+  {_20} is first successor of {_19} and
+
+  #  %20 = and i32 %13, 7, !UID !18
+  {_20} is and instruction and
+  {_13} is first argument of {_20} and
+  {_7} is second argument of {_20} and
+  {_21} is first successor of {_20} and
+
+  #  %21 = lshr i32 %19, %20, !UID !19
+  {_21} is LShr instruction and
+  {_18} is first argument of {_21} and
+  {_20} is second argument of {_21} and
+  {_22} is first successor of {_21} and
+
+  #  %22 = and i32 %21, 1, !UID !20
+  {_22} is and instruction and
+  {_21} is first argument of {_22} and
+  {_1} is second argument of {_22} and
+  {_23} is first successor of {_22} and
+
+  #  %23 = xor i32 %22, 1, !UID !21
+  {_23} is xor instruction and
+  {_22} is first argument of {_23} and
+  {_1} is second argument of {_23} and
+  {_24} is first successor of {_23} and
+
+  #  %24 = load i32, i32* %error.in, align 4, !UID !22
+  {_24} is load instruction and
+  {error_in} is first argument of {_24} and
+  {_25} is first successor of {_24} and
+
+  #  %25 = add nsw i32 %23, %24, !UID !23
+  {_25} is add instruction and
+  {_23} is first argument of {_25} and
+  {_24} is second argument of {_25} and
+  {anonymous[0]} is first successor of {_25} and
+
+  #  store i32 %25, i32* %error.in, align 4, !UID !24
+  {anonymous[0]} is store instruction and
+  {_25} is first argument of {anonymous[0]} and
+  {error_in} is second argument of {anonymous[0]} and
+  {_26} is first successor of {anonymous[0]} and
+
+  #  %26 = load i32, i32* %samplePoints.in, align 4, !UID !25
+  {_26} is load instruction and
+  {samplePoints_in} is first argument of {_26} and
+  {_27} is first successor of {_26} and
+
+  #  %27 = add nsw i32 %26, 1, !UID !26
+  {_27} is add instruction and
+  {_26} is first argument of {_27} and
+  {_1} is second argument of {_27} and
+  {anonymous[1]} is first successor of {_27} and
+
+  #  store i32 %27, i32* %samplePoints.in, align 4, !UID !27
+  {anonymous[1]} is store instruction and
+  {_27} is first argument of {anonymous[1]} and
+  {samplePoints_in} is second argument of {anonymous[1]} and
+  {_28} is first successor of {anonymous[1]} and
+
+  #  %28 = fadd float %vr.0, %delta2.02.in, !UID !28
+  {_28} is fadd instruction and
+  {vr_0} is first argument of {_28} and
+  {delta2_02_in} is second argument of {_28} and
+  {_29} is first successor of {_28} and
+
+  #  %29 = add nuw nsw i32 %j.03.in, 1, !UID !29
+  {_29} is add instruction and
+  {j_03_in} is first argument of {_29} and
+  {_1} is second argument of {_29} and
+  {_30} is first successor of {_29} and
+
+  #  %30 = bitcast <{ float, i32 }>* %1 to i8*
+  {_30} is BitCast instruction and
+  {_31} is first successor of {_30} and
+
+  #  %31 = bitcast i8* %30 to float*
+  {_31} is BitCast instruction and
+  {anonymous[2]} is first successor of {_31} and
+
+  #  store float %28, float* %31, align 4, !UID !30, !LO !31
+  {anonymous[2]} is store instruction and
+  {_28} is first argument of {anonymous[2]} and
+  {_1_} is second argument of {anonymous[2]} and
+  {_32} is first successor of {anonymous[2]} and
+
+  #  %32 = getelementptr i8, i8* %30, i64 4
+  {_32} is gep instruction and
+  {_1_} is first argument of {_32} and
+  {_4} is second argument of {_32} and
+  {_33} is first successor of {_32} and
+
+  #  %33 = bitcast i8* %32 to i32*
+  {_33} is BitCast instruction and
+  {anonymous[3]} is first successor of {_33} and
+
+  #  store i32 %29, i32* %33, align 4, !UID !32, !LO !31
+  {anonymous[3]} is store instruction and
+  {_29} is first argument of {anonymous[3]} and
+  {_32} is second argument of {anonymous[3]} and
+  {anonymous[4]} is first successor of {anonymous[3]} and
+
+  #  ret i1 true, !UID !33, !BB_UID !34
+  # {anonymous[4]} is ret instruction and
+  # {true} is first argument of {anonymous[4]} and
+ #float %delta2.02.in
+  # {delta2_02_in} is an argument and
+
+  #float %vr.4
+  # {vr_4} is an argument and
+
+  #float %vr.5
+  # {vr_5} is an argument and
+
+  #float %vr.6
+  # {vr_6} is an argument and
+
+  #float %vr.7
+  # {vr_7} is an argument and
+
+  #float 5.000000e-01
+  {_5_000000e_01} is a constant and
+
+  #i64* %vr.3
+  # {vr_3} is an argument and
+
+  #i32 8
+  {_8} is a constant and
+
+  #i8** %vr.2
+  # {vr_2} is an argument and
+
+  #i32 7
+  {_7} is a constant and
+
+  #i32 1
+  {_1} is a constant and
+
+  #i32* %error.in
+  # {error_in} is an argument and
+
+  #i32* %samplePoints.in
+  # {samplePoints_in} is an argument and
+
+  #float %vr.0
+  # {vr_0} is an argument and
+
+  #i32 %j.03.in
+  # {j_03_in} is an argument and
+
+  #<{ float, i32 }>* %1
+  # {_1_} is an argument and
+
+  #i64 4
+  {_4} is a constant and
+
+  #i1 true
+  {true} is a constant and
+  {dummy} is unused)
+End

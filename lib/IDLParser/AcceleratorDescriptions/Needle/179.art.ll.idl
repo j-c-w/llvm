@@ -1,0 +1,201 @@
+Export Constraint art
+(
+  #  %2 = load %struct.xyz*, %struct.xyz** %Y.in, align 8, !UID !1
+  {_2} is load instruction and
+  {Y_in} is first argument of {_2} and
+  {_3} is first successor of {_2} and
+
+  #  %3 = load %struct.f1_neuron*, %struct.f1_neuron** %f1_layer.in, align 8, !UID !2
+  {_3} is load instruction and
+  {f1_layer_in} is first argument of {_3} and
+  {_4} is first successor of {_3} and
+
+  #  %4 = mul i64 %indvars.iv.next84135.in, 64
+  {_4} is mul instruction and
+  {indvars_iv_next84135_in} is first argument of {_4} and
+  {_64} is second argument of {_4} and
+  {_5} is first successor of {_4} and
+
+  #  %5 = add i64 %4, 40
+  {_5} is add instruction and
+  {_4} is first argument of {_5} and
+  {_40} is second argument of {_5} and
+  {_6} is first successor of {_5} and
+
+  #  %6 = bitcast %struct.f1_neuron* %3 to i8*
+  {_6} is BitCast instruction and
+  {_7} is first successor of {_6} and
+
+  #  %7 = getelementptr i8, i8* %6, i64 %5
+  {_7} is gep instruction and
+  {_3} is first argument of {_7} and
+  {_5} is second argument of {_7} and
+  {_8_} is first successor of {_7} and
+
+  #  %8 = bitcast i8* %7 to double*
+  {_8_} is BitCast instruction and
+  {_9} is first successor of {_8_} and
+
+  #  %9 = load double, double* %8, align 8, !UID !3
+  {_9} is load instruction and
+  {_7} is first argument of {_9} and
+  {_10} is first successor of {_9} and
+
+  #  %10 = load double**, double*** %bus.in, align 8, !UID !4
+  {_10} is load instruction and
+  {bus_in} is first argument of {_10} and
+  {_11} is first successor of {_10} and
+
+  #  %11 = mul i64 %indvars.iv.next84135.in, 8
+  {_11} is mul instruction and
+  {indvars_iv_next84135_in} is first argument of {_11} and
+  {_8} is second argument of {_11} and
+  {_12} is first successor of {_11} and
+
+  #  %12 = bitcast double** %10 to i8*
+  {_12} is BitCast instruction and
+  {_13} is first successor of {_12} and
+
+  #  %13 = getelementptr i8, i8* %12, i64 %11
+  {_13} is gep instruction and
+  {_10} is first argument of {_13} and
+  {_11} is second argument of {_13} and
+  {_14} is first successor of {_13} and
+
+  #  %14 = bitcast i8* %13 to double**
+  {_14} is BitCast instruction and
+  {_15} is first successor of {_14} and
+
+  #  %15 = load double*, double** %14, align 8, !UID !5
+  {_15} is load instruction and
+  {_13} is first argument of {_15} and
+  {_16_} is first successor of {_15} and
+
+  #  %16 = mul i64 %indvars.iv85.in, 8
+  {_16_} is mul instruction and
+  {indvars_iv85_in} is first argument of {_16_} and
+  {_8} is second argument of {_16_} and
+  {_17} is first successor of {_16_} and
+
+  #  %17 = bitcast double* %15 to i8*
+  {_17} is BitCast instruction and
+  {_18} is first successor of {_17} and
+
+  #  %18 = getelementptr i8, i8* %17, i64 %16
+  {_18} is gep instruction and
+  {_15} is first argument of {_18} and
+  {_16_} is second argument of {_18} and
+  {_19} is first successor of {_18} and
+
+  #  %19 = bitcast i8* %18 to double*
+  {_19} is BitCast instruction and
+  {_20} is first successor of {_19} and
+
+  #  %20 = load double, double* %19, align 8, !UID !6
+  {_20} is load instruction and
+  {_18} is first argument of {_20} and
+  {_21} is first successor of {_20} and
+
+  #  %21 = fmul double %9, %20, !UID !7
+  {_21} is fmul instruction and
+  {_9} is first argument of {_21} and
+  {_20} is second argument of {_21} and
+  {_22} is first successor of {_21} and
+
+  #  %22 = mul i64 %indvars.iv85.in, 16
+  {_22} is mul instruction and
+  {indvars_iv85_in} is first argument of {_22} and
+  {_16} is second argument of {_22} and
+  {_23} is first successor of {_22} and
+
+  #  %23 = bitcast %struct.xyz* %2 to i8*
+  {_23} is BitCast instruction and
+  {_24} is first successor of {_23} and
+
+  #  %24 = getelementptr i8, i8* %23, i64 %22
+  {_24} is gep instruction and
+  {_2} is first argument of {_24} and
+  {_22} is second argument of {_24} and
+  {_25} is first successor of {_24} and
+
+  #  %25 = bitcast i8* %24 to double*
+  {_25} is BitCast instruction and
+  {_26} is first successor of {_25} and
+
+  #  %26 = load double, double* %25, align 8, !UID !8
+  {_26} is load instruction and
+  {_24} is first argument of {_26} and
+  {_27} is first successor of {_26} and
+
+  #  %27 = fadd double %21, %26, !UID !9
+  {_27} is fadd instruction and
+  {_21} is first argument of {_27} and
+  {_26} is second argument of {_27} and
+  {anonymous[0]} is first successor of {_27} and
+
+  #  store double %27, double* %25, align 8, !UID !10
+  {anonymous[0]} is store instruction and
+  {_27} is first argument of {anonymous[0]} and
+  {_24} is second argument of {anonymous[0]} and
+  {_28} is first successor of {anonymous[0]} and
+
+  #  %28 = add nuw nsw i64 %indvars.iv.next84135.in, 1, !UID !11
+  {_28} is add instruction and
+  {indvars_iv_next84135_in} is first argument of {_28} and
+  {_1} is second argument of {_28} and
+  {_29} is first successor of {_28} and
+
+  #  %29 = bitcast <{ i64 }>* %1 to i8*
+  {_29} is BitCast instruction and
+  {_30} is first successor of {_29} and
+
+  #  %30 = bitcast i8* %29 to i64*
+  {_30} is BitCast instruction and
+  {anonymous[1]} is first successor of {_30} and
+
+  #  store i64 %28, i64* %30, align 8, !UID !12, !LO !13
+  {anonymous[1]} is store instruction and
+  {_28} is first argument of {anonymous[1]} and
+  {_1_} is second argument of {anonymous[1]} and
+  {anonymous[2]} is first successor of {anonymous[1]} and
+
+  #  ret i1 true, !UID !14, !BB_UID !15
+  # {anonymous[2]} is ret instruction and
+  # {true} is first argument of {anonymous[2]} and
+ #%struct.xyz** %Y.in
+  # {Y_in} is an argument and
+
+  #%struct.f1_neuron** %f1_layer.in
+  # {f1_layer_in} is an argument and
+
+  #i64 %indvars.iv.next84135.in
+  # {indvars_iv_next84135_in} is an argument and
+
+  #i64 64
+  {_64} is a constant and
+
+  #i64 40
+  {_40} is a constant and
+
+  #double*** %bus.in
+  # {bus_in} is an argument and
+
+  #i64 8
+  {_8} is a constant and
+
+  #i64 %indvars.iv85.in
+  # {indvars_iv85_in} is an argument and
+
+  #i64 16
+  {_16} is a constant and
+
+  #i64 1
+  {_1} is a constant and
+
+  #<{ i64 }>* %1
+  # {_1_} is an argument and
+
+  #i1 true
+  {true} is a constant and
+  {dummy} is unused)
+End

@@ -1,0 +1,136 @@
+Export Constraint sjeng
+(
+  #  %2 = mul i64 %indvars.iv.in, 4
+  {_2} is mul instruction and
+  {indvars_iv_in} is first argument of {_2} and
+  {_4} is second argument of {_2} and
+  {_3} is first successor of {_2} and
+
+  #  %3 = bitcast [62 x i32]* %pieces.in to i8*
+  {_3} is BitCast instruction and
+  {_4_} is first successor of {_3} and
+
+  #  %4 = getelementptr i8, i8* %3, i64 %2
+  {_4_} is gep instruction and
+  {pieces_in} is first argument of {_4_} and
+  {_2} is second argument of {_4_} and
+  {_5} is first successor of {_4_} and
+
+  #  %5 = bitcast i8* %4 to i32*
+  {_5} is BitCast instruction and
+  {_6} is first successor of {_5} and
+
+  #  %6 = load i32, i32* %5, align 4, !UID !1
+  {_6} is load instruction and
+  {_4_} is first argument of {_6} and
+  {_7} is first successor of {_6} and
+
+  #  %7 = add nsw i32 %a.095.in, 1, !UID !2
+  {_7} is add instruction and
+  {a_095_in} is first argument of {_7} and
+  {_1} is second argument of {_7} and
+  {anonymous[0]} is first successor of {_7} and
+
+  #  store i32 %6, i32* %gfrom.in, align 4, !UID !3
+  {anonymous[0]} is store instruction and
+  {_6} is first argument of {anonymous[0]} and
+  {gfrom_in} is second argument of {anonymous[0]} and
+  {_8_} is first successor of {anonymous[0]} and
+
+  #  %8 = bitcast <{ i64, i32, i32 }>* %1 to i8*
+  {_8_} is BitCast instruction and
+  {_9} is first successor of {_8_} and
+
+  #  %9 = getelementptr i8, i8* %8, i64 12
+  {_9} is gep instruction and
+  {_1_} is first argument of {_9} and
+  {_12} is second argument of {_9} and
+  {_10} is first successor of {_9} and
+
+  #  %10 = bitcast i8* %9 to i32*
+  {_10} is BitCast instruction and
+  {anonymous[1]} is first successor of {_10} and
+
+  #  store i32 %7, i32* %10, align 4, !UID !4, !LO !5
+  {anonymous[1]} is store instruction and
+  {_7} is first argument of {anonymous[1]} and
+  {_9} is second argument of {anonymous[1]} and
+  {_11} is first successor of {anonymous[1]} and
+
+  #  %11 = add nuw nsw i64 %indvars.iv.in, 1, !UID !6
+  {_11} is add instruction and
+  {indvars_iv_in} is first argument of {_11} and
+  {_1__} is second argument of {_11} and
+  {_12_} is first successor of {_11} and
+
+  #  %12 = load i32, i32* %Variant.in, align 4, !UID !7
+  {_12_} is load instruction and
+  {Variant_in} is first argument of {_12_} and
+  {_13} is first successor of {_12_} and
+
+  #  %13 = bitcast i8* %8 to i64*
+  {_13} is BitCast instruction and
+  {anonymous[2]} is first successor of {_13} and
+
+  #  store i64 %11, i64* %13, align 8, !UID !8, !LO !5
+  # {anonymous[2]} is store instruction and
+  {_11} is first argument of {anonymous[2]} and
+  {_1_} is second argument of {anonymous[2]} and
+  {_14} is first successor of {anonymous[2]} and
+
+  #  %14 = getelementptr i8, i8* %8, i64 8
+  {_14} is gep instruction and
+  {_1_} is first argument of {_14} and
+  {_8} is second argument of {_14} and
+  {_15} is first successor of {_14} and
+
+  #  %15 = bitcast i8* %14 to i32*
+  {_15} is BitCast instruction and
+  {anonymous[3]} is first successor of {_15} and
+
+  #  store i32 %12, i32* %15, align 4, !UID !9, !LO !5
+  {anonymous[3]} is store instruction and
+  {_12_} is first argument of {anonymous[3]} and
+  {_14} is second argument of {anonymous[3]} and
+  {anonymous[4]} is first successor of {anonymous[3]} and
+
+  #  ret i1 true, !UID !10, !BB_UID !11
+  # {anonymous[4]} is ret instruction and
+  # {true} is first argument of {anonymous[4]} and
+ #i64 %indvars.iv.in
+  # {indvars_iv_in} is an argument and
+
+  #i64 4
+  {_4} is a constant and
+
+  #[62 x i32]* %pieces.in
+  # {pieces_in} is an argument and
+
+  #i32 %a.095.in
+  # {a_095_in} is an argument and
+
+  #i32 1
+  {_1} is a constant and
+
+  #i32* %gfrom.in
+  # {gfrom_in} is an argument and
+
+  #<{ i64, i32, i32 }>* %1
+  # {_1_} is an argument and
+
+  #i64 12
+  {_12} is a constant and
+
+  #i64 1
+  {_1__} is a constant and
+
+  #i32* %Variant.in
+  # {Variant_in} is an argument and
+
+  #i64 8
+  {_8} is a constant and
+
+  #i1 true
+  {true} is a constant and
+  {dummy} is unused)
+End

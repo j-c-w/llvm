@@ -1,0 +1,514 @@
+Export Constraint hmmer
+(
+  #  %2 = add nsw i64 %indvars.iv.in, -1, !UID !1
+  {_2} is add instruction and
+  {indvars_iv_in} is first argument of {_2} and
+  {_1} is second argument of {_2} and
+  {_3} is first successor of {_2} and
+
+  #  %3 = mul i64 %2, 4
+  {_3} is mul instruction and
+  {_2} is first argument of {_3} and
+  {_4} is second argument of {_3} and
+  {_4_} is first successor of {_3} and
+
+  #  %4 = bitcast i32* %vr.1 to i8*
+  {_4_} is BitCast instruction and
+  {_5} is first successor of {_4_} and
+
+  #  %5 = getelementptr i8, i8* %4, i64 %3
+  {_5} is gep instruction and
+  {vr_1} is first argument of {_5} and
+  {_3} is second argument of {_5} and
+  {_6} is first successor of {_5} and
+
+  #  %6 = bitcast i8* %5 to i32*
+  {_6} is BitCast instruction and
+  {_7} is first successor of {_6} and
+
+  #  %7 = load i32, i32* %6, align 4, !UID !2
+  {_7} is load instruction and
+  {_5} is first argument of {_7} and
+  {_8} is first successor of {_7} and
+
+  #  %8 = bitcast i32* %vr.2 to i8*
+  {_8} is BitCast instruction and
+  {_9} is first successor of {_8} and
+
+  #  %9 = getelementptr i8, i8* %8, i64 %3
+  {_9} is gep instruction and
+  {vr_2} is first argument of {_9} and
+  {_3} is second argument of {_9} and
+  {_10} is first successor of {_9} and
+
+  #  %10 = bitcast i8* %9 to i32*
+  {_10} is BitCast instruction and
+  {_11} is first successor of {_10} and
+
+  #  %11 = load i32, i32* %10, align 4, !UID !3
+  {_11} is load instruction and
+  {_9} is first argument of {_11} and
+  {_12} is first successor of {_11} and
+
+  #  %12 = add nsw i32 %11, %7, !UID !4
+  {_12} is add instruction and
+  {_11} is first argument of {_12} and
+  {_7} is second argument of {_12} and
+  {_13} is first successor of {_12} and
+
+  #  %13 = mul i64 %indvars.iv.in, 4
+  {_13} is mul instruction and
+  {indvars_iv_in} is first argument of {_13} and
+  {_4} is second argument of {_13} and
+  {_14} is first successor of {_13} and
+
+  #  %14 = bitcast i32* %vr.3 to i8*
+  {_14} is BitCast instruction and
+  {_15} is first successor of {_14} and
+
+  #  %15 = getelementptr i8, i8* %14, i64 %13
+  {_15} is gep instruction and
+  {vr_3} is first argument of {_15} and
+  {_13} is second argument of {_15} and
+  {_16} is first successor of {_15} and
+
+  #  %16 = bitcast i8* %15 to i32*
+  {_16} is BitCast instruction and
+  {anonymous[0]} is first successor of {_16} and
+
+  #  store i32 %12, i32* %16, align 4, !UID !5
+  {anonymous[0]} is store instruction and
+  {_12} is first argument of {anonymous[0]} and
+  {_15} is second argument of {anonymous[0]} and
+  {_17} is first successor of {anonymous[0]} and
+
+  #  %17 = bitcast i32* %vr.4 to i8*
+  {_17} is BitCast instruction and
+  {_18} is first successor of {_17} and
+
+  #  %18 = getelementptr i8, i8* %17, i64 %3
+  {_18} is gep instruction and
+  {vr_4} is first argument of {_18} and
+  {_3} is second argument of {_18} and
+  {_19} is first successor of {_18} and
+
+  #  %19 = bitcast i8* %18 to i32*
+  {_19} is BitCast instruction and
+  {_20} is first successor of {_19} and
+
+  #  %20 = load i32, i32* %19, align 4, !UID !6
+  {_20} is load instruction and
+  {_18} is first argument of {_20} and
+  {_21} is first successor of {_20} and
+
+  #  %21 = bitcast i32* %vr.5 to i8*
+  {_21} is BitCast instruction and
+  {_22} is first successor of {_21} and
+
+  #  %22 = getelementptr i8, i8* %21, i64 %3
+  {_22} is gep instruction and
+  {vr_5} is first argument of {_22} and
+  {_3} is second argument of {_22} and
+  {_23} is first successor of {_22} and
+
+  #  %23 = bitcast i8* %22 to i32*
+  {_23} is BitCast instruction and
+  {_24} is first successor of {_23} and
+
+  #  %24 = load i32, i32* %23, align 4, !UID !7
+  {_24} is load instruction and
+  {_22} is first argument of {_24} and
+  {_25} is first successor of {_24} and
+
+  #  %25 = add nsw i32 %24, %20, !UID !8
+  {_25} is add instruction and
+  {_24} is first argument of {_25} and
+  {_20} is second argument of {_25} and
+  {_26} is first successor of {_25} and
+
+  #  %26 = icmp sgt i32 %25, %12, !UID !9
+  {_26} is icmp instruction and
+  {_25} is first argument of {_26} and
+  {_12} is second argument of {_26} and
+  {_27} is first successor of {_26} and
+
+  #  %27 = select i1 %26, i32 %25, i32 %12, !UID !10
+  {_27} is select instruction and
+  {_26} is first argument of {_27} and
+  {_25} is second argument of {_27} and
+  {_12} is third argument of {_27} and
+  {anonymous[1]} is first successor of {_27} and
+
+  #  store i32 %27, i32* %16, align 4, !UID !11
+  {anonymous[1]} is store instruction and
+  {_27} is first argument of {anonymous[1]} and
+  {_15} is second argument of {anonymous[1]} and
+  {_28} is first successor of {anonymous[1]} and
+
+  #  %28 = bitcast i32* %vr.6 to i8*
+  {_28} is BitCast instruction and
+  {_29} is first successor of {_28} and
+
+  #  %29 = getelementptr i8, i8* %28, i64 %3
+  {_29} is gep instruction and
+  {vr_6} is first argument of {_29} and
+  {_3} is second argument of {_29} and
+  {_30} is first successor of {_29} and
+
+  #  %30 = bitcast i8* %29 to i32*
+  {_30} is BitCast instruction and
+  {_31} is first successor of {_30} and
+
+  #  %31 = load i32, i32* %30, align 4, !UID !12
+  {_31} is load instruction and
+  {_29} is first argument of {_31} and
+  {_32} is first successor of {_31} and
+
+  #  %32 = bitcast i32* %vr.7 to i8*
+  {_32} is BitCast instruction and
+  {_33} is first successor of {_32} and
+
+  #  %33 = getelementptr i8, i8* %32, i64 %3
+  {_33} is gep instruction and
+  {vr_7} is first argument of {_33} and
+  {_3} is second argument of {_33} and
+  {_34} is first successor of {_33} and
+
+  #  %34 = bitcast i8* %33 to i32*
+  {_34} is BitCast instruction and
+  {_35} is first successor of {_34} and
+
+  #  %35 = load i32, i32* %34, align 4, !UID !13
+  {_35} is load instruction and
+  {_33} is first argument of {_35} and
+  {_36} is first successor of {_35} and
+
+  #  %36 = add nsw i32 %35, %31, !UID !14
+  {_36} is add instruction and
+  {_35} is first argument of {_36} and
+  {_31} is second argument of {_36} and
+  {_37} is first successor of {_36} and
+
+  #  %37 = icmp sgt i32 %36, %27, !UID !15
+  {_37} is icmp instruction and
+  {_36} is first argument of {_37} and
+  {_27} is second argument of {_37} and
+  {_38} is first successor of {_37} and
+
+  #  %38 = select i1 %37, i32 %36, i32 %27, !UID !16
+  {_38} is select instruction and
+  {_37} is first argument of {_38} and
+  {_36} is second argument of {_38} and
+  {_27} is third argument of {_38} and
+  {anonymous[2]} is first successor of {_38} and
+
+  #  store i32 %38, i32* %16, align 4, !UID !17
+  {anonymous[2]} is store instruction and
+  {_38} is first argument of {anonymous[2]} and
+  {_15} is second argument of {anonymous[2]} and
+  {_39} is first successor of {anonymous[2]} and
+
+  #  %39 = bitcast i32* %vr.8 to i8*
+  {_39} is BitCast instruction and
+  {_40} is first successor of {_39} and
+
+  #  %40 = getelementptr i8, i8* %39, i64 %13
+  {_40} is gep instruction and
+  {vr_8} is first argument of {_40} and
+  {_13} is second argument of {_40} and
+  {_41} is first successor of {_40} and
+
+  #  %41 = bitcast i8* %40 to i32*
+  {_41} is BitCast instruction and
+  {_42} is first successor of {_41} and
+
+  #  %42 = load i32, i32* %41, align 4, !UID !18
+  {_42} is load instruction and
+  {_40} is first argument of {_42} and
+  {_43} is first successor of {_42} and
+
+  #  %43 = add nsw i32 %42, %vr.9, !UID !19
+  {_43} is add instruction and
+  {_42} is first argument of {_43} and
+  {vr_9} is second argument of {_43} and
+  {_44} is first successor of {_43} and
+
+  #  %44 = icmp sgt i32 %43, %38, !UID !20
+  {_44} is icmp instruction and
+  {_43} is first argument of {_44} and
+  {_38} is second argument of {_44} and
+  {_45} is first successor of {_44} and
+
+  #  %45 = select i1 %44, i32 %43, i32 %38, !UID !21
+  {_45} is select instruction and
+  {_44} is first argument of {_45} and
+  {_43} is second argument of {_45} and
+  {_38} is third argument of {_45} and
+  {anonymous[3]} is first successor of {_45} and
+
+  #  store i32 %45, i32* %16, align 4, !UID !22
+  {anonymous[3]} is store instruction and
+  {_45} is first argument of {anonymous[3]} and
+  {_15} is second argument of {anonymous[3]} and
+  {_46} is first successor of {anonymous[3]} and
+
+  #  %46 = bitcast i32* %vr.10 to i8*
+  {_46} is BitCast instruction and
+  {_47} is first successor of {_46} and
+
+  #  %47 = getelementptr i8, i8* %46, i64 %13
+  {_47} is gep instruction and
+  {vr_10} is first argument of {_47} and
+  {_13} is second argument of {_47} and
+  {_48} is first successor of {_47} and
+
+  #  %48 = bitcast i8* %47 to i32*
+  {_48} is BitCast instruction and
+  {_49} is first successor of {_48} and
+
+  #  %49 = load i32, i32* %48, align 4, !UID !23
+  {_49} is load instruction and
+  {_47} is first argument of {_49} and
+  {_50} is first successor of {_49} and
+
+  #  %50 = add nsw i32 %45, %49, !UID !24
+  {_50} is add instruction and
+  {_45} is first argument of {_50} and
+  {_49} is second argument of {_50} and
+  {_51} is first successor of {_50} and
+
+  #  %51 = icmp sgt i32 %50, -987654321
+  {_51} is icmp instruction and
+  {_50} is first argument of {_51} and
+  {_987654321} is second argument of {_51} and
+  {_52} is first successor of {_51} and
+
+  #  %52 = select i1 %51, i32 %50, i32 -987654321, !UID !25
+  {_52} is select instruction and
+  {_51} is first argument of {_52} and
+  {_50} is second argument of {_52} and
+  {_987654321} is third argument of {_52} and
+  {anonymous[4]} is first successor of {_52} and
+
+  #  store i32 %52, i32* %16, align 4, !UID !26
+  {anonymous[4]} is store instruction and
+  {_52} is first argument of {anonymous[4]} and
+  {_15} is second argument of {anonymous[4]} and
+  {_53} is first successor of {anonymous[4]} and
+
+  #  %53 = bitcast i32* %vr.11 to i8*
+  {_53} is BitCast instruction and
+  {_54} is first successor of {_53} and
+
+  #  %54 = getelementptr i8, i8* %53, i64 %3
+  {_54} is gep instruction and
+  {vr_11} is first argument of {_54} and
+  {_3} is second argument of {_54} and
+  {_55} is first successor of {_54} and
+
+  #  %55 = bitcast i8* %54 to i32*
+  {_55} is BitCast instruction and
+  {_56} is first successor of {_55} and
+
+  #  %56 = load i32, i32* %55, align 4, !UID !27
+  {_56} is load instruction and
+  {_54} is first argument of {_56} and
+  {_57} is first successor of {_56} and
+
+  #  %57 = bitcast i32* %vr.12 to i8*
+  {_57} is BitCast instruction and
+  {_58} is first successor of {_57} and
+
+  #  %58 = getelementptr i8, i8* %57, i64 %3
+  {_58} is gep instruction and
+  {vr_12} is first argument of {_58} and
+  {_3} is second argument of {_58} and
+  {_59} is first successor of {_58} and
+
+  #  %59 = bitcast i8* %58 to i32*
+  {_59} is BitCast instruction and
+  {_60} is first successor of {_59} and
+
+  #  %60 = load i32, i32* %59, align 4, !UID !28
+  {_60} is load instruction and
+  {_58} is first argument of {_60} and
+  {_61} is first successor of {_60} and
+
+  #  %61 = add nsw i32 %60, %56, !UID !29
+  {_61} is add instruction and
+  {_60} is first argument of {_61} and
+  {_56} is second argument of {_61} and
+  {_62} is first successor of {_61} and
+
+  #  %62 = getelementptr i8, i8* %53, i64 %13
+  {_62} is gep instruction and
+  {vr_11} is first argument of {_62} and
+  {_13} is second argument of {_62} and
+  {_63} is first successor of {_62} and
+
+  #  %63 = bitcast i8* %62 to i32*
+  {_63} is BitCast instruction and
+  {anonymous[5]} is first successor of {_63} and
+
+  #  store i32 %61, i32* %63, align 4, !UID !30
+  {anonymous[5]} is store instruction and
+  {_61} is first argument of {anonymous[5]} and
+  {_62} is second argument of {anonymous[5]} and
+  {_64} is first successor of {anonymous[5]} and
+
+  #  %64 = getelementptr i8, i8* %14, i64 %3
+  {_64} is gep instruction and
+  {vr_3} is first argument of {_64} and
+  {_3} is second argument of {_64} and
+  {_65} is first successor of {_64} and
+
+  #  %65 = bitcast i8* %64 to i32*
+  {_65} is BitCast instruction and
+  {_66} is first successor of {_65} and
+
+  #  %66 = load i32, i32* %65, align 4, !UID !31
+  {_66} is load instruction and
+  {_64} is first argument of {_66} and
+  {_67} is first successor of {_66} and
+
+  #  %67 = bitcast i32* %vr.13 to i8*
+  {_67} is BitCast instruction and
+  {_68} is first successor of {_67} and
+
+  #  %68 = getelementptr i8, i8* %67, i64 %3
+  {_68} is gep instruction and
+  {vr_13} is first argument of {_68} and
+  {_3} is second argument of {_68} and
+  {_69} is first successor of {_68} and
+
+  #  %69 = bitcast i8* %68 to i32*
+  {_69} is BitCast instruction and
+  {_70} is first successor of {_69} and
+
+  #  %70 = load i32, i32* %69, align 4, !UID !32
+  {_70} is load instruction and
+  {_68} is first argument of {_70} and
+  {_71} is first successor of {_70} and
+
+  #  %71 = add nsw i32 %70, %66, !UID !33
+  {_71} is add instruction and
+  {_70} is first argument of {_71} and
+  {_66} is second argument of {_71} and
+  {_72} is first successor of {_71} and
+
+  #  %72 = icmp sgt i32 %71, %61, !UID !34
+  {_72} is icmp instruction and
+  {_71} is first argument of {_72} and
+  {_61} is second argument of {_72} and
+  {_73} is first successor of {_72} and
+
+  #  %73 = select i1 %72, i32 %71, i32 %61, !UID !35
+  {_73} is select instruction and
+  {_72} is first argument of {_73} and
+  {_71} is second argument of {_73} and
+  {_61} is third argument of {_73} and
+  {_74} is first successor of {_73} and
+
+  #  %74 = icmp sgt i32 %73, -987654321
+  {_74} is icmp instruction and
+  {_73} is first argument of {_74} and
+  {_987654321} is second argument of {_74} and
+  {_75} is first successor of {_74} and
+
+  #  %75 = select i1 %74, i32 %73, i32 -987654321, !UID !36
+  {_75} is select instruction and
+  {_74} is first argument of {_75} and
+  {_73} is second argument of {_75} and
+  {_987654321} is third argument of {_75} and
+  {anonymous[6]} is first successor of {_75} and
+
+  #  store i32 %75, i32* %63, align 4, !UID !37
+  {anonymous[6]} is store instruction and
+  {_75} is first argument of {anonymous[6]} and
+  {_62} is second argument of {anonymous[6]} and
+  {_76} is first successor of {anonymous[6]} and
+
+  #  %76 = add nuw nsw i64 %indvars.iv.in, 1, !UID !38
+  {_76} is add instruction and
+  {indvars_iv_in} is first argument of {_76} and
+  {_1_} is second argument of {_76} and
+  {_77} is first successor of {_76} and
+
+  #  %77 = bitcast <{ i64 }>* %1 to i8*
+  {_77} is BitCast instruction and
+  {_78} is first successor of {_77} and
+
+  #  %78 = bitcast i8* %77 to i64*
+  {_78} is BitCast instruction and
+  {anonymous[7]} is first successor of {_78} and
+
+  #  store i64 %76, i64* %78, align 8, !UID !39, !LO !40
+  {anonymous[7]} is store instruction and
+  {_76} is first argument of {anonymous[7]} and
+  {_1__} is second argument of {anonymous[7]} and
+  {anonymous[8]} is first successor of {anonymous[7]} and
+
+  #  ret i1 true, !UID !41, !BB_UID !42
+  # {anonymous[8]} is ret instruction and
+  # {true} is first argument of {anonymous[8]} and
+ #i64 %indvars.iv.in
+  # {indvars_iv_in} is an argument and
+
+  #i64 -1
+  {_1} is a constant and
+
+  #i64 4
+  {_4} is a constant and
+
+  #i32* %vr.1
+  # {vr_1} is an argument and
+
+  #i32* %vr.2
+  # {vr_2} is an argument and
+
+  #i32* %vr.3
+  # {vr_3} is an argument and
+
+  #i32* %vr.4
+  # {vr_4} is an argument and
+
+  #i32* %vr.5
+  # {vr_5} is an argument and
+
+  #i32* %vr.6
+  # {vr_6} is an argument and
+
+  #i32* %vr.7
+  # {vr_7} is an argument and
+
+  #i32* %vr.8
+  # {vr_8} is an argument and
+
+  #i32 %vr.9
+  # {vr_9} is an argument and
+
+  #i32* %vr.10
+  # {vr_10} is an argument and
+
+  #i32 -987654321
+  {_987654321} is a constant and
+
+  #i32* %vr.11
+  # {vr_11} is an argument and
+
+  #i32* %vr.12
+  # {vr_12} is an argument and
+
+  #i32* %vr.13
+  # {vr_13} is an argument and
+
+  #i64 1
+  {_1_} is a constant and
+
+  #<{ i64 }>* %1
+  # {_1__} is an argument and
+
+  #i1 true
+  {true} is a constant and
+  {dummy} is unused)
+End
