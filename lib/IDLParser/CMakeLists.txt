@@ -4,7 +4,7 @@ add_llvm_library(LLVMIDLParser
           idl_parser
 )
 
-FILE(GLOB IDL_SOURCES *.idl)
+FILE(GLOB_RECURSE IDL_SOURCES *.idl)
 
 set(CMAKE_CXX_STANDARD 17)
 
