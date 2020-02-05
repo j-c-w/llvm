@@ -111,10 +111,18 @@ class ResearchReplacer : public ResearchReplacerBase
 {
 public:
     ResearchReplacer() : ResearchReplacerBase({
-   {"IfThenBranch", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   {"IfThenElseBranch", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"gzip", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"art", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"equake", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"bzip2", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"namd", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"sjeng", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"blackscholes", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"bodytrack", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"dwt", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"fft2d", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
    /* {"SPMV", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
-   {"Loop", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}
+   {"hmmer", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}
    }) { }
 };
 
