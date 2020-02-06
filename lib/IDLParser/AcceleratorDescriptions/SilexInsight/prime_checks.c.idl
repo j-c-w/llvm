@@ -1,0 +1,220 @@
+Export Constraint is_prime
+(
+  #  %conv1 = sitofp i32 %n to double, !dbg !8
+  {conv1} is SIToFP instruction and
+  {n} is first argument of {conv1} and
+  {call9} is first successor of {conv1} and
+
+  #  %call9 = tail call fast double @__sqrt_finite(double %conv1) #2, !dbg !9
+  {call9} is call instruction and
+  {sqrt_finite} is first argument of {call9} and
+  {conv1} is second argument of {call9} and
+  {cmp10} is first successor of {call9} and
+
+  #  %cmp10 = fcmp fast ogt double %call9, 2.000000e+00, !dbg !10
+  {cmp10} is fcmp instruction and
+  {call9} is first argument of {cmp10} and
+  {_2_000000e_00} is second argument of {cmp10} and
+  {anonymous[0]} is first successor of {cmp10} and
+
+  #  br i1 %cmp10, label %for.body.preheader, label %cleanup, !dbg !11
+  {anonymous[0]} is branch instruction and
+  {cmp10} is first argument of {anonymous[0]} and
+  {_0_} is first successor of {anonymous[0]} and
+  {anonymous[1]} is second successor of {anonymous[0]} and
+
+  #  br label %for.body, !dbg !12
+  {anonymous[1]} is branch instruction and
+  {i_011} is first successor of {anonymous[1]} and
+
+  #  %conv = sitofp i32 %inc to double, !dbg !13
+  {conv} is SIToFP instruction and
+  {inc} is first argument of {conv} and
+  {call} is first successor of {conv} and
+
+  #  %call = tail call fast double @__sqrt_finite(double %conv1) #2, !dbg !9
+  {call} is call instruction and
+  {sqrt_finite} is first argument of {call} and
+  {conv1} is second argument of {call} and
+  {cmp} is first successor of {call} and
+
+  #  %cmp = fcmp fast ogt double %call, %conv, !dbg !10
+  {cmp} is fcmp instruction and
+  {call} is first argument of {cmp} and
+  {conv} is second argument of {cmp} and
+  {anonymous[2]} is first successor of {cmp} and
+
+  #  br i1 %cmp, label %for.body, label %cleanup.loopexit, !dbg !11, !llvm.loop !14
+  {anonymous[2]} is branch instruction and
+  {cmp} is first argument of {anonymous[2]} and
+  {ph} is first successor of {anonymous[2]} and
+  {i_011} is second successor of {anonymous[2]} and
+
+  #  %i.011 = phi i32 [ %inc, %for.cond ], [ 2, %for.body.preheader ]
+  {i_011} is phi instruction and
+  {inc} is first argument of {i_011} and
+  {_2} is second argument of {i_011} and
+  {rem} is first successor of {i_011} and
+
+  #  %rem = srem i32 %n, %i.011, !dbg !12
+  {rem} is srem instruction and
+  {n} is first argument of {rem} and
+  {i_011} is second argument of {rem} and
+  {cmp3} is first successor of {rem} and
+
+  #  %cmp3 = icmp eq i32 %rem, 0, !dbg !16
+  {cmp3} is icmp instruction and
+  {rem} is first argument of {cmp3} and
+  {_0} is second argument of {cmp3} and
+  {inc} is first successor of {cmp3} and
+
+  #  %inc = add nuw nsw i32 %i.011, 1, !dbg !17
+  {inc} is add instruction and
+  {i_011} is first argument of {inc} and
+  {_1} is second argument of {inc} and
+  {anonymous[3]} is first successor of {inc} and
+
+  #  br i1 %cmp3, label %cleanup.loopexit, label %for.cond, !dbg !18
+  {anonymous[3]} is branch instruction and
+  {cmp3} is first argument of {anonymous[3]} and
+  {conv} is first successor of {anonymous[3]} and
+  {ph} is second successor of {anonymous[3]} and
+
+  #  %.ph = phi i32 [ 0, %for.body ], [ 1, %for.cond ]
+  {ph} is phi instruction and
+  {_0} is first argument of {ph} and
+  {_1} is second argument of {ph} and
+  {anonymous[4]} is first successor of {ph} and
+
+  #  br label %cleanup, !dbg !19
+  {anonymous[4]} is branch instruction and
+  {_0_} is first successor of {anonymous[4]} and
+
+  #  %0 = phi i32 [ 1, %entry ], [ %.ph, %cleanup.loopexit ]
+  {_0_} is phi instruction and
+  {_1} is first argument of {_0_} and
+  {ph} is second argument of {_0_} and
+  {anonymous[5]} is first successor of {_0_} and
+
+  #
+  {sqrt_finite} is a constant and
+
+  #double 2.000000e+00
+  {_2_000000e_00} is a constant and
+
+  #i32 2
+  {_2} is a constant and
+
+  #i32 0
+  {_0} is a constant and
+
+  #i32 1
+  {_1} is a constant and
+  {dummy} is unused)
+End
+
+Export Constraint is_prime_while
+(
+  #  %conv = sitofp i32 %n to double, !dbg !8
+  {conv} is SIToFP instruction and
+  {n} is first argument of {conv} and
+  {call} is first successor of {conv} and
+
+  #  %call = tail call fast double @__sqrt_finite(double %conv) #2, !dbg !9
+  {call} is call instruction and
+  {sqrt_finite} is first argument of {call} and
+  {conv} is second argument of {call} and
+  {conv1} is first successor of {call} and
+
+  #  %conv1 = fptosi double %call to i32, !dbg !9
+  {conv1} is FPToSI instruction and
+  {call} is first argument of {conv1} and
+  {cmp11} is first successor of {conv1} and
+
+  #  %cmp11 = icmp sgt i32 %conv1, 2, !dbg !10
+  {cmp11} is icmp instruction and
+  {conv1} is first argument of {cmp11} and
+  {_2} is second argument of {cmp11} and
+  {anonymous[0]} is first successor of {cmp11} and
+
+  #  br i1 %cmp11, label %while.body.preheader, label %cleanup, !dbg !11
+  {anonymous[0]} is branch instruction and
+  {cmp11} is first argument of {anonymous[0]} and
+  {retval_0} is first successor of {anonymous[0]} and
+  {anonymous[1]} is second successor of {anonymous[0]} and
+
+  #  br label %while.body, !dbg !12
+  {anonymous[1]} is branch instruction and
+  {i_012} is first successor of {anonymous[1]} and
+
+  #  %cmp = icmp slt i32 %inc, %conv1, !dbg !10
+  {cmp} is icmp instruction and
+  {inc} is first argument of {cmp} and
+  {conv1} is second argument of {cmp} and
+  {anonymous[2]} is first successor of {cmp} and
+
+  #  br i1 %cmp, label %while.body, label %cleanup.loopexit, !dbg !11, !llvm.loop !13
+  {anonymous[2]} is branch instruction and
+  {cmp} is first argument of {anonymous[2]} and
+  {retval_0_ph} is first successor of {anonymous[2]} and
+  {i_012} is second successor of {anonymous[2]} and
+
+  #  %i.012 = phi i32 [ %inc, %while.cond ], [ 2, %while.body.preheader ]
+  {i_012} is phi instruction and
+  {inc} is first argument of {i_012} and
+  {_2} is second argument of {i_012} and
+  {rem} is first successor of {i_012} and
+
+  #  %rem = srem i32 %n, %i.012, !dbg !12
+  {rem} is srem instruction and
+  {n} is first argument of {rem} and
+  {i_012} is second argument of {rem} and
+  {cmp3} is first successor of {rem} and
+
+  #  %cmp3 = icmp eq i32 %rem, 0, !dbg !15
+  {cmp3} is icmp instruction and
+  {rem} is first argument of {cmp3} and
+  {_0} is second argument of {cmp3} and
+  {inc} is first successor of {cmp3} and
+
+  #  %inc = add nuw nsw i32 %i.012, 1, !dbg !16
+  {inc} is add instruction and
+  {i_012} is first argument of {inc} and
+  {_1} is second argument of {inc} and
+  {anonymous[3]} is first successor of {inc} and
+
+  #  br i1 %cmp3, label %cleanup.loopexit, label %while.cond, !dbg !17
+  {anonymous[3]} is branch instruction and
+  {cmp3} is first argument of {anonymous[3]} and
+  {cmp} is first successor of {anonymous[3]} and
+  {retval_0_ph} is second successor of {anonymous[3]} and
+
+  #  %retval.0.ph = phi i32 [ 1, %while.body ], [ 0, %while.cond ]
+  {retval_0_ph} is phi instruction and
+  {_1} is first argument of {retval_0_ph} and
+  {_0} is second argument of {retval_0_ph} and
+  {anonymous[4]} is first successor of {retval_0_ph} and
+
+  #  br label %cleanup, !dbg !18
+  {anonymous[4]} is branch instruction and
+  {retval_0} is first successor of {anonymous[4]} and
+
+  #  %retval.0 = phi i32 [ 0, %entry ], [ %retval.0.ph, %cleanup.loopexit ], !dbg !19
+  {retval_0} is phi instruction and
+  {_0} is first argument of {retval_0} and
+  {retval_0_ph} is second argument of {retval_0} and
+  {anonymous[5]} is first successor of {retval_0} and
+
+  #
+  {sqrt_finite} is a constant and
+
+  #i32 2
+  {_2} is a constant and
+
+  #i32 0
+  {_0} is a constant and
+
+  #i32 1
+  {_1} is a constant and
+  {dummy} is unused)
+End

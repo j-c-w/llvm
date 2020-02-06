@@ -1,0 +1,120 @@
+Export Constraint quad_sum
+(
+  #  %add = add nsw i32 %b, %a, !dbg !8
+  {add} is add instruction and
+  {b} is first argument of {add} and
+  {a} is second argument of {add} and
+  {add1} is first successor of {add} and
+
+  #  %add1 = add nsw i32 %add, %c, !dbg !9
+  {add1} is add instruction and
+  {add} is first argument of {add1} and
+  {c} is second argument of {add1} and
+  {add2} is first successor of {add1} and
+
+  #  %add2 = add nsw i32 %add1, %d, !dbg !10
+  {add2} is add instruction and
+  {add1} is first argument of {add2} and
+  {d} is second argument of {add2} and
+  {anonymous[0]} is first successor of {add2} and
+
+  #  ret i32 %add2, !dbg !11
+  {anonymous[0]} is ret instruction and
+  {add2} is first argument of {anonymous[0]} and
+ #i32 %b
+  {b} is an argument and
+
+  #i32 %a
+  {a} is an argument and
+
+  #i32 %c
+  {c} is an argument and
+
+  #i32 %d
+  {d} is an argument and
+  {dummy} is unused)
+End
+
+Export Constraint mx_plus_c
+(
+  #  %mul = mul nsw i32 %x, %m, !dbg !8
+  {mul} is mul instruction and
+  {x} is first argument of {mul} and
+  {m} is second argument of {mul} and
+  {add} is first successor of {mul} and
+
+  #  %add = add nsw i32 %mul, %c, !dbg !9
+  {add} is add instruction and
+  {mul} is first argument of {add} and
+  {c} is second argument of {add} and
+  {anonymous[0]} is first successor of {add} and
+
+  #  ret i32 %add, !dbg !10
+  {anonymous[0]} is ret instruction and
+  {add} is first argument of {anonymous[0]} and
+ #i32 %x
+  {x} is an argument and
+
+  #i32 %m
+  {m} is an argument and
+
+  #i32 %c
+  {c} is an argument and
+  {dummy} is unused)
+End
+
+Export Constraint mx_plus_c_float
+(
+  #  %mul = fmul fast float %x, %m, !dbg !8
+  {mul} is fmul instruction and
+  {x} is first argument of {mul} and
+  {m} is second argument of {mul} and
+  {add} is first successor of {mul} and
+
+  #  %add = fadd fast float %mul, %c, !dbg !9
+  {add} is fadd instruction and
+  {mul} is first argument of {add} and
+  {c} is second argument of {add} and
+  {anonymous[0]} is first successor of {add} and
+
+  #  ret float %add, !dbg !10
+  {anonymous[0]} is ret instruction and
+  {add} is first argument of {anonymous[0]} and
+ #float %x
+  {x} is an argument and
+
+  #float %m
+  {m} is an argument and
+
+  #float %c
+  {c} is an argument and
+  {dummy} is unused)
+End
+
+Export Constraint mx_plus_c_double
+(
+  #  %mul = fmul fast double %x, %m, !dbg !8
+  {mul} is fmul instruction and
+  {x} is first argument of {mul} and
+  {m} is second argument of {mul} and
+  {add} is first successor of {mul} and
+
+  #  %add = fadd fast double %mul, %c, !dbg !9
+  {add} is fadd instruction and
+  {mul} is first argument of {add} and
+  {c} is second argument of {add} and
+  {anonymous[0]} is first successor of {add} and
+
+  #  ret double %add, !dbg !10
+  {anonymous[0]} is ret instruction and
+  {add} is first argument of {anonymous[0]} and
+ #double %x
+  {x} is an argument and
+
+  #double %m
+  {m} is an argument and
+
+  #double %c
+  {c} is an argument and
+  {dummy} is unused)
+End

@@ -1,0 +1,2514 @@
+Export Constraint downsample_1
+(
+  #  %cmp25 = icmp sgt i32 %in_dim, 0, !dbg !8
+  {cmp25} is icmp instruction and
+  {in_dim} is first argument of {cmp25} and
+  {_0} is second argument of {cmp25} and
+  {anonymous[0]} is first successor of {cmp25} and
+
+  #  br i1 %cmp25, label %for.cond1.preheader.lr.ph, label %for.cond.cleanup, !dbg !9
+  {anonymous[0]} is branch instruction and
+  {cmp25} is first argument of {anonymous[0]} and
+  {anonymous[6]} is first successor of {anonymous[0]} and
+  {cmp222} is second successor of {anonymous[0]} and
+
+  #  %cmp222 = icmp sgt i32 %ratio, 0
+  {cmp222} is icmp instruction and
+  {ratio} is first argument of {cmp222} and
+  {_0} is second argument of {cmp222} and
+  {_0__} is first successor of {cmp222} and
+
+  #  %0 = sext i32 %ratio to i64, !dbg !9
+  {_0__} is sext instruction and
+  {_1__} is first successor of {_0__} and
+
+  #  %1 = sext i32 %in_dim to i64, !dbg !9
+  {_1__} is sext instruction and
+  {wide_trip_count} is first successor of {_1__} and
+
+  #  %wide.trip.count = zext i32 %ratio to i64
+  {wide_trip_count} is zext instruction and
+  {_2_} is first successor of {wide_trip_count} and
+
+  #  %2 = add nsw i64 %wide.trip.count, -1, !dbg !9
+  {_2_} is add instruction and
+  {ratio} is first argument of {_2_} and
+  {_1} is second argument of {_2_} and
+  {xtraiter} is first successor of {_2_} and
+
+  #  %xtraiter = and i64 %wide.trip.count, 3
+  {xtraiter} is and instruction and
+  {ratio} is first argument of {xtraiter} and
+  {_3} is second argument of {xtraiter} and
+  {_3_} is first successor of {xtraiter} and
+
+  #  %3 = icmp ult i64 %2, 3
+  {_3_} is icmp instruction and
+  {_2_} is first argument of {_3_} and
+  {_3} is second argument of {_3_} and
+  {unroll_iter} is first successor of {_3_} and
+
+  #  %unroll_iter = sub nsw i64 %wide.trip.count, %xtraiter
+  {unroll_iter} is sub instruction and
+  {ratio} is first argument of {unroll_iter} and
+  {xtraiter} is second argument of {unroll_iter} and
+  {lcmp_mod} is first successor of {unroll_iter} and
+
+  #  %lcmp.mod = icmp eq i64 %xtraiter, 0
+  {lcmp_mod} is icmp instruction and
+  {xtraiter} is first argument of {lcmp_mod} and
+  {_0_} is second argument of {lcmp_mod} and
+  {_4__} is first successor of {lcmp_mod} and
+
+  #  %4 = bitcast i32* %out to i8*
+  {_4__} is BitCast instruction and
+  {_5} is first successor of {_4__} and
+
+  #  %5 = bitcast i32* %in to i8*
+  {_5} is BitCast instruction and
+  {anonymous[1]} is first successor of {_5} and
+
+  #  br label %for.cond1.preheader, !dbg !9
+  {anonymous[1]} is branch instruction and
+  {indvars_iv29} is first successor of {anonymous[1]} and
+
+  #  %indvars.iv29 = phi i64 [ 0, %for.cond1.preheader.lr.ph ], [ %indvars.iv.next30, %for.cond.cleanup3 ]
+  {indvars_iv29} is phi instruction and
+  {_0_} is first argument of {indvars_iv29} and
+  {indvars_iv_next30} is second argument of {indvars_iv29} and
+  {anonymous[2]} is first successor of {indvars_iv29} and
+
+  #  br i1 %cmp222, label %for.body4.preheader, label %for.cond.cleanup3, !dbg !10
+  {anonymous[2]} is branch instruction and
+  {cmp222} is first argument of {anonymous[2]} and
+  {sum_0_lcssa} is first successor of {anonymous[2]} and
+  {anonymous[3]} is second successor of {anonymous[2]} and
+
+  #  br i1 %3, label %for.cond.cleanup3.loopexit.unr-lcssa, label %for.body4.preheader32, !dbg !11
+  {anonymous[3]} is branch instruction and
+  {_3_} is first argument of {anonymous[3]} and
+  {anonymous[4]} is first successor of {anonymous[3]} and
+  {add5_lcssa_ph} is second successor of {anonymous[3]} and
+
+  #  br label %for.body4, !dbg !11
+  {anonymous[4]} is branch instruction and
+  {indvars_iv} is first successor of {anonymous[4]} and
+
+  #  br label %for.cond.cleanup, !dbg !12
+  {anonymous[5]} is branch instruction and
+  {anonymous[6]} is first successor of {anonymous[5]} and
+
+  #  ret void, !dbg !12
+  {anonymous[6]} is ret instruction and
+
+  #  %add5.3.lcssa = phi i32 [ %add5.3, %for.body4 ], !dbg !13
+  {add5_3_lcssa} is phi instruction and
+  {add5_3} is first argument of {add5_3_lcssa} and
+  {indvars_iv_next_3_lcssa} is first successor of {add5_3_lcssa} and
+
+  #  %indvars.iv.next.3.lcssa = phi i64 [ %indvars.iv.next.3, %for.body4 ], !dbg !14
+  {indvars_iv_next_3_lcssa} is phi instruction and
+  {indvars_iv_next_3} is first argument of {indvars_iv_next_3_lcssa} and
+  {anonymous[7]} is first successor of {indvars_iv_next_3_lcssa} and
+
+  #  br label %for.cond.cleanup3.loopexit.unr-lcssa, !dbg !10
+  {anonymous[7]} is branch instruction and
+  {add5_lcssa_ph} is first successor of {anonymous[7]} and
+
+  #  %add5.lcssa.ph = phi i32 [ undef, %for.body4.preheader ], [ %add5.3.lcssa, %for.cond.cleanup3.loopexit.unr-lcssa.loopexit ]
+  {add5_lcssa_ph} is phi instruction and
+  {undef} is first argument of {add5_lcssa_ph} and
+  {add5_3_lcssa} is second argument of {add5_lcssa_ph} and
+  {indvars_iv_unr} is first successor of {add5_lcssa_ph} and
+
+  #  %indvars.iv.unr = phi i64 [ 0, %for.body4.preheader ], [ %indvars.iv.next.3.lcssa, %for.cond.cleanup3.loopexit.unr-lcssa.loopexit ]
+  {indvars_iv_unr} is phi instruction and
+  {_0_} is first argument of {indvars_iv_unr} and
+  {indvars_iv_next_3_lcssa} is second argument of {indvars_iv_unr} and
+  {sum_023_unr} is first successor of {indvars_iv_unr} and
+
+  #  %sum.023.unr = phi i32 [ 0, %for.body4.preheader ], [ %add5.3.lcssa, %for.cond.cleanup3.loopexit.unr-lcssa.loopexit ]
+  {sum_023_unr} is phi instruction and
+  {_0} is first argument of {sum_023_unr} and
+  {add5_3_lcssa} is second argument of {sum_023_unr} and
+  {anonymous[8]} is first successor of {sum_023_unr} and
+
+  #  br i1 %lcmp.mod, label %for.cond.cleanup3, label %for.body4.epil.preheader, !dbg !10
+  {anonymous[8]} is branch instruction and
+  {lcmp_mod} is first argument of {anonymous[8]} and
+  {anonymous[9]} is first successor of {anonymous[8]} and
+  {sum_0_lcssa} is second successor of {anonymous[8]} and
+
+  #  br label %for.body4.epil, !dbg !11
+  {anonymous[9]} is branch instruction and
+  {indvars_iv_epil} is first successor of {anonymous[9]} and
+
+  #  %indvars.iv.epil = phi i64 [ %indvars.iv.next.epil, %for.body4.epil ], [ %indvars.iv.unr, %for.body4.epil.preheader ]
+  {indvars_iv_epil} is phi instruction and
+  {indvars_iv_next_epil} is first argument of {indvars_iv_epil} and
+  {indvars_iv_unr} is second argument of {indvars_iv_epil} and
+  {sum_023_epil} is first successor of {indvars_iv_epil} and
+
+  #  %sum.023.epil = phi i32 [ %add5.epil, %for.body4.epil ], [ %sum.023.unr, %for.body4.epil.preheader ]
+  {sum_023_epil} is phi instruction and
+  {add5_epil} is first argument of {sum_023_epil} and
+  {sum_023_unr} is second argument of {sum_023_epil} and
+  {epil_iter} is first successor of {sum_023_epil} and
+
+  #  %epil.iter = phi i64 [ %epil.iter.sub, %for.body4.epil ], [ %xtraiter, %for.body4.epil.preheader ]
+  {epil_iter} is phi instruction and
+  {epil_iter_sub} is first argument of {epil_iter} and
+  {xtraiter} is second argument of {epil_iter} and
+  {_6} is first successor of {epil_iter} and
+
+  #  %6 = add nsw i64 %indvars.iv.epil, %indvars.iv29, !dbg !11
+  {_6} is add instruction and
+  {indvars_iv_epil} is first argument of {_6} and
+  {indvars_iv29} is second argument of {_6} and
+  {_7} is first successor of {_6} and
+
+  #  %7 = mul i64 %6, 4, !dbg !15
+  {_7} is mul instruction and
+  {_6} is first argument of {_7} and
+  {_4} is second argument of {_7} and
+  {_8} is first successor of {_7} and
+
+  #  %8 = getelementptr i8, i8* %5, i64 %7, !dbg !15
+  {_8} is gep instruction and
+  {in} is first argument of {_8} and
+  {_7} is second argument of {_8} and
+  {_9} is first successor of {_8} and
+
+  #  %9 = bitcast i8* %8 to i32*, !dbg !15
+  {_9} is BitCast instruction and
+  {_10} is first successor of {_9} and
+
+  #  %10 = load i32, i32* %9, align 4, !dbg !15, !tbaa !16
+  {_10} is load instruction and
+  {_8} is first argument of {_10} and
+  {add5_epil} is first successor of {_10} and
+
+  #  %add5.epil = add nsw i32 %10, %sum.023.epil, !dbg !13
+  {add5_epil} is add instruction and
+  {_10} is first argument of {add5_epil} and
+  {sum_023_epil} is second argument of {add5_epil} and
+  {indvars_iv_next_epil} is first successor of {add5_epil} and
+
+  #  %indvars.iv.next.epil = add nuw nsw i64 %indvars.iv.epil, 1, !dbg !14
+  {indvars_iv_next_epil} is add instruction and
+  {indvars_iv_epil} is first argument of {indvars_iv_next_epil} and
+  {_1_} is second argument of {indvars_iv_next_epil} and
+  {epil_iter_sub} is first successor of {indvars_iv_next_epil} and
+
+  #  %epil.iter.sub = add nsw i64 %epil.iter, -1, !dbg !10
+  {epil_iter_sub} is add instruction and
+  {epil_iter} is first argument of {epil_iter_sub} and
+  {_1} is second argument of {epil_iter_sub} and
+  {epil_iter_cmp} is first successor of {epil_iter_sub} and
+
+  #  %epil.iter.cmp = icmp eq i64 %epil.iter.sub, 0, !dbg !10
+  {epil_iter_cmp} is icmp instruction and
+  {epil_iter_sub} is first argument of {epil_iter_cmp} and
+  {_0_} is second argument of {epil_iter_cmp} and
+  {anonymous[10]} is first successor of {epil_iter_cmp} and
+
+  #  br i1 %epil.iter.cmp, label %for.cond.cleanup3.loopexit, label %for.body4.epil, !dbg !10, !llvm.loop !20
+  {anonymous[10]} is branch instruction and
+  {epil_iter_cmp} is first argument of {anonymous[10]} and
+  {indvars_iv_epil} is first successor of {anonymous[10]} and
+  {add5_epil_lcssa} is second successor of {anonymous[10]} and
+
+  #  %add5.epil.lcssa = phi i32 [ %add5.epil, %for.body4.epil ], !dbg !13
+  {add5_epil_lcssa} is phi instruction and
+  {add5_epil} is first argument of {add5_epil_lcssa} and
+  {anonymous[11]} is first successor of {add5_epil_lcssa} and
+
+  #  br label %for.cond.cleanup3, !dbg !22
+  {anonymous[11]} is branch instruction and
+  {sum_0_lcssa} is first successor of {anonymous[11]} and
+
+  #  %sum.0.lcssa = phi i32 [ 0, %for.cond1.preheader ], [ %add5.lcssa.ph, %for.cond.cleanup3.loopexit.unr-lcssa ], [ %add5.epil.lcssa, %for.cond.cleanup3.loopexit ], !dbg !23
+  {sum_0_lcssa} is phi instruction and
+  {_0} is first argument of {sum_0_lcssa} and
+  {add5_lcssa_ph} is second argument of {sum_0_lcssa} and
+  {add5_epil_lcssa} is third argument of {sum_0_lcssa} and
+  {div} is first successor of {sum_0_lcssa} and
+
+  #  %div = sdiv i32 %sum.0.lcssa, %ratio, !dbg !22
+  {div} is sdiv instruction and
+  {sum_0_lcssa} is first argument of {div} and
+  {ratio} is second argument of {div} and
+  {_11} is first successor of {div} and
+
+  #  %11 = mul i64 %indvars.iv29, 4, !dbg !24
+  {_11} is mul instruction and
+  {indvars_iv29} is first argument of {_11} and
+  {_4} is second argument of {_11} and
+  {_12} is first successor of {_11} and
+
+  #  %12 = getelementptr i8, i8* %4, i64 %11, !dbg !24
+  {_12} is gep instruction and
+  {out} is first argument of {_12} and
+  {_11} is second argument of {_12} and
+  {_13} is first successor of {_12} and
+
+  #  %13 = bitcast i8* %12 to i32*, !dbg !24
+  {_13} is BitCast instruction and
+  {anonymous[12]} is first successor of {_13} and
+
+  #  store i32 %div, i32* %13, align 4, !dbg !25, !tbaa !16
+  {anonymous[12]} is store instruction and
+  {div} is first argument of {anonymous[12]} and
+  {_12} is second argument of {anonymous[12]} and
+  {indvars_iv_next30} is first successor of {anonymous[12]} and
+
+  #  %indvars.iv.next30 = add nsw i64 %indvars.iv29, %0, !dbg !26
+  {indvars_iv_next30} is add instruction and
+  {indvars_iv29} is first argument of {indvars_iv_next30} and
+  {ratio} is second argument of {indvars_iv_next30} and
+  {cmp} is first successor of {indvars_iv_next30} and
+
+  #  %cmp = icmp slt i64 %indvars.iv.next30, %1, !dbg !8
+  {cmp} is icmp instruction and
+  {indvars_iv_next30} is first argument of {cmp} and
+  {in_dim} is second argument of {cmp} and
+  {anonymous[13]} is first successor of {cmp} and
+
+  #  br i1 %cmp, label %for.cond1.preheader, label %for.cond.cleanup.loopexit, !dbg !9, !llvm.loop !27
+  {anonymous[13]} is branch instruction and
+  {cmp} is first argument of {anonymous[13]} and
+  {anonymous[5]} is first successor of {anonymous[13]} and
+  {indvars_iv29} is second successor of {anonymous[13]} and
+
+  #  %indvars.iv = phi i64 [ %indvars.iv.next.3, %for.body4 ], [ 0, %for.body4.preheader32 ]
+  {indvars_iv} is phi instruction and
+  {indvars_iv_next_3} is first argument of {indvars_iv} and
+  {_0_} is second argument of {indvars_iv} and
+  {sum_023} is first successor of {indvars_iv} and
+
+  #  %sum.023 = phi i32 [ %add5.3, %for.body4 ], [ 0, %for.body4.preheader32 ]
+  {sum_023} is phi instruction and
+  {add5_3} is first argument of {sum_023} and
+  {_0} is second argument of {sum_023} and
+  {niter} is first successor of {sum_023} and
+
+  #  %niter = phi i64 [ %niter.nsub.3, %for.body4 ], [ %unroll_iter, %for.body4.preheader32 ]
+  {niter} is phi instruction and
+  {niter_nsub_3} is first argument of {niter} and
+  {unroll_iter} is second argument of {niter} and
+  {_14} is first successor of {niter} and
+
+  #  %14 = add nsw i64 %indvars.iv, %indvars.iv29, !dbg !11
+  {_14} is add instruction and
+  {indvars_iv} is first argument of {_14} and
+  {indvars_iv29} is second argument of {_14} and
+  {_15} is first successor of {_14} and
+
+  #  %15 = mul i64 %14, 4, !dbg !15
+  {_15} is mul instruction and
+  {_14} is first argument of {_15} and
+  {_4} is second argument of {_15} and
+  {_16} is first successor of {_15} and
+
+  #  %16 = getelementptr i8, i8* %5, i64 %15, !dbg !15
+  {_16} is gep instruction and
+  {in} is first argument of {_16} and
+  {_15} is second argument of {_16} and
+  {_17} is first successor of {_16} and
+
+  #  %17 = bitcast i8* %16 to i32*, !dbg !15
+  {_17} is BitCast instruction and
+  {_18} is first successor of {_17} and
+
+  #  %18 = load i32, i32* %17, align 4, !dbg !15, !tbaa !16
+  {_18} is load instruction and
+  {_16} is first argument of {_18} and
+  {add5} is first successor of {_18} and
+
+  #  %add5 = add nsw i32 %18, %sum.023, !dbg !13
+  {add5} is add instruction and
+  {_18} is first argument of {add5} and
+  {sum_023} is second argument of {add5} and
+  {indvars_iv_next} is first successor of {add5} and
+
+  #  %indvars.iv.next = or i64 %indvars.iv, 1, !dbg !14
+  {indvars_iv_next} is or instruction and
+  {indvars_iv} is first argument of {indvars_iv_next} and
+  {_1_} is second argument of {indvars_iv_next} and
+  {_19} is first successor of {indvars_iv_next} and
+
+  #  %19 = add nsw i64 %indvars.iv.next, %indvars.iv29, !dbg !11
+  {_19} is add instruction and
+  {indvars_iv_next} is first argument of {_19} and
+  {indvars_iv29} is second argument of {_19} and
+  {_20} is first successor of {_19} and
+
+  #  %20 = mul i64 %19, 4, !dbg !15
+  {_20} is mul instruction and
+  {_19} is first argument of {_20} and
+  {_4} is second argument of {_20} and
+  {_21} is first successor of {_20} and
+
+  #  %21 = getelementptr i8, i8* %5, i64 %20, !dbg !15
+  {_21} is gep instruction and
+  {in} is first argument of {_21} and
+  {_20} is second argument of {_21} and
+  {_22} is first successor of {_21} and
+
+  #  %22 = bitcast i8* %21 to i32*, !dbg !15
+  {_22} is BitCast instruction and
+  {_23} is first successor of {_22} and
+
+  #  %23 = load i32, i32* %22, align 4, !dbg !15, !tbaa !16
+  {_23} is load instruction and
+  {_21} is first argument of {_23} and
+  {add5_1} is first successor of {_23} and
+
+  #  %add5.1 = add nsw i32 %23, %add5, !dbg !13
+  {add5_1} is add instruction and
+  {_23} is first argument of {add5_1} and
+  {add5} is second argument of {add5_1} and
+  {indvars_iv_next_1} is first successor of {add5_1} and
+
+  #  %indvars.iv.next.1 = or i64 %indvars.iv, 2, !dbg !14
+  {indvars_iv_next_1} is or instruction and
+  {indvars_iv} is first argument of {indvars_iv_next_1} and
+  {_2} is second argument of {indvars_iv_next_1} and
+  {_24} is first successor of {indvars_iv_next_1} and
+
+  #  %24 = add nsw i64 %indvars.iv.next.1, %indvars.iv29, !dbg !11
+  {_24} is add instruction and
+  {indvars_iv_next_1} is first argument of {_24} and
+  {indvars_iv29} is second argument of {_24} and
+  {_25} is first successor of {_24} and
+
+  #  %25 = mul i64 %24, 4, !dbg !15
+  {_25} is mul instruction and
+  {_24} is first argument of {_25} and
+  {_4} is second argument of {_25} and
+  {_26} is first successor of {_25} and
+
+  #  %26 = getelementptr i8, i8* %5, i64 %25, !dbg !15
+  {_26} is gep instruction and
+  {in} is first argument of {_26} and
+  {_25} is second argument of {_26} and
+  {_27} is first successor of {_26} and
+
+  #  %27 = bitcast i8* %26 to i32*, !dbg !15
+  {_27} is BitCast instruction and
+  {_28} is first successor of {_27} and
+
+  #  %28 = load i32, i32* %27, align 4, !dbg !15, !tbaa !16
+  {_28} is load instruction and
+  {_26} is first argument of {_28} and
+  {add5_2} is first successor of {_28} and
+
+  #  %add5.2 = add nsw i32 %28, %add5.1, !dbg !13
+  {add5_2} is add instruction and
+  {_28} is first argument of {add5_2} and
+  {add5_1} is second argument of {add5_2} and
+  {indvars_iv_next_2} is first successor of {add5_2} and
+
+  #  %indvars.iv.next.2 = or i64 %indvars.iv, 3, !dbg !14
+  {indvars_iv_next_2} is or instruction and
+  {indvars_iv} is first argument of {indvars_iv_next_2} and
+  {_3} is second argument of {indvars_iv_next_2} and
+  {_29} is first successor of {indvars_iv_next_2} and
+
+  #  %29 = add nsw i64 %indvars.iv.next.2, %indvars.iv29, !dbg !11
+  {_29} is add instruction and
+  {indvars_iv_next_2} is first argument of {_29} and
+  {indvars_iv29} is second argument of {_29} and
+  {_30} is first successor of {_29} and
+
+  #  %30 = mul i64 %29, 4, !dbg !15
+  {_30} is mul instruction and
+  {_29} is first argument of {_30} and
+  {_4} is second argument of {_30} and
+  {_31} is first successor of {_30} and
+
+  #  %31 = getelementptr i8, i8* %5, i64 %30, !dbg !15
+  {_31} is gep instruction and
+  {in} is first argument of {_31} and
+  {_30} is second argument of {_31} and
+  {_32} is first successor of {_31} and
+
+  #  %32 = bitcast i8* %31 to i32*, !dbg !15
+  {_32} is BitCast instruction and
+  {_33} is first successor of {_32} and
+
+  #  %33 = load i32, i32* %32, align 4, !dbg !15, !tbaa !16
+  {_33} is load instruction and
+  {_31} is first argument of {_33} and
+  {add5_3} is first successor of {_33} and
+
+  #  %add5.3 = add nsw i32 %33, %add5.2, !dbg !13
+  {add5_3} is add instruction and
+  {_33} is first argument of {add5_3} and
+  {add5_2} is second argument of {add5_3} and
+  {indvars_iv_next_3} is first successor of {add5_3} and
+
+  #  %indvars.iv.next.3 = add nuw nsw i64 %indvars.iv, 4, !dbg !14
+  {indvars_iv_next_3} is add instruction and
+  {indvars_iv} is first argument of {indvars_iv_next_3} and
+  {_4} is second argument of {indvars_iv_next_3} and
+  {niter_nsub_3} is first successor of {indvars_iv_next_3} and
+
+  #  %niter.nsub.3 = add i64 %niter, -4, !dbg !10
+  {niter_nsub_3} is add instruction and
+  {niter} is first argument of {niter_nsub_3} and
+  {_4_} is second argument of {niter_nsub_3} and
+  {niter_ncmp_3} is first successor of {niter_nsub_3} and
+
+  #  %niter.ncmp.3 = icmp eq i64 %niter.nsub.3, 0, !dbg !10
+  {niter_ncmp_3} is icmp instruction and
+  {niter_nsub_3} is first argument of {niter_ncmp_3} and
+  {_0_} is second argument of {niter_ncmp_3} and
+  {anonymous[14]} is first successor of {niter_ncmp_3} and
+
+  #  br i1 %niter.ncmp.3, label %for.cond.cleanup3.loopexit.unr-lcssa.loopexit, label %for.body4, !dbg !10, !llvm.loop !29
+  {anonymous[14]} is branch instruction and
+  {niter_ncmp_3} is first argument of {anonymous[14]} and
+  {indvars_iv} is first successor of {anonymous[14]} and
+  {add5_3_lcssa} is second successor of {anonymous[14]} and
+ #i32 %in_dim
+  {in_dim} is an argument and
+
+  #i32 0
+  {_0} is a constant and
+
+  #i32 %ratio
+  {ratio} is an argument and
+
+  #i64 -1
+  {_1} is a constant and
+
+  #i64 3
+  {_3} is a constant and
+
+  #i64 0
+  {_0_} is a constant and
+
+  #i32* %out
+  {out} is an argument and
+
+  #i32* %in
+  {in} is an argument and
+
+  #i32 undef
+  {undef} is a constant and
+
+  #i64 4
+  {_4} is a constant and
+
+  #i64 1
+  {_1_} is a constant and
+
+  #i64 2
+  {_2} is a constant and
+
+  #i64 -4
+  {_4_} is a constant and
+  {dummy} is unused)
+End
+
+Export Constraint downsample_2
+(
+  #  %cmp14 = icmp sgt i32 %in_dim, 0, !dbg !8
+  {cmp14} is icmp instruction and
+  {in_dim} is first argument of {cmp14} and
+  {_0} is second argument of {cmp14} and
+  {anonymous[0]} is first successor of {cmp14} and
+
+  #  br i1 %cmp14, label %for.body.preheader, label %for.cond.cleanup, !dbg !9
+  {anonymous[0]} is branch instruction and
+  {cmp14} is first argument of {anonymous[0]} and
+  {anonymous[7]} is first successor of {anonymous[0]} and
+  {_0_} is second successor of {anonymous[0]} and
+
+  #  %0 = bitcast i32* %out to i8*
+  {_0_} is BitCast instruction and
+  {_1_} is first successor of {_0_} and
+
+  #  %1 = getelementptr i8, i8* %0, i64 4
+  {_1_} is gep instruction and
+  {out} is first argument of {_1_} and
+  {_4} is second argument of {_1_} and
+  {_2__} is first successor of {_1_} and
+
+  #  %2 = bitcast i8* %1 to i32*
+  {_2__} is BitCast instruction and
+  {xtraiter} is first successor of {_2__} and
+
+  #  %xtraiter = and i32 %in_dim, 1, !dbg !10
+  {xtraiter} is and instruction and
+  {in_dim} is first argument of {xtraiter} and
+  {_1} is second argument of {xtraiter} and
+  {_3} is first successor of {xtraiter} and
+
+  #  %3 = icmp eq i32 %in_dim, 1, !dbg !10
+  {_3} is icmp instruction and
+  {in_dim} is first argument of {_3} and
+  {_1} is second argument of {_3} and
+  {anonymous[1]} is first successor of {_3} and
+
+  #  br i1 %3, label %for.cond.cleanup.loopexit.unr-lcssa, label %for.body.preheader.new, !dbg !10
+  {anonymous[1]} is branch instruction and
+  {_3} is first argument of {anonymous[1]} and
+  {unroll_iter} is first successor of {anonymous[1]} and
+  {i_017_unr} is second successor of {anonymous[1]} and
+
+  #  %unroll_iter = sub i32 %in_dim, %xtraiter, !dbg !10
+  {unroll_iter} is sub instruction and
+  {in_dim} is first argument of {unroll_iter} and
+  {xtraiter} is second argument of {unroll_iter} and
+  {anonymous[2]} is first successor of {unroll_iter} and
+
+  #  br label %for.body, !dbg !10
+  {anonymous[2]} is branch instruction and
+  {i_017} is first successor of {anonymous[2]} and
+
+  #  %add.1.lcssa = phi i32 [ %add.1, %8 ], !dbg !11
+  {add_1_lcssa} is phi instruction and
+  {add_1} is first argument of {add_1_lcssa} and
+  {add3_1_lcssa} is first successor of {add_1_lcssa} and
+
+  #  %add3.1.lcssa = phi i32 [ %add3.1, %8 ], !dbg !12
+  {add3_1_lcssa} is phi instruction and
+  {add3_1} is first argument of {add3_1_lcssa} and
+  {anonymous[3]} is first successor of {add3_1_lcssa} and
+
+  #  br label %for.cond.cleanup.loopexit.unr-lcssa, !dbg !13
+  {anonymous[3]} is branch instruction and
+  {i_017_unr} is first successor of {anonymous[3]} and
+
+  #  %i.017.unr = phi i32 [ 0, %for.body.preheader ], [ %add3.1.lcssa, %for.cond.cleanup.loopexit.unr-lcssa.loopexit ]
+  {i_017_unr} is phi instruction and
+  {_0} is first argument of {i_017_unr} and
+  {add3_1_lcssa} is second argument of {i_017_unr} and
+  {sum_016_unr} is first successor of {i_017_unr} and
+
+  #  %sum.016.unr = phi i32 [ 0, %for.body.preheader ], [ %add.1.lcssa, %for.cond.cleanup.loopexit.unr-lcssa.loopexit ]
+  {sum_016_unr} is phi instruction and
+  {_0} is first argument of {sum_016_unr} and
+  {add_1_lcssa} is second argument of {sum_016_unr} and
+  {lcmp_mod} is first successor of {sum_016_unr} and
+
+  #  %lcmp.mod = icmp ne i32 %xtraiter, 0, !dbg !13
+  {lcmp_mod} is icmp instruction and
+  {xtraiter} is first argument of {lcmp_mod} and
+  {_0} is second argument of {lcmp_mod} and
+  {cmp1_epil} is first successor of {lcmp_mod} and
+
+  #  %cmp1.epil = icmp eq i32 %i.017.unr, %ratio, !dbg !10
+  {cmp1_epil} is icmp instruction and
+  {i_017_unr} is first argument of {cmp1_epil} and
+  {ratio} is second argument of {cmp1_epil} and
+  {or_cond} is first successor of {cmp1_epil} and
+
+  #  %or.cond = and i1 %lcmp.mod, %cmp1.epil, !dbg !13
+  {or_cond} is and instruction and
+  {lcmp_mod} is first argument of {or_cond} and
+  {cmp1_epil} is second argument of {or_cond} and
+  {anonymous[4]} is first successor of {or_cond} and
+
+  #  br i1 %or.cond, label %if.then.epil, label %for.cond.cleanup, !dbg !13
+  {anonymous[4]} is branch instruction and
+  {or_cond} is first argument of {anonymous[4]} and
+  {anonymous[7]} is first successor of {anonymous[4]} and
+  {div_epil} is second successor of {anonymous[4]} and
+
+  #  %div.epil = sdiv i32 %sum.016.unr, %ratio, !dbg !14
+  {div_epil} is sdiv instruction and
+  {sum_016_unr} is first argument of {div_epil} and
+  {ratio} is second argument of {div_epil} and
+  {anonymous[5]} is first successor of {div_epil} and
+
+  #  store i32 %div.epil, i32* %2, align 4, !dbg !15, !tbaa !16
+  {anonymous[5]} is store instruction and
+  {div_epil} is first argument of {anonymous[5]} and
+  {_1_} is second argument of {anonymous[5]} and
+  {anonymous[6]} is first successor of {anonymous[5]} and
+
+  #  br label %for.cond.cleanup, !dbg !20
+  {anonymous[6]} is branch instruction and
+  {anonymous[7]} is first successor of {anonymous[6]} and
+
+  #  ret void, !dbg !21
+  {anonymous[7]} is ret instruction and
+
+  #  %i.017 = phi i32 [ 0, %for.body.preheader.new ], [ %add3.1, %8 ]
+  {i_017} is phi instruction and
+  {_0} is first argument of {i_017} and
+  {add3_1} is second argument of {i_017} and
+  {sum_016} is first successor of {i_017} and
+
+  #  %sum.016 = phi i32 [ 0, %for.body.preheader.new ], [ %add.1, %8 ]
+  {sum_016} is phi instruction and
+  {_0} is first argument of {sum_016} and
+  {add_1} is second argument of {sum_016} and
+  {niter} is first successor of {sum_016} and
+
+  #  %niter = phi i32 [ %unroll_iter, %for.body.preheader.new ], [ %niter.nsub.1, %8 ]
+  {niter} is phi instruction and
+  {unroll_iter} is first argument of {niter} and
+  {niter_nsub_1} is second argument of {niter} and
+  {cmp1} is first successor of {niter} and
+
+  #  %cmp1 = icmp eq i32 %i.017, %ratio, !dbg !10
+  {cmp1} is icmp instruction and
+  {i_017} is first argument of {cmp1} and
+  {ratio} is second argument of {cmp1} and
+  {anonymous[8]} is first successor of {cmp1} and
+
+  #  br i1 %cmp1, label %if.then, label %if.end, !dbg !13
+  {anonymous[8]} is branch instruction and
+  {cmp1} is first argument of {anonymous[8]} and
+  {simplifycfg_merge} is first successor of {anonymous[8]} and
+  {div} is second successor of {anonymous[8]} and
+
+  #  %div = sdiv i32 %sum.016, %ratio, !dbg !14
+  {div} is sdiv instruction and
+  {sum_016} is first argument of {div} and
+  {ratio} is second argument of {div} and
+  {anonymous[9]} is first successor of {div} and
+
+  #  br label %if.end, !dbg !20
+  {anonymous[9]} is branch instruction and
+  {simplifycfg_merge} is first successor of {anonymous[9]} and
+
+  #  %simplifycfg.merge = phi i32 [ %div, %if.then ], [ undef, %for.body ]
+  {simplifycfg_merge} is phi instruction and
+  {div} is first argument of {simplifycfg_merge} and
+  {undef} is second argument of {simplifycfg_merge} and
+  {sum_1} is first successor of {simplifycfg_merge} and
+
+  #  %sum.1 = phi i32 [ 0, %if.then ], [ %sum.016, %for.body ], !dbg !22
+  {sum_1} is phi instruction and
+  {_0} is first argument of {sum_1} and
+  {sum_016} is second argument of {sum_1} and
+  {add} is first successor of {sum_1} and
+
+  #  %add = add nsw i32 %sum.1, %ratio, !dbg !11
+  {add} is add instruction and
+  {sum_1} is first argument of {add} and
+  {ratio} is second argument of {add} and
+  {add3} is first successor of {add} and
+
+  #  %add3 = or i32 %i.017, 1, !dbg !12
+  {add3} is or instruction and
+  {i_017} is first argument of {add3} and
+  {_1} is second argument of {add3} and
+  {cmp1_1} is first successor of {add3} and
+
+  #  %cmp1.1 = icmp eq i32 %add3, %ratio, !dbg !10
+  {cmp1_1} is icmp instruction and
+  {add3} is first argument of {cmp1_1} and
+  {ratio} is second argument of {cmp1_1} and
+  {anonymous[10]} is first successor of {cmp1_1} and
+
+  #  br i1 %cmp1.1, label %if.then.1, label %if.end.1, !dbg !13
+  {anonymous[10]} is branch instruction and
+  {cmp1_1} is first argument of {anonymous[10]} and
+  {simplifycfg_merge18} is first successor of {anonymous[10]} and
+  {div_1} is second successor of {anonymous[10]} and
+
+  #  %div.1 = sdiv i32 %add, %ratio, !dbg !14
+  {div_1} is sdiv instruction and
+  {add} is first argument of {div_1} and
+  {ratio} is second argument of {div_1} and
+  {anonymous[11]} is first successor of {div_1} and
+
+  #  br label %if.end.1, !dbg !20
+  {anonymous[11]} is branch instruction and
+  {simplifycfg_merge18} is first successor of {anonymous[11]} and
+
+  #  %simplifycfg.merge18 = phi i32 [ %div.1, %if.then.1 ], [ %simplifycfg.merge, %if.end ]
+  {simplifycfg_merge18} is phi instruction and
+  {div_1} is first argument of {simplifycfg_merge18} and
+  {simplifycfg_merge} is second argument of {simplifycfg_merge18} and
+  {sum_1_1} is first successor of {simplifycfg_merge18} and
+
+  #  %sum.1.1 = phi i32 [ 0, %if.then.1 ], [ %add, %if.end ], !dbg !22
+  {sum_1_1} is phi instruction and
+  {_0} is first argument of {sum_1_1} and
+  {add} is second argument of {sum_1_1} and
+  {_4_} is first successor of {sum_1_1} and
+
+  #  %4 = xor i1 %cmp1, true, !dbg !11
+  {_4_} is xor instruction and
+  {cmp1} is first argument of {_4_} and
+  {true} is second argument of {_4_} and
+  {_5} is first successor of {_4_} and
+
+  #  %5 = xor i1 %cmp1.1, true, !dbg !11
+  {_5} is xor instruction and
+  {cmp1_1} is first argument of {_5} and
+  {true} is second argument of {_5} and
+  {_6} is first successor of {_5} and
+
+  #  %6 = or i1 %cmp1, %cmp1.1, !dbg !11
+  {_6} is or instruction and
+  {cmp1} is first argument of {_6} and
+  {cmp1_1} is second argument of {_6} and
+  {anonymous[12]} is first successor of {_6} and
+
+  #  br i1 %6, label %7, label %8, !dbg !11
+  {anonymous[12]} is branch instruction and
+  {_6} is first argument of {anonymous[12]} and
+  {add_1} is first successor of {anonymous[12]} and
+  {anonymous[13]} is second successor of {anonymous[12]} and
+
+  #  store i32 %simplifycfg.merge18, i32* %2, align 4, !dbg !11, !tbaa !16
+  {anonymous[13]} is store instruction and
+  {simplifycfg_merge18} is first argument of {anonymous[13]} and
+  {_1_} is second argument of {anonymous[13]} and
+  {anonymous[14]} is first successor of {anonymous[13]} and
+
+  #  br label %8, !dbg !11
+  {anonymous[14]} is branch instruction and
+  {add_1} is first successor of {anonymous[14]} and
+
+  #  %add.1 = add nsw i32 %sum.1.1, %ratio, !dbg !11
+  {add_1} is add instruction and
+  {sum_1_1} is first argument of {add_1} and
+  {ratio} is second argument of {add_1} and
+  {add3_1} is first successor of {add_1} and
+
+  #  %add3.1 = add nuw nsw i32 %i.017, 2, !dbg !12
+  {add3_1} is add instruction and
+  {i_017} is first argument of {add3_1} and
+  {_2} is second argument of {add3_1} and
+  {niter_nsub_1} is first successor of {add3_1} and
+
+  #  %niter.nsub.1 = add i32 %niter, -2, !dbg !9
+  {niter_nsub_1} is add instruction and
+  {niter} is first argument of {niter_nsub_1} and
+  {_2_} is second argument of {niter_nsub_1} and
+  {niter_ncmp_1} is first successor of {niter_nsub_1} and
+
+  #  %niter.ncmp.1 = icmp eq i32 %niter.nsub.1, 0, !dbg !9
+  {niter_ncmp_1} is icmp instruction and
+  {niter_nsub_1} is first argument of {niter_ncmp_1} and
+  {_0} is second argument of {niter_ncmp_1} and
+  {anonymous[15]} is first successor of {niter_ncmp_1} and
+
+  #  br i1 %niter.ncmp.1, label %for.cond.cleanup.loopexit.unr-lcssa.loopexit, label %for.body, !dbg !9, !llvm.loop !23
+  {anonymous[15]} is branch instruction and
+  {niter_ncmp_1} is first argument of {anonymous[15]} and
+  {i_017} is first successor of {anonymous[15]} and
+  {add_1_lcssa} is second successor of {anonymous[15]} and
+ #i32 %in_dim
+  {in_dim} is an argument and
+
+  #i32 0
+  {_0} is a constant and
+
+  #i32* %out
+  {out} is an argument and
+
+  #i64 4
+  {_4} is a constant and
+
+  #i32 1
+  {_1} is a constant and
+
+  #i32 %ratio
+  {ratio} is an argument and
+
+  #i32 undef
+  {undef} is a constant and
+
+  #i1 true
+  {true} is a constant and
+
+  #i32 2
+  {_2} is a constant and
+
+  #i32 -2
+  {_2_} is a constant and
+  {dummy} is unused)
+End
+
+Export Constraint downsample_float_1
+(
+  #  %cmp25 = icmp sgt i32 %in_dim, 0, !dbg !8
+  {cmp25} is icmp instruction and
+  {in_dim} is first argument of {cmp25} and
+  {_0} is second argument of {cmp25} and
+  {anonymous[0]} is first successor of {cmp25} and
+
+  #  br i1 %cmp25, label %for.cond1.preheader.lr.ph, label %for.cond.cleanup, !dbg !9
+  {anonymous[0]} is branch instruction and
+  {cmp25} is first argument of {anonymous[0]} and
+  {anonymous[6]} is first successor of {anonymous[0]} and
+  {cmp222} is second successor of {anonymous[0]} and
+
+  #  %cmp222 = icmp sgt i32 %ratio, 0
+  {cmp222} is icmp instruction and
+  {ratio} is first argument of {cmp222} and
+  {_0} is second argument of {cmp222} and
+  {conv} is first successor of {cmp222} and
+
+  #  %conv = sitofp i32 %ratio to float
+  {conv} is SIToFP instruction and
+  {ratio} is first argument of {conv} and
+  {_0__} is first successor of {conv} and
+
+  #  %0 = fdiv fast float 1.000000e+00, %conv
+  {_0__} is fdiv instruction and
+  {_1_000000e_00} is first argument of {_0__} and
+  {conv} is second argument of {_0__} and
+  {_1__} is first successor of {_0__} and
+
+  #  %1 = sext i32 %ratio to i64, !dbg !9
+  {_1__} is sext instruction and
+  {_2_} is first successor of {_1__} and
+
+  #  %2 = sext i32 %in_dim to i64, !dbg !9
+  {_2_} is sext instruction and
+  {wide_trip_count} is first successor of {_2_} and
+
+  #  %wide.trip.count = zext i32 %ratio to i64
+  {wide_trip_count} is zext instruction and
+  {_3_} is first successor of {wide_trip_count} and
+
+  #  %3 = add nsw i64 %wide.trip.count, -1, !dbg !9
+  {_3_} is add instruction and
+  {ratio} is first argument of {_3_} and
+  {_1} is second argument of {_3_} and
+  {xtraiter} is first successor of {_3_} and
+
+  #  %xtraiter = and i64 %wide.trip.count, 3
+  {xtraiter} is and instruction and
+  {ratio} is first argument of {xtraiter} and
+  {_3} is second argument of {xtraiter} and
+  {_4__} is first successor of {xtraiter} and
+
+  #  %4 = icmp ult i64 %3, 3
+  {_4__} is icmp instruction and
+  {_3_} is first argument of {_4__} and
+  {_3} is second argument of {_4__} and
+  {unroll_iter} is first successor of {_4__} and
+
+  #  %unroll_iter = sub nsw i64 %wide.trip.count, %xtraiter
+  {unroll_iter} is sub instruction and
+  {ratio} is first argument of {unroll_iter} and
+  {xtraiter} is second argument of {unroll_iter} and
+  {lcmp_mod} is first successor of {unroll_iter} and
+
+  #  %lcmp.mod = icmp eq i64 %xtraiter, 0
+  {lcmp_mod} is icmp instruction and
+  {xtraiter} is first argument of {lcmp_mod} and
+  {_0_} is second argument of {lcmp_mod} and
+  {_5} is first successor of {lcmp_mod} and
+
+  #  %5 = bitcast float* %out to i8*
+  {_5} is BitCast instruction and
+  {_6} is first successor of {_5} and
+
+  #  %6 = bitcast float* %in to i8*
+  {_6} is BitCast instruction and
+  {anonymous[1]} is first successor of {_6} and
+
+  #  br label %for.cond1.preheader, !dbg !9
+  {anonymous[1]} is branch instruction and
+  {indvars_iv29} is first successor of {anonymous[1]} and
+
+  #  %indvars.iv29 = phi i64 [ 0, %for.cond1.preheader.lr.ph ], [ %indvars.iv.next30, %for.cond.cleanup3 ]
+  {indvars_iv29} is phi instruction and
+  {_0_} is first argument of {indvars_iv29} and
+  {indvars_iv_next30} is second argument of {indvars_iv29} and
+  {anonymous[2]} is first successor of {indvars_iv29} and
+
+  #  br i1 %cmp222, label %for.body4.preheader, label %for.cond.cleanup3, !dbg !10
+  {anonymous[2]} is branch instruction and
+  {cmp222} is first argument of {anonymous[2]} and
+  {sum_0_lcssa} is first successor of {anonymous[2]} and
+  {anonymous[3]} is second successor of {anonymous[2]} and
+
+  #  br i1 %4, label %for.cond.cleanup3.loopexit.unr-lcssa, label %for.body4.preheader32, !dbg !11
+  {anonymous[3]} is branch instruction and
+  {_4__} is first argument of {anonymous[3]} and
+  {anonymous[4]} is first successor of {anonymous[3]} and
+  {add5_lcssa_ph} is second successor of {anonymous[3]} and
+
+  #  br label %for.body4, !dbg !11
+  {anonymous[4]} is branch instruction and
+  {indvars_iv} is first successor of {anonymous[4]} and
+
+  #  br label %for.cond.cleanup, !dbg !12
+  {anonymous[5]} is branch instruction and
+  {anonymous[6]} is first successor of {anonymous[5]} and
+
+  #  ret void, !dbg !12
+  {anonymous[6]} is ret instruction and
+
+  #  %add5.3.lcssa = phi float [ %add5.3, %for.body4 ], !dbg !13
+  {add5_3_lcssa} is phi instruction and
+  {add5_3} is first argument of {add5_3_lcssa} and
+  {indvars_iv_next_3_lcssa} is first successor of {add5_3_lcssa} and
+
+  #  %indvars.iv.next.3.lcssa = phi i64 [ %indvars.iv.next.3, %for.body4 ], !dbg !14
+  {indvars_iv_next_3_lcssa} is phi instruction and
+  {indvars_iv_next_3} is first argument of {indvars_iv_next_3_lcssa} and
+  {anonymous[7]} is first successor of {indvars_iv_next_3_lcssa} and
+
+  #  br label %for.cond.cleanup3.loopexit.unr-lcssa, !dbg !10
+  {anonymous[7]} is branch instruction and
+  {add5_lcssa_ph} is first successor of {anonymous[7]} and
+
+  #  %add5.lcssa.ph = phi float [ undef, %for.body4.preheader ], [ %add5.3.lcssa, %for.cond.cleanup3.loopexit.unr-lcssa.loopexit ]
+  {add5_lcssa_ph} is phi instruction and
+  {undef} is first argument of {add5_lcssa_ph} and
+  {add5_3_lcssa} is second argument of {add5_lcssa_ph} and
+  {indvars_iv_unr} is first successor of {add5_lcssa_ph} and
+
+  #  %indvars.iv.unr = phi i64 [ 0, %for.body4.preheader ], [ %indvars.iv.next.3.lcssa, %for.cond.cleanup3.loopexit.unr-lcssa.loopexit ]
+  {indvars_iv_unr} is phi instruction and
+  {_0_} is first argument of {indvars_iv_unr} and
+  {indvars_iv_next_3_lcssa} is second argument of {indvars_iv_unr} and
+  {sum_023_unr} is first successor of {indvars_iv_unr} and
+
+  #  %sum.023.unr = phi float [ 0.000000e+00, %for.body4.preheader ], [ %add5.3.lcssa, %for.cond.cleanup3.loopexit.unr-lcssa.loopexit ]
+  {sum_023_unr} is phi instruction and
+  {_0_000000e_00} is first argument of {sum_023_unr} and
+  {add5_3_lcssa} is second argument of {sum_023_unr} and
+  {anonymous[8]} is first successor of {sum_023_unr} and
+
+  #  br i1 %lcmp.mod, label %for.cond.cleanup3, label %for.body4.epil.preheader, !dbg !10
+  {anonymous[8]} is branch instruction and
+  {lcmp_mod} is first argument of {anonymous[8]} and
+  {anonymous[9]} is first successor of {anonymous[8]} and
+  {sum_0_lcssa} is second successor of {anonymous[8]} and
+
+  #  br label %for.body4.epil, !dbg !11
+  {anonymous[9]} is branch instruction and
+  {indvars_iv_epil} is first successor of {anonymous[9]} and
+
+  #  %indvars.iv.epil = phi i64 [ %indvars.iv.next.epil, %for.body4.epil ], [ %indvars.iv.unr, %for.body4.epil.preheader ]
+  {indvars_iv_epil} is phi instruction and
+  {indvars_iv_next_epil} is first argument of {indvars_iv_epil} and
+  {indvars_iv_unr} is second argument of {indvars_iv_epil} and
+  {sum_023_epil} is first successor of {indvars_iv_epil} and
+
+  #  %sum.023.epil = phi float [ %add5.epil, %for.body4.epil ], [ %sum.023.unr, %for.body4.epil.preheader ]
+  {sum_023_epil} is phi instruction and
+  {add5_epil} is first argument of {sum_023_epil} and
+  {sum_023_unr} is second argument of {sum_023_epil} and
+  {epil_iter} is first successor of {sum_023_epil} and
+
+  #  %epil.iter = phi i64 [ %epil.iter.sub, %for.body4.epil ], [ %xtraiter, %for.body4.epil.preheader ]
+  {epil_iter} is phi instruction and
+  {epil_iter_sub} is first argument of {epil_iter} and
+  {xtraiter} is second argument of {epil_iter} and
+  {_7} is first successor of {epil_iter} and
+
+  #  %7 = add nsw i64 %indvars.iv.epil, %indvars.iv29, !dbg !11
+  {_7} is add instruction and
+  {indvars_iv_epil} is first argument of {_7} and
+  {indvars_iv29} is second argument of {_7} and
+  {_8} is first successor of {_7} and
+
+  #  %8 = mul i64 %7, 4, !dbg !15
+  {_8} is mul instruction and
+  {_7} is first argument of {_8} and
+  {_4} is second argument of {_8} and
+  {_9} is first successor of {_8} and
+
+  #  %9 = getelementptr i8, i8* %6, i64 %8, !dbg !15
+  {_9} is gep instruction and
+  {in} is first argument of {_9} and
+  {_8} is second argument of {_9} and
+  {_10} is first successor of {_9} and
+
+  #  %10 = bitcast i8* %9 to float*, !dbg !15
+  {_10} is BitCast instruction and
+  {_11} is first successor of {_10} and
+
+  #  %11 = load float, float* %10, align 4, !dbg !15, !tbaa !16
+  {_11} is load instruction and
+  {_9} is first argument of {_11} and
+  {add5_epil} is first successor of {_11} and
+
+  #  %add5.epil = fadd fast float %11, %sum.023.epil, !dbg !13
+  {add5_epil} is fadd instruction and
+  {_11} is first argument of {add5_epil} and
+  {sum_023_epil} is second argument of {add5_epil} and
+  {indvars_iv_next_epil} is first successor of {add5_epil} and
+
+  #  %indvars.iv.next.epil = add nuw nsw i64 %indvars.iv.epil, 1, !dbg !14
+  {indvars_iv_next_epil} is add instruction and
+  {indvars_iv_epil} is first argument of {indvars_iv_next_epil} and
+  {_1_} is second argument of {indvars_iv_next_epil} and
+  {epil_iter_sub} is first successor of {indvars_iv_next_epil} and
+
+  #  %epil.iter.sub = add nsw i64 %epil.iter, -1, !dbg !10
+  {epil_iter_sub} is add instruction and
+  {epil_iter} is first argument of {epil_iter_sub} and
+  {_1} is second argument of {epil_iter_sub} and
+  {epil_iter_cmp} is first successor of {epil_iter_sub} and
+
+  #  %epil.iter.cmp = icmp eq i64 %epil.iter.sub, 0, !dbg !10
+  {epil_iter_cmp} is icmp instruction and
+  {epil_iter_sub} is first argument of {epil_iter_cmp} and
+  {_0_} is second argument of {epil_iter_cmp} and
+  {anonymous[10]} is first successor of {epil_iter_cmp} and
+
+  #  br i1 %epil.iter.cmp, label %for.cond.cleanup3.loopexit, label %for.body4.epil, !dbg !10, !llvm.loop !20
+  {anonymous[10]} is branch instruction and
+  {epil_iter_cmp} is first argument of {anonymous[10]} and
+  {indvars_iv_epil} is first successor of {anonymous[10]} and
+  {add5_epil_lcssa} is second successor of {anonymous[10]} and
+
+  #  %add5.epil.lcssa = phi float [ %add5.epil, %for.body4.epil ], !dbg !13
+  {add5_epil_lcssa} is phi instruction and
+  {add5_epil} is first argument of {add5_epil_lcssa} and
+  {anonymous[11]} is first successor of {add5_epil_lcssa} and
+
+  #  br label %for.cond.cleanup3
+  {anonymous[11]} is branch instruction and
+  {sum_0_lcssa} is first successor of {anonymous[11]} and
+
+  #  %sum.0.lcssa = phi float [ 0.000000e+00, %for.cond1.preheader ], [ %add5.lcssa.ph, %for.cond.cleanup3.loopexit.unr-lcssa ], [ %add5.epil.lcssa, %for.cond.cleanup3.loopexit ], !dbg !22
+  {sum_0_lcssa} is phi instruction and
+  {_0_000000e_00} is first argument of {sum_0_lcssa} and
+  {add5_lcssa_ph} is second argument of {sum_0_lcssa} and
+  {add5_epil_lcssa} is third argument of {sum_0_lcssa} and
+  {_12} is first successor of {sum_0_lcssa} and
+
+  #  %12 = fmul fast float %sum.0.lcssa, %0
+  {_12} is fmul instruction and
+  {sum_0_lcssa} is first argument of {_12} and
+  {_0__} is second argument of {_12} and
+  {_13} is first successor of {_12} and
+
+  #  %13 = mul i64 %indvars.iv29, 4, !dbg !23
+  {_13} is mul instruction and
+  {indvars_iv29} is first argument of {_13} and
+  {_4} is second argument of {_13} and
+  {_14} is first successor of {_13} and
+
+  #  %14 = getelementptr i8, i8* %5, i64 %13, !dbg !23
+  {_14} is gep instruction and
+  {out} is first argument of {_14} and
+  {_13} is second argument of {_14} and
+  {_15} is first successor of {_14} and
+
+  #  %15 = bitcast i8* %14 to float*, !dbg !23
+  {_15} is BitCast instruction and
+  {anonymous[12]} is first successor of {_15} and
+
+  #  store float %12, float* %15, align 4, !dbg !24, !tbaa !16
+  {anonymous[12]} is store instruction and
+  {_12} is first argument of {anonymous[12]} and
+  {_14} is second argument of {anonymous[12]} and
+  {indvars_iv_next30} is first successor of {anonymous[12]} and
+
+  #  %indvars.iv.next30 = add nsw i64 %indvars.iv29, %1, !dbg !25
+  {indvars_iv_next30} is add instruction and
+  {indvars_iv29} is first argument of {indvars_iv_next30} and
+  {ratio} is second argument of {indvars_iv_next30} and
+  {cmp} is first successor of {indvars_iv_next30} and
+
+  #  %cmp = icmp slt i64 %indvars.iv.next30, %2, !dbg !8
+  {cmp} is icmp instruction and
+  {indvars_iv_next30} is first argument of {cmp} and
+  {in_dim} is second argument of {cmp} and
+  {anonymous[13]} is first successor of {cmp} and
+
+  #  br i1 %cmp, label %for.cond1.preheader, label %for.cond.cleanup.loopexit, !dbg !9, !llvm.loop !26
+  {anonymous[13]} is branch instruction and
+  {cmp} is first argument of {anonymous[13]} and
+  {anonymous[5]} is first successor of {anonymous[13]} and
+  {indvars_iv29} is second successor of {anonymous[13]} and
+
+  #  %indvars.iv = phi i64 [ %indvars.iv.next.3, %for.body4 ], [ 0, %for.body4.preheader32 ]
+  {indvars_iv} is phi instruction and
+  {indvars_iv_next_3} is first argument of {indvars_iv} and
+  {_0_} is second argument of {indvars_iv} and
+  {sum_023} is first successor of {indvars_iv} and
+
+  #  %sum.023 = phi float [ %add5.3, %for.body4 ], [ 0.000000e+00, %for.body4.preheader32 ]
+  {sum_023} is phi instruction and
+  {add5_3} is first argument of {sum_023} and
+  {_0_000000e_00} is second argument of {sum_023} and
+  {niter} is first successor of {sum_023} and
+
+  #  %niter = phi i64 [ %niter.nsub.3, %for.body4 ], [ %unroll_iter, %for.body4.preheader32 ]
+  {niter} is phi instruction and
+  {niter_nsub_3} is first argument of {niter} and
+  {unroll_iter} is second argument of {niter} and
+  {_16} is first successor of {niter} and
+
+  #  %16 = add nsw i64 %indvars.iv, %indvars.iv29, !dbg !11
+  {_16} is add instruction and
+  {indvars_iv} is first argument of {_16} and
+  {indvars_iv29} is second argument of {_16} and
+  {_17} is first successor of {_16} and
+
+  #  %17 = mul i64 %16, 4, !dbg !15
+  {_17} is mul instruction and
+  {_16} is first argument of {_17} and
+  {_4} is second argument of {_17} and
+  {_18} is first successor of {_17} and
+
+  #  %18 = getelementptr i8, i8* %6, i64 %17, !dbg !15
+  {_18} is gep instruction and
+  {in} is first argument of {_18} and
+  {_17} is second argument of {_18} and
+  {_19} is first successor of {_18} and
+
+  #  %19 = bitcast i8* %18 to float*, !dbg !15
+  {_19} is BitCast instruction and
+  {_20} is first successor of {_19} and
+
+  #  %20 = load float, float* %19, align 4, !dbg !15, !tbaa !16
+  {_20} is load instruction and
+  {_18} is first argument of {_20} and
+  {add5} is first successor of {_20} and
+
+  #  %add5 = fadd fast float %20, %sum.023, !dbg !13
+  {add5} is fadd instruction and
+  {_20} is first argument of {add5} and
+  {sum_023} is second argument of {add5} and
+  {indvars_iv_next} is first successor of {add5} and
+
+  #  %indvars.iv.next = or i64 %indvars.iv, 1, !dbg !14
+  {indvars_iv_next} is or instruction and
+  {indvars_iv} is first argument of {indvars_iv_next} and
+  {_1_} is second argument of {indvars_iv_next} and
+  {_21} is first successor of {indvars_iv_next} and
+
+  #  %21 = add nsw i64 %indvars.iv.next, %indvars.iv29, !dbg !11
+  {_21} is add instruction and
+  {indvars_iv_next} is first argument of {_21} and
+  {indvars_iv29} is second argument of {_21} and
+  {_22} is first successor of {_21} and
+
+  #  %22 = mul i64 %21, 4, !dbg !15
+  {_22} is mul instruction and
+  {_21} is first argument of {_22} and
+  {_4} is second argument of {_22} and
+  {_23} is first successor of {_22} and
+
+  #  %23 = getelementptr i8, i8* %6, i64 %22, !dbg !15
+  {_23} is gep instruction and
+  {in} is first argument of {_23} and
+  {_22} is second argument of {_23} and
+  {_24} is first successor of {_23} and
+
+  #  %24 = bitcast i8* %23 to float*, !dbg !15
+  {_24} is BitCast instruction and
+  {_25} is first successor of {_24} and
+
+  #  %25 = load float, float* %24, align 4, !dbg !15, !tbaa !16
+  {_25} is load instruction and
+  {_23} is first argument of {_25} and
+  {add5_1} is first successor of {_25} and
+
+  #  %add5.1 = fadd fast float %25, %add5, !dbg !13
+  {add5_1} is fadd instruction and
+  {_25} is first argument of {add5_1} and
+  {add5} is second argument of {add5_1} and
+  {indvars_iv_next_1} is first successor of {add5_1} and
+
+  #  %indvars.iv.next.1 = or i64 %indvars.iv, 2, !dbg !14
+  {indvars_iv_next_1} is or instruction and
+  {indvars_iv} is first argument of {indvars_iv_next_1} and
+  {_2} is second argument of {indvars_iv_next_1} and
+  {_26} is first successor of {indvars_iv_next_1} and
+
+  #  %26 = add nsw i64 %indvars.iv.next.1, %indvars.iv29, !dbg !11
+  {_26} is add instruction and
+  {indvars_iv_next_1} is first argument of {_26} and
+  {indvars_iv29} is second argument of {_26} and
+  {_27} is first successor of {_26} and
+
+  #  %27 = mul i64 %26, 4, !dbg !15
+  {_27} is mul instruction and
+  {_26} is first argument of {_27} and
+  {_4} is second argument of {_27} and
+  {_28} is first successor of {_27} and
+
+  #  %28 = getelementptr i8, i8* %6, i64 %27, !dbg !15
+  {_28} is gep instruction and
+  {in} is first argument of {_28} and
+  {_27} is second argument of {_28} and
+  {_29} is first successor of {_28} and
+
+  #  %29 = bitcast i8* %28 to float*, !dbg !15
+  {_29} is BitCast instruction and
+  {_30} is first successor of {_29} and
+
+  #  %30 = load float, float* %29, align 4, !dbg !15, !tbaa !16
+  {_30} is load instruction and
+  {_28} is first argument of {_30} and
+  {add5_2} is first successor of {_30} and
+
+  #  %add5.2 = fadd fast float %30, %add5.1, !dbg !13
+  {add5_2} is fadd instruction and
+  {_30} is first argument of {add5_2} and
+  {add5_1} is second argument of {add5_2} and
+  {indvars_iv_next_2} is first successor of {add5_2} and
+
+  #  %indvars.iv.next.2 = or i64 %indvars.iv, 3, !dbg !14
+  {indvars_iv_next_2} is or instruction and
+  {indvars_iv} is first argument of {indvars_iv_next_2} and
+  {_3} is second argument of {indvars_iv_next_2} and
+  {_31} is first successor of {indvars_iv_next_2} and
+
+  #  %31 = add nsw i64 %indvars.iv.next.2, %indvars.iv29, !dbg !11
+  {_31} is add instruction and
+  {indvars_iv_next_2} is first argument of {_31} and
+  {indvars_iv29} is second argument of {_31} and
+  {_32} is first successor of {_31} and
+
+  #  %32 = mul i64 %31, 4, !dbg !15
+  {_32} is mul instruction and
+  {_31} is first argument of {_32} and
+  {_4} is second argument of {_32} and
+  {_33} is first successor of {_32} and
+
+  #  %33 = getelementptr i8, i8* %6, i64 %32, !dbg !15
+  {_33} is gep instruction and
+  {in} is first argument of {_33} and
+  {_32} is second argument of {_33} and
+  {_34} is first successor of {_33} and
+
+  #  %34 = bitcast i8* %33 to float*, !dbg !15
+  {_34} is BitCast instruction and
+  {_35} is first successor of {_34} and
+
+  #  %35 = load float, float* %34, align 4, !dbg !15, !tbaa !16
+  {_35} is load instruction and
+  {_33} is first argument of {_35} and
+  {add5_3} is first successor of {_35} and
+
+  #  %add5.3 = fadd fast float %35, %add5.2, !dbg !13
+  {add5_3} is fadd instruction and
+  {_35} is first argument of {add5_3} and
+  {add5_2} is second argument of {add5_3} and
+  {indvars_iv_next_3} is first successor of {add5_3} and
+
+  #  %indvars.iv.next.3 = add nuw nsw i64 %indvars.iv, 4, !dbg !14
+  {indvars_iv_next_3} is add instruction and
+  {indvars_iv} is first argument of {indvars_iv_next_3} and
+  {_4} is second argument of {indvars_iv_next_3} and
+  {niter_nsub_3} is first successor of {indvars_iv_next_3} and
+
+  #  %niter.nsub.3 = add i64 %niter, -4, !dbg !10
+  {niter_nsub_3} is add instruction and
+  {niter} is first argument of {niter_nsub_3} and
+  {_4_} is second argument of {niter_nsub_3} and
+  {niter_ncmp_3} is first successor of {niter_nsub_3} and
+
+  #  %niter.ncmp.3 = icmp eq i64 %niter.nsub.3, 0, !dbg !10
+  {niter_ncmp_3} is icmp instruction and
+  {niter_nsub_3} is first argument of {niter_ncmp_3} and
+  {_0_} is second argument of {niter_ncmp_3} and
+  {anonymous[14]} is first successor of {niter_ncmp_3} and
+
+  #  br i1 %niter.ncmp.3, label %for.cond.cleanup3.loopexit.unr-lcssa.loopexit, label %for.body4, !dbg !10, !llvm.loop !28
+  {anonymous[14]} is branch instruction and
+  {niter_ncmp_3} is first argument of {anonymous[14]} and
+  {indvars_iv} is first successor of {anonymous[14]} and
+  {add5_3_lcssa} is second successor of {anonymous[14]} and
+ #i32 %in_dim
+  {in_dim} is an argument and
+
+  #i32 0
+  {_0} is a constant and
+
+  #i32 %ratio
+  {ratio} is an argument and
+
+  #float 1.000000e+00
+  {_1_000000e_00} is a constant and
+
+  #i64 -1
+  {_1} is a constant and
+
+  #i64 3
+  {_3} is a constant and
+
+  #i64 0
+  {_0_} is a constant and
+
+  #float* %out
+  {out} is an argument and
+
+  #float* %in
+  {in} is an argument and
+
+  #float undef
+  {undef} is a constant and
+
+  #float 0.000000e+00
+  {_0_000000e_00} is a constant and
+
+  #i64 4
+  {_4} is a constant and
+
+  #i64 1
+  {_1_} is a constant and
+
+  #i64 2
+  {_2} is a constant and
+
+  #i64 -4
+  {_4_} is a constant and
+  {dummy} is unused)
+End
+
+Export Constraint downsample_float_2
+(
+  #  %cmp15 = icmp sgt i32 %in_dim, 0, !dbg !8
+  {cmp15} is icmp instruction and
+  {in_dim} is first argument of {cmp15} and
+  {_0} is second argument of {cmp15} and
+  {anonymous[0]} is first successor of {cmp15} and
+
+  #  br i1 %cmp15, label %for.body.lr.ph, label %for.cond.cleanup, !dbg !9
+  {anonymous[0]} is branch instruction and
+  {cmp15} is first argument of {anonymous[0]} and
+  {anonymous[7]} is first successor of {anonymous[0]} and
+  {conv} is second successor of {anonymous[0]} and
+
+  #  %conv = sitofp i32 %ratio to float
+  {conv} is SIToFP instruction and
+  {ratio} is first argument of {conv} and
+  {_0_} is first successor of {conv} and
+
+  #  %0 = fdiv fast float 1.000000e+00, %conv
+  {_0_} is fdiv instruction and
+  {_1_000000e_00} is first argument of {_0_} and
+  {conv} is second argument of {_0_} and
+  {_1_} is first successor of {_0_} and
+
+  #  %1 = bitcast float* %out to i8*
+  {_1_} is BitCast instruction and
+  {_2__} is first successor of {_1_} and
+
+  #  %2 = getelementptr i8, i8* %1, i64 4
+  {_2__} is gep instruction and
+  {out} is first argument of {_2__} and
+  {_4} is second argument of {_2__} and
+  {_3} is first successor of {_2__} and
+
+  #  %3 = bitcast i8* %2 to float*
+  {_3} is BitCast instruction and
+  {xtraiter} is first successor of {_3} and
+
+  #  %xtraiter = and i32 %in_dim, 1, !dbg !9
+  {xtraiter} is and instruction and
+  {in_dim} is first argument of {xtraiter} and
+  {_1} is second argument of {xtraiter} and
+  {_4_} is first successor of {xtraiter} and
+
+  #  %4 = icmp eq i32 %in_dim, 1, !dbg !9
+  {_4_} is icmp instruction and
+  {in_dim} is first argument of {_4_} and
+  {_1} is second argument of {_4_} and
+  {anonymous[1]} is first successor of {_4_} and
+
+  #  br i1 %4, label %for.cond.cleanup.loopexit.unr-lcssa, label %for.body.lr.ph.new, !dbg !9
+  {anonymous[1]} is branch instruction and
+  {_4_} is first argument of {anonymous[1]} and
+  {unroll_iter} is first successor of {anonymous[1]} and
+  {i_018_unr} is second successor of {anonymous[1]} and
+
+  #  %unroll_iter = sub i32 %in_dim, %xtraiter, !dbg !9
+  {unroll_iter} is sub instruction and
+  {in_dim} is first argument of {unroll_iter} and
+  {xtraiter} is second argument of {unroll_iter} and
+  {anonymous[2]} is first successor of {unroll_iter} and
+
+  #  br label %for.body, !dbg !9
+  {anonymous[2]} is branch instruction and
+  {i_018} is first successor of {anonymous[2]} and
+
+  #  %add.1.lcssa = phi float [ %add.1, %12 ], !dbg !10
+  {add_1_lcssa} is phi instruction and
+  {add_1} is first argument of {add_1_lcssa} and
+  {add4_1_lcssa} is first successor of {add_1_lcssa} and
+
+  #  %add4.1.lcssa = phi i32 [ %add4.1, %12 ], !dbg !11
+  {add4_1_lcssa} is phi instruction and
+  {add4_1} is first argument of {add4_1_lcssa} and
+  {anonymous[3]} is first successor of {add4_1_lcssa} and
+
+  #  br label %for.cond.cleanup.loopexit.unr-lcssa, !dbg !12
+  {anonymous[3]} is branch instruction and
+  {i_018_unr} is first successor of {anonymous[3]} and
+
+  #  %i.018.unr = phi i32 [ 0, %for.body.lr.ph ], [ %add4.1.lcssa, %for.cond.cleanup.loopexit.unr-lcssa.loopexit ]
+  {i_018_unr} is phi instruction and
+  {_0} is first argument of {i_018_unr} and
+  {add4_1_lcssa} is second argument of {i_018_unr} and
+  {sum_017_unr} is first successor of {i_018_unr} and
+
+  #  %sum.017.unr = phi float [ 0.000000e+00, %for.body.lr.ph ], [ %add.1.lcssa, %for.cond.cleanup.loopexit.unr-lcssa.loopexit ]
+  {sum_017_unr} is phi instruction and
+  {_0_000000e_00} is first argument of {sum_017_unr} and
+  {add_1_lcssa} is second argument of {sum_017_unr} and
+  {lcmp_mod} is first successor of {sum_017_unr} and
+
+  #  %lcmp.mod = icmp ne i32 %xtraiter, 0, !dbg !12
+  {lcmp_mod} is icmp instruction and
+  {xtraiter} is first argument of {lcmp_mod} and
+  {_0} is second argument of {lcmp_mod} and
+  {cmp1_epil} is first successor of {lcmp_mod} and
+
+  #  %cmp1.epil = icmp eq i32 %i.018.unr, %ratio, !dbg !13
+  {cmp1_epil} is icmp instruction and
+  {i_018_unr} is first argument of {cmp1_epil} and
+  {ratio} is second argument of {cmp1_epil} and
+  {or_cond} is first successor of {cmp1_epil} and
+
+  #  %or.cond = and i1 %lcmp.mod, %cmp1.epil, !dbg !12
+  {or_cond} is and instruction and
+  {lcmp_mod} is first argument of {or_cond} and
+  {cmp1_epil} is second argument of {or_cond} and
+  {anonymous[4]} is first successor of {or_cond} and
+
+  #  br i1 %or.cond, label %if.then.epil, label %for.cond.cleanup, !dbg !12
+  {anonymous[4]} is branch instruction and
+  {or_cond} is first argument of {anonymous[4]} and
+  {anonymous[7]} is first successor of {anonymous[4]} and
+  {_5} is second successor of {anonymous[4]} and
+
+  #  %5 = fmul fast float %sum.017.unr, %0
+  {_5} is fmul instruction and
+  {sum_017_unr} is first argument of {_5} and
+  {_0_} is second argument of {_5} and
+  {anonymous[5]} is first successor of {_5} and
+
+  #  store float %5, float* %3, align 4, !dbg !14, !tbaa !15
+  {anonymous[5]} is store instruction and
+  {_5} is first argument of {anonymous[5]} and
+  {_2__} is second argument of {anonymous[5]} and
+  {anonymous[6]} is first successor of {anonymous[5]} and
+
+  #  br label %for.cond.cleanup, !dbg !19
+  {anonymous[6]} is branch instruction and
+  {anonymous[7]} is first successor of {anonymous[6]} and
+
+  #  ret void, !dbg !20
+  {anonymous[7]} is ret instruction and
+
+  #  %i.018 = phi i32 [ 0, %for.body.lr.ph.new ], [ %add4.1, %12 ]
+  {i_018} is phi instruction and
+  {_0} is first argument of {i_018} and
+  {add4_1} is second argument of {i_018} and
+  {sum_017} is first successor of {i_018} and
+
+  #  %sum.017 = phi float [ 0.000000e+00, %for.body.lr.ph.new ], [ %add.1, %12 ]
+  {sum_017} is phi instruction and
+  {_0_000000e_00} is first argument of {sum_017} and
+  {add_1} is second argument of {sum_017} and
+  {niter} is first successor of {sum_017} and
+
+  #  %niter = phi i32 [ %unroll_iter, %for.body.lr.ph.new ], [ %niter.nsub.1, %12 ]
+  {niter} is phi instruction and
+  {unroll_iter} is first argument of {niter} and
+  {niter_nsub_1} is second argument of {niter} and
+  {cmp1} is first successor of {niter} and
+
+  #  %cmp1 = icmp eq i32 %i.018, %ratio, !dbg !13
+  {cmp1} is icmp instruction and
+  {i_018} is first argument of {cmp1} and
+  {ratio} is second argument of {cmp1} and
+  {_6} is first successor of {cmp1} and
+
+  #  %6 = fmul fast float %sum.017, %0
+  {_6} is fmul instruction and
+  {sum_017} is first argument of {_6} and
+  {_0_} is second argument of {_6} and
+  {sum_1} is first successor of {_6} and
+
+  #  %sum.1 = select i1 %cmp1, float 0.000000e+00, float %sum.017, !dbg !12
+  {sum_1} is select instruction and
+  {cmp1} is first argument of {sum_1} and
+  {_0_000000e_00} is second argument of {sum_1} and
+  {sum_017} is third argument of {sum_1} and
+  {add} is first successor of {sum_1} and
+
+  #  %add = fadd fast float %sum.1, %conv, !dbg !10
+  {add} is fadd instruction and
+  {sum_1} is first argument of {add} and
+  {conv} is second argument of {add} and
+  {add4} is first successor of {add} and
+
+  #  %add4 = or i32 %i.018, 1, !dbg !11
+  {add4} is or instruction and
+  {i_018} is first argument of {add4} and
+  {_1} is second argument of {add4} and
+  {cmp1_1} is first successor of {add4} and
+
+  #  %cmp1.1 = icmp eq i32 %add4, %ratio, !dbg !13
+  {cmp1_1} is icmp instruction and
+  {add4} is first argument of {cmp1_1} and
+  {ratio} is second argument of {cmp1_1} and
+  {_7} is first successor of {cmp1_1} and
+
+  #  %7 = fmul fast float %add, %0
+  {_7} is fmul instruction and
+  {add} is first argument of {_7} and
+  {_0_} is second argument of {_7} and
+  {spec_select} is first successor of {_7} and
+
+  #  %spec.select = select i1 %cmp1.1, float %7, float %6, !dbg !12
+  {spec_select} is select instruction and
+  {cmp1_1} is first argument of {spec_select} and
+  {_7} is second argument of {spec_select} and
+  {_6} is third argument of {spec_select} and
+  {spec_select20} is first successor of {spec_select} and
+
+  #  %spec.select20 = select i1 %cmp1.1, float 0.000000e+00, float %add, !dbg !12
+  {spec_select20} is select instruction and
+  {cmp1_1} is first argument of {spec_select20} and
+  {_0_000000e_00} is second argument of {spec_select20} and
+  {add} is third argument of {spec_select20} and
+  {_8} is first successor of {spec_select20} and
+
+  #  %8 = xor i1 %cmp1, true, !dbg !10
+  {_8} is xor instruction and
+  {cmp1} is first argument of {_8} and
+  {true} is second argument of {_8} and
+  {_9} is first successor of {_8} and
+
+  #  %9 = xor i1 %cmp1.1, true, !dbg !10
+  {_9} is xor instruction and
+  {cmp1_1} is first argument of {_9} and
+  {true} is second argument of {_9} and
+  {_10} is first successor of {_9} and
+
+  #  %10 = or i1 %cmp1, %cmp1.1, !dbg !10
+  {_10} is or instruction and
+  {cmp1} is first argument of {_10} and
+  {cmp1_1} is second argument of {_10} and
+  {anonymous[8]} is first successor of {_10} and
+
+  #  br i1 %10, label %11, label %12, !dbg !10
+  {anonymous[8]} is branch instruction and
+  {_10} is first argument of {anonymous[8]} and
+  {add_1} is first successor of {anonymous[8]} and
+  {anonymous[9]} is second successor of {anonymous[8]} and
+
+  #  store float %spec.select, float* %3, align 4, !dbg !10, !tbaa !15
+  {anonymous[9]} is store instruction and
+  {spec_select} is first argument of {anonymous[9]} and
+  {_2__} is second argument of {anonymous[9]} and
+  {anonymous[10]} is first successor of {anonymous[9]} and
+
+  #  br label %12, !dbg !10
+  {anonymous[10]} is branch instruction and
+  {add_1} is first successor of {anonymous[10]} and
+
+  #  %add.1 = fadd fast float %spec.select20, %conv, !dbg !10
+  {add_1} is fadd instruction and
+  {spec_select20} is first argument of {add_1} and
+  {conv} is second argument of {add_1} and
+  {add4_1} is first successor of {add_1} and
+
+  #  %add4.1 = add nuw nsw i32 %i.018, 2, !dbg !11
+  {add4_1} is add instruction and
+  {i_018} is first argument of {add4_1} and
+  {_2} is second argument of {add4_1} and
+  {niter_nsub_1} is first successor of {add4_1} and
+
+  #  %niter.nsub.1 = add i32 %niter, -2, !dbg !9
+  {niter_nsub_1} is add instruction and
+  {niter} is first argument of {niter_nsub_1} and
+  {_2_} is second argument of {niter_nsub_1} and
+  {niter_ncmp_1} is first successor of {niter_nsub_1} and
+
+  #  %niter.ncmp.1 = icmp eq i32 %niter.nsub.1, 0, !dbg !9
+  {niter_ncmp_1} is icmp instruction and
+  {niter_nsub_1} is first argument of {niter_ncmp_1} and
+  {_0} is second argument of {niter_ncmp_1} and
+  {anonymous[11]} is first successor of {niter_ncmp_1} and
+
+  #  br i1 %niter.ncmp.1, label %for.cond.cleanup.loopexit.unr-lcssa.loopexit, label %for.body, !dbg !9, !llvm.loop !21
+  {anonymous[11]} is branch instruction and
+  {niter_ncmp_1} is first argument of {anonymous[11]} and
+  {i_018} is first successor of {anonymous[11]} and
+  {add_1_lcssa} is second successor of {anonymous[11]} and
+ #i32 %in_dim
+  {in_dim} is an argument and
+
+  #i32 0
+  {_0} is a constant and
+
+  #i32 %ratio
+  {ratio} is an argument and
+
+  #float 1.000000e+00
+  {_1_000000e_00} is a constant and
+
+  #float* %out
+  {out} is an argument and
+
+  #i64 4
+  {_4} is a constant and
+
+  #i32 1
+  {_1} is a constant and
+
+  #float 0.000000e+00
+  {_0_000000e_00} is a constant and
+
+  #i1 true
+  {true} is a constant and
+
+  #i32 2
+  {_2} is a constant and
+
+  #i32 -2
+  {_2_} is a constant and
+  {dummy} is unused)
+End
+
+Export Constraint downsample_double_1
+(
+  #  %cmp25 = icmp sgt i32 %in_dim, 0, !dbg !8
+  {cmp25} is icmp instruction and
+  {in_dim} is first argument of {cmp25} and
+  {_0} is second argument of {cmp25} and
+  {anonymous[0]} is first successor of {cmp25} and
+
+  #  br i1 %cmp25, label %for.cond1.preheader.lr.ph, label %for.cond.cleanup, !dbg !9
+  {anonymous[0]} is branch instruction and
+  {cmp25} is first argument of {anonymous[0]} and
+  {anonymous[6]} is first successor of {anonymous[0]} and
+  {cmp222} is second successor of {anonymous[0]} and
+
+  #  %cmp222 = icmp sgt i32 %ratio, 0
+  {cmp222} is icmp instruction and
+  {ratio} is first argument of {cmp222} and
+  {_0} is second argument of {cmp222} and
+  {conv} is first successor of {cmp222} and
+
+  #  %conv = sitofp i32 %ratio to double
+  {conv} is SIToFP instruction and
+  {ratio} is first argument of {conv} and
+  {_0__} is first successor of {conv} and
+
+  #  %0 = fdiv fast double 1.000000e+00, %conv
+  {_0__} is fdiv instruction and
+  {_1_000000e_00} is first argument of {_0__} and
+  {conv} is second argument of {_0__} and
+  {_1__} is first successor of {_0__} and
+
+  #  %1 = sext i32 %ratio to i64, !dbg !9
+  {_1__} is sext instruction and
+  {_2_} is first successor of {_1__} and
+
+  #  %2 = sext i32 %in_dim to i64, !dbg !9
+  {_2_} is sext instruction and
+  {wide_trip_count} is first successor of {_2_} and
+
+  #  %wide.trip.count = zext i32 %ratio to i64
+  {wide_trip_count} is zext instruction and
+  {_3_} is first successor of {wide_trip_count} and
+
+  #  %3 = add nsw i64 %wide.trip.count, -1, !dbg !9
+  {_3_} is add instruction and
+  {ratio} is first argument of {_3_} and
+  {_1} is second argument of {_3_} and
+  {xtraiter} is first successor of {_3_} and
+
+  #  %xtraiter = and i64 %wide.trip.count, 3
+  {xtraiter} is and instruction and
+  {ratio} is first argument of {xtraiter} and
+  {_3} is second argument of {xtraiter} and
+  {_4__} is first successor of {xtraiter} and
+
+  #  %4 = icmp ult i64 %3, 3
+  {_4__} is icmp instruction and
+  {_3_} is first argument of {_4__} and
+  {_3} is second argument of {_4__} and
+  {unroll_iter} is first successor of {_4__} and
+
+  #  %unroll_iter = sub nsw i64 %wide.trip.count, %xtraiter
+  {unroll_iter} is sub instruction and
+  {ratio} is first argument of {unroll_iter} and
+  {xtraiter} is second argument of {unroll_iter} and
+  {lcmp_mod} is first successor of {unroll_iter} and
+
+  #  %lcmp.mod = icmp eq i64 %xtraiter, 0
+  {lcmp_mod} is icmp instruction and
+  {xtraiter} is first argument of {lcmp_mod} and
+  {_0_} is second argument of {lcmp_mod} and
+  {_5} is first successor of {lcmp_mod} and
+
+  #  %5 = bitcast double* %out to i8*
+  {_5} is BitCast instruction and
+  {_6} is first successor of {_5} and
+
+  #  %6 = bitcast double* %in to i8*
+  {_6} is BitCast instruction and
+  {anonymous[1]} is first successor of {_6} and
+
+  #  br label %for.cond1.preheader, !dbg !9
+  {anonymous[1]} is branch instruction and
+  {indvars_iv29} is first successor of {anonymous[1]} and
+
+  #  %indvars.iv29 = phi i64 [ 0, %for.cond1.preheader.lr.ph ], [ %indvars.iv.next30, %for.cond.cleanup3 ]
+  {indvars_iv29} is phi instruction and
+  {_0_} is first argument of {indvars_iv29} and
+  {indvars_iv_next30} is second argument of {indvars_iv29} and
+  {anonymous[2]} is first successor of {indvars_iv29} and
+
+  #  br i1 %cmp222, label %for.body4.preheader, label %for.cond.cleanup3, !dbg !10
+  {anonymous[2]} is branch instruction and
+  {cmp222} is first argument of {anonymous[2]} and
+  {sum_0_lcssa} is first successor of {anonymous[2]} and
+  {anonymous[3]} is second successor of {anonymous[2]} and
+
+  #  br i1 %4, label %for.cond.cleanup3.loopexit.unr-lcssa, label %for.body4.preheader32, !dbg !11
+  {anonymous[3]} is branch instruction and
+  {_4__} is first argument of {anonymous[3]} and
+  {anonymous[4]} is first successor of {anonymous[3]} and
+  {add5_lcssa_ph} is second successor of {anonymous[3]} and
+
+  #  br label %for.body4, !dbg !11
+  {anonymous[4]} is branch instruction and
+  {indvars_iv} is first successor of {anonymous[4]} and
+
+  #  br label %for.cond.cleanup, !dbg !12
+  {anonymous[5]} is branch instruction and
+  {anonymous[6]} is first successor of {anonymous[5]} and
+
+  #  ret void, !dbg !12
+  {anonymous[6]} is ret instruction and
+
+  #  %add5.3.lcssa = phi double [ %add5.3, %for.body4 ], !dbg !13
+  {add5_3_lcssa} is phi instruction and
+  {add5_3} is first argument of {add5_3_lcssa} and
+  {indvars_iv_next_3_lcssa} is first successor of {add5_3_lcssa} and
+
+  #  %indvars.iv.next.3.lcssa = phi i64 [ %indvars.iv.next.3, %for.body4 ], !dbg !14
+  {indvars_iv_next_3_lcssa} is phi instruction and
+  {indvars_iv_next_3} is first argument of {indvars_iv_next_3_lcssa} and
+  {anonymous[7]} is first successor of {indvars_iv_next_3_lcssa} and
+
+  #  br label %for.cond.cleanup3.loopexit.unr-lcssa, !dbg !10
+  {anonymous[7]} is branch instruction and
+  {add5_lcssa_ph} is first successor of {anonymous[7]} and
+
+  #  %add5.lcssa.ph = phi double [ undef, %for.body4.preheader ], [ %add5.3.lcssa, %for.cond.cleanup3.loopexit.unr-lcssa.loopexit ]
+  {add5_lcssa_ph} is phi instruction and
+  {undef} is first argument of {add5_lcssa_ph} and
+  {add5_3_lcssa} is second argument of {add5_lcssa_ph} and
+  {indvars_iv_unr} is first successor of {add5_lcssa_ph} and
+
+  #  %indvars.iv.unr = phi i64 [ 0, %for.body4.preheader ], [ %indvars.iv.next.3.lcssa, %for.cond.cleanup3.loopexit.unr-lcssa.loopexit ]
+  {indvars_iv_unr} is phi instruction and
+  {_0_} is first argument of {indvars_iv_unr} and
+  {indvars_iv_next_3_lcssa} is second argument of {indvars_iv_unr} and
+  {sum_023_unr} is first successor of {indvars_iv_unr} and
+
+  #  %sum.023.unr = phi double [ 0.000000e+00, %for.body4.preheader ], [ %add5.3.lcssa, %for.cond.cleanup3.loopexit.unr-lcssa.loopexit ]
+  {sum_023_unr} is phi instruction and
+  {_0_000000e_00} is first argument of {sum_023_unr} and
+  {add5_3_lcssa} is second argument of {sum_023_unr} and
+  {anonymous[8]} is first successor of {sum_023_unr} and
+
+  #  br i1 %lcmp.mod, label %for.cond.cleanup3, label %for.body4.epil.preheader, !dbg !10
+  {anonymous[8]} is branch instruction and
+  {lcmp_mod} is first argument of {anonymous[8]} and
+  {anonymous[9]} is first successor of {anonymous[8]} and
+  {sum_0_lcssa} is second successor of {anonymous[8]} and
+
+  #  br label %for.body4.epil, !dbg !11
+  {anonymous[9]} is branch instruction and
+  {indvars_iv_epil} is first successor of {anonymous[9]} and
+
+  #  %indvars.iv.epil = phi i64 [ %indvars.iv.next.epil, %for.body4.epil ], [ %indvars.iv.unr, %for.body4.epil.preheader ]
+  {indvars_iv_epil} is phi instruction and
+  {indvars_iv_next_epil} is first argument of {indvars_iv_epil} and
+  {indvars_iv_unr} is second argument of {indvars_iv_epil} and
+  {sum_023_epil} is first successor of {indvars_iv_epil} and
+
+  #  %sum.023.epil = phi double [ %add5.epil, %for.body4.epil ], [ %sum.023.unr, %for.body4.epil.preheader ]
+  {sum_023_epil} is phi instruction and
+  {add5_epil} is first argument of {sum_023_epil} and
+  {sum_023_unr} is second argument of {sum_023_epil} and
+  {epil_iter} is first successor of {sum_023_epil} and
+
+  #  %epil.iter = phi i64 [ %epil.iter.sub, %for.body4.epil ], [ %xtraiter, %for.body4.epil.preheader ]
+  {epil_iter} is phi instruction and
+  {epil_iter_sub} is first argument of {epil_iter} and
+  {xtraiter} is second argument of {epil_iter} and
+  {_7} is first successor of {epil_iter} and
+
+  #  %7 = add nsw i64 %indvars.iv.epil, %indvars.iv29, !dbg !11
+  {_7} is add instruction and
+  {indvars_iv_epil} is first argument of {_7} and
+  {indvars_iv29} is second argument of {_7} and
+  {_8_} is first successor of {_7} and
+
+  #  %8 = mul i64 %7, 8, !dbg !15
+  {_8_} is mul instruction and
+  {_7} is first argument of {_8_} and
+  {_8} is second argument of {_8_} and
+  {_9} is first successor of {_8_} and
+
+  #  %9 = getelementptr i8, i8* %6, i64 %8, !dbg !15
+  {_9} is gep instruction and
+  {in} is first argument of {_9} and
+  {_8_} is second argument of {_9} and
+  {_10} is first successor of {_9} and
+
+  #  %10 = bitcast i8* %9 to double*, !dbg !15
+  {_10} is BitCast instruction and
+  {_11} is first successor of {_10} and
+
+  #  %11 = load double, double* %10, align 8, !dbg !15, !tbaa !16
+  {_11} is load instruction and
+  {_9} is first argument of {_11} and
+  {add5_epil} is first successor of {_11} and
+
+  #  %add5.epil = fadd fast double %11, %sum.023.epil, !dbg !13
+  {add5_epil} is fadd instruction and
+  {_11} is first argument of {add5_epil} and
+  {sum_023_epil} is second argument of {add5_epil} and
+  {indvars_iv_next_epil} is first successor of {add5_epil} and
+
+  #  %indvars.iv.next.epil = add nuw nsw i64 %indvars.iv.epil, 1, !dbg !14
+  {indvars_iv_next_epil} is add instruction and
+  {indvars_iv_epil} is first argument of {indvars_iv_next_epil} and
+  {_1_} is second argument of {indvars_iv_next_epil} and
+  {epil_iter_sub} is first successor of {indvars_iv_next_epil} and
+
+  #  %epil.iter.sub = add nsw i64 %epil.iter, -1, !dbg !10
+  {epil_iter_sub} is add instruction and
+  {epil_iter} is first argument of {epil_iter_sub} and
+  {_1} is second argument of {epil_iter_sub} and
+  {epil_iter_cmp} is first successor of {epil_iter_sub} and
+
+  #  %epil.iter.cmp = icmp eq i64 %epil.iter.sub, 0, !dbg !10
+  {epil_iter_cmp} is icmp instruction and
+  {epil_iter_sub} is first argument of {epil_iter_cmp} and
+  {_0_} is second argument of {epil_iter_cmp} and
+  {anonymous[10]} is first successor of {epil_iter_cmp} and
+
+  #  br i1 %epil.iter.cmp, label %for.cond.cleanup3.loopexit, label %for.body4.epil, !dbg !10, !llvm.loop !20
+  {anonymous[10]} is branch instruction and
+  {epil_iter_cmp} is first argument of {anonymous[10]} and
+  {indvars_iv_epil} is first successor of {anonymous[10]} and
+  {add5_epil_lcssa} is second successor of {anonymous[10]} and
+
+  #  %add5.epil.lcssa = phi double [ %add5.epil, %for.body4.epil ], !dbg !13
+  {add5_epil_lcssa} is phi instruction and
+  {add5_epil} is first argument of {add5_epil_lcssa} and
+  {anonymous[11]} is first successor of {add5_epil_lcssa} and
+
+  #  br label %for.cond.cleanup3
+  {anonymous[11]} is branch instruction and
+  {sum_0_lcssa} is first successor of {anonymous[11]} and
+
+  #  %sum.0.lcssa = phi double [ 0.000000e+00, %for.cond1.preheader ], [ %add5.lcssa.ph, %for.cond.cleanup3.loopexit.unr-lcssa ], [ %add5.epil.lcssa, %for.cond.cleanup3.loopexit ], !dbg !22
+  {sum_0_lcssa} is phi instruction and
+  {_0_000000e_00} is first argument of {sum_0_lcssa} and
+  {add5_lcssa_ph} is second argument of {sum_0_lcssa} and
+  {add5_epil_lcssa} is third argument of {sum_0_lcssa} and
+  {_12} is first successor of {sum_0_lcssa} and
+
+  #  %12 = fmul fast double %sum.0.lcssa, %0
+  {_12} is fmul instruction and
+  {sum_0_lcssa} is first argument of {_12} and
+  {_0__} is second argument of {_12} and
+  {_13} is first successor of {_12} and
+
+  #  %13 = mul i64 %indvars.iv29, 8, !dbg !23
+  {_13} is mul instruction and
+  {indvars_iv29} is first argument of {_13} and
+  {_8} is second argument of {_13} and
+  {_14} is first successor of {_13} and
+
+  #  %14 = getelementptr i8, i8* %5, i64 %13, !dbg !23
+  {_14} is gep instruction and
+  {out} is first argument of {_14} and
+  {_13} is second argument of {_14} and
+  {_15} is first successor of {_14} and
+
+  #  %15 = bitcast i8* %14 to double*, !dbg !23
+  {_15} is BitCast instruction and
+  {anonymous[12]} is first successor of {_15} and
+
+  #  store double %12, double* %15, align 8, !dbg !24, !tbaa !16
+  {anonymous[12]} is store instruction and
+  {_12} is first argument of {anonymous[12]} and
+  {_14} is second argument of {anonymous[12]} and
+  {indvars_iv_next30} is first successor of {anonymous[12]} and
+
+  #  %indvars.iv.next30 = add nsw i64 %indvars.iv29, %1, !dbg !25
+  {indvars_iv_next30} is add instruction and
+  {indvars_iv29} is first argument of {indvars_iv_next30} and
+  {ratio} is second argument of {indvars_iv_next30} and
+  {cmp} is first successor of {indvars_iv_next30} and
+
+  #  %cmp = icmp slt i64 %indvars.iv.next30, %2, !dbg !8
+  {cmp} is icmp instruction and
+  {indvars_iv_next30} is first argument of {cmp} and
+  {in_dim} is second argument of {cmp} and
+  {anonymous[13]} is first successor of {cmp} and
+
+  #  br i1 %cmp, label %for.cond1.preheader, label %for.cond.cleanup.loopexit, !dbg !9, !llvm.loop !26
+  {anonymous[13]} is branch instruction and
+  {cmp} is first argument of {anonymous[13]} and
+  {anonymous[5]} is first successor of {anonymous[13]} and
+  {indvars_iv29} is second successor of {anonymous[13]} and
+
+  #  %indvars.iv = phi i64 [ %indvars.iv.next.3, %for.body4 ], [ 0, %for.body4.preheader32 ]
+  {indvars_iv} is phi instruction and
+  {indvars_iv_next_3} is first argument of {indvars_iv} and
+  {_0_} is second argument of {indvars_iv} and
+  {sum_023} is first successor of {indvars_iv} and
+
+  #  %sum.023 = phi double [ %add5.3, %for.body4 ], [ 0.000000e+00, %for.body4.preheader32 ]
+  {sum_023} is phi instruction and
+  {add5_3} is first argument of {sum_023} and
+  {_0_000000e_00} is second argument of {sum_023} and
+  {niter} is first successor of {sum_023} and
+
+  #  %niter = phi i64 [ %niter.nsub.3, %for.body4 ], [ %unroll_iter, %for.body4.preheader32 ]
+  {niter} is phi instruction and
+  {niter_nsub_3} is first argument of {niter} and
+  {unroll_iter} is second argument of {niter} and
+  {_16} is first successor of {niter} and
+
+  #  %16 = add nsw i64 %indvars.iv, %indvars.iv29, !dbg !11
+  {_16} is add instruction and
+  {indvars_iv} is first argument of {_16} and
+  {indvars_iv29} is second argument of {_16} and
+  {_17} is first successor of {_16} and
+
+  #  %17 = mul i64 %16, 8, !dbg !15
+  {_17} is mul instruction and
+  {_16} is first argument of {_17} and
+  {_8} is second argument of {_17} and
+  {_18} is first successor of {_17} and
+
+  #  %18 = getelementptr i8, i8* %6, i64 %17, !dbg !15
+  {_18} is gep instruction and
+  {in} is first argument of {_18} and
+  {_17} is second argument of {_18} and
+  {_19} is first successor of {_18} and
+
+  #  %19 = bitcast i8* %18 to double*, !dbg !15
+  {_19} is BitCast instruction and
+  {_20} is first successor of {_19} and
+
+  #  %20 = load double, double* %19, align 8, !dbg !15, !tbaa !16
+  {_20} is load instruction and
+  {_18} is first argument of {_20} and
+  {add5} is first successor of {_20} and
+
+  #  %add5 = fadd fast double %20, %sum.023, !dbg !13
+  {add5} is fadd instruction and
+  {_20} is first argument of {add5} and
+  {sum_023} is second argument of {add5} and
+  {indvars_iv_next} is first successor of {add5} and
+
+  #  %indvars.iv.next = or i64 %indvars.iv, 1, !dbg !14
+  {indvars_iv_next} is or instruction and
+  {indvars_iv} is first argument of {indvars_iv_next} and
+  {_1_} is second argument of {indvars_iv_next} and
+  {_21} is first successor of {indvars_iv_next} and
+
+  #  %21 = add nsw i64 %indvars.iv.next, %indvars.iv29, !dbg !11
+  {_21} is add instruction and
+  {indvars_iv_next} is first argument of {_21} and
+  {indvars_iv29} is second argument of {_21} and
+  {_22} is first successor of {_21} and
+
+  #  %22 = mul i64 %21, 8, !dbg !15
+  {_22} is mul instruction and
+  {_21} is first argument of {_22} and
+  {_8} is second argument of {_22} and
+  {_23} is first successor of {_22} and
+
+  #  %23 = getelementptr i8, i8* %6, i64 %22, !dbg !15
+  {_23} is gep instruction and
+  {in} is first argument of {_23} and
+  {_22} is second argument of {_23} and
+  {_24} is first successor of {_23} and
+
+  #  %24 = bitcast i8* %23 to double*, !dbg !15
+  {_24} is BitCast instruction and
+  {_25} is first successor of {_24} and
+
+  #  %25 = load double, double* %24, align 8, !dbg !15, !tbaa !16
+  {_25} is load instruction and
+  {_23} is first argument of {_25} and
+  {add5_1} is first successor of {_25} and
+
+  #  %add5.1 = fadd fast double %25, %add5, !dbg !13
+  {add5_1} is fadd instruction and
+  {_25} is first argument of {add5_1} and
+  {add5} is second argument of {add5_1} and
+  {indvars_iv_next_1} is first successor of {add5_1} and
+
+  #  %indvars.iv.next.1 = or i64 %indvars.iv, 2, !dbg !14
+  {indvars_iv_next_1} is or instruction and
+  {indvars_iv} is first argument of {indvars_iv_next_1} and
+  {_2} is second argument of {indvars_iv_next_1} and
+  {_26} is first successor of {indvars_iv_next_1} and
+
+  #  %26 = add nsw i64 %indvars.iv.next.1, %indvars.iv29, !dbg !11
+  {_26} is add instruction and
+  {indvars_iv_next_1} is first argument of {_26} and
+  {indvars_iv29} is second argument of {_26} and
+  {_27} is first successor of {_26} and
+
+  #  %27 = mul i64 %26, 8, !dbg !15
+  {_27} is mul instruction and
+  {_26} is first argument of {_27} and
+  {_8} is second argument of {_27} and
+  {_28} is first successor of {_27} and
+
+  #  %28 = getelementptr i8, i8* %6, i64 %27, !dbg !15
+  {_28} is gep instruction and
+  {in} is first argument of {_28} and
+  {_27} is second argument of {_28} and
+  {_29} is first successor of {_28} and
+
+  #  %29 = bitcast i8* %28 to double*, !dbg !15
+  {_29} is BitCast instruction and
+  {_30} is first successor of {_29} and
+
+  #  %30 = load double, double* %29, align 8, !dbg !15, !tbaa !16
+  {_30} is load instruction and
+  {_28} is first argument of {_30} and
+  {add5_2} is first successor of {_30} and
+
+  #  %add5.2 = fadd fast double %30, %add5.1, !dbg !13
+  {add5_2} is fadd instruction and
+  {_30} is first argument of {add5_2} and
+  {add5_1} is second argument of {add5_2} and
+  {indvars_iv_next_2} is first successor of {add5_2} and
+
+  #  %indvars.iv.next.2 = or i64 %indvars.iv, 3, !dbg !14
+  {indvars_iv_next_2} is or instruction and
+  {indvars_iv} is first argument of {indvars_iv_next_2} and
+  {_3} is second argument of {indvars_iv_next_2} and
+  {_31} is first successor of {indvars_iv_next_2} and
+
+  #  %31 = add nsw i64 %indvars.iv.next.2, %indvars.iv29, !dbg !11
+  {_31} is add instruction and
+  {indvars_iv_next_2} is first argument of {_31} and
+  {indvars_iv29} is second argument of {_31} and
+  {_32} is first successor of {_31} and
+
+  #  %32 = mul i64 %31, 8, !dbg !15
+  {_32} is mul instruction and
+  {_31} is first argument of {_32} and
+  {_8} is second argument of {_32} and
+  {_33} is first successor of {_32} and
+
+  #  %33 = getelementptr i8, i8* %6, i64 %32, !dbg !15
+  {_33} is gep instruction and
+  {in} is first argument of {_33} and
+  {_32} is second argument of {_33} and
+  {_34} is first successor of {_33} and
+
+  #  %34 = bitcast i8* %33 to double*, !dbg !15
+  {_34} is BitCast instruction and
+  {_35} is first successor of {_34} and
+
+  #  %35 = load double, double* %34, align 8, !dbg !15, !tbaa !16
+  {_35} is load instruction and
+  {_33} is first argument of {_35} and
+  {add5_3} is first successor of {_35} and
+
+  #  %add5.3 = fadd fast double %35, %add5.2, !dbg !13
+  {add5_3} is fadd instruction and
+  {_35} is first argument of {add5_3} and
+  {add5_2} is second argument of {add5_3} and
+  {indvars_iv_next_3} is first successor of {add5_3} and
+
+  #  %indvars.iv.next.3 = add nuw nsw i64 %indvars.iv, 4, !dbg !14
+  {indvars_iv_next_3} is add instruction and
+  {indvars_iv} is first argument of {indvars_iv_next_3} and
+  {_4} is second argument of {indvars_iv_next_3} and
+  {niter_nsub_3} is first successor of {indvars_iv_next_3} and
+
+  #  %niter.nsub.3 = add i64 %niter, -4, !dbg !10
+  {niter_nsub_3} is add instruction and
+  {niter} is first argument of {niter_nsub_3} and
+  {_4_} is second argument of {niter_nsub_3} and
+  {niter_ncmp_3} is first successor of {niter_nsub_3} and
+
+  #  %niter.ncmp.3 = icmp eq i64 %niter.nsub.3, 0, !dbg !10
+  {niter_ncmp_3} is icmp instruction and
+  {niter_nsub_3} is first argument of {niter_ncmp_3} and
+  {_0_} is second argument of {niter_ncmp_3} and
+  {anonymous[14]} is first successor of {niter_ncmp_3} and
+
+  #  br i1 %niter.ncmp.3, label %for.cond.cleanup3.loopexit.unr-lcssa.loopexit, label %for.body4, !dbg !10, !llvm.loop !28
+  {anonymous[14]} is branch instruction and
+  {niter_ncmp_3} is first argument of {anonymous[14]} and
+  {indvars_iv} is first successor of {anonymous[14]} and
+  {add5_3_lcssa} is second successor of {anonymous[14]} and
+ #i32 %in_dim
+  {in_dim} is an argument and
+
+  #i32 0
+  {_0} is a constant and
+
+  #i32 %ratio
+  {ratio} is an argument and
+
+  #double 1.000000e+00
+  {_1_000000e_00} is a constant and
+
+  #i64 -1
+  {_1} is a constant and
+
+  #i64 3
+  {_3} is a constant and
+
+  #i64 0
+  {_0_} is a constant and
+
+  #double* %out
+  {out} is an argument and
+
+  #double* %in
+  {in} is an argument and
+
+  #double undef
+  {undef} is a constant and
+
+  #double 0.000000e+00
+  {_0_000000e_00} is a constant and
+
+  #i64 8
+  {_8} is a constant and
+
+  #i64 1
+  {_1_} is a constant and
+
+  #i64 2
+  {_2} is a constant and
+
+  #i64 4
+  {_4} is a constant and
+
+  #i64 -4
+  {_4_} is a constant and
+  {dummy} is unused)
+End
+
+Export Constraint downsample_double_2
+(
+  #  %cmp15 = icmp sgt i32 %in_dim, 0, !dbg !8
+  {cmp15} is icmp instruction and
+  {in_dim} is first argument of {cmp15} and
+  {_0} is second argument of {cmp15} and
+  {anonymous[0]} is first successor of {cmp15} and
+
+  #  br i1 %cmp15, label %for.body.lr.ph, label %for.cond.cleanup, !dbg !9
+  {anonymous[0]} is branch instruction and
+  {cmp15} is first argument of {anonymous[0]} and
+  {anonymous[7]} is first successor of {anonymous[0]} and
+  {conv} is second successor of {anonymous[0]} and
+
+  #  %conv = sitofp i32 %ratio to double
+  {conv} is SIToFP instruction and
+  {ratio} is first argument of {conv} and
+  {_0_} is first successor of {conv} and
+
+  #  %0 = fdiv fast double 1.000000e+00, %conv
+  {_0_} is fdiv instruction and
+  {_1_000000e_00} is first argument of {_0_} and
+  {conv} is second argument of {_0_} and
+  {_1_} is first successor of {_0_} and
+
+  #  %1 = bitcast double* %out to i8*
+  {_1_} is BitCast instruction and
+  {_2__} is first successor of {_1_} and
+
+  #  %2 = getelementptr i8, i8* %1, i64 8
+  {_2__} is gep instruction and
+  {out} is first argument of {_2__} and
+  {_8} is second argument of {_2__} and
+  {_3} is first successor of {_2__} and
+
+  #  %3 = bitcast i8* %2 to double*
+  {_3} is BitCast instruction and
+  {xtraiter} is first successor of {_3} and
+
+  #  %xtraiter = and i32 %in_dim, 1, !dbg !9
+  {xtraiter} is and instruction and
+  {in_dim} is first argument of {xtraiter} and
+  {_1} is second argument of {xtraiter} and
+  {_4} is first successor of {xtraiter} and
+
+  #  %4 = icmp eq i32 %in_dim, 1, !dbg !9
+  {_4} is icmp instruction and
+  {in_dim} is first argument of {_4} and
+  {_1} is second argument of {_4} and
+  {anonymous[1]} is first successor of {_4} and
+
+  #  br i1 %4, label %for.cond.cleanup.loopexit.unr-lcssa, label %for.body.lr.ph.new, !dbg !9
+  {anonymous[1]} is branch instruction and
+  {_4} is first argument of {anonymous[1]} and
+  {unroll_iter} is first successor of {anonymous[1]} and
+  {i_018_unr} is second successor of {anonymous[1]} and
+
+  #  %unroll_iter = sub i32 %in_dim, %xtraiter, !dbg !9
+  {unroll_iter} is sub instruction and
+  {in_dim} is first argument of {unroll_iter} and
+  {xtraiter} is second argument of {unroll_iter} and
+  {anonymous[2]} is first successor of {unroll_iter} and
+
+  #  br label %for.body, !dbg !9
+  {anonymous[2]} is branch instruction and
+  {i_018} is first successor of {anonymous[2]} and
+
+  #  %add.1.lcssa = phi double [ %add.1, %12 ], !dbg !10
+  {add_1_lcssa} is phi instruction and
+  {add_1} is first argument of {add_1_lcssa} and
+  {add4_1_lcssa} is first successor of {add_1_lcssa} and
+
+  #  %add4.1.lcssa = phi i32 [ %add4.1, %12 ], !dbg !11
+  {add4_1_lcssa} is phi instruction and
+  {add4_1} is first argument of {add4_1_lcssa} and
+  {anonymous[3]} is first successor of {add4_1_lcssa} and
+
+  #  br label %for.cond.cleanup.loopexit.unr-lcssa, !dbg !12
+  {anonymous[3]} is branch instruction and
+  {i_018_unr} is first successor of {anonymous[3]} and
+
+  #  %i.018.unr = phi i32 [ 0, %for.body.lr.ph ], [ %add4.1.lcssa, %for.cond.cleanup.loopexit.unr-lcssa.loopexit ]
+  {i_018_unr} is phi instruction and
+  {_0} is first argument of {i_018_unr} and
+  {add4_1_lcssa} is second argument of {i_018_unr} and
+  {sum_017_unr} is first successor of {i_018_unr} and
+
+  #  %sum.017.unr = phi double [ 0.000000e+00, %for.body.lr.ph ], [ %add.1.lcssa, %for.cond.cleanup.loopexit.unr-lcssa.loopexit ]
+  {sum_017_unr} is phi instruction and
+  {_0_000000e_00} is first argument of {sum_017_unr} and
+  {add_1_lcssa} is second argument of {sum_017_unr} and
+  {lcmp_mod} is first successor of {sum_017_unr} and
+
+  #  %lcmp.mod = icmp ne i32 %xtraiter, 0, !dbg !12
+  {lcmp_mod} is icmp instruction and
+  {xtraiter} is first argument of {lcmp_mod} and
+  {_0} is second argument of {lcmp_mod} and
+  {cmp1_epil} is first successor of {lcmp_mod} and
+
+  #  %cmp1.epil = icmp eq i32 %i.018.unr, %ratio, !dbg !13
+  {cmp1_epil} is icmp instruction and
+  {i_018_unr} is first argument of {cmp1_epil} and
+  {ratio} is second argument of {cmp1_epil} and
+  {or_cond} is first successor of {cmp1_epil} and
+
+  #  %or.cond = and i1 %lcmp.mod, %cmp1.epil, !dbg !12
+  {or_cond} is and instruction and
+  {lcmp_mod} is first argument of {or_cond} and
+  {cmp1_epil} is second argument of {or_cond} and
+  {anonymous[4]} is first successor of {or_cond} and
+
+  #  br i1 %or.cond, label %if.then.epil, label %for.cond.cleanup, !dbg !12
+  {anonymous[4]} is branch instruction and
+  {or_cond} is first argument of {anonymous[4]} and
+  {anonymous[7]} is first successor of {anonymous[4]} and
+  {_5} is second successor of {anonymous[4]} and
+
+  #  %5 = fmul fast double %sum.017.unr, %0
+  {_5} is fmul instruction and
+  {sum_017_unr} is first argument of {_5} and
+  {_0_} is second argument of {_5} and
+  {anonymous[5]} is first successor of {_5} and
+
+  #  store double %5, double* %3, align 8, !dbg !14, !tbaa !15
+  {anonymous[5]} is store instruction and
+  {_5} is first argument of {anonymous[5]} and
+  {_2__} is second argument of {anonymous[5]} and
+  {anonymous[6]} is first successor of {anonymous[5]} and
+
+  #  br label %for.cond.cleanup, !dbg !19
+  {anonymous[6]} is branch instruction and
+  {anonymous[7]} is first successor of {anonymous[6]} and
+
+  #  ret void, !dbg !20
+  {anonymous[7]} is ret instruction and
+
+  #  %i.018 = phi i32 [ 0, %for.body.lr.ph.new ], [ %add4.1, %12 ]
+  {i_018} is phi instruction and
+  {_0} is first argument of {i_018} and
+  {add4_1} is second argument of {i_018} and
+  {sum_017} is first successor of {i_018} and
+
+  #  %sum.017 = phi double [ 0.000000e+00, %for.body.lr.ph.new ], [ %add.1, %12 ]
+  {sum_017} is phi instruction and
+  {_0_000000e_00} is first argument of {sum_017} and
+  {add_1} is second argument of {sum_017} and
+  {niter} is first successor of {sum_017} and
+
+  #  %niter = phi i32 [ %unroll_iter, %for.body.lr.ph.new ], [ %niter.nsub.1, %12 ]
+  {niter} is phi instruction and
+  {unroll_iter} is first argument of {niter} and
+  {niter_nsub_1} is second argument of {niter} and
+  {cmp1} is first successor of {niter} and
+
+  #  %cmp1 = icmp eq i32 %i.018, %ratio, !dbg !13
+  {cmp1} is icmp instruction and
+  {i_018} is first argument of {cmp1} and
+  {ratio} is second argument of {cmp1} and
+  {_6} is first successor of {cmp1} and
+
+  #  %6 = fmul fast double %sum.017, %0
+  {_6} is fmul instruction and
+  {sum_017} is first argument of {_6} and
+  {_0_} is second argument of {_6} and
+  {sum_1} is first successor of {_6} and
+
+  #  %sum.1 = select i1 %cmp1, double 0.000000e+00, double %sum.017, !dbg !12
+  {sum_1} is select instruction and
+  {cmp1} is first argument of {sum_1} and
+  {_0_000000e_00} is second argument of {sum_1} and
+  {sum_017} is third argument of {sum_1} and
+  {add} is first successor of {sum_1} and
+
+  #  %add = fadd fast double %sum.1, %conv, !dbg !10
+  {add} is fadd instruction and
+  {sum_1} is first argument of {add} and
+  {conv} is second argument of {add} and
+  {add4} is first successor of {add} and
+
+  #  %add4 = or i32 %i.018, 1, !dbg !11
+  {add4} is or instruction and
+  {i_018} is first argument of {add4} and
+  {_1} is second argument of {add4} and
+  {cmp1_1} is first successor of {add4} and
+
+  #  %cmp1.1 = icmp eq i32 %add4, %ratio, !dbg !13
+  {cmp1_1} is icmp instruction and
+  {add4} is first argument of {cmp1_1} and
+  {ratio} is second argument of {cmp1_1} and
+  {_7} is first successor of {cmp1_1} and
+
+  #  %7 = fmul fast double %add, %0
+  {_7} is fmul instruction and
+  {add} is first argument of {_7} and
+  {_0_} is second argument of {_7} and
+  {spec_select} is first successor of {_7} and
+
+  #  %spec.select = select i1 %cmp1.1, double %7, double %6, !dbg !12
+  {spec_select} is select instruction and
+  {cmp1_1} is first argument of {spec_select} and
+  {_7} is second argument of {spec_select} and
+  {_6} is third argument of {spec_select} and
+  {spec_select20} is first successor of {spec_select} and
+
+  #  %spec.select20 = select i1 %cmp1.1, double 0.000000e+00, double %add, !dbg !12
+  {spec_select20} is select instruction and
+  {cmp1_1} is first argument of {spec_select20} and
+  {_0_000000e_00} is second argument of {spec_select20} and
+  {add} is third argument of {spec_select20} and
+  {_8_} is first successor of {spec_select20} and
+
+  #  %8 = xor i1 %cmp1, true, !dbg !10
+  {_8_} is xor instruction and
+  {cmp1} is first argument of {_8_} and
+  {true} is second argument of {_8_} and
+  {_9} is first successor of {_8_} and
+
+  #  %9 = xor i1 %cmp1.1, true, !dbg !10
+  {_9} is xor instruction and
+  {cmp1_1} is first argument of {_9} and
+  {true} is second argument of {_9} and
+  {_10} is first successor of {_9} and
+
+  #  %10 = or i1 %cmp1, %cmp1.1, !dbg !10
+  {_10} is or instruction and
+  {cmp1} is first argument of {_10} and
+  {cmp1_1} is second argument of {_10} and
+  {anonymous[8]} is first successor of {_10} and
+
+  #  br i1 %10, label %11, label %12, !dbg !10
+  {anonymous[8]} is branch instruction and
+  {_10} is first argument of {anonymous[8]} and
+  {add_1} is first successor of {anonymous[8]} and
+  {anonymous[9]} is second successor of {anonymous[8]} and
+
+  #  store double %spec.select, double* %3, align 8, !dbg !10, !tbaa !15
+  {anonymous[9]} is store instruction and
+  {spec_select} is first argument of {anonymous[9]} and
+  {_2__} is second argument of {anonymous[9]} and
+  {anonymous[10]} is first successor of {anonymous[9]} and
+
+  #  br label %12, !dbg !10
+  {anonymous[10]} is branch instruction and
+  {add_1} is first successor of {anonymous[10]} and
+
+  #  %add.1 = fadd fast double %spec.select20, %conv, !dbg !10
+  {add_1} is fadd instruction and
+  {spec_select20} is first argument of {add_1} and
+  {conv} is second argument of {add_1} and
+  {add4_1} is first successor of {add_1} and
+
+  #  %add4.1 = add nuw nsw i32 %i.018, 2, !dbg !11
+  {add4_1} is add instruction and
+  {i_018} is first argument of {add4_1} and
+  {_2} is second argument of {add4_1} and
+  {niter_nsub_1} is first successor of {add4_1} and
+
+  #  %niter.nsub.1 = add i32 %niter, -2, !dbg !9
+  {niter_nsub_1} is add instruction and
+  {niter} is first argument of {niter_nsub_1} and
+  {_2_} is second argument of {niter_nsub_1} and
+  {niter_ncmp_1} is first successor of {niter_nsub_1} and
+
+  #  %niter.ncmp.1 = icmp eq i32 %niter.nsub.1, 0, !dbg !9
+  {niter_ncmp_1} is icmp instruction and
+  {niter_nsub_1} is first argument of {niter_ncmp_1} and
+  {_0} is second argument of {niter_ncmp_1} and
+  {anonymous[11]} is first successor of {niter_ncmp_1} and
+
+  #  br i1 %niter.ncmp.1, label %for.cond.cleanup.loopexit.unr-lcssa.loopexit, label %for.body, !dbg !9, !llvm.loop !21
+  {anonymous[11]} is branch instruction and
+  {niter_ncmp_1} is first argument of {anonymous[11]} and
+  {i_018} is first successor of {anonymous[11]} and
+  {add_1_lcssa} is second successor of {anonymous[11]} and
+ #i32 %in_dim
+  {in_dim} is an argument and
+
+  #i32 0
+  {_0} is a constant and
+
+  #i32 %ratio
+  {ratio} is an argument and
+
+  #double 1.000000e+00
+  {_1_000000e_00} is a constant and
+
+  #double* %out
+  {out} is an argument and
+
+  #i64 8
+  {_8} is a constant and
+
+  #i32 1
+  {_1} is a constant and
+
+  #double 0.000000e+00
+  {_0_000000e_00} is a constant and
+
+  #i1 true
+  {true} is a constant and
+
+  #i32 2
+  {_2} is a constant and
+
+  #i32 -2
+  {_2_} is a constant and
+  {dummy} is unused)
+End
