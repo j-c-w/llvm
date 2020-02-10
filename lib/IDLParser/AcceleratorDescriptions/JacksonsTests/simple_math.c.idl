@@ -18,20 +18,6 @@ Export Constraint quad_sum
   {d} is second argument of {add2} and
   {anonymous[0]} is first successor of {add2} and
 
-  #  ret i32 %add2, !dbg !11
-  {anonymous[0]} is ret instruction and
-  {add2} is first argument of {anonymous[0]} and
- #i32 %b
-  {b} is an argument and
-
-  #i32 %a
-  {a} is an argument and
-
-  #i32 %c
-  {c} is an argument and
-
-  #i32 %d
-  {d} is an argument and
   {dummy} is unused)
 End
 
@@ -50,16 +36,7 @@ Export Constraint mx_plus_c
   {anonymous[0]} is first successor of {add} and
 
   #  ret i32 %add, !dbg !10
-  {anonymous[0]} is ret instruction and
   {add} is first argument of {anonymous[0]} and
- #i32 %x
-  {x} is an argument and
-
-  #i32 %m
-  {m} is an argument and
-
-  #i32 %c
-  {c} is an argument and
   {dummy} is unused)
 End
 
@@ -78,16 +55,8 @@ Export Constraint mx_plus_c_float
   {anonymous[0]} is first successor of {add} and
 
   #  ret float %add, !dbg !10
-  {anonymous[0]} is ret instruction and
   {add} is first argument of {anonymous[0]} and
  #float %x
-  {x} is an argument and
-
-  #float %m
-  {m} is an argument and
-
-  #float %c
-  {c} is an argument and
   {dummy} is unused)
 End
 
@@ -105,16 +74,7 @@ Export Constraint mx_plus_c_double
   {c} is second argument of {add} and
   {anonymous[0]} is first successor of {add} and
 
-  #  ret double %add, !dbg !10
-  {anonymous[0]} is ret instruction and
   {add} is first argument of {anonymous[0]} and
  #double %x
-  {x} is an argument and
-
-  #double %m
-  {m} is an argument and
-
-  #double %c
-  {c} is an argument and
   {dummy} is unused)
 End
