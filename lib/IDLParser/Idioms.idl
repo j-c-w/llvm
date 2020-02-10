@@ -1,11 +1,2 @@
-Include AcceleratorDescriptions/Needle/164.gzip.ll.idl
-Include AcceleratorDescriptions/Needle/179.art.ll.idl
-Include AcceleratorDescriptions/Needle/183.equake.ll.idl
-Include AcceleratorDescriptions/Needle/401.bzip2.ll.idl
-Include AcceleratorDescriptions/Needle/444.namd.ll.idl
-Include AcceleratorDescriptions/Needle/456.hmmer.ll.idl
-Include AcceleratorDescriptions/Needle/458.sjeng.ll.idl
-Include AcceleratorDescriptions/Needle/blackscholes.ll.idl
-Include AcceleratorDescriptions/Needle/bodytrack.ll.idl
-Include AcceleratorDescriptions/Needle/dwt53.ll.idl
-Include AcceleratorDescriptions/Needle/fft-2d.ll.idl
+Include AcceleratorDescriptions/JacksonsTests/simple_loops.c.idl
+Include AcceleratorDescriptions/JacksonsTests/simple_math.c.idl

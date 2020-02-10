@@ -111,18 +111,28 @@ class ResearchReplacer : public ResearchReplacerBase
 {
 public:
     ResearchReplacer() : ResearchReplacerBase({
-   {"gzip", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   {"art", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   {"equake", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   {"bzip2", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   {"namd", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   {"sjeng", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   {"blackscholes", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   {"bodytrack", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   {"dwt", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   {"fft2d", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
-   /* {"SPMV", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
-   {"hmmer", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}
+   {"sum", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"sum_double", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"sum_float", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"inc", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"inc_double", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"inc_float", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"quad_sum", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"mx_plus_c", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"mx_plus_c_float", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr},
+   {"mx_plus_c_double", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}
+   /* {"gzip", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
+   /* {"art", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
+   /* {"equake", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
+   /* {"bzip2", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
+   /* {"namd", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
+   /* {"sjeng", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
+   /* {"blackscholes", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
+   /* {"bodytrack", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
+   /* {"dwt", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
+   /* {"fft2d", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, */
+   /* /1* {"SPMV", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr}, *1/ */
+   /* {"hmmer", [](const Solution& s)->Value*{ return s["loop"]["comparison"]; }, nullptr} */
    }) { }
 };
 
